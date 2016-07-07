@@ -16,6 +16,7 @@ describe('Build Model', () => {
     let datastore;
     let executorMock;
     let hashaMock;
+    let build;
 
     before(() => {
         mockery.enable({
@@ -27,22 +28,25 @@ describe('Build Model', () => {
     beforeEach(() => {
         datastore = {
             get: sinon.stub(),
+            scan: sinon.stub(),
+            update: sinon.stub(),
             save: sinon.stub()
         };
         hashaMock = {
             sha1: sinon.stub()
         };
-        mockery.registerMock('screwdriver-hashr', hashaMock);
         executorMock = {
             start: sinon.stub(),
             stream: sinon.stub()
         };
         executorFactoryStub.prototype = executorMock;
+        mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('screwdriver-executor-k8s', executorFactoryStub);
 
-        /* eslint-disable global-require */
+        // eslint-disable-next-line global-require
         BuildModel = require('../../lib/buildmodel');
-        /* eslint-enable global-require */
+
+        build = new BuildModel(datastore);
     });
 
     afterEach(() => {
@@ -71,13 +75,68 @@ describe('Build Model', () => {
         it('calls executor stream with correct values', () => {
             const streamStub = sinon.stub();
             const buildId = 'as12345';
-            const build = new BuildModel(datastore);
 
             build.stream({ buildId }, streamStub);
-
             assert.calledWith(executorMock.stream, {
                 buildId
             }, streamStub);
+        });
+    });
+
+    describe('get', () => {
+        it('calls datastore get and returns correct values', (done) => {
+            datastore.get.yieldsAsync(null, { id: 'as12345', data: 'stuff' });
+            build.get('as12345', (err, data) => {
+                assert.isNull(err);
+                assert.deepEqual(data, {
+                    id: 'as12345',
+                    data: 'stuff'
+                });
+                done();
+            });
+        });
+    });
+
+    describe('list', () => {
+        const paginate = {
+            page: 1,
+            count: 2
+        };
+
+        it('calls datastore scan and returns correct values', (done) => {
+            const returnValue = [
+                {
+                    id: 'a1234',
+                    data: 'stuff1'
+                },
+                {
+                    id: 'a1234',
+                    data: 'stuff2'
+                }
+            ];
+
+            datastore.scan.yieldsAsync(null, returnValue);
+            build.list(paginate, (err, data) => {
+                assert.isNull(err);
+                assert.deepEqual(data, returnValue);
+                done();
+            });
+        });
+    });
+
+    describe('update', () => {
+        const config = {
+            id: 'as12345',
+            data: 'stuff'
+        };
+
+        it('calls datastore update and returns the new object', (done) => {
+            datastore.update.yieldsAsync(null, { jobId: '1234' });
+            build.update(config, (err, result) => {
+                assert.isNull(err);
+                assert.deepEqual(result, { jobId: '1234' });
+                done();
+            });
         });
     });
 
@@ -87,7 +146,6 @@ describe('Build Model', () => {
         const now = 112233445566;
         const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
         const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
-        let build;
         let sandbox;
         const jobsTableConfig = {
             table: 'jobs',
@@ -109,8 +167,6 @@ describe('Build Model', () => {
             datastore.get.yieldsAsync(null, {});
             datastore.save.yieldsAsync(null, {});
             executorMock.start.yieldsAsync(null);
-
-            build = new BuildModel(datastore);
         });
 
         it('executes things in order', (done) => {

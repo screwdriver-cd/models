@@ -9,6 +9,85 @@
 npm install screwdriver-models
 ```
 
+### Build Model
+```js
+'use strict';
+const BuildModel = require('screwdriver-models');
+const datastore = require('your-datastore');
+const build = new BuildModel(datastore);
+const config = {
+    page: 1
+    count: 2
+}
+build.list(config, (err, data) => {
+    if (err) {
+        throw new Error(err);
+    }
+    console.log(data);
+});
+```
+#### Create
+Create & start a new build
+```
+create(config, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Configuration Object |
+| config.jobId | String | The unique ID for a job |
+| config.container | String | Container for the build to run in |
+| callback | Function | Callback function|
+
+#### Get
+Get a build based on id
+```
+get(id, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| id | String | The unique ID for the build |
+| callback | Function | Callback function|
+
+#### List
+List builds with pagination
+```
+list(paginate, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| paginate        | Object | Pagination Object |
+| paginate.page | Number | The page for pagination |
+| paginate.count | Number | The count for pagination |
+| callback | Function | Callback function |
+
+#### Update
+Update a specific build
+```
+update(config, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Configuration Object |
+| config.id | String | The unique ID for the build |
+| config.data | String | The new data to update with |
+| callback | Function | Callback function|
+
+#### Stream
+Stream the log of a build
+```
+stream(config, response)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Configuration Object |
+| config.buildId | String | The unique ID for the build |
+| response | Object | The response object to stream to|
+
 ## Testing
 
 ```bash
