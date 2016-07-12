@@ -1,6 +1,6 @@
 {
   "name": "screwdriver-models",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Screwdriver models",
   "main": "index.js",
   "scripts": {
