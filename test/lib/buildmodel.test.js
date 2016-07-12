@@ -69,6 +69,10 @@ describe('Build Model', () => {
         const result = new BuildModel(datastore);
 
         assert.property(result, 'create');
+        assert.property(result, 'get');
+        assert.property(result, 'list');
+        assert.property(result, 'update');
+        assert.property(result, 'stream');
     });
 
     describe('stream', () => {
