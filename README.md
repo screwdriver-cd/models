@@ -9,23 +9,121 @@
 npm install screwdriver-models
 ```
 
+### Pipeline Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+
+module.exports = (datastore) => ({
+    method: 'GET',
+    path: '/pipelines',
+    config: {
+        description: 'Get pipelines with pagination',
+        notes: 'Returns all pipeline records',
+        tags: ['api', 'pipelines'],
+        handler: (request, reply) => {
+            const Pipeline = new Model.Pipeline(datastore);
+            Pipeline.list(request.query, reply);
+        },
+        response: {
+            schema: listSchema
+        },
+        validate: {
+            query: schema.pagination
+        }
+    }
+});
+```
+
+
+#### Create
+Create a pipeline & create a default job called `main`
+```
+create(config, callback)
+```
+
+| Parameter        | Type  | Required  |  Description |
+| :-------------   | :---- | :---- | :-------------|
+| config        | Object | Yes | Configuration Object |
+| config.scmUrl | String | Yes | Source Code URL for the application |
+| config.configUrl | String | No | Source Code URL for Screwdriver configuration |
+| callback | Function | Yes | Callback function|
+
+#### Get
+Get a pipeline based on id
+```
+get(id, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| id | String | The unique ID for the pipeline |
+| callback | Function | Callback function|
+
+#### List
+List builds with pagination
+```
+list(paginate, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| paginate        | Object | Pagination Object |
+| paginate.page | Number | The page for pagination |
+| paginate.count | Number | The count for pagination |
+| callback | Function | Callback function |
+
+#### Update
+Update a specific pipeline
+```
+update(config, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Configuration Object |
+| config.id | String | The unique ID for the pipeline |
+| config.data | String | The new data to update with |
+| callback | Function | Callback function|
+
+#### Sync
+Sync the pipeline. Look up the configuration in the repo to create and delete jobs if necessary.
+```
+sync(config, callback)
+```
+
+| Parameter        | Type  | Required  |  Description |
+| :-------------   | :---- | :---- | :-------------|
+| config        | Object | Yes | Configuration Object |
+| config.scmUrl | String | Yes | Source Code URL for the application |
+| callback | Function | Yes | Callback function|
+
 ### Build Model
 ```js
 'use strict';
-const BuildModel = require('screwdriver-models');
-const datastore = require('your-datastore');
-const build = new BuildModel(datastore);
-const config = {
-    page: 1
-    count: 2
-}
-build.list(config, (err, data) => {
-    if (err) {
-        throw new Error(err);
+const Model = require('screwdriver-models');
+
+module.exports = (datastore) => ({
+    method: 'GET',
+    path: '/builds',
+    config: {
+        description: 'Get builds with pagination',
+        notes: 'Returns all builds records',
+        tags: ['api', 'builds'],
+        handler: (request, reply) => {
+            const Build = new Model.Build(datastore);
+            Build.list(request.query, reply);
+        },
+        response: {
+            schema: listSchema
+        },
+        validate: {
+            query: schema.pagination
+        }
     }
-    console.log(data);
 });
 ```
+
 #### Create
 Create & start a new build
 ```
