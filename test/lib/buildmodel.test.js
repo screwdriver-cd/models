@@ -59,22 +59,6 @@ describe('Build Model', () => {
         mockery.disable();
     });
 
-    it('constructs', () => {
-        const result = new BuildModel(datastore);
-
-        assert.isOk(result);
-    });
-
-    it('has the correct API', () => {
-        const result = new BuildModel(datastore);
-
-        assert.property(result, 'create');
-        assert.property(result, 'get');
-        assert.property(result, 'list');
-        assert.property(result, 'update');
-        assert.property(result, 'stream');
-    });
-
     describe('stream', () => {
         it('calls executor stream with correct values', () => {
             const streamStub = sinon.stub();

@@ -13,28 +13,18 @@ npm install screwdriver-models
 ```js
 'use strict';
 const Model = require('screwdriver-models');
+const Pipeline = new Model.Pipeline(datastore);
+const config = {
+    page: 2,
+    count: 3
+}
 
-module.exports = (datastore) => ({
-    method: 'GET',
-    path: '/pipelines',
-    config: {
-        description: 'Get pipelines with pagination',
-        notes: 'Returns all pipeline records',
-        tags: ['api', 'pipelines'],
-        handler: (request, reply) => {
-            const Pipeline = new Model.Pipeline(datastore);
-            Pipeline.list(request.query, reply);
-        },
-        response: {
-            schema: listSchema
-        },
-        validate: {
-            query: schema.pagination
-        }
+Pipeline.list(config, (err, result) => {
+    if (!err) {
+        console.log(result);
     }
 });
 ```
-
 
 #### Create
 Create a pipeline & create a default job called `main`
@@ -47,7 +37,7 @@ create(config, callback)
 | config        | Object | Yes | Configuration Object |
 | config.scmUrl | String | Yes | Source Code URL for the application |
 | config.configUrl | String | No | Source Code URL for Screwdriver configuration |
-| callback | Function | Yes | Callback function|
+| callback | Function | Yes | Callback function fn(err) |
 
 #### Get
 Get a pipeline based on id
@@ -58,7 +48,7 @@ get(id, callback)
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
 | id | String | The unique ID for the pipeline |
-| callback | Function | Callback function|
+| callback | Function | Callback function fn(err, result) where result is the pipeline with the specific id|
 
 #### List
 List builds with pagination
@@ -71,7 +61,7 @@ list(paginate, callback)
 | paginate        | Object | Pagination Object |
 | paginate.page | Number | The page for pagination |
 | paginate.count | Number | The count for pagination |
-| callback | Function | Callback function |
+| callback | Function | Callback function fn(err, result) where result is an array of pipelines|
 
 #### Update
 Update a specific pipeline
@@ -84,7 +74,7 @@ update(config, callback)
 | config        | Object | Configuration Object |
 | config.id | String | The unique ID for the pipeline |
 | config.data | String | The new data to update with |
-| callback | Function | Callback function|
+| callback | Function | Callback function fn(err, result) where result is the new pipeline object|
 
 #### Sync
 Sync the pipeline. Look up the configuration in the repo to create and delete jobs if necessary.
@@ -96,30 +86,89 @@ sync(config, callback)
 | :-------------   | :---- | :---- | :-------------|
 | config        | Object | Yes | Configuration Object |
 | config.scmUrl | String | Yes | Source Code URL for the application |
-| callback | Function | Yes | Callback function|
+| callback | Function | Yes | Callback function fn(err)|
+
+### Job Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const Job = new Model.Job(datastore);
+const config = {
+    page: 2,
+    count: 3
+}
+
+Job.list(config, (err, result) => {
+    if (!err) {
+        console.log(result);
+    }
+});
+```
+
+#### Create
+Create a new job
+```
+create(config, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Configuration Object |
+| config.pipelineId | String | The pipelineId that the job belongs to |
+| config.name | String | The name of the job |
+| callback | Function | Callback function fn(err)|
+
+#### Get
+Get a job based on id
+```
+get(id, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| id | String | The unique ID for the job |
+| callback | Function | Callback function fn(err, result) where result is the job object with the specific id|
+
+#### List
+List jobs with pagination
+```
+list(paginate, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| paginate        | Object | Pagination Object |
+| paginate.page | Number | The page for pagination |
+| paginate.count | Number | The count for pagination |
+| callback | Function | Callback function fn(err, result) where result is an array of jobs |
+
+#### Update
+Update a specific job
+```
+update(config, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Configuration Object |
+| config.id | String | The unique ID for the job |
+| config.data | String | The new data to update with |
+| callback | Function | Callback function fn(err, result) where result is the new job object |
+
 
 ### Build Model
 ```js
 'use strict';
 const Model = require('screwdriver-models');
+const Build = new Model.Build(datastore);
+const config = {
+    page: 2,
+    count: 3
+}
 
-module.exports = (datastore) => ({
-    method: 'GET',
-    path: '/builds',
-    config: {
-        description: 'Get builds with pagination',
-        notes: 'Returns all builds records',
-        tags: ['api', 'builds'],
-        handler: (request, reply) => {
-            const Build = new Model.Build(datastore);
-            Build.list(request.query, reply);
-        },
-        response: {
-            schema: listSchema
-        },
-        validate: {
-            query: schema.pagination
-        }
+Build.list(config, (err, result) => {
+    if (!err) {
+        console.log(result);
     }
 });
 ```
@@ -135,7 +184,7 @@ create(config, callback)
 | config        | Object | Configuration Object |
 | config.jobId | String | The unique ID for a job |
 | config.container | String | Container for the build to run in |
-| callback | Function | Callback function|
+| callback | Function | Callback function fn(err)|
 
 #### Get
 Get a build based on id
@@ -146,7 +195,7 @@ get(id, callback)
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
 | id | String | The unique ID for the build |
-| callback | Function | Callback function|
+| callback | Function | Callback function fn(err, result) where result is the build object with the specific id |
 
 #### List
 List builds with pagination
@@ -159,7 +208,7 @@ list(paginate, callback)
 | paginate        | Object | Pagination Object |
 | paginate.page | Number | The page for pagination |
 | paginate.count | Number | The count for pagination |
-| callback | Function | Callback function |
+| callback | Function | Callback function fn(err, result) where result is an array of builds |
 
 #### Update
 Update a specific build
@@ -172,7 +221,7 @@ update(config, callback)
 | config        | Object | Configuration Object |
 | config.id | String | The unique ID for the build |
 | config.data | String | The new data to update with |
-| callback | Function | Callback function|
+| callback | Function | Callback function fn(err, result) where result is the new build object |
 
 #### Stream
 Stream the log of a build
