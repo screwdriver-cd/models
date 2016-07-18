@@ -10,14 +10,6 @@ describe('Job Model', () => {
     let datastore;
     let hashaMock;
     let job;
-    const jobData = {
-        id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
-        pipelineId: '151c9b11e4a9a27e9e374daca6e59df37d8cf00f',
-        name: 'deploy',
-        state: 'ENABLED',
-        triggers: [],
-        triggeredBy: ['151c9b11e4a9a27e9e374daca6e59df37d8cf00f']
-    };
 
     before(() => {
         mockery.enable({
@@ -39,7 +31,7 @@ describe('Job Model', () => {
         mockery.registerMock('screwdriver-hashr', hashaMock);
 
         // eslint-disable-next-line global-require
-        JobModel = require('../../lib/jobmodel');
+        JobModel = require('../../lib/job');
 
         job = new JobModel(datastore);
     });
@@ -54,58 +46,10 @@ describe('Job Model', () => {
         mockery.disable();
     });
 
-    describe('get', () => {
-        it('calls datastore get and returns correct values', (done) => {
-            datastore.get.yieldsAsync(null, jobData);
-            job.get('as12345', (err, data) => {
-                assert.isNull(err);
-                assert.deepEqual(data, jobData);
-                done();
-            });
-        });
-    });
-
-    describe('list', () => {
-        const paginate = {
-            page: 1,
-            count: 2
-        };
-
-        it('calls datastore scan and returns correct values', (done) => {
-            const returnValue = [
-                {
-                    id: '151c9b11e4a9a27e9e374daca6e59df37d8cf00f',
-                    name: 'component'
-                },
-                {
-                    id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
-                    name: 'deploy'
-                }
-            ];
-
-            datastore.scan.yieldsAsync(null, returnValue);
-            job.list(paginate, (err, data) => {
-                assert.isNull(err);
-                assert.deepEqual(data, returnValue);
-                done();
-            });
-        });
-    });
-
-    describe('update', () => {
-        const config = {
-            id: 'as12345',
-            data: 'stuff'
-        };
-
-        it('calls datastore update and returns the new object', (done) => {
-            datastore.update.yieldsAsync(null, { jobId: '1234' });
-            job.update(config, (err, result) => {
-                assert.isNull(err);
-                assert.deepEqual(result, { jobId: '1234' });
-                done();
-            });
-        });
+    it('extends base class', () => {
+        assert.isFunction(job.get);
+        assert.isFunction(job.update);
+        assert.isFunction(job.list);
     });
 
     describe('create', () => {

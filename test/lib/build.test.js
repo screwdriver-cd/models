@@ -44,7 +44,7 @@ describe('Build Model', () => {
         mockery.registerMock('screwdriver-executor-k8s', executorFactoryStub);
 
         // eslint-disable-next-line global-require
-        BuildModel = require('../../lib/buildmodel');
+        BuildModel = require('../../lib/build');
 
         build = new BuildModel(datastore);
     });
@@ -59,6 +59,12 @@ describe('Build Model', () => {
         mockery.disable();
     });
 
+    it('extends base class', () => {
+        assert.isFunction(build.get);
+        assert.isFunction(build.update);
+        assert.isFunction(build.list);
+    });
+
     describe('stream', () => {
         it('calls executor stream with correct values', () => {
             const streamStub = sinon.stub();
@@ -68,63 +74,6 @@ describe('Build Model', () => {
             assert.calledWith(executorMock.stream, {
                 buildId
             }, streamStub);
-        });
-    });
-
-    describe('get', () => {
-        it('calls datastore get and returns correct values', (done) => {
-            datastore.get.yieldsAsync(null, { id: 'as12345', data: 'stuff' });
-            build.get('as12345', (err, data) => {
-                assert.isNull(err);
-                assert.deepEqual(data, {
-                    id: 'as12345',
-                    data: 'stuff'
-                });
-                done();
-            });
-        });
-    });
-
-    describe('list', () => {
-        const paginate = {
-            page: 1,
-            count: 2
-        };
-
-        it('calls datastore scan and returns correct values', (done) => {
-            const returnValue = [
-                {
-                    id: 'a1234',
-                    data: 'stuff1'
-                },
-                {
-                    id: 'a1234',
-                    data: 'stuff2'
-                }
-            ];
-
-            datastore.scan.yieldsAsync(null, returnValue);
-            build.list(paginate, (err, data) => {
-                assert.isNull(err);
-                assert.deepEqual(data, returnValue);
-                done();
-            });
-        });
-    });
-
-    describe('update', () => {
-        const config = {
-            id: 'as12345',
-            data: 'stuff'
-        };
-
-        it('calls datastore update and returns the new object', (done) => {
-            datastore.update.yieldsAsync(null, { jobId: '1234' });
-            build.update(config, (err, result) => {
-                assert.isNull(err);
-                assert.deepEqual(result, { jobId: '1234' });
-                done();
-            });
         });
     });
 
