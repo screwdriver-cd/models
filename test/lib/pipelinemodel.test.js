@@ -53,22 +53,6 @@ describe('Pipeline Model', () => {
         mockery.disable();
     });
 
-    it('constructs', () => {
-        const result = new PipelineModel(datastore);
-
-        assert.isOk(result);
-    });
-
-    it('has the correct API', () => {
-        const result = new PipelineModel(datastore);
-
-        assert.property(result, 'create');
-        assert.property(result, 'get');
-        assert.property(result, 'list');
-        assert.property(result, 'update');
-        assert.property(result, 'sync');
-    });
-
     describe('get', () => {
         it('calls datastore get and returns correct values', (done) => {
             datastore.get.yieldsAsync(null, { id: 'as12345', data: 'stuff' });
@@ -198,30 +182,28 @@ describe('Pipeline Model', () => {
 
     describe('sync', () => {
         const scmUrl = 'git@github.com:screwdriver-cd/data-model.git#master';
-        const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
-        const testJobId = 'e398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
+        const pipelineId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
+        const jobId = 'e398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
         const jobName = 'main';
 
         it('creates the main job if pipeline exists', (done) => {
-            hashaMock.sha1.withArgs(`${scmUrl}`).returns(testId);
-            hashaMock.sha1.withArgs(`${testId}${jobName}`).returns(testJobId);
+            hashaMock.sha1.withArgs(`${scmUrl}`).returns(pipelineId);
+            hashaMock.sha1.withArgs(`${pipelineId}${jobName}`).returns(jobId);
             datastore.get.yieldsAsync(null);
             datastore.save.yieldsAsync(null);
             pipeline.sync({ scmUrl }, () => {
                 assert.calledWith(datastore.save, {
                     table: 'jobs',
                     params: {
-                        id: testJobId,
+                        id: jobId,
                         data: {
                             name: 'main',
-                            pipelineId: testId,
-                            state: 'ENABLED',
-                            triggers: [],
-                            triggeredBy: []
+                            pipelineId,
+                            state: 'ENABLED'
                         }
                     }
                 });
-                assert.calledWith(hashaMock.sha1, `${testId}main`);
+                assert.calledWith(hashaMock.sha1, `${pipelineId}main`);
                 done();
             });
         });
