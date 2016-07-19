@@ -38,7 +38,7 @@ describe('Pipeline Model', () => {
         mockery.registerMock('screwdriver-executor-k8s', executorFactoryStub);
 
         // eslint-disable-next-line global-require
-        PipelineModel = require('../../lib/pipelinemodel');
+        PipelineModel = require('../../lib/pipeline');
 
         pipeline = new PipelineModel(datastore);
     });
@@ -53,61 +53,10 @@ describe('Pipeline Model', () => {
         mockery.disable();
     });
 
-    describe('get', () => {
-        it('calls datastore get and returns correct values', (done) => {
-            datastore.get.yieldsAsync(null, { id: 'as12345', data: 'stuff' });
-            pipeline.get('as12345', (err, data) => {
-                assert.isNull(err);
-                assert.deepEqual(data, {
-                    id: 'as12345',
-                    data: 'stuff'
-                });
-                done();
-            });
-        });
-    });
-
-    describe('list', () => {
-        const paginate = {
-            page: 1,
-            count: 2
-        };
-
-        it('calls datastore scan and returns correct values', (done) => {
-            const returnValue = [
-                {
-                    id: '1321shewp',
-                    scmUrl: 'git@github.com/repo1.git#master'
-                },
-                {
-                    id: '0842wpoe',
-                    scmUrl: 'git@github.com/repo2.git#master'
-                }
-            ];
-
-            datastore.scan.yieldsAsync(null, returnValue);
-            pipeline.list(paginate, (err, data) => {
-                assert.isNull(err);
-                assert.deepEqual(data, returnValue);
-                done();
-            });
-        });
-    });
-
-    describe('update', () => {
-        const config = {
-            id: 'as12345',
-            scmUrl: 'git@github.com/stuff.git#master'
-        };
-
-        it('calls datastore update and returns the new object', (done) => {
-            datastore.update.yieldsAsync(null, { scmUrl: 'git@github.com/stuff.git#master' });
-            pipeline.update(config, (err, result) => {
-                assert.isNull(err);
-                assert.deepEqual(result, { scmUrl: 'git@github.com/stuff.git#master' });
-                done();
-            });
-        });
+    it('extends base class', () => {
+        assert.isFunction(pipeline.get);
+        assert.isFunction(pipeline.update);
+        assert.isFunction(pipeline.list);
     });
 
     describe('create', () => {
