@@ -8,6 +8,78 @@
 ```bash
 npm install screwdriver-models
 ```
+### Platform Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const Platform = new Model.Platform(datastore);
+const config = {
+    page: 2,
+    count: 3
+}
+
+Platform.list(config, (err, result) => {
+    if (!err) {
+        console.log(result);
+    }
+});
+```
+
+#### Create
+Create a new platform
+```
+create(config, callback)
+```
+
+| Parameter        | Type  | Required | Description |
+| :-------------   | :---- | :---- | :-------------|
+| config        | Object | Yes | Configuration Object |
+| config.name | String | Yes | Platform name |
+| config.version | String | Yes | Platform version |
+| config.config | String | No | Config of the platform |
+| config.author | String | No | Author of the platform |
+| config.scmUrl | String | No | Source Code URL for Screwdriver configuration |
+| config.docUrl | String | No | Doc URL of platform |
+| config.experimental | Boolean | No | Whether platform is experimental |
+| callback | Function | Yes | Callback function fn(err) |
+
+#### Get
+Get a platform based on id
+```
+get(id, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| id | String | The unique ID for the platform |
+| callback | Function | Callback function fn(err, result) where result is the platform object with the specific id|
+
+#### List
+List platforms with pagination
+```
+list(paginate, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| paginate        | Object | Pagination Object |
+| paginate.page | Number | The page for pagination |
+| paginate.count | Number | The count for pagination |
+| callback | Function | Callback function fn(err, result) where result is an array of platforms |
+
+#### Update
+Update a specific platform
+```
+update(config, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Configuration Object |
+| config.id | String | The unique ID for the platform |
+| config.data | String | The new data to update with |
+| callback | Function | Callback function fn(err, result) where result is the new platform object |
+
 
 ### Pipeline Model
 ```js

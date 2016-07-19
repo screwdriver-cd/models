@@ -5,12 +5,6 @@ const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-/**
- * Stub for Executor K8s factory method
- * @method executorFactoryStub
- */
-function executorFactoryStub() {}
-
 describe('Pipeline Model', () => {
     let PipelineModel;
     let datastore;
@@ -27,15 +21,12 @@ describe('Pipeline Model', () => {
     beforeEach(() => {
         datastore = {
             get: sinon.stub(),
-            scan: sinon.stub(),
-            update: sinon.stub(),
             save: sinon.stub()
         };
         hashaMock = {
             sha1: sinon.stub()
         };
         mockery.registerMock('screwdriver-hashr', hashaMock);
-        mockery.registerMock('screwdriver-executor-k8s', executorFactoryStub);
 
         // eslint-disable-next-line global-require
         PipelineModel = require('../../lib/pipeline');
@@ -91,17 +82,7 @@ describe('Pipeline Model', () => {
             sandbox.restore();
         });
 
-        it('returns error when the scmUrl already exists', (done) => {
-            datastore.get.yieldsAsync(null, { id: testId, scmUrl });
-            pipeline.create({ scmUrl }, (error) => {
-                assert.isOk(error);
-                assert.equal(error.message, 'scmUrl needs to be unique');
-                done();
-            });
-        });
-
         it('returns error when the datastore fails to save', (done) => {
-            datastore.get.yieldsAsync(null, null);
             const testError = new Error('datastoreSaveError');
 
             datastore.save.yieldsAsync(testError);
@@ -114,7 +95,6 @@ describe('Pipeline Model', () => {
         });
 
         it('and correct pipeline data', (done) => {
-            datastore.get.yieldsAsync(null, null);
             sandbox.useFakeTimers(dateNow);
             datastore.save.yieldsAsync(null);
 
