@@ -20,9 +20,6 @@ describe('Job Model', () => {
 
     beforeEach(() => {
         datastore = {
-            get: sinon.stub(),
-            scan: sinon.stub(),
-            update: sinon.stub(),
             save: sinon.stub()
         };
         hashaMock = {
