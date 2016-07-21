@@ -251,12 +251,12 @@ Create & start a new build
 create(config, callback)
 ```
 
-| Parameter        | Type  |  Description |
-| :-------------   | :---- | :-------------|
-| config        | Object | Configuration Object |
-| config.jobId | String | The unique ID for a job |
-| config.container | String | Container for the build to run in |
-| callback | Function | Callback function fn(err)|
+| Parameter        | Type  |  Required | Description |
+| :-------------   | :---- | :-------------|  :-------------|
+| config        | Object | Yes | Configuration Object |
+| config.jobId | String | Yes | The unique ID for a job |
+| config.container | String | No | Container for the build to run in |
+| callback | Function | Yes | Callback function fn(err)|
 
 #### Get
 Get a build based on id

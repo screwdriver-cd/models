@@ -76,7 +76,7 @@ describe('Build Model', () => {
     });
 
     describe('create', () => {
-        const container = 'node:4';
+        const container = 'node:6';
         const jobId = '62089f642bbfd1886623964b4cff12db59869e5d';
         const now = 112233445566;
         const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
@@ -121,7 +121,7 @@ describe('Build Model', () => {
                     id: testId,
                     data: {
                         cause: 'Started by user',
-                        container,
+                        container: 'node:4',
                         createTime: now,
                         jobId,
                         runNumber: now,
@@ -133,13 +133,12 @@ describe('Build Model', () => {
             sandbox.useFakeTimers(now);
 
             build.create({
-                jobId,
-                container
+                jobId
             }, (err, data) => {
                 assert.isNull(err);
                 assert.deepEqual(data, {
                     cause: 'Started by user',
-                    container,
+                    container: 'node:4',
                     createTime: now,
                     id: testId,
                     jobId,
