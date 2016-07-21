@@ -232,7 +232,7 @@ update(config, callback)
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const Build = new Model.Build(datastore);
+const Build = new Model.Build(datastore, executor);
 const config = {
     page: 2,
     count: 3
@@ -298,14 +298,14 @@ update(config, callback)
 #### Stream
 Stream the log of a build
 ```
-stream(config, response)
+stream(config, callback)
 ```
 
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
 | config        | Object | Configuration Object |
 | config.buildId | String | The unique ID for the build |
-| response | Object | The response object to stream to|
+| callback | Function | Callback function fn(err, stream) where stream is a Readable stream|
 
 ## Testing
 
