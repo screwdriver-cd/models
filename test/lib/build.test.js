@@ -39,12 +39,11 @@ describe('Build Model', () => {
         };
         executorFactoryStub.prototype = executorMock;
         mockery.registerMock('screwdriver-hashr', hashaMock);
-        mockery.registerMock('screwdriver-executor-k8s', executorFactoryStub);
 
         // eslint-disable-next-line global-require
         BuildModel = require('../../lib/build');
 
-        build = new BuildModel(datastore);
+        build = new BuildModel(datastore, executorMock);
     });
 
     afterEach(() => {
