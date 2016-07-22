@@ -123,7 +123,7 @@ describe('Build Model', () => {
                         container: 'node:4',
                         createTime: now,
                         jobId,
-                        runNumber: now,
+                        number: now,
                         status: 'QUEUED'
                     }
                 }
@@ -141,13 +141,13 @@ describe('Build Model', () => {
                     createTime: now,
                     id: testId,
                     jobId,
-                    runNumber: now,
+                    number: now,
                     status: 'QUEUED'
                 });
 
                 assert.calledWith(hashaMock.sha1, {
                     jobId,
-                    runNumber: now
+                    number: now
                 });
                 assert.calledWith(datastore.save, saveConfig);
                 done();
