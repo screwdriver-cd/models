@@ -41,7 +41,7 @@ create(config, callback)
 | config.scmUrl | String | No | Source Code URL for Screwdriver configuration |
 | config.docUrl | String | No | Doc URL of platform |
 | config.experimental | Boolean | No | Whether platform is experimental |
-| callback | Function | Yes | Callback function fn(err) |
+| callback | Function | Yes | Callback function fn(err, data) where data is the new platform that is created |
 
 #### Get
 Get a platform based on id
@@ -109,7 +109,7 @@ create(config, callback)
 | config        | Object | Yes | Configuration Object |
 | config.scmUrl | String | Yes | Source Code URL for the application |
 | config.configUrl | String | No | Source Code URL for Screwdriver configuration |
-| callback | Function | Yes | Callback function fn(err) |
+| callback | Function | Yes | Callback function fn(err, data) where data is the new pipeline that is created |
 
 #### Get
 Get a pipeline based on id
@@ -188,7 +188,7 @@ create(config, callback)
 | config        | Object | Configuration Object |
 | config.pipelineId | String | The pipelineId that the job belongs to |
 | config.name | String | The name of the job |
-| callback | Function | Callback function fn(err)|
+| callback | Function | Callback function fn(err, data) where data is the new job that is created|
 
 #### Get
 Get a job based on id
@@ -256,7 +256,7 @@ create(config, callback)
 | config        | Object | Yes | Configuration Object |
 | config.jobId | String | Yes | The unique ID for a job |
 | config.container | String | No | Container for the build to run in |
-| callback | Function | Yes | Callback function fn(err)|
+| callback | Function | Yes | Callback function fn(err, data) where data is the new build that is created |
 
 #### Get
 Get a build based on id
@@ -307,9 +307,66 @@ stream(config, callback)
 | config.buildId | String | The unique ID for the build |
 | callback | Function | Callback function fn(err, stream) where stream is a Readable stream|
 
+### User Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const Job = new Model.User(datastore);
+const config = {
+    username: 'myself',
+    token: 'eyJksd3'            // User's github token
+}
+
+User.create(config, (err, user) => {
+    if (!err) {
+        console.log(user);
+    }
+});
+```
+
+#### Create
+Create a new user
+```
+create(config, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Configuration Object |
+| config.username | String | The username |
+| config.token | String | The user's github token|
+| callback | Function | Callback function fn(err, data) where data is the new user that is created|
+
+
+#### Get
+Get a user based on id
+```
+get(id, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| id | String | The unique ID for the user |
+| callback | Function | Callback function fn(err, result) where result is the user object with the specific id |
+
+
+#### Update
+Update a specific user
+```
+update(config, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Configuration Object |
+| config.id | String | The unique ID for the user |
+| config.data | String | The new data to update with |
+| callback | Function | Callback function fn(err, result) where result is the new user object |
+
 ## Testing
 
 ```bash
+
 npm test
 ```
 
