@@ -118,7 +118,9 @@ describe('Pipeline Model', () => {
         it('creates the main job if pipeline exists', (done) => {
             hashaMock.sha1.withArgs(`${scmUrl}`).returns(pipelineId);
             hashaMock.sha1.withArgs(`${pipelineId}${jobName}`).returns(jobId);
-            datastore.get.yieldsAsync(null);
+            datastore.get.yieldsAsync(null, {
+                id: pipelineId
+            });
             datastore.save.yieldsAsync(null);
             pipeline.sync({ scmUrl }, () => {
                 assert.calledWith(datastore.save, {
@@ -137,12 +139,21 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('returns error if pipeline does not exist', (done) => {
+        it('returns error if datastore explodes', (done) => {
             const err = new Error('blah');
 
             datastore.get.yieldsAsync(err);
             pipeline.sync({ scmUrl }, (error) => {
                 assert.isOk(error);
+                done();
+            });
+        });
+
+        it('returns null if pipeline does not exist', (done) => {
+            datastore.get.yieldsAsync(null, null);
+            pipeline.sync({ scmUrl }, (error, data) => {
+                assert.isNull(error);
+                assert.isNull(data);
                 done();
             });
         });
