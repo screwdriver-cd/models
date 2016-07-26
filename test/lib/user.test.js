@@ -6,9 +6,11 @@ const sinon = require('sinon');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('User Model', () => {
+    const password = 'password';
     let UserModel;
     let datastore;
     let hashaMock;
+    let ironMock;
     let user;
 
     before(() => {
@@ -25,12 +27,18 @@ describe('User Model', () => {
         hashaMock = {
             sha1: sinon.stub()
         };
+        ironMock = {
+            seal: sinon.stub(),
+            unseal: sinon.stub(),
+            defaults: {}
+        };
         mockery.registerMock('screwdriver-hashr', hashaMock);
+        mockery.registerMock('iron', ironMock);
 
         // eslint-disable-next-line global-require
         UserModel = require('../../lib/user');
 
-        user = new UserModel(datastore);
+        user = new UserModel(datastore, password);
     });
 
     afterEach(() => {
@@ -91,6 +99,30 @@ describe('User Model', () => {
                 assert.calledWith(datastore.save, datastoreConfig);
                 done();
             });
+        });
+    });
+
+    it('seal token', (done) => {
+        const token = '1234';
+
+        ironMock.seal.withArgs(token, password, ironMock.defaults)
+            .yieldsAsync(null, 'werlx');
+        user.sealToken(token, (err, sealed) => {
+            assert.calledWith(ironMock.seal, token, password, ironMock.defaults);
+            assert.deepEqual(sealed, 'werlx');
+            done();
+        });
+    });
+
+    it('unseal token', (done) => {
+        const sealed = 'werlx';
+
+        ironMock.unseal.withArgs(sealed, password, ironMock.defaults)
+            .yieldsAsync(null, '1234');
+        user.unsealToken(sealed, (err, unsealed) => {
+            assert.calledWith(ironMock.unseal, sealed, password, ironMock.defaults);
+            assert.deepEqual(unsealed, '1234');
+            done();
         });
     });
 });
