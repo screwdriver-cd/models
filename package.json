@@ -1,6 +1,6 @@
 {
   "name": "screwdriver-models",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Screwdriver models",
   "main": "index.js",
   "scripts": {
@@ -42,6 +42,7 @@
   "dependencies": {
     "async": "^2.0.0-rc.6",
     "hoek": "^4.0.1",
+    "screwdriver-data-schema": "^5.0.4",
     "screwdriver-hashr": "^1.0.30"
   }
 }

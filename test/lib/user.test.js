@@ -56,7 +56,7 @@ describe('User Model', () => {
         const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
 
         beforeEach(() => {
-            hashaMock.sha1.withArgs(username).returns(testId);
+            hashaMock.sha1.withArgs({ username }).returns(testId);
 
             config = {
                 username: 'me',
