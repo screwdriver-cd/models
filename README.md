@@ -311,7 +311,7 @@ stream(config, callback)
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const Job = new Model.User(datastore);
+const Job = new Model.User(datastore, password);
 const config = {
     username: 'myself',
     token: 'eyJksd3'            // User's github token
@@ -362,6 +362,30 @@ update(config, callback)
 | config.id | String | The unique ID for the user |
 | config.data | String | The new data to update with |
 | callback | Function | Callback function fn(err, result) where result is the new user object |
+
+
+#### Seal Token
+Seal a token
+```
+sealToken(token, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| token | String | The token to seal |
+| callback | Function | Callback function fn(err, sealed) where sealed is the sealed token |
+
+
+#### Unseal Token
+Unseal a token
+```
+unsealToken(sealed, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| sealed | String | The token to unseal |
+| callback | Function | Callback function fn(err, unsealed) where unsealed is the unsealed token |
 
 ## Testing
 
