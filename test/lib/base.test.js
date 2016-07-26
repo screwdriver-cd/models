@@ -8,6 +8,8 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('Base Model', () => {
     let BaseModel;
     let datastore;
+    let modelMock;
+    let hashaMock;
     let base;
     const baseData = {
         id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
@@ -32,10 +34,24 @@ describe('Base Model', () => {
             update: sinon.stub()
         };
 
+        modelMock = {
+            models: {
+                base: {
+                    tableName: 'base',
+                    keys: ['foo', 'bar']
+                }
+            }
+        };
+        hashaMock = {
+            sha1: sinon.stub()
+        };
+        mockery.registerMock('screwdriver-hashr', hashaMock);
+        mockery.registerMock('screwdriver-data-schema', modelMock);
+
         // eslint-disable-next-line global-require
         BaseModel = require('../../lib/base');
 
-        base = new BaseModel(datastore);
+        base = new BaseModel('base', datastore);
     });
 
     afterEach(() => {
@@ -46,6 +62,20 @@ describe('Base Model', () => {
 
     after(() => {
         mockery.disable();
+    });
+
+    describe('generateId', () => {
+        it('generates a fancy ID', () => {
+            hashaMock.sha1.withArgs({
+                foo: '1234',
+                bar: '2345'
+            }).returns('OK');
+            assert.equal(base.generateId({
+                foo: '1234',
+                bar: '2345',
+                zap: '4444'
+            }), 'OK');
+        });
     });
 
     describe('get', () => {

@@ -62,7 +62,9 @@ describe('Pipeline Model', () => {
             sandbox = sinon.sandbox.create({
                 useFakeTimers: false
             });
-            hashaMock.sha1.withArgs(scmUrl).returns(testId);
+            hashaMock.sha1.withArgs({
+                scmUrl
+            }).returns(testId);
 
             config = {
                 table: 'pipelines',
@@ -116,8 +118,13 @@ describe('Pipeline Model', () => {
         const jobName = 'main';
 
         it('creates the main job if pipeline exists', (done) => {
-            hashaMock.sha1.withArgs(`${scmUrl}`).returns(pipelineId);
-            hashaMock.sha1.withArgs(`${pipelineId}${jobName}`).returns(jobId);
+            hashaMock.sha1.withArgs({
+                scmUrl
+            }).returns(pipelineId);
+            hashaMock.sha1.withArgs({
+                pipelineId,
+                name: jobName
+            }).returns(jobId);
             datastore.get.yieldsAsync(null, {
                 id: pipelineId
             });
@@ -134,7 +141,10 @@ describe('Pipeline Model', () => {
                         }
                     }
                 });
-                assert.calledWith(hashaMock.sha1, `${pipelineId}main`);
+                assert.calledWith(hashaMock.sha1, {
+                    pipelineId,
+                    name: 'main'
+                });
                 done();
             });
         });

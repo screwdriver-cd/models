@@ -74,7 +74,9 @@ describe('Job Model', () => {
                 name
             }, (err) => {
                 assert.isNull(err);
-                assert.calledWith(hashaMock.sha1, `${pipelineId}${name}`);
+                assert.calledWith(hashaMock.sha1, {
+                    pipelineId, name
+                });
                 assert.calledWith(datastore.save, saveConfig);
                 done();
             });
