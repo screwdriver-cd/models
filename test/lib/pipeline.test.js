@@ -56,7 +56,6 @@ describe('Pipeline Model', () => {
         const dateNow = 1111111111;
         const scmUrl = 'git@github.com:screwdriver-cd/data-model.git#master';
         const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
-        const platformName = 'generic@1';
 
         beforeEach(() => {
             sandbox = sinon.sandbox.create({
@@ -73,8 +72,7 @@ describe('Pipeline Model', () => {
                     data: {
                         createTime: dateNow,
                         scmUrl,
-                        configUrl: scmUrl,
-                        platform: platformName
+                        configUrl: scmUrl
                     }
                 }
             };
