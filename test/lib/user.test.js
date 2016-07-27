@@ -2,8 +2,15 @@
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
+const Joi = require('joi');
 
 sinon.assert.expose(assert, { prefix: '' });
+
+/**
+ * Stub for Github method
+ * @method githubFactoryMock
+ */
+function githubFactoryMock() {}
 
 describe('User Model', () => {
     const password = 'password';
@@ -11,6 +18,7 @@ describe('User Model', () => {
     let datastore;
     let githubMock;
     let hashaMock;
+    let schemaMock;
     let ironMock;
     let user;
 
@@ -40,9 +48,32 @@ describe('User Model', () => {
             unseal: sinon.stub(),
             defaults: {}
         };
+        schemaMock = {
+            models: {
+                user: {
+                    base: {
+                        id: Joi.string(),
+                        username: Joi.string(),
+                        token: Joi.string()
+                    },
+                    keys: ['username'],
+                    tableName: 'users'
+                }
+            },
+            config: {
+                regex: {
+                    SCM_URL: /^git@([^:]+):([^\/]+)\/(.+?)\.git(#.+)?$/
+                }
+            }
+        };
+
+        githubFactoryMock.prototype.authenticate = githubMock.authenticate;
+        githubFactoryMock.prototype.repos = githubMock.repos;
+
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('iron', ironMock);
-        mockery.registerMock('github', githubMock);
+        mockery.registerMock('github', githubFactoryMock);
+        mockery.registerMock('screwdriver-data-schema', schemaMock);
 
         // eslint-disable-next-line global-require
         UserModel = require('../../lib/user');
