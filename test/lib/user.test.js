@@ -9,6 +9,7 @@ describe('User Model', () => {
     const password = 'password';
     let UserModel;
     let datastore;
+    let githubMock;
     let hashaMock;
     let ironMock;
     let user;
@@ -22,7 +23,14 @@ describe('User Model', () => {
 
     beforeEach(() => {
         datastore = {
+            get: sinon.stub(),
             save: sinon.stub()
+        };
+        githubMock = {
+            authenticate: sinon.stub(),
+            repos: {
+                get: sinon.stub()
+            }
         };
         hashaMock = {
             sha1: sinon.stub()
@@ -34,6 +42,7 @@ describe('User Model', () => {
         };
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('iron', ironMock);
+        mockery.registerMock('github', githubMock);
 
         // eslint-disable-next-line global-require
         UserModel = require('../../lib/user');
@@ -123,6 +132,67 @@ describe('User Model', () => {
             assert.calledWith(ironMock.unseal, sealed, password, ironMock.defaults);
             assert.deepEqual(unsealed, '1234');
             done();
+        });
+    });
+
+    describe('getPermissions', () => {
+        const token = 'sealedToken';
+
+        it('successfully gets permission', (done) => {
+            const userObj = {
+                id: '1234',
+                user: 'me',
+                token
+            };
+            const config = {
+                username: 'me',
+                scmUrl: 'git@github.com:screwdriver-cd/models.git'
+            };
+            const repo = {
+                permissions: {
+                    admin: true,
+                    push: false,
+                    pull: false
+                }
+            };
+
+            datastore.get.yieldsAsync(null, userObj);
+            ironMock.unseal.withArgs(token, password, ironMock.defaults)
+                .yieldsAsync(null, 'unsealedToken');
+            githubMock.authenticate.returns();
+            githubMock.repos.get.yieldsAsync(null, repo);
+            user.getPermissions(config, (err, res) => {
+                assert.calledWith(ironMock.unseal, token, password, ironMock.defaults);
+                assert.calledWith(githubMock.repos.get, {
+                    user: 'screwdriver-cd',
+                    repo: 'models'
+                });
+                assert.deepEqual(res, repo.permissions);
+                done();
+            });
+        });
+
+        it('returns error if fails to get permission', (done) => {
+            const userObj = {
+                id: '1234',
+                user: 'me',
+                token
+            };
+            const config = {
+                username: 'me',
+                scmUrl: 'git@github.com:screwdriver-cd/models.git'
+            };
+            const err = new Error('blah');
+
+            datastore.get.yieldsAsync(null, userObj);
+            ironMock.unseal.withArgs(token, password, ironMock.defaults)
+                .yieldsAsync(null, 'unsealedToken');
+            githubMock.authenticate.returns(null);
+            githubMock.repos.get.yieldsAsync(err);
+            user.getPermissions(config, (error) => {
+                assert.isOk(error);
+                done();
+            });
         });
     });
 });
