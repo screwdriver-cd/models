@@ -28,7 +28,8 @@ describe('Build Model', () => {
     beforeEach(() => {
         datastore = {
             get: sinon.stub(),
-            save: sinon.stub()
+            save: sinon.stub(),
+            scan: sinon.stub()
         };
         hashaMock = {
             sha1: sinon.stub()
@@ -71,6 +72,65 @@ describe('Build Model', () => {
             assert.calledWith(executorMock.stream, {
                 buildId
             }, streamStub);
+        });
+    });
+
+    describe('getBuildsForJobId', () => {
+        const config = {
+            jobId: 'jobId',
+            paginate: {
+                page: 1,
+                count: 25
+            }
+        };
+
+        it('returns error when datastore returns error', (done) => {
+            const error = new Error('database');
+
+            datastore.scan.yieldsAsync(error);
+            build.getBuildsForJobId(config, (err, records) => {
+                assert.notOk(records);
+                assert.deepEqual(error, err);
+                done();
+            });
+        });
+
+        it('calls datastore with correct values', (done) => {
+            datastore.scan.yieldsAsync(null, [{
+                jobId: 'jobId',
+                number: 1
+            }, {
+                jobId: 'jobId',
+                number: 3
+            }, {
+                jobId: 'jobId',
+                number: 2
+            }]);
+
+            build.getBuildsForJobId(config, (err, records) => {
+                assert.isNull(err);
+                assert.deepEqual(records, [{
+                    jobId: 'jobId',
+                    number: 1
+                }, {
+                    jobId: 'jobId',
+                    number: 2
+                }, {
+                    jobId: 'jobId',
+                    number: 3
+                }]);
+                assert.calledWith(datastore.scan, {
+                    table: 'builds',
+                    params: {
+                        jobId: 'jobId'
+                    },
+                    paginate: {
+                        page: 1,
+                        count: 25
+                    }
+                });
+                done();
+            });
         });
     });
 
