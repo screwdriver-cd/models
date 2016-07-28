@@ -107,6 +107,7 @@ create(config, callback)
 | Parameter        | Type  | Required  |  Description |
 | :-------------   | :---- | :---- | :-------------|
 | config        | Object | Yes | Configuration Object |
+| config.admins | Array | Yes | Array of admins for this pipeline |
 | config.scmUrl | String | Yes | Source Code URL for the application |
 | config.configUrl | String | No | Source Code URL for Screwdriver configuration |
 | callback | Function | Yes | Callback function fn(err, data) where data is the new pipeline that is created |
@@ -386,6 +387,20 @@ unsealToken(sealed, callback)
 | :-------------   | :---- | :-------------|
 | sealed | String | The token to unseal |
 | callback | Function | Callback function fn(err, unsealed) where unsealed is the unsealed token |
+
+
+#### Get User's Permissions For a Repo
+Get user's permissions for a specific repo
+```
+getPermissions(config, callback)
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config | Object | Configuration object |
+| config.username | String | Username |
+| config.scmUrl | String | The scmUrl of the repo |
+| callback | Function | Callback function fn(err, permissions) where permissions is an object that includes the following keys: admin, pull, push with boolean values |
 
 ## Testing
 

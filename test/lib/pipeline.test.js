@@ -56,6 +56,7 @@ describe('Pipeline Model', () => {
         const dateNow = 1111111111;
         const scmUrl = 'git@github.com:screwdriver-cd/data-model.git#master';
         const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
+        const admins = ['me'];
 
         beforeEach(() => {
             sandbox = sinon.sandbox.create({
@@ -70,6 +71,7 @@ describe('Pipeline Model', () => {
                 params: {
                     id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
                     data: {
+                        admins,
                         createTime: dateNow,
                         scmUrl,
                         configUrl: scmUrl
@@ -87,7 +89,7 @@ describe('Pipeline Model', () => {
 
             datastore.save.yieldsAsync(testError);
 
-            pipeline.create({ scmUrl }, (error) => {
+            pipeline.create({ scmUrl, admins }, (error) => {
                 assert.isOk(error);
                 assert.equal(error.message, 'datastoreSaveError');
                 done();
@@ -98,7 +100,7 @@ describe('Pipeline Model', () => {
             sandbox.useFakeTimers(dateNow);
             datastore.save.yieldsAsync(null);
 
-            pipeline.create({ scmUrl }, () => {
+            pipeline.create({ scmUrl, admins }, () => {
                 assert.calledWith(datastore.save, config);
                 done();
             });
