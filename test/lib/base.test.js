@@ -108,7 +108,7 @@ describe('Base Model', () => {
             ];
 
             datastore.scan.yieldsAsync(null, returnValue);
-            base.list(paginate, (err, data) => {
+            base.list({ paginate }, (err, data) => {
                 assert.isNull(err);
                 assert.deepEqual(data, returnValue);
                 done();
