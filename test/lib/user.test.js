@@ -8,9 +8,15 @@ sinon.assert.expose(assert, { prefix: '' });
 
 /**
  * Stub for Github method
- * @method githubFactoryMock
+ * @method GithubMock
  */
-function githubFactoryMock() {}
+function GithubMock() {}
+
+/**
+ * Stub for circuit-fuses wrapper
+ * @method BreakerMock
+ */
+function BreakerMock() {}
 
 describe('User Model', () => {
     const password = 'password';
@@ -21,6 +27,7 @@ describe('User Model', () => {
     let schemaMock;
     let ironMock;
     let user;
+    let breakerRunMock;
 
     before(() => {
         mockery.enable({
@@ -66,14 +73,17 @@ describe('User Model', () => {
                 }
             }
         };
+        breakerRunMock = sinon.stub();
 
-        githubFactoryMock.prototype.authenticate = githubMock.authenticate;
-        githubFactoryMock.prototype.repos = githubMock.repos;
+        BreakerMock.prototype.runCommand = breakerRunMock;
+        GithubMock.prototype.authenticate = githubMock.authenticate;
+        GithubMock.prototype.repos = githubMock.repos;
 
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('iron', ironMock);
-        mockery.registerMock('github', githubFactoryMock);
+        mockery.registerMock('github', GithubMock);
         mockery.registerMock('screwdriver-data-schema', schemaMock);
+        mockery.registerMock('circuit-fuses', BreakerMock);
 
         // eslint-disable-next-line global-require
         UserModel = require('../../lib/user');
@@ -168,6 +178,7 @@ describe('User Model', () => {
 
     describe('getPermissions', () => {
         const token = 'sealedToken';
+        const unsealed = 'unsealedToken';
 
         it('successfully gets permission', (done) => {
             const userObj = {
@@ -186,18 +197,22 @@ describe('User Model', () => {
                     pull: false
                 }
             };
+            const breakerParams = {
+                token: unsealed,
+                action: 'get',
+                params: {
+                    user: 'screwdriver-cd',
+                    repo: 'models'
+                }
+            };
 
             datastore.get.yieldsAsync(null, userObj);
             ironMock.unseal.withArgs(token, password, ironMock.defaults)
-                .yieldsAsync(null, 'unsealedToken');
-            githubMock.authenticate.returns();
-            githubMock.repos.get.yieldsAsync(null, repo);
+                .yieldsAsync(null, unsealed);
+            breakerRunMock.yieldsAsync(null, repo);
             user.getPermissions(config, (err, res) => {
                 assert.calledWith(ironMock.unseal, token, password, ironMock.defaults);
-                assert.calledWith(githubMock.repos.get, {
-                    user: 'screwdriver-cd',
-                    repo: 'models'
-                });
+                assert.calledWith(breakerRunMock, breakerParams);
                 assert.deepEqual(res, repo.permissions);
                 done();
             });
@@ -213,13 +228,12 @@ describe('User Model', () => {
                 username: 'me',
                 scmUrl: 'git@github.com:screwdriver-cd/models.git'
             };
-            const err = new Error('blah');
+            const err = new Error('error');
 
             datastore.get.yieldsAsync(null, userObj);
             ironMock.unseal.withArgs(token, password, ironMock.defaults)
                 .yieldsAsync(null, 'unsealedToken');
-            githubMock.authenticate.returns(null);
-            githubMock.repos.get.yieldsAsync(err);
+            breakerRunMock.yieldsAsync(err);
             user.getPermissions(config, (error) => {
                 assert.isOk(error);
                 done();
