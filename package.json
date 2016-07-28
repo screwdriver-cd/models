@@ -40,10 +40,10 @@
     "sinon": "^1.17.4"
   },
   "dependencies": {
-    "async": "^2.0.0-rc.6",
+    "async": "^2.0.0",
     "hoek": "^4.0.1",
     "iron": "^4.0.1",
-    "screwdriver-data-schema": "^6.0.0",
+    "screwdriver-data-schema": "^7.0.0",
     "screwdriver-hashr": "^1.0.30"
   }
 }

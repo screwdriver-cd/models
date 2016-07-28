@@ -77,6 +77,7 @@ describe('Build Model', () => {
     describe('create', () => {
         const container = 'node:6';
         const jobId = '62089f642bbfd1886623964b4cff12db59869e5d';
+        const jobName = 'main';
         const now = 112233445566;
         const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
         const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
@@ -157,7 +158,10 @@ describe('Build Model', () => {
         });
 
         it('creates a build by executing the executor', (done) => {
-            datastore.get.withArgs(jobsTableConfig).yieldsAsync(null, { pipelineId });
+            datastore.get.withArgs(jobsTableConfig).yieldsAsync(null, {
+                pipelineId,
+                name: jobName
+            });
             datastore.get.withArgs(pipelinesTableConfig).yieldsAsync(null, { scmUrl: 'scmUrl' });
 
             build.create({
@@ -169,6 +173,7 @@ describe('Build Model', () => {
                     buildId: testId,
                     container,
                     jobId,
+                    jobName,
                     pipelineId,
                     scmUrl: 'scmUrl'
                 });
