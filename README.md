@@ -161,6 +161,28 @@ sync(config, callback)
 | config.scmUrl | String | Yes | Source Code URL for the application |
 | callback | Function | Yes | Callback function fn(err)|
 
+#### Format the Scm Url
+Format the scm url. Will make the scm url lower case and add a #master branch name if a branch name is not already specified.
+```
+formatScmUrl(scmUrl)
+```
+
+| Parameter        | Type  | Required  |  Description |
+| :-------------   | :---- | :---- | :-------------|
+| scmUrl        | String | Yes | Github scm url |
+
+Example:
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const Pipeline = new Model.Pipeline(datastore);
+const scmUrl = 'git@git.corp.yahoo.com:foo/BAR.git';
+
+const formattedScmUrl = Pipeline.formatScmUrl(scmUrl);
+console.log(formattedScmUrl);   // Prints 'git@git.corp.yahoo.com:foo/bar.git#master'
+```
+
+
 ### Job Model
 ```js
 'use strict';

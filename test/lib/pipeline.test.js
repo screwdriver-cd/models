@@ -2,6 +2,7 @@
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
+const Joi = require('joi');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -10,6 +11,7 @@ describe('Pipeline Model', () => {
     let datastore;
     let hashaMock;
     let pipeline;
+    let schemaMock;
 
     before(() => {
         mockery.enable({
@@ -26,7 +28,34 @@ describe('Pipeline Model', () => {
         hashaMock = {
             sha1: sinon.stub()
         };
+        schemaMock = {
+            models: {
+                pipeline: {
+                    base: {
+                        id: Joi.string(),
+                        scmUrl: Joi.string()
+                    },
+                    keys: ['scmUrl'],
+                    tableName: 'pipelines'
+                },
+                job: {
+                    base: {
+                        id: Joi.string(),
+                        name: Joi.string(),
+                        pipelineId: Joi.string()
+                    },
+                    keys: ['pipelineId', 'name'],
+                    tableName: 'jobs'
+                }
+            },
+            config: {
+                regex: {
+                    SCM_URL: /^git@([^:]+):([^\/]+)\/(.+?)\.git(#.+)?$/
+                }
+            }
+        };
         mockery.registerMock('screwdriver-hashr', hashaMock);
+        mockery.registerMock('screwdriver-data-schema', schemaMock);
 
         // eslint-disable-next-line global-require
         PipelineModel = require('../../lib/pipeline');
@@ -166,6 +195,27 @@ describe('Pipeline Model', () => {
                 assert.isNull(data);
                 done();
             });
+        });
+    });
+
+    describe('formatScmUrl', () => {
+        const scmUrl = 'git@github.com:screwdriver-cd/HASHR.git';
+        const scmUrlBranch = 'git@github.com:screwdriver-cd/HASHR.git#foo';
+        const formattedScmUrl = 'git@github.com:screwdriver-cd/hashr.git#master';
+        const formattedScmUrlBranch = 'git@github.com:screwdriver-cd/hashr.git#foo';
+
+        it('adds master branch when there is no branch specified', (done) => {
+            const result = pipeline.formatScmUrl(scmUrl);
+
+            assert.equal(result, formattedScmUrl, 'scmUrl is not formatted correctly');
+            done();
+        });
+
+        it('does not add master branch when there is a branch specified', (done) => {
+            const result = pipeline.formatScmUrl(scmUrlBranch);
+
+            assert.equal(result, formattedScmUrlBranch, 'scmUrl is not formatted correctly');
+            done();
         });
     });
 });
