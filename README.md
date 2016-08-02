@@ -255,7 +255,7 @@ update(config, callback)
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const Build = new Model.Build(datastore, executor);
+const Build = new Model.Build(datastore, executor, password);
 const config = {
     page: 2,
     count: 3
