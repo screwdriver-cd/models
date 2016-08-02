@@ -12,6 +12,12 @@ sinon.assert.expose(assert, { prefix: '' });
  */
 function executorFactoryStub() {}
 
+/**
+ * Stub for User
+ * @method userFactoryStub
+ */
+function userFactoryStub() {}
+
 describe('Build Model', () => {
     let BuildModel;
     let datastore;
@@ -20,6 +26,7 @@ describe('Build Model', () => {
     let build;
     let githubMock;
     let breakerMock;
+    let userMock;
 
     before(() => {
         mockery.enable({
@@ -49,14 +56,17 @@ describe('Build Model', () => {
         breakerMock = {
             runCommand: sinon.stub()
         };
+        userMock = sinon.stub();
         executorFactoryStub.prototype = executorMock;
+        userFactoryStub.prototype = userMock;
+        mockery.registerMock('./user', userFactoryStub);
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('./github', githubMock);
 
         // eslint-disable-next-line global-require
         BuildModel = require('../../lib/build');
 
-        build = new BuildModel(datastore, executorMock);
+        build = new BuildModel(datastore, executorMock, 'password');
     });
 
     afterEach(() => {
@@ -154,8 +164,10 @@ describe('Build Model', () => {
         const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
         const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
         const username = 'myself';
+        const scmUrl = 'git@github.com:screwdriver-cd/models.git#master';
         const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
-        const scmUrl = 'git@github.com:screwdriver-cd/models.git';
+        const repo = 'models';
+        const branch = 'master';
         const jobsTableConfig = {
             table: 'jobs',
             params: {
@@ -177,25 +189,48 @@ describe('Build Model', () => {
             status: 'QUEUED',
             sha
         };
+        const repoInfo = {
+            user: username,
+            repo,
+            branch
+        };
+        let getBranch;
+        let createStatus;
         let sandbox;
 
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
+            getBranch = {
+                user: build.user,
+                username,
+                action: 'getBranch',
+                params: repoInfo
+            };
+            createStatus = {
+                user: build.user,
+                username,
+                action: 'createStatus',
+                params: {
+                    user: username,
+                    repo,
+                    sha,
+                    state: 'pending',
+                    context: 'screwdriver'
+                }
+            };
 
             hashaMock.sha1.returns(testId);
-            datastore.save.yieldsAsync(null, {});
             datastore.get.withArgs(jobsTableConfig).yieldsAsync(null, {
                 pipelineId,
                 name: jobName
             });
             datastore.get.withArgs(pipelinesTableConfig)
                 .yieldsAsync(null, { scmUrl });
+            githubMock.getInfo.returns(repoInfo);
+            githubMock.run.withArgs(getBranch).yieldsAsync(null, { commit: { sha } });
+            githubMock.run.withArgs(createStatus).yieldsAsync(null, null);
+            datastore.save.yieldsAsync(null, {});
             executorMock.start.yieldsAsync(null);
-            githubMock.run.yieldsAsync(null, null);
-            githubMock.getInfo.returns({
-                user: username,
-                repo: 'models'
-            });
             githubMock.getBreaker.returns(breakerMock);
             breakerMock.runCommand.yieldsAsync(null, null);
         });
@@ -204,11 +239,35 @@ describe('Build Model', () => {
             build.create({
                 username,
                 jobId,
-                container
+                sha
             }, () => {
                 assert.isOk(datastore.save.calledBefore(executorMock.start));
                 done();
             });
+        });
+
+        it('look up sha when it is not passed in', (done) => {
+            const saveConfig = {
+                table: 'builds',
+                params: {
+                    id: testId,
+                    data: buildData
+                }
+            };
+
+            sandbox.useFakeTimers(now);
+
+            build.create({
+                jobId,
+                username
+            }, (err) => {
+                assert.isNull(err);
+                assert.calledWith(datastore.save, saveConfig);
+                assert.calledWith(githubMock.run, getBranch);
+                done();
+            });
+
+            process.nextTick(sandbox.clock.tick);
         });
 
         it('creates a new build model and saves it to the datastore', (done) => {
@@ -241,9 +300,10 @@ describe('Build Model', () => {
             process.nextTick(sandbox.clock.tick);
         });
 
-        it('creates a build by executing the executor', (done) => {
+        it('Start the executor', (done) => {
             build.create({
                 jobId,
+                username,
                 container,
                 sha
             }, (err) => {
@@ -260,12 +320,26 @@ describe('Build Model', () => {
             });
         });
 
+        it('Create github status', (done) => {
+            build.create({
+                jobId,
+                username,
+                container,
+                sha
+            }, (err) => {
+                assert.isNull(err);
+                assert.calledWith(githubMock.run, createStatus);
+                done();
+            });
+        });
+
         it('fails to save the build data to the datastore', (done) => {
             const errorMessage = 'datastoreSaveFailure';
 
             datastore.save.yieldsAsync(new Error(errorMessage));
             build.create({
                 jobId,
+                username,
                 container,
                 sha
             }, (err) => {
@@ -280,7 +354,7 @@ describe('Build Model', () => {
             datastore.get.withArgs(jobsTableConfig).yieldsAsync(new Error(errorMessage));
             build.create({
                 jobId,
-                container,
+                username,
                 sha
             }, (err) => {
                 assert.strictEqual(err.message, errorMessage);
@@ -294,7 +368,7 @@ describe('Build Model', () => {
             datastore.get.withArgs(pipelinesTableConfig).yieldsAsync(new Error(errorMessage));
             build.create({
                 jobId,
-                container,
+                username,
                 sha
             }, (err) => {
                 assert.strictEqual(err.message, errorMessage);
@@ -308,7 +382,7 @@ describe('Build Model', () => {
             executorMock.start.yieldsAsync(new Error(errorMessage));
             build.create({
                 jobId,
-                container,
+                username,
                 sha
             }, (err) => {
                 assert.strictEqual(err.message, errorMessage);
