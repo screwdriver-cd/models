@@ -194,6 +194,8 @@ describe('Build Model', () => {
             repo,
             branch
         };
+        const tokenGen = (buildId) => `token_${buildId}`;
+        const apiUri = 'http://localhost:8080';
         let getBranch;
         let createStatus;
         let sandbox;
@@ -239,7 +241,9 @@ describe('Build Model', () => {
             build.create({
                 username,
                 jobId,
-                sha
+                sha,
+                tokenGen,
+                apiUri
             }, () => {
                 assert.isOk(datastore.save.calledBefore(executorMock.start));
                 done();
@@ -259,7 +263,9 @@ describe('Build Model', () => {
 
             build.create({
                 jobId,
-                username
+                username,
+                tokenGen,
+                apiUri
             }, (err) => {
                 assert.isNull(err);
                 assert.calledWith(datastore.save, saveConfig);
@@ -285,7 +291,9 @@ describe('Build Model', () => {
             build.create({
                 jobId,
                 username,
-                sha
+                sha,
+                tokenGen,
+                apiUri
             }, (err, data) => {
                 assert.isNull(err);
                 assert.deepEqual(data, returned);
@@ -305,16 +313,16 @@ describe('Build Model', () => {
                 jobId,
                 username,
                 container,
-                sha
+                sha,
+                tokenGen,
+                apiUri
             }, (err) => {
                 assert.isNull(err);
                 assert.calledWith(executorMock.start, {
                     buildId: testId,
                     container,
-                    jobId,
-                    jobName,
-                    pipelineId,
-                    scmUrl
+                    apiUri,
+                    token: `token_${testId}`
                 });
                 done();
             });
@@ -325,7 +333,9 @@ describe('Build Model', () => {
                 jobId,
                 username,
                 container,
-                sha
+                sha,
+                tokenGen,
+                apiUri
             }, (err) => {
                 assert.isNull(err);
                 assert.calledWith(githubMock.run, createStatus);
@@ -341,7 +351,9 @@ describe('Build Model', () => {
                 jobId,
                 username,
                 container,
-                sha
+                sha,
+                tokenGen,
+                apiUri
             }, (err) => {
                 assert.strictEqual(err.message, errorMessage);
                 done();
@@ -355,7 +367,9 @@ describe('Build Model', () => {
             build.create({
                 jobId,
                 username,
-                sha
+                sha,
+                tokenGen,
+                apiUri
             }, (err) => {
                 assert.strictEqual(err.message, errorMessage);
                 done();
@@ -369,7 +383,9 @@ describe('Build Model', () => {
             build.create({
                 jobId,
                 username,
-                sha
+                sha,
+                tokenGen,
+                apiUri
             }, (err) => {
                 assert.strictEqual(err.message, errorMessage);
                 done();
@@ -383,7 +399,9 @@ describe('Build Model', () => {
             build.create({
                 jobId,
                 username,
-                sha
+                sha,
+                tokenGen,
+                apiUri
             }, (err) => {
                 assert.strictEqual(err.message, errorMessage);
                 done();
