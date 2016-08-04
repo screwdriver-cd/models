@@ -163,7 +163,7 @@ describe('Build Model', () => {
         const now = 112233445566;
         const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
         const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
-        const username = 'myself';
+        const username = 'i_made_the_request';
         const scmUrl = 'git@github.com:screwdriver-cd/models.git#master';
         const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
         const repo = 'models';
@@ -181,7 +181,7 @@ describe('Build Model', () => {
             }
         };
         const buildData = {
-            cause: 'Started by user',
+            cause: 'Started by user i_made_the_request',
             container: 'node:4',
             createTime: now,
             jobId,
@@ -190,7 +190,7 @@ describe('Build Model', () => {
             sha
         };
         const repoInfo = {
-            user: username,
+            user: 'owner',
             repo,
             branch
         };
@@ -208,10 +208,10 @@ describe('Build Model', () => {
             };
             createStatus = {
                 user: build.user,
-                username,
+                username: 'batman',
                 action: 'createStatus',
                 params: {
-                    user: username,
+                    user: 'owner',
                     repo,
                     sha,
                     state: 'pending',
@@ -225,7 +225,7 @@ describe('Build Model', () => {
                 name: jobName
             });
             datastore.get.withArgs(pipelinesTableConfig)
-                .yieldsAsync(null, { scmUrl });
+                .yieldsAsync(null, { scmUrl, admins: { batman: true } });
             githubMock.getInfo.returns(repoInfo);
             githubMock.run.withArgs(getBranch).yieldsAsync(null, { commit: { sha } });
             githubMock.run.withArgs(createStatus).yieldsAsync(null, null);

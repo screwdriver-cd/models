@@ -218,4 +218,27 @@ describe('Pipeline Model', () => {
             done();
         });
     });
+
+    describe('getAdmin', () => {
+        const pipelineId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
+
+        it('returns error if cannot get pipeline', (done) => {
+            const error = new Error('blah');
+
+            datastore.get.yieldsAsync(error);
+            pipeline.getAdmin(pipelineId, (err) => {
+                assert.isOk(err);
+                done();
+            });
+        });
+
+        it('returns admin of pipeline', (done) => {
+            datastore.get.yieldsAsync(null, { admins: { batman: true } });
+            pipeline.getAdmin(pipelineId, (err, admin) => {
+                assert.isNull(err);
+                assert.equal(admin, 'batman');
+                done();
+            });
+        });
+    });
 });
