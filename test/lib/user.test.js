@@ -150,53 +150,138 @@ describe('User Model', () => {
                 done();
             });
         });
-    });
 
-    it('seal token', (done) => {
-        const token = '1234';
+        it('promises to create the user data', () => {
+            datastore.save.yieldsAsync(null, 'dataFromDatastore');
 
-        ironMock.seal.withArgs(token, password, ironMock.defaults)
-            .yieldsAsync(null, 'werlx');
-        user.sealToken(token, (err, sealed) => {
-            assert.calledWith(ironMock.seal, token, password, ironMock.defaults);
-            assert.deepEqual(sealed, 'werlx');
-            done();
+            return user.create(config)
+                .then((data) => {
+                    assert.strictEqual(data, 'dataFromDatastore');
+                });
+        });
+
+        it('rejects when datastore save fails', () => {
+            const expectedError = new Error('datastoreSaveFail');
+
+            datastore.save.yieldsAsync(expectedError);
+
+            return user.create(config)
+                .then(() => {
+                    assert.fail('this should not fail the test');
+                })
+                .catch((err) => {
+                    assert.deepEqual(err, expectedError);
+                });
         });
     });
 
-    it('unseal token', (done) => {
+    describe('seal token', () => {
+        const token = '1234';
+
+        beforeEach(() => {
+            ironMock.seal.withArgs(token, password, ironMock.defaults)
+                .yieldsAsync(null, 'werlx');
+        });
+
+        it('properly executes seal token', (done) => {
+            user.sealToken(token, (err, sealed) => {
+                assert.calledWith(ironMock.seal, token, password, ironMock.defaults);
+                assert.deepEqual(sealed, 'werlx');
+                done();
+            });
+        });
+
+        it('promises to execute seal token', () =>
+            user.sealToken(token)
+                .then((sealedToken) => {
+                    assert.deepEqual(sealedToken, 'werlx');
+                    assert.calledWith(ironMock.seal, token, password, ironMock.defaults);
+                })
+        );
+
+        it('rejects to execute a seal token', () => {
+            const expectedError = new Error('whaleIsNotSeal');
+
+            ironMock.seal.withArgs(token, password, ironMock.defaults)
+                .yieldsAsync(expectedError);
+
+            return user.sealToken(token)
+                .then(() => {
+                    assert.fail('This should not fail the test');
+                })
+                .catch((err) => {
+                    assert.deepEqual(err, expectedError);
+                });
+        });
+    });
+
+    describe('unseal token', () => {
         const sealed = 'werlx';
 
-        ironMock.unseal.withArgs(sealed, password, ironMock.defaults)
-            .yieldsAsync(null, '1234');
-        user.unsealToken(sealed, (err, unsealed) => {
-            assert.calledWith(ironMock.unseal, sealed, password, ironMock.defaults);
-            assert.deepEqual(unsealed, '1234');
-            done();
+        beforeEach(() => {
+            ironMock.unseal.withArgs(sealed, password, ironMock.defaults)
+                .yieldsAsync(null, '1234');
+        });
+
+        it('properly unseal token', (done) => {
+            user.unsealToken(sealed, (err, unsealed) => {
+                assert.calledWith(ironMock.unseal, sealed, password, ironMock.defaults);
+                assert.deepEqual(unsealed, '1234');
+                done();
+            });
+        });
+
+        it('promises to execute unseal token', () =>
+            user.unsealToken(sealed)
+                .then((unsealed) => {
+                    assert.strictEqual(unsealed, '1234');
+                })
+        );
+
+        it('rejects when unseal token fails', () => {
+            const expectedError = new Error('TooCoolToBeSeal');
+
+            ironMock.unseal.withArgs(sealed, password, ironMock.defaults)
+                .yieldsAsync(expectedError);
+
+            return user.unsealToken(sealed)
+                .then(() => {
+                    assert.fail('This should not fail the test');
+                })
+                .catch((err) => {
+                    assert.deepEqual(err, expectedError);
+                });
         });
     });
 
     describe('getPermissions', () => {
+        const config = {
+            username: 'me',
+            scmUrl: 'git@github.com:screwdriver-cd/models.git'
+        };
+        const repo = {
+            permissions: {
+                admin: true,
+                push: false,
+                pull: false
+            }
+        };
         const token = 'sealedToken';
         const unsealed = 'unsealedToken';
+        const userObj = {
+            id: '1234',
+            user: 'me',
+            token
+        };
+
+        beforeEach(() => {
+            datastore.get.yieldsAsync(null, userObj);
+            ironMock.unseal.withArgs(token, password, ironMock.defaults)
+                .yieldsAsync(null, unsealed);
+            breakerRunMock.yieldsAsync(null, repo);
+        });
 
         it('successfully gets permission', (done) => {
-            const userObj = {
-                id: '1234',
-                user: 'me',
-                token
-            };
-            const config = {
-                username: 'me',
-                scmUrl: 'git@github.com:screwdriver-cd/models.git'
-            };
-            const repo = {
-                permissions: {
-                    admin: true,
-                    push: false,
-                    pull: false
-                }
-            };
             const breakerParams = {
                 token: unsealed,
                 action: 'get',
@@ -206,10 +291,6 @@ describe('User Model', () => {
                 }
             };
 
-            datastore.get.yieldsAsync(null, userObj);
-            ironMock.unseal.withArgs(token, password, ironMock.defaults)
-                .yieldsAsync(null, unsealed);
-            breakerRunMock.yieldsAsync(null, repo);
             user.getPermissions(config, (err, res) => {
                 assert.calledWith(ironMock.unseal, token, password, ironMock.defaults);
                 assert.calledWith(breakerRunMock, breakerParams);
@@ -219,25 +300,34 @@ describe('User Model', () => {
         });
 
         it('returns error if fails to get permission', (done) => {
-            const userObj = {
-                id: '1234',
-                user: 'me',
-                token
-            };
-            const config = {
-                username: 'me',
-                scmUrl: 'git@github.com:screwdriver-cd/models.git'
-            };
             const err = new Error('error');
 
-            datastore.get.yieldsAsync(null, userObj);
-            ironMock.unseal.withArgs(token, password, ironMock.defaults)
-                .yieldsAsync(null, 'unsealedToken');
             breakerRunMock.yieldsAsync(err);
             user.getPermissions(config, (error) => {
                 assert.isOk(error);
                 done();
             });
+        });
+
+        it('promises to get permissions', () =>
+            user.getPermissions(config)
+                .then((data) => {
+                    assert.deepEqual(data, repo.permissions);
+                })
+        );
+
+        it('rejects if fails to get permissions', () => {
+            const expectedError = new Error('brokeTheBreaker');
+
+            breakerRunMock.yieldsAsync(expectedError);
+
+            return user.getPermissions(config)
+                .then(() => {
+                    assert.fail('This should not fail the test');
+                })
+                .catch((err) => {
+                    assert.deepEqual(err, expectedError);
+                });
         });
     });
 });

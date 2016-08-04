@@ -87,14 +87,39 @@ describe('Build Model', () => {
     });
 
     describe('stream', () => {
-        it('calls executor stream with correct values', () => {
-            const streamStub = sinon.stub();
-            const buildId = 'as12345';
+        const buildId = 'as12345';
 
-            build.stream({ buildId }, streamStub);
-            assert.calledWith(executorMock.stream, {
-                buildId
-            }, streamStub);
+        it('calls executor stream with correct values', () => {
+            build.stream({ buildId }, () => {
+                assert.calledWith(executorMock.stream, {
+                    buildId
+                });
+            });
+        });
+
+        it('promises to call executor stream', () => {
+            const expectedData = 'someDataFromStream';
+
+            executorMock.stream.yieldsAsync(null, expectedData);
+
+            return build.stream({ buildId })
+                .then((data) => {
+                    assert.strictEqual(data, expectedData);
+                });
+        });
+
+        it('rejects when exectuor stream fails', () => {
+            const expectedError = new Error('Youseemtobeusinganunblockerorproxy');
+
+            executorMock.stream.yieldsAsync(expectedError);
+
+            return build.stream({ buildId })
+                .then(() => {
+                    assert.fail('This should not fail the test');
+                })
+                .catch((err) => {
+                    assert.deepEqual(err, expectedError);
+                });
         });
     });
 
@@ -118,6 +143,20 @@ describe('Build Model', () => {
                 count: 25
             }
         };
+        const jobs = [{
+            jobId: 'jobId',
+            number: 1
+        }, {
+            jobId: 'jobId',
+            number: 3
+        }, {
+            jobId: 'jobId',
+            number: 2
+        }];
+
+        beforeEach(() => {
+            datastore.scan.yieldsAsync(null, jobs);
+        });
 
         it('returns error when datastore returns error', (done) => {
             const error = new Error('database');
@@ -131,29 +170,9 @@ describe('Build Model', () => {
         });
 
         it('calls datastore with correct values', (done) => {
-            datastore.scan.yieldsAsync(null, [{
-                jobId: 'jobId',
-                number: 1
-            }, {
-                jobId: 'jobId',
-                number: 3
-            }, {
-                jobId: 'jobId',
-                number: 2
-            }]);
-
             build.getBuildsForJobId(config, (err, records) => {
                 assert.isNull(err);
-                assert.deepEqual(records, [{
-                    jobId: 'jobId',
-                    number: 1
-                }, {
-                    jobId: 'jobId',
-                    number: 2
-                }, {
-                    jobId: 'jobId',
-                    number: 3
-                }]);
+                assert.deepEqual(records, jobs);
                 assert.calledWith(datastore.scan, {
                     table: 'builds',
                     params: {
@@ -166,6 +185,27 @@ describe('Build Model', () => {
                 });
                 done();
             });
+        });
+
+        it('promises to call getBuildsForJobId', () =>
+            build.getBuildsForJobId(config)
+                .then((data) => {
+                    assert.deepEqual(data, jobs);
+                })
+        );
+
+        it('rejects when getBuildsForJobId fails', () => {
+            const expectedError = new Error('noBuildsNoJobsNoService');
+
+            datastore.scan.yieldsAsync(expectedError);
+
+            return build.getBuildsForJobId(config)
+                .then(() => {
+                    assert.fail('This should not fail the test');
+                })
+                .catch((err) => {
+                    assert.deepEqual(err, expectedError);
+                });
         });
     });
 
@@ -279,8 +319,6 @@ describe('Build Model', () => {
                 assert.calledWith(githubMock.run, getBranch);
                 done();
             });
-
-            process.nextTick(sandbox.clock.tick);
         });
 
         it('creates a new build model and saves it to the datastore', (done) => {
@@ -309,8 +347,6 @@ describe('Build Model', () => {
                 assert.calledWith(datastore.save, saveConfig);
                 done();
             });
-
-            process.nextTick(sandbox.clock.tick);
         });
 
         it('Start the executor', (done) => {
@@ -400,6 +436,18 @@ describe('Build Model', () => {
             }, (err) => {
                 assert.strictEqual(err.message, errorMessage);
                 done();
+            });
+        });
+
+        it('promises to execute create', () => {
+            const expectedData = hoek.applyToDefaults({ id: testId }, buildData);
+
+            return build.create({
+                jobId,
+                username,
+                sha
+            }).then((data) => {
+                assert.deepEqual(data, expectedData);
             });
         });
     });

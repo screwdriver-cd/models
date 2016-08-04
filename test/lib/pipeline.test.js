@@ -4,12 +4,15 @@ const mockery = require('mockery');
 const sinon = require('sinon');
 const Joi = require('joi');
 
+require('sinon-as-promised');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('Pipeline Model', () => {
     let PipelineModel;
     let datastore;
     let hashaMock;
+    let jobModelMock;
+    let jobModelFactory;
     let pipeline;
     let schemaMock;
 
@@ -54,6 +57,12 @@ describe('Pipeline Model', () => {
                 }
             }
         };
+        jobModelMock = {
+            create: sinon.stub()
+        };
+        jobModelFactory = sinon.stub().returns(jobModelMock);
+        mockery.registerMock('./job', jobModelFactory);
+
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('screwdriver-data-schema', schemaMock);
 
@@ -138,39 +147,50 @@ describe('Pipeline Model', () => {
                 sandbox.clock.tick();
             });
         });
+
+        it('promises to create the pipeline data', () => {
+            sandbox.useFakeTimers(dateNow);
+            datastore.save.yieldsAsync(null);
+
+            return pipeline.create({ scmUrl, admins })
+                .then(() => {
+                    assert.calledWith(datastore.save, config);
+                });
+        });
+
+        it('rejects to create pipeline data when datastore fails', () => {
+            const errorMessage = 'expectedErrorMessage';
+
+            sandbox.useFakeTimers(dateNow);
+            datastore.save.yieldsAsync(new Error(errorMessage));
+
+            return pipeline.create({ scmUrl, admins })
+                .then(() => {
+                    assert.fail('this should not cause the build to fail');
+                })
+                .catch((err) => {
+                    assert.strictEqual(err.message, errorMessage);
+                });
+        });
     });
 
     describe('sync', () => {
         const scmUrl = 'git@github.com:screwdriver-cd/data-model.git#master';
         const pipelineId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
-        const jobId = 'e398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
-        const jobName = 'main';
 
         it('creates the main job if pipeline exists', (done) => {
-            hashaMock.sha1.withArgs({
-                scmUrl
-            }).returns(pipelineId);
-            hashaMock.sha1.withArgs({
-                pipelineId,
-                name: jobName
-            }).returns(jobId);
-            datastore.get.yieldsAsync(null, {
-                id: pipelineId
-            });
-            datastore.save.yieldsAsync(null);
-            pipeline.sync({ scmUrl }, () => {
-                assert.calledWith(datastore.save, {
-                    table: 'jobs',
-                    params: {
-                        id: jobId,
-                        data: {
-                            name: 'main',
-                            pipelineId,
-                            state: 'ENABLED'
-                        }
-                    }
-                });
+            hashaMock.sha1.returns(pipelineId);
+            datastore.get.yieldsAsync(null, { id: pipelineId });
+            jobModelMock.create.yieldsAsync(null, 'jobCreateResult');
+
+            pipeline.sync({ scmUrl }, (err, data) => {
+                assert.isNull(err);
+                assert.strictEqual(data, 'jobCreateResult');
+
                 assert.calledWith(hashaMock.sha1, {
+                    scmUrl
+                });
+                assert.calledWith(jobModelMock.create, {
                     pipelineId,
                     name: 'main'
                 });
@@ -183,7 +203,7 @@ describe('Pipeline Model', () => {
 
             datastore.get.yieldsAsync(err);
             pipeline.sync({ scmUrl }, (error) => {
-                assert.isOk(error);
+                assert.deepEqual(error, err);
                 done();
             });
         });
@@ -195,6 +215,32 @@ describe('Pipeline Model', () => {
                 assert.isNull(data);
                 done();
             });
+        });
+
+        it('promises to create main job if pipeline exists', () => {
+            hashaMock.sha1.returns(pipelineId);
+            datastore.get.yieldsAsync(null, { id: pipelineId });
+            // jobModelMock.create.yieldsAsync(null, 'jobCreateResult');
+            jobModelMock.create.resolves('jobCreateResult');
+
+            return pipeline.sync({ scmUrl })
+                .then((data) => {
+                    assert.strictEqual(data, 'jobCreateResult');
+                });
+        });
+
+        it('rejects to create if datastore explodes', () => {
+            const expectedError = new Error('datastoreKaboom');
+
+            datastore.get.yieldsAsync(expectedError);
+
+            return pipeline.sync({ scmUrl })
+                .then(() => {
+                    assert.fail('This should not fail the test');
+                })
+                .catch((err) => {
+                    assert.deepEqual(err, expectedError);
+                });
         });
     });
 
@@ -222,6 +268,10 @@ describe('Pipeline Model', () => {
     describe('getAdmin', () => {
         const pipelineId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
 
+        beforeEach(() => {
+            datastore.get.yieldsAsync(null, { admins: { batman: true } });
+        });
+
         it('returns error if cannot get pipeline', (done) => {
             const error = new Error('blah');
 
@@ -233,12 +283,32 @@ describe('Pipeline Model', () => {
         });
 
         it('returns admin of pipeline', (done) => {
-            datastore.get.yieldsAsync(null, { admins: { batman: true } });
             pipeline.getAdmin(pipelineId, (err, admin) => {
                 assert.isNull(err);
                 assert.equal(admin, 'batman');
                 done();
             });
+        });
+
+        it('promises to return admins', () =>
+            pipeline.getAdmin(pipelineId)
+                .then((admin) => {
+                    assert.equal(admin, 'batman');
+                })
+        );
+
+        it('rejects when it cannot get the pipeline', () => {
+            const expectedError = new Error('marioFail');
+
+            datastore.get.yieldsAsync(expectedError);
+
+            return pipeline.getAdmin(pipelineId)
+                .then(() => {
+                    assert.fail('This should not fail the test');
+                })
+                .catch((err) => {
+                    assert.deepEqual(err, expectedError);
+                });
         });
     });
 });
