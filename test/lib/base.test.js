@@ -87,6 +87,27 @@ describe('Base Model', () => {
                 done();
             });
         });
+
+        it('returns a promise from the datastore get', () => {
+            datastore.get.yieldsAsync(null, baseData);
+
+            return base.get('bz098765')
+                .then((data) => {
+                    assert.deepEqual(data, baseData);
+                });
+        });
+
+        it('rejects with a failure from the datastore get', () => {
+            datastore.get.yieldsAsync(new Error('teehee'));
+
+            return base.get('doesntMatter')
+                .then(() => {
+                    assert.fail('this shall not pass');
+                })
+                .catch((err) => {
+                    assert.strictEqual(err.message, 'teehee');
+                });
+        });
     });
 
     describe('list', () => {
@@ -94,25 +115,47 @@ describe('Base Model', () => {
             page: 1,
             count: 2
         };
+        const returnValue = [
+            {
+                id: '151c9b11e4a9a27e9e374daca6e59df37d8cf00f',
+                name: 'component'
+            },
+            {
+                id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                name: 'deploy'
+            }
+        ];
 
         it('calls datastore scan and returns correct values', (done) => {
-            const returnValue = [
-                {
-                    id: '151c9b11e4a9a27e9e374daca6e59df37d8cf00f',
-                    name: 'component'
-                },
-                {
-                    id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
-                    name: 'deploy'
-                }
-            ];
-
             datastore.scan.yieldsAsync(null, returnValue);
             base.list({ paginate }, (err, data) => {
                 assert.isNull(err);
                 assert.deepEqual(data, returnValue);
                 done();
             });
+        });
+
+        it('promises to call datastore scan and return the correct value', () => {
+            datastore.scan.yieldsAsync(null, returnValue);
+
+            return base.list({ paginate })
+                .then((data) => {
+                    assert.deepEqual(data, returnValue);
+                });
+        });
+
+        it('rejects with a failure from the datastore scan', () => {
+            const errorMessage = 'genericScanError';
+
+            datastore.scan.yieldsAsync(new Error(errorMessage));
+
+            return base.list({ paginate })
+                .then(() => {
+                    assert.fail('this should not happen');
+                })
+                .catch((err) => {
+                    assert.strictEqual(err.message, errorMessage);
+                });
         });
     });
 
@@ -129,6 +172,29 @@ describe('Base Model', () => {
                 assert.deepEqual(result, { baseId: '1234' });
                 done();
             });
+        });
+
+        it('promises to call datastore update', () => {
+            datastore.update.yieldsAsync(null, { baseId: '1234' });
+
+            return base.update(config)
+                .then((data) => {
+                    assert.deepEqual(data, { baseId: '1234' });
+                });
+        });
+
+        it('rejects with a failure from the datastore update', () => {
+            const errorMessage = 'iLessThanThreeMocha';
+
+            datastore.update.yieldsAsync(new Error(errorMessage));
+
+            return base.update(config)
+                .then(() => {
+                    assert.fail('this should not fail the test case');
+                })
+                .catch((err) => {
+                    assert.strictEqual(err.message, errorMessage);
+                });
         });
     });
 });

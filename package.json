@@ -1,6 +1,6 @@
 {
   "name": "screwdriver-models",
-  "version": "5.0.0",
+  "version": "5.1.0",
   "description": "Screwdriver models",
   "main": "index.js",
   "scripts": {
@@ -36,7 +36,8 @@
     "jenkins-mocha": "^2.6.0",
     "joi": "^9.0.4",
     "mockery": "^1.7.0",
-    "sinon": "^1.17.4"
+    "sinon": "^1.17.4",
+    "sinon-as-promised": "^4.0.2"
   },
   "dependencies": {
     "async": "^2.0.1",
