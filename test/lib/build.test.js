@@ -46,7 +46,8 @@ describe('Build Model', () => {
         };
         executorMock = {
             start: sinon.stub(),
-            stream: sinon.stub()
+            stream: sinon.stub(),
+            stop: sinon.stub()
         };
         githubMock = {
             getBreaker: sinon.stub(),
@@ -94,6 +95,18 @@ describe('Build Model', () => {
             assert.calledWith(executorMock.stream, {
                 buildId
             }, streamStub);
+        });
+    });
+
+    describe('stop', () => {
+        it('calls executor stop with correct values', () => {
+            const stopStub = sinon.stub();
+            const buildId = 'as12345';
+
+            build.stop({ buildId }, stopStub);
+            assert.calledWith(executorMock.stop, {
+                buildId
+            }, stopStub);
         });
     });
 
