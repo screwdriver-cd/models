@@ -60,6 +60,39 @@ describe('nodeify', () => {
         });
     });
 
+    describe('withContext', () => {
+        const args = [
+            'firstArg',
+            'secondArg'
+        ];
+        let context;
+        const expectedData = 'theDataReturnedFromMagicalMethod';
+
+        beforeEach(() => {
+            context = {
+                magicalMethod: sinon.stub()
+            };
+
+            context.magicalMethod.yieldsAsync(null, expectedData);
+        });
+
+        it('invokes the function with context', (done) => {
+            nodeify.withContext(context, 'magicalMethod', args, (err, data) => {
+                assert.isNull(err);
+                assert.deepEqual(data, expectedData);
+                assert.calledWith(context.magicalMethod, args[0], args[1]);
+                done();
+            });
+        });
+
+        it('promises to invoke the function with context', () =>
+            nodeify.withContext(context, 'magicalMethod', args)
+                .then((data) => {
+                    assert.deepEqual(data, expectedData);
+                })
+        );
+    });
+
     describe('fail', () => {
         it('invokes the callback with a failure', (done) => {
             const expectedError = new Error('hanShotSecond');
