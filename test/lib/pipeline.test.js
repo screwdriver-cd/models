@@ -246,9 +246,9 @@ describe('Pipeline Model', () => {
 
     describe('formatScmUrl', () => {
         const scmUrl = 'git@github.com:screwdriver-cd/HASHR.git';
-        const scmUrlBranch = 'git@github.com:screwdriver-cd/HASHR.git#foo';
+        const scmUrlBranch = 'git@github.com:screwdriver-cd/HASHR.git#Foo';
         const formattedScmUrl = 'git@github.com:screwdriver-cd/hashr.git#master';
-        const formattedScmUrlBranch = 'git@github.com:screwdriver-cd/hashr.git#foo';
+        const formattedScmUrlBranch = 'git@github.com:screwdriver-cd/hashr.git#Foo';
 
         it('adds master branch when there is no branch specified', (done) => {
             const result = pipeline.formatScmUrl(scmUrl);
