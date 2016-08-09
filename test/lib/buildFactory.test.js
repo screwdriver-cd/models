@@ -1,8 +1,13 @@
 'use strict';
 const assert = require('chai').assert;
 const mockery = require('mockery');
-const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
+const sinon = require('sinon');
+
+require('sinon-as-promised');
+sinon.assert.expose(assert, { prefix: '' });
+
+const startStub = sinon.stub().resolves('foo');
 
 class Build {
     constructor(config) {
@@ -13,13 +18,9 @@ class Build {
     }
 
     start() {
-        return new Promise(resolve => resolve('foo'));
+        return startStub.apply(startStub, arguments);
     }
 }
-
-require('sinon-as-promised');
-
-sinon.assert.expose(assert, { prefix: '' });
 
 describe('Build Factory', () => {
     let BuildFactory;
@@ -98,6 +99,8 @@ describe('Build Factory', () => {
 
     describe('create', () => {
         let sandbox;
+        let tokenGen;
+        const apiUri = 'https://notify.com/some/endpoint';
         const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
         const jobId = '62089f642bbfd1886623964b4cff12db59869e5d';
         const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
@@ -128,6 +131,8 @@ describe('Build Factory', () => {
             sandbox.useFakeTimers(dateNow);
 
             hashaMock.sha1.returns(testId);
+
+            tokenGen = sinon.stub();
         });
 
         afterEach(() => {
@@ -139,7 +144,7 @@ describe('Build Factory', () => {
 
             datastore.save.yieldsAsync(null, expected);
 
-            return factory.create({ username, jobId, sha }).then(model => {
+            return factory.create({ apiUri, username, jobId, sha }).then(model => {
                 assert.isTrue(datastore.save.calledWith(saveConfig));
                 assert.instanceOf(model, Build);
                 assert.deepEqual(model.datastore, datastore);
@@ -180,7 +185,7 @@ describe('Build Factory', () => {
                 commit: { sha }
             });
 
-            return factory.create({ username, jobId }).then(model => {
+            return factory.create({ apiUri, username, jobId, tokenGen }).then(model => {
                 assert.isTrue(datastore.save.calledWith(saveConfig));
                 assert.instanceOf(model, Build);
                 assert.calledWith(jobFactory, { datastore });
@@ -193,6 +198,10 @@ describe('Build Factory', () => {
                         user: 'screwdriver-cd',
                         repo: 'models'
                     }
+                });
+                assert.calledWith(startStub, {
+                    apiUri,
+                    tokenGen
                 });
             });
         });

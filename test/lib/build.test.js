@@ -6,6 +6,7 @@ const sinon = require('sinon');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('Build Model', () => {
+    const apiUri = 'https://notify.com/some/endpoint';
     const jobId = '62089f642bbfd1886623964b4cff12db59869e5d';
     const now = 112233445566;
     const buildId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
@@ -165,10 +166,12 @@ describe('Build Model', () => {
 
     describe('start', () => {
         let sandbox;
+        let tokenGen;
         const user = { username: 'me' };
         const adminUser = { username: 'batman' };
         const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
         const scmUrl = 'git@github.com:screwdriver-cd/models.git#master';
+        const token = 'equivalentToOneQuarter';
 
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
@@ -188,6 +191,8 @@ describe('Build Model', () => {
                 }))
             });
 
+            tokenGen = sinon.stub().returns(token);
+
             userFactoryMock.get.withArgs(user).resolves(user);
             userFactoryMock.get.withArgs(adminUser).resolves(adminUser);
             githubMock.getInfo.returns({
@@ -197,29 +202,32 @@ describe('Build Model', () => {
         });
 
         it('promises to start a build', () =>
-            build.start()
-                .then(() => {
-                    assert.calledWith(executorMock.start, {
-                        buildId,
-                        container,
-                        jobId,
-                        jobName: 'main',
-                        pipelineId,
-                        scmUrl
-                    });
+            build.start({
+                apiUri,
+                tokenGen
+            })
+            .then(() => {
+                assert.calledWith(tokenGen, buildId);
 
-                    assert.calledWith(githubMock.run, {
-                        user: adminUser,
-                        action: 'createStatus',
-                        params: {
-                            user: user.username,
-                            repo: 'models',
-                            sha,
-                            state: 'pending',
-                            context: 'screwdriver'
-                        }
-                    });
-                })
+                assert.calledWith(executorMock.start, {
+                    apiUri,
+                    buildId,
+                    container,
+                    token
+                });
+
+                assert.calledWith(githubMock.run, {
+                    user: adminUser,
+                    action: 'createStatus',
+                    params: {
+                        user: user.username,
+                        repo: 'models',
+                        sha,
+                        state: 'pending',
+                        context: 'screwdriver'
+                    }
+                });
+            })
         );
 
         it('rejects when the executor fails', () => {
@@ -227,13 +235,16 @@ describe('Build Model', () => {
 
             executorMock.start.yieldsAsync(expectedError);
 
-            return build.start()
-                .then(() => {
-                    assert.fail('This should not fail the test');
-                })
-                .catch((err) => {
-                    assert.deepEqual(err, expectedError);
-                });
+            return build.start({
+                apiUri,
+                tokenGen
+            })
+            .then(() => {
+                assert.fail('This should not fail the test');
+            })
+            .catch((err) => {
+                assert.deepEqual(err, expectedError);
+            });
         });
     });
 });
