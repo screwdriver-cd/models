@@ -1,7 +1,7 @@
 'use strict';
-const Build = require('./lib/build');
-const Job = require('./lib/job');
-const Pipeline = require('./lib/pipeline');
-const User = require('./lib/user');
+const BuildFactory = require('./lib/buildFactory');
+const JobFactory = require('./lib/jobFactory');
+const PipelineFactory = require('./lib/pipelineFactory');
+const UserFactory = require('./lib/userFactory');
 
-module.exports = { Build, Job, Pipeline, User };
+module.exports = { BuildFactory, JobFactory, PipelineFactory, UserFactory };

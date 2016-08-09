@@ -4,12 +4,15 @@ const mockery = require('mockery');
 const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
+require('sinon-as-promised');
 
 describe('Job Model', () => {
+    let pipelineFactoryMock;
     let JobModel;
     let datastore;
-    let hashaMock;
     let job;
+    let BaseModel;
+    let config;
 
     before(() => {
         mockery.enable({
@@ -20,17 +23,28 @@ describe('Job Model', () => {
 
     beforeEach(() => {
         datastore = {
-            save: sinon.stub()
+            update: sinon.stub()
         };
-        hashaMock = {
-            sha1: sinon.stub()
+        pipelineFactoryMock = {
+            get: sinon.stub().resolves({})
         };
-        mockery.registerMock('screwdriver-hashr', hashaMock);
+
+        mockery.registerMock('./pipelineFactory', sinon.stub().returns(pipelineFactoryMock));
 
         // eslint-disable-next-line global-require
         JobModel = require('../../lib/job');
+        // eslint-disable-next-line global-require
+        BaseModel = require('../../lib/base');
 
-        job = new JobModel(datastore);
+        config = {
+            datastore,
+            id: '1234',
+            name: 'main',
+            pipelineId: 'abcd',
+            state: 'ENABLED'
+        };
+
+        job = new JobModel(config);
     });
 
     afterEach(() => {
@@ -43,73 +57,25 @@ describe('Job Model', () => {
         mockery.disable();
     });
 
-    it('extends base class', () => {
-        assert.isFunction(job.get);
+    it('is constructed properly', () => {
+        assert.instanceOf(job, BaseModel);
         assert.isFunction(job.update);
-        assert.isFunction(job.list);
+
+        Object.keys(config).forEach(key => {
+            assert.strictEqual(job[key], config[key]);
+        });
     });
 
-    describe('create', () => {
-        const jobId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
-        const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
-        const name = 'main';
-        const saveConfig = {
-            table: 'jobs',
-            params: {
-                id: jobId,
-                data: {
-                    name,
-                    pipelineId,
-                    state: 'ENABLED'
-                }
-            }
-        };
+    it('has a pipeline getter', () => {
+        // when we fetch a pipeline it resolves to a promise
+        assert.isFunction(job.pipeline.then);
+        // and a factory is called to create that promise
+        assert.calledWith(pipelineFactoryMock.get, config.pipelineId);
 
-        beforeEach(() => {
-            hashaMock.sha1.returns(jobId);
-        });
-
-        it('creates a new job in the datastore', (done) => {
-            datastore.save.yieldsAsync(null);
-            job.create({
-                pipelineId,
-                name
-            }, (err) => {
-                assert.isNull(err);
-                assert.calledWith(hashaMock.sha1, {
-                    pipelineId, name
-                });
-                assert.calledWith(datastore.save, saveConfig);
-                done();
-            });
-        });
-
-        it('promises to create a new job', () => {
-            hashaMock.sha1.returns(jobId);
-            datastore.save.yieldsAsync(null, { expected: 'toReturnThis' });
-
-            return job.create({ pipelineId, name })
-                .then((data) => {
-                    assert.calledWith(hashaMock.sha1, {
-                        pipelineId, name
-                    });
-                    assert.calledWith(datastore.save, saveConfig);
-                    assert.deepEqual(data, { expected: 'toReturnThis' });
-                });
-        });
-
-        it('rejects when a datastore save fails', () => {
-            const errorMessage = 'datastoreSaveFailureMessage';
-
-            datastore.save.yieldsAsync(new Error(errorMessage));
-
-            return job.create({ pipelineId, name })
-                .then(() => {
-                    assert.fail('This should not fail the test');
-                })
-                .catch((err) => {
-                    assert.strictEqual(err.message, errorMessage);
-                });
-        });
+        // When we call job.pipeline again it is still a promise
+        assert.isFunction(job.pipeline.then);
+        // ...but the factory was not recreated, since the promise is stored
+        // as the model's pipeline property, now
+        assert.calledOnce(pipelineFactoryMock.get);
     });
 });

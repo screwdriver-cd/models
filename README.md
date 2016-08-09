@@ -4,167 +4,102 @@
 > Screwdriver models
 
 ## Usage
+Asynchronous methods return promises.
 
 ```bash
 npm install screwdriver-models
 ```
-### Platform Model
+
+### Pipeline Factory
+#### Search
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const Platform = new Model.Platform(datastore);
+const factory = Model.PipelineFactory.getInstance({ datastore });
 const config = {
-    page: 2,
-    count: 3
+    params: {
+        configUrl: 'banana'
+    },
+    paginate {
+        page: 2,
+        count: 3
+    }
 }
 
-Platform.list(config, (err, result) => {
-    if (!err) {
-        console.log(result);
-    }
+factory.list(config).then(pipelines => {
+    // Do stuff with list of pipelines
 });
 ```
 
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Config Object |
+| config.paginate.page | Number | The page for pagination |
+| config.paginate.count | Number | The count for pagination |
+| config.params | Object | fields to search on |
+
 #### Create
-Create a new platform
-```
-create(config, callback)
-```
-
-| Parameter        | Type  | Required | Description |
-| :-------------   | :---- | :---- | :-------------|
-| config        | Object | Yes | Configuration Object |
-| config.name | String | Yes | Platform name |
-| config.version | String | Yes | Platform version |
-| config.config | String | No | Config of the platform |
-| config.author | String | No | Author of the platform |
-| config.scmUrl | String | No | Source Code URL for Screwdriver configuration |
-| config.docUrl | String | No | Doc URL of platform |
-| config.experimental | Boolean | No | Whether platform is experimental |
-| callback | Function | Yes | Callback function fn(err, data) where data is the new platform that is created |
-
-#### Get
-Get a platform based on id
-```
-get(id, callback)
-```
-
-| Parameter        | Type  |  Description |
-| :-------------   | :---- | :-------------|
-| id | String | The unique ID for the platform |
-| callback | Function | Callback function fn(err, result) where result is the platform object with the specific id|
-
-#### List
-List platforms with pagination
-```
-list(paginate, callback)
-```
-
-| Parameter        | Type  |  Description |
-| :-------------   | :---- | :-------------|
-| paginate        | Object | Pagination Object |
-| paginate.page | Number | The page for pagination |
-| paginate.count | Number | The count for pagination |
-| callback | Function | Callback function fn(err, result) where result is an array of platforms |
-
-#### Update
-Update a specific platform
-```
-update(config, callback)
-```
-
-| Parameter        | Type  |  Description |
-| :-------------   | :---- | :-------------|
-| config        | Object | Configuration Object |
-| config.id | String | The unique ID for the platform |
-| config.data | String | The new data to update with |
-| callback | Function | Callback function fn(err, result) where result is the new platform object |
-
-
-### Pipeline Model
 ```js
-'use strict';
-const Model = require('screwdriver-models');
-const Pipeline = new Model.Pipeline(datastore);
-const config = {
-    page: 2,
-    count: 3
-}
-
-Pipeline.list(config, (err, result) => {
-    if (!err) {
-        console.log(result);
-    }
+factory.create(config).then(model => {
+    // do stuff with pipeline model
 });
-```
-
-#### Create
-Create a pipeline & create a default job called `main`
-```
-create(config, callback)
 ```
 
 | Parameter        | Type  | Required  |  Description |
 | :-------------   | :---- | :---- | :-------------|
 | config        | Object | Yes | Configuration Object |
-| config.admins | Array | Yes | Array of admins for this pipeline |
+| config.admins | Object | Yes | Admins for this pipeline, e.g { batman: true } |
 | config.scmUrl | String | Yes | Source Code URL for the application |
 | config.configUrl | String | No | Source Code URL for Screwdriver configuration |
-| callback | Function | Yes | Callback function fn(err, data) where data is the new pipeline that is created |
 
 #### Get
-Get a pipeline based on id
-```
-get(id, callback)
+Get a pipeline based on id. Can pass the generatedId for the pipeline, or the unique keys for the model, and the id will be determined automatically.
+```js
+factory.get(id).then(model => {
+    // do stuff with pipeline model
+});
+
+factory.get({ scmUrl }).then(model => {
+    // do stuff with pipeline model
+});
 ```
 
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
 | id | String | The unique ID for the pipeline |
-| callback | Function | Callback function fn(err, result) where result is the pipeline with the specific id|
+| config.scmUrl | String | Source Code URL for the application |
 
-#### List
-List builds with pagination
-```
-list(paginate, callback)
-```
 
-| Parameter        | Type  |  Description |
-| :-------------   | :---- | :-------------|
-| paginate        | Object | Pagination Object |
-| paginate.page | Number | The page for pagination |
-| paginate.count | Number | The count for pagination |
-| callback | Function | Callback function fn(err, result) where result is an array of pipelines|
+### Pipeline Model
 
 #### Update
-Update a specific pipeline
+Update a specific pipeline model
 ```
-update(config, callback)
+model.update()
 ```
 
-| Parameter        | Type  |  Description |
-| :-------------   | :---- | :-------------|
-| config        | Object | Configuration Object |
-| config.id | String | The unique ID for the pipeline |
-| config.data | String | The new data to update with |
-| callback | Function | Callback function fn(err, result) where result is the new pipeline object|
+Example:
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.PipelineFactory.getInstance({ datastore });
+const scmUrl = 'git@git.corp.yahoo.com:foo/BAR.git';
+factory.get({ scmUrl }).then(model => {
+    model.configUrl = 'git@git.corp.yahoo.com:foo/bar.git#master';
+    return model.update();
+})
+```
 
 #### Sync
 Sync the pipeline. Look up the configuration in the repo to create and delete jobs if necessary.
 ```
-sync(config, callback)
+model.sync()
 ```
-
-| Parameter        | Type  | Required  |  Description |
-| :-------------   | :---- | :---- | :-------------|
-| config        | Object | Yes | Configuration Object |
-| config.scmUrl | String | Yes | Source Code URL for the application |
-| callback | Function | Yes | Callback function fn(err)|
 
 #### Format the Scm Url
 Format the scm url. Will make the scm url lower case and add a #master branch name if a branch name is not already specified.
 ```
-formatScmUrl(scmUrl)
+model.formatScmUrl(scmUrl)
 ```
 
 | Parameter        | Type  | Required  |  Description |
@@ -175,35 +110,47 @@ Example:
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const Pipeline = new Model.Pipeline(datastore);
+const factory = Model.PipelineFactory.getInstance({ datastore });
 const scmUrl = 'git@git.corp.yahoo.com:foo/BAR.git';
-
-const formattedScmUrl = Pipeline.formatScmUrl(scmUrl);
-console.log(formattedScmUrl);   // Prints 'git@git.corp.yahoo.com:foo/bar.git#master'
+factory.get({ scmUrl }).then(model => {
+    const formattedScmUrl = model.formatScmUrl(model.scmUrl);
+    console.log(formattedScmUrl);   // Prints 'git@git.corp.yahoo.com:foo/bar.git#master'
+})
 ```
 
-
-### Job Model
+### Job Factory
+#### Search
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const Job = new Model.Job(datastore);
+const factory = Model.JobFactory.getInstance({ datastore });
 const config = {
-    page: 2,
-    count: 3
+    params: {
+        pipelineId: 'aabbccdd1234'
+    },
+    paginate {
+        page: 2,
+        count: 3
+    }
 }
 
-Job.list(config, (err, result) => {
-    if (!err) {
-        console.log(result);
-    }
+factory.list(config).then(jobs => {
+    // Do stuff with list of jobs
 });
 ```
 
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Config Object |
+| config.paginate.page | Number | The page for pagination |
+| config.paginate.count | Number | The count for pagination |
+| config.params | Object | fields to search on |
+
 #### Create
-Create a new job
-```
-create(config, callback)
+```js
+factory.create(config).then(model => {
+    // do stuff with job model
+});
 ```
 
 | Parameter        | Type  |  Description |
@@ -211,218 +158,238 @@ create(config, callback)
 | config        | Object | Configuration Object |
 | config.pipelineId | String | The pipelineId that the job belongs to |
 | config.name | String | The name of the job |
-| callback | Function | Callback function fn(err, data) where data is the new job that is created|
 
 #### Get
-Get a job based on id
-```
-get(id, callback)
+Get a job based on id. Can pass the generatedId for the job, or the unique keys for the model, and the id will be determined automatically.
+```js
+factory.get(id).then(model => {
+    // do stuff with job model
+});
+
+factory.get({ pipelineId, name }).then(model => {
+    // do stuff with job model
+});
 ```
 
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
 | id | String | The unique ID for the job |
-| callback | Function | Callback function fn(err, result) where result is the job object with the specific id|
+| config.pipelineId | String | Id of the pipeline the job is associated with |
+| config.name | String Name of the job |
 
-#### List
-List jobs with pagination
-```
-list(paginate, callback)
-```
+### Job Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.JobFactory.getInstance({ datastore });
 
-| Parameter        | Type  |  Description |
-| :-------------   | :---- | :-------------|
-| paginate        | Object | Pagination Object |
-| paginate.page | Number | The page for pagination |
-| paginate.count | Number | The count for pagination |
-| callback | Function | Callback function fn(err, result) where result is an array of jobs |
+factory.get(id).then(model => {
+    model.name = 'hello';
+    return model.update();
+});
+```
 
 #### Update
 Update a specific job
 ```
-update(config, callback)
+model.update()
+```
+
+### Build Factory
+#### Search
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.BuildFactory.getInstance({ datastore });
+const config = {
+    params: {
+        jobId: 'aaabbccdd1234'
+    },
+    paginate {
+        page: 2,
+        count: 3
+    }
+}
+
+factory.list(config).then(builds => {
+    // Do stuff with list of builds
+});
 ```
 
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
-| config        | Object | Configuration Object |
-| config.id | String | The unique ID for the job |
-| config.data | String | The new data to update with |
-| callback | Function | Callback function fn(err, result) where result is the new job object |
-
-
-### Build Model
-```js
-'use strict';
-const Model = require('screwdriver-models');
-const Build = new Model.Build(datastore, executor, password);
-const config = {
-    page: 2,
-    count: 3
-}
-
-Build.list(config, (err, result) => {
-    if (!err) {
-        console.log(result);
-    }
-});
-```
+| config        | Object | Config Object |
+| config.paginate.page | Number | The page for pagination |
+| config.paginate.count | Number | The count for pagination |
+| config.params | Object | fields to search on |
 
 #### Create
-Create & start a new build
-```
-create(config, callback)
+```js
+factory.create(config).then(model => {
+    // do stuff with build model
+});
 ```
 
 | Parameter        | Type  |  Required | Description |
 | :-------------   | :---- | :-------------|  :-------------|
 | config        | Object | Yes | Configuration Object |
 | config.jobId | String | Yes | The unique ID for a job |
+| config.username | String | Yes | User who made the change to kick off the build |
+| config.executor | String | Yes | Executor that can talk to compute resource |
 | config.container | String | No | Container for the build to run in |
-| callback | Function | Yes | Callback function fn(err, data) where data is the new build that is created |
+| config.sha | String | No | SHA used to kick off the build |
 
 #### Get
-Get a build based on id
-```
-get(id, callback)
+Get a build based on id. Can pass the generatedId for the build, or the unique keys for the model, and the id will be determined automatically.
+```js
+factory.get(id).then(model => {
+    // do stuff with build model
+});
+
+factory.get({ jobId, number }).then(model => {
+    // do stuff with build model
+});
 ```
 
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
 | id | String | The unique ID for the build |
-| callback | Function | Callback function fn(err, result) where result is the build object with the specific id |
+| config.jobId | String | The unique ID for a job |
+| config.number | Number | build number |
 
-#### List
-List builds with pagination
-```
-list(paginate, callback)
-```
+### Build Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.BuildFactory.getInstance(config);
 
-| Parameter        | Type  |  Description |
-| :-------------   | :---- | :-------------|
-| paginate        | Object | Pagination Object |
-| paginate.page | Number | The page for pagination |
-| paginate.count | Number | The count for pagination |
-| callback | Function | Callback function fn(err, result) where result is an array of builds |
+factory.get(id).then(model => {
+    model.state = 'FAILURE';
+    model.update();
+});
+```
 
 #### Update
 Update a specific build
 ```
-update(config, callback)
+model.update()
 ```
-
-| Parameter        | Type  |  Description |
-| :-------------   | :---- | :-------------|
-| config        | Object | Configuration Object |
-| config.id | String | The unique ID for the build |
-| config.data | String | The new data to update with |
-| callback | Function | Callback function fn(err, result) where result is the new build object |
 
 #### Stream
 Stream the log of a build
 ```
-stream(config, callback)
+model.stream()
+```
+
+### User Factory
+#### Search
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.UserFactory.getInstance({ datastore });
+const config = {
+    params: {
+        username: 'batman'
+    },
+    paginate {
+        page: 2,
+        count: 3
+    }
+}
+
+factory.list(config).then(users => {
+    // Do stuff with list of users
+});
 ```
 
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
-| config        | Object | Configuration Object |
-| config.buildId | String | The unique ID for the build |
-| callback | Function | Callback function fn(err, stream) where stream is a Readable stream|
+| config        | Object | Config Object |
+| config.paginate.page | Number | The page for pagination |
+| config.paginate.count | Number | The count for pagination |
+| config.params | Object | fields to search on |
+
+#### Create
+```js
+factory.create(config).then(model => {
+    // do stuff with user model
+});
+```
+
+| Parameter        | Type  |  Required | Description |
+| :-------------   | :---- | :-------------|  :-------------|
+| config        | Object | Yes | Configuration Object |
+| config.username | String | Yes | User who made the change to kick off the build |
+| config.token | String | Yes | unsealed token |
+| config.password | String | Yes | User's password used to seal/unseal token, not saved in datastore |
+
+#### Get
+Get a user based on id. Can pass the generatedId for the user, or the username, and the id will be determined automatically.
+```js
+factory.get(id).then(model => {
+    // do stuff with user model
+});
+
+factory.get({ username }).then(model => {
+    // do stuff with user model
+});
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| id | String | The unique ID for the build |
+| config.username | String | User name |
 
 ### User Model
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const Job = new Model.User(datastore, password);
+const factory = Model.UserFactory.getInsance({ datastore });
 const config = {
     username: 'myself',
-    token: 'eyJksd3'            // User's github token
+    token: 'eyJksd3',            // User's github token
+    password
 }
 
-User.create(config, (err, user) => {
-    if (!err) {
-        console.log(user);
-    }
-});
+factory.create(config)
+    .then(user => user.getPermissions(scmUrl))
+    .then(permissions => {
+        // do stuff here
+    });
 ```
-
-#### Create
-Create a new user
-```
-create(config, callback)
-```
-
-| Parameter        | Type  |  Description |
-| :-------------   | :---- | :-------------|
-| config        | Object | Configuration Object |
-| config.username | String | The username |
-| config.token | String | The user's github token|
-| callback | Function | Callback function fn(err, data) where data is the new user that is created|
-
-
-#### Get
-Get a user based on id
-```
-get(id, callback)
-```
-
-| Parameter        | Type  |  Description |
-| :-------------   | :---- | :-------------|
-| id | String | The unique ID for the user |
-| callback | Function | Callback function fn(err, result) where result is the user object with the specific id |
-
 
 #### Update
 Update a specific user
 ```
-update(config, callback)
+model.update()
 ```
-
-| Parameter        | Type  |  Description |
-| :-------------   | :---- | :-------------|
-| config        | Object | Configuration Object |
-| config.id | String | The unique ID for the user |
-| config.data | String | The new data to update with |
-| callback | Function | Callback function fn(err, result) where result is the new user object |
-
 
 #### Seal Token
 Seal a token
 ```
-sealToken(token, callback)
+model.sealToken(token)
 ```
 
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
 | token | String | The token to seal |
-| callback | Function | Callback function fn(err, sealed) where sealed is the sealed token |
 
 
 #### Unseal Token
-Unseal a token
+Unseal the user's token
 ```
-unsealToken(sealed, callback)
+model.unsealToken()
 ```
-
-| Parameter        | Type  |  Description |
-| :-------------   | :---- | :-------------|
-| sealed | String | The token to unseal |
-| callback | Function | Callback function fn(err, unsealed) where unsealed is the unsealed token |
-
 
 #### Get User's Permissions For a Repo
 Get user's permissions for a specific repo
 ```
-getPermissions(config, callback)
+model.getPermissions(scmUrl)
 ```
 
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
-| config | Object | Configuration object |
-| config.username | String | Username |
-| config.scmUrl | String | The scmUrl of the repo |
-| callback | Function | Callback function fn(err, permissions) where permissions is an object that includes the following keys: admin, pull, push with boolean values |
+| scmUrl | String | The scmUrl of the repo |
 
 ## Testing
 
