@@ -184,7 +184,7 @@ describe('Build Model', () => {
                 pipeline: new Promise(resolve => resolve({
                     id: pipelineId,
                     scmUrl,
-                    getAdmin: () => 'batman'
+                    admin: 'batman'
                 }))
             });
 
