@@ -113,5 +113,16 @@ describe('Job Factory', () => {
 
             assert.equal(f1, f2);
         });
+
+        it('should not require config on second call', () => {
+            const f1 = JobFactory.getInstance({ datastore });
+            const f2 = JobFactory.getInstance();
+
+            assert.equal(f1, f2);
+        });
+
+        it('should throw when config not supplied', () => {
+            assert.throw(JobFactory.getInstance, Error, 'No datastore provided to JobFactory');
+        });
     });
 });

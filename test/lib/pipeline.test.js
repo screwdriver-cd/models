@@ -108,27 +108,6 @@ describe('Pipeline Model', () => {
         });
     });
 
-    describe('formatScmUrl', () => {
-        const url = 'git@github.com:screwdriver-cd/HASHR.git';
-        const scmUrlBranch = 'git@github.com:screwdriver-cd/HASHR.git#Foo';
-        const formattedScmUrl = 'git@github.com:screwdriver-cd/hashr.git#master';
-        const formattedScmUrlBranch = 'git@github.com:screwdriver-cd/hashr.git#Foo';
-
-        it('adds master branch when there is no branch specified', (done) => {
-            const result = pipeline.formatScmUrl(url);
-
-            assert.equal(result, formattedScmUrl, 'scmUrl is not formatted correctly');
-            done();
-        });
-
-        it('does not add master branch when there is a branch specified', (done) => {
-            const result = pipeline.formatScmUrl(scmUrlBranch);
-
-            assert.equal(result, formattedScmUrlBranch, 'scmUrl is not formatted correctly');
-            done();
-        });
-    });
-
     describe('get admin', () => {
         it('returns admin of pipeline', () => {
             assert.equal(pipeline.admin, 'batman');
