@@ -233,9 +233,9 @@ factory.create(config).then(model => {
 | Parameter        | Type  |  Required | Description |
 | :-------------   | :---- | :-------------|  :-------------|
 | config        | Object | Yes | Configuration Object |
-| config.jobId | String | Yes | The unique ID for a job |
+| config.apiUri | String | Yes | URI back to the API |
+| config.tokenGen | FUnction | Yes | Generator for building tokens |
 | config.username | String | Yes | User who made the change to kick off the build |
-| config.executor | String | Yes | Executor that can talk to compute resource |
 | config.container | String | No | Container for the build to run in |
 | config.sha | String | No | SHA used to kick off the build |
 
