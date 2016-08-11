@@ -115,7 +115,6 @@ describe('Build Factory', () => {
                     createTime: dateNow,
                     number: dateNow,
                     status: 'QUEUED',
-                    username,
                     jobId,
                     sha
                 }
@@ -147,6 +146,17 @@ describe('Build Factory', () => {
                 assert.deepEqual(model.executor, executor);
                 assert.isFalse(jobFactoryMock.get.called);
                 assert.isFalse(userFactoryMock.get.called);
+            });
+        });
+
+        it('ignores extraneous parameters', () => {
+            const expected = {};
+            const garbage = 'garbageData';
+
+            datastore.save.yieldsAsync(null, expected);
+
+            return factory.create({ garbage, username, jobId, sha }).then(() => {
+                assert.calledWith(datastore.save, saveConfig);
             });
         });
 
