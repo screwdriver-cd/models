@@ -73,7 +73,6 @@ describe('Build Model', () => {
             datastore,
             username: 'me',
             executor: executorMock,
-            password: 'password',
             id: buildId,
             cause: 'Started by user i_made_the_request',
             container,

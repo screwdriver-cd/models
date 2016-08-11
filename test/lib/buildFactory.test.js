@@ -6,6 +6,8 @@ const schema = require('screwdriver-data-schema');
 
 class Build {
     constructor(config) {
+        this.datastore = config.datastore;
+        this.executor = config.executor;
         this.jobId = config.id;
         this.number = config.number;
     }
@@ -22,6 +24,7 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('Build Factory', () => {
     let BuildFactory;
     let datastore;
+    let executor;
     let hashaMock;
     let jobFactoryMock;
     let userFactoryMock;
@@ -37,6 +40,7 @@ describe('Build Factory', () => {
     });
 
     beforeEach(() => {
+        executor = {};
         datastore = {
             save: sinon.stub(),
             scan: sinon.stub()
@@ -70,7 +74,7 @@ describe('Build Factory', () => {
         // eslint-disable-next-line global-require
         BuildFactory = require('../../lib/buildFactory');
 
-        factory = new BuildFactory({ datastore });
+        factory = new BuildFactory({ datastore, executor });
     });
 
     afterEach(() => {
@@ -84,10 +88,11 @@ describe('Build Factory', () => {
     });
 
     describe('createClass', () => {
-        it('should return a Pipeline', () => {
+        it('should return a Build', () => {
             const model = factory.createClass({});
 
             assert.instanceOf(model, Build);
+            assert.deepEqual(model.executor, executor);
         });
     });
 
@@ -138,6 +143,8 @@ describe('Build Factory', () => {
             return factory.create({ username, jobId, sha }).then(model => {
                 assert.isTrue(datastore.save.calledWith(saveConfig));
                 assert.instanceOf(model, Build);
+                assert.deepEqual(model.datastore, datastore);
+                assert.deepEqual(model.executor, executor);
                 assert.isFalse(jobFactoryMock.get.called);
                 assert.isFalse(userFactoryMock.get.called);
             });
@@ -245,10 +252,25 @@ describe('Build Factory', () => {
 
     describe('getInstance', () => {
         it('should encapsulate new, and act as a singleton', () => {
-            const f1 = BuildFactory.getInstance({ datastore });
-            const f2 = BuildFactory.getInstance({ datastore });
+            const f1 = BuildFactory.getInstance({ datastore, executor });
+            const f2 = BuildFactory.getInstance({ datastore, executor });
 
             assert.equal(f1, f2);
+        });
+
+        it('should not require config on second call', () => {
+            const f1 = BuildFactory.getInstance({ datastore, executor });
+            const f2 = BuildFactory.getInstance();
+
+            assert.equal(f1, f2);
+        });
+
+        it('should throw when config not supplied', () => {
+            assert.throw(BuildFactory.getInstance, Error, 'No datastore provided to BuildFactory');
+            assert.throw(() => { BuildFactory.getInstance({ datastore }); },
+                Error,
+                'No executor provided to BuildFactory'
+            );
         });
     });
 });

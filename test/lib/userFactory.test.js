@@ -102,5 +102,16 @@ describe('User Factory', () => {
 
             assert.equal(f1, f2);
         });
+
+        it('should not require config on second call', () => {
+            const f1 = UserFactory.getInstance({ datastore });
+            const f2 = UserFactory.getInstance();
+
+            assert.equal(f1, f2);
+        });
+
+        it('should throw when config not supplied', () => {
+            assert.throw(UserFactory.getInstance, Error, 'No datastore provided to UserFactory');
+        });
     });
 });

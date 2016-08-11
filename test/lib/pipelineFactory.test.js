@@ -131,5 +131,19 @@ describe('Pipeline Factory', () => {
 
             assert.equal(f1, f2);
         });
+
+        it('should not require config on second call', () => {
+            const f1 = PipelineFactory.getInstance({ datastore });
+            const f2 = PipelineFactory.getInstance();
+
+            assert.equal(f1, f2);
+        });
+
+        it('should throw when config not supplied', () => {
+            assert.throw(PipelineFactory.getInstance,
+                Error,
+                'No datastore provided to PipelineFactory'
+            );
+        });
     });
 });
