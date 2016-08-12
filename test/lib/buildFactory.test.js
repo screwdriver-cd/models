@@ -59,8 +59,9 @@ describe('Build Factory', () => {
             run: sinon.stub(),
             getInfo: sinon.stub()
         };
-
-        jobFactory = sinon.stub().returns(jobFactoryMock);
+        jobFactory = {
+            getInstance: sinon.stub().returns(jobFactoryMock)
+        };
 
         // Fixing mockery issue with duplicate file names
         // by re-registering data-schema with its own implementation
@@ -68,7 +69,9 @@ describe('Build Factory', () => {
 
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('./jobFactory', jobFactory);
-        mockery.registerMock('./userFactory', sinon.stub().returns(userFactoryMock));
+        mockery.registerMock('./userFactory', {
+            getInstance: sinon.stub().returns(userFactoryMock)
+        });
         mockery.registerMock('./github', githubMock);
         mockery.registerMock('./build', Build);
 
@@ -188,7 +191,7 @@ describe('Build Factory', () => {
             return factory.create({ apiUri, username, jobId, tokenGen }).then(model => {
                 assert.isTrue(datastore.save.calledWith(saveConfig));
                 assert.instanceOf(model, Build);
-                assert.calledWith(jobFactory, { datastore });
+                assert.calledOnce(jobFactory.getInstance);
                 assert.calledWith(jobFactoryMock.get, jobId);
                 assert.calledWith(userFactoryMock.get, { username });
                 assert.calledWith(githubMock.run, {

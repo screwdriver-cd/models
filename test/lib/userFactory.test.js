@@ -6,6 +6,7 @@ const sinon = require('sinon');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('User Factory', () => {
+    const password = 'totallySecurePassword';
     let UserFactory;
     let datastore;
     let hashaMock;
@@ -42,7 +43,7 @@ describe('User Factory', () => {
         // eslint-disable-next-line global-require
         UserFactory = require('../../lib/userFactory');
 
-        factory = new UserFactory({ datastore });
+        factory = new UserFactory({ datastore, password });
     });
 
     afterEach(() => {
@@ -83,10 +84,9 @@ describe('User Factory', () => {
 
             return factory.create({
                 username: 'batman',
-                token: 'hero',
-                password: 'hello'
+                token: 'hero'
             }).then(model => {
-                assert.calledWith(ironMock.seal, 'hero', 'hello', 'defaults');
+                assert.calledWith(ironMock.seal, 'hero', password, 'defaults');
                 assert.instanceOf(model, User);
                 Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
