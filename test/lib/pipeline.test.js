@@ -40,7 +40,7 @@ describe('Pipeline Model', () => {
             create: sinon.stub()
         };
         // jobModelFactory = sinon.stub().returns(jobModelMock);
-        mockery.registerMock('./jobFactory', sinon.stub().returns(jobFactoryMock));
+        mockery.registerMock('./jobFactory', { getInstance: sinon.stub().returns(jobFactoryMock) });
 
         mockery.registerMock('screwdriver-hashr', hashaMock);
 
