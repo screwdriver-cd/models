@@ -173,7 +173,6 @@ describe('Build Model', () => {
     describe('start', () => {
         let sandbox;
         let tokenGen;
-        const user = { username: 'me' };
         const adminUser = { username: 'batman' };
         const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
         const scmUrl = 'git@github.com:screwdriver-cd/models.git#master';
@@ -199,9 +198,9 @@ describe('Build Model', () => {
 
             tokenGen = sinon.stub().returns(token);
 
-            userFactoryMock.get.withArgs(user).resolves(user);
             userFactoryMock.get.withArgs(adminUser).resolves(adminUser);
             githubMock.getInfo.returns({
+                user: 'screwdriver-cd',
                 repo: 'models'
             });
             githubMock.run.resolves(null);
@@ -226,7 +225,7 @@ describe('Build Model', () => {
                     user: adminUser,
                     action: 'createStatus',
                     params: {
-                        user: user.username,
+                        user: 'screwdriver-cd',
                         repo: 'models',
                         sha,
                         state: 'pending',
