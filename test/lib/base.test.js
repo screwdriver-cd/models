@@ -68,20 +68,41 @@ describe('Base Model', () => {
         });
     });
 
+    describe('getter and setter', () => {
+        it('sets a value in an internal object store', () => {
+            assert.isFalse(base.isDirty);
+            base.foo = 'banana';
+            assert.equal(base.foo, 'banana');
+            assert.isTrue(base.isDirty);
+        });
+    });
+
     describe('update', () => {
+        it('is a noop if no fields changed', () => {
+            assert.isFalse(base.isDirty);
+
+            return base.update().then(model => {
+                assert.isFalse(model.isDirty);
+                assert.notCalled(datastore.update);
+            });
+        });
+
         it('promises to call datastore update', () => {
             datastore.update.yieldsAsync(null, { baseId: '1234' });
+
+            base.foo = 'banana';
+            assert.isTrue(base.isDirty);
 
             return base.update(config)
                 .then(model => {
                     assert.deepEqual(model, base);
+                    assert.isFalse(model.isDirty);
                     assert.isTrue(datastore.update.calledWith({
                         table: 'base',
                         params: {
                             id: 'as12345',
                             data: {
-                                foo: 'foo',
-                                bar: 'bar'
+                                foo: 'banana'
                             }
                         }
                     }));
@@ -92,6 +113,8 @@ describe('Base Model', () => {
             const errorMessage = 'iLessThanThreeMocha';
 
             datastore.update.yieldsAsync(new Error(errorMessage));
+            // update won't call datastore unless values have changed
+            base.foo = 'banana';
 
             return base.update(config)
                 .then(() => {
