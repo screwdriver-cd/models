@@ -1,6 +1,3 @@
-workflow:
-    - publish
-
 jobs:
     main:
         image: node:4
