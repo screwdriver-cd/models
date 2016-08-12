@@ -150,6 +150,20 @@ describe('Base Factory', () => {
                 })
         );
 
+        it('returns null when datastore miss occurs', () => {
+            datastore.get.withArgs({
+                table: 'jobs',
+                params: {
+                    id: jobId
+                }
+            }).yieldsAsync(null, null);
+
+            return factory.get(baseData.id)
+                .then(model => {
+                    assert.isNull(model);
+                });
+        });
+
         it('rejects with a failure from the datastore get', () => {
             datastore.get.yieldsAsync(new Error('teehee'));
 

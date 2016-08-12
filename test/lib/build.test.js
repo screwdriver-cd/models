@@ -59,9 +59,15 @@ describe('Build Model', () => {
         jobFactoryMock = {
             get: sinon.stub()
         };
+        const uF = {
+            getInstance: sinon.stub().returns(userFactoryMock)
+        };
+        const jF = {
+            getInstance: sinon.stub().returns(jobFactoryMock)
+        };
 
-        mockery.registerMock('./userFactory', sinon.stub().returns(userFactoryMock));
-        mockery.registerMock('./jobFactory', sinon.stub().returns(jobFactoryMock));
+        mockery.registerMock('./userFactory', uF);
+        mockery.registerMock('./jobFactory', jF);
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('./github', githubMock);
 

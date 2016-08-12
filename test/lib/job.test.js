@@ -29,7 +29,9 @@ describe('Job Model', () => {
             get: sinon.stub().resolves({})
         };
 
-        mockery.registerMock('./pipelineFactory', sinon.stub().returns(pipelineFactoryMock));
+        mockery.registerMock('./pipelineFactory', {
+            getInstance: sinon.stub().returns(pipelineFactoryMock)
+        });
 
         // eslint-disable-next-line global-require
         JobModel = require('../../lib/job');
