@@ -8,7 +8,7 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('Base Model', () => {
     let BaseModel;
     let datastore;
-    let modelMock;
+    let schemaMock;
     let base;
     let config;
 
@@ -26,7 +26,7 @@ describe('Base Model', () => {
             update: sinon.stub()
         };
 
-        modelMock = {
+        schemaMock = {
             models: {
                 base: {
                     tableName: 'base',
@@ -34,7 +34,7 @@ describe('Base Model', () => {
                 }
             }
         };
-        mockery.registerMock('screwdriver-data-schema', modelMock);
+        mockery.registerMock('screwdriver-data-schema', schemaMock);
 
         // eslint-disable-next-line global-require
         BaseModel = require('../../lib/base');
@@ -62,9 +62,15 @@ describe('Base Model', () => {
     describe('constructor', () => {
         it('constructs properly', () => {
             assert.instanceOf(base, BaseModel);
-            Object.keys(config).forEach(key => {
+            schemaMock.models.base.allKeys.forEach(key => {
                 assert.strictEqual(base[key], config[key]);
             });
+            // datastore is private
+            assert.isUndefined(base.datastore);
+        });
+
+        it('exposes as ownProperties only those keys defined in the schema', () => {
+            assert.deepEqual(Object.getOwnPropertyNames(base), schemaMock.models.base.allKeys);
         });
     });
 

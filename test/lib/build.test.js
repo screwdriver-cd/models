@@ -2,6 +2,7 @@
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
+const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -108,9 +109,14 @@ describe('Build Model', () => {
         assert.isFunction(build.stop);
         assert.isFunction(build.stream);
 
-        Object.keys(config).forEach(key => {
+        schema.models.build.allKeys.forEach(key => {
             assert.strictEqual(build[key], config[key]);
         });
+
+        // Also added a username members
+        assert.strictEqual(build.username, config.username);
+        // executor is private
+        assert.isUndefined(build.executor);
     });
 
     describe('stream', () => {

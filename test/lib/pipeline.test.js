@@ -2,6 +2,7 @@
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
+const schema = require('screwdriver-data-schema');
 
 require('sinon-as-promised');
 sinon.assert.expose(assert, { prefix: '' });
@@ -75,7 +76,7 @@ describe('Pipeline Model', () => {
         assert.instanceOf(pipeline, PipelineModel);
         assert.instanceOf(pipeline, BaseModel);
 
-        Object.keys(pipelineConfig).forEach(key => {
+        schema.models.pipeline.allKeys.forEach(key => {
             assert.strictEqual(pipeline[key], pipelineConfig[key]);
         });
     });

@@ -2,6 +2,7 @@
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
+const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -74,9 +75,11 @@ describe('User Model', () => {
     it('is constructed properly', () => {
         assert.instanceOf(user, UserModel);
         assert.instanceOf(user, BaseModel);
-        Object.keys(createConfig).forEach(key => {
+        schema.models.user.allKeys.forEach(key => {
             assert.strictEqual(user[key], createConfig[key]);
         });
+        // password is private
+        assert.isUndefined(user.password);
     });
 
     describe('seal token', () => {

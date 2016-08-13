@@ -2,6 +2,7 @@
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
+const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
 require('sinon-as-promised');
@@ -63,7 +64,7 @@ describe('Job Model', () => {
         assert.instanceOf(job, BaseModel);
         assert.isFunction(job.update);
 
-        Object.keys(config).forEach(key => {
+        schema.models.job.allKeys.forEach(key => {
             assert.strictEqual(job[key], config[key]);
         });
     });
