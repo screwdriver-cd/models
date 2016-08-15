@@ -14,6 +14,7 @@ describe('Pipeline Model', () => {
     let pipeline;
     let BaseModel;
     let jobFactoryMock;
+    let userFactoryMock;
 
     const dateNow = 1111111111;
     const scmUrl = 'git@github.com:screwdriver-cd/data-model.git#master';
@@ -40,8 +41,15 @@ describe('Pipeline Model', () => {
         jobFactoryMock = {
             create: sinon.stub()
         };
+        userFactoryMock = {
+            get: sinon.stub()
+        };
+
         // jobModelFactory = sinon.stub().returns(jobModelMock);
         mockery.registerMock('./jobFactory', { getInstance: sinon.stub().returns(jobFactoryMock) });
+        mockery.registerMock('./userFactory', {
+            getInstance: sinon.stub().returns(userFactoryMock)
+        });
 
         mockery.registerMock('screwdriver-hashr', hashaMock);
 
@@ -110,8 +118,18 @@ describe('Pipeline Model', () => {
     });
 
     describe('get admin', () => {
-        it('returns admin of pipeline', () => {
-            assert.equal(pipeline.admin, 'batman');
+        it('has an admin getter', () => {
+            userFactoryMock.get.resolves(null);
+            // when we fetch a user it resolves to a promise
+            assert.isFunction(pipeline.admin.then);
+            // and a factory is called to create that promise
+            assert.calledWith(userFactoryMock.get, { username: 'batman' });
+
+            // When we call pipeline.admin again it is still a promise
+            assert.isFunction(pipeline.admin.then);
+            // ...but the factory was not recreated, since the promise is stored
+            // as the model's pipeline property, now
+            assert.calledOnce(userFactoryMock.get);
         });
     });
 });
