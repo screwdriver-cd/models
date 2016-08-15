@@ -208,6 +208,26 @@ describe('Build Factory', () => {
                 });
             });
         });
+
+        it('properly handles rejection due to missing models', () => {
+            jobFactoryMock.get.resolves(null);
+            userFactoryMock.get.resolves(null);
+
+            return factory.create({ apiUri, username, jobId, tokenGen }).catch(err => {
+                assert.instanceOf(err, Error);
+                assert.strictEqual(err.message, 'Job does not exist');
+            });
+        });
+
+        it('properly handles rejection due to missing models', () => {
+            jobFactoryMock.get.resolves({});
+            userFactoryMock.get.resolves(null);
+
+            return factory.create({ apiUri, username, jobId, tokenGen }).catch(err => {
+                assert.instanceOf(err, Error);
+                assert.strictEqual(err.message, 'User does not exist');
+            });
+        });
     });
 
     describe('getBuildsForJobId', () => {

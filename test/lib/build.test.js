@@ -258,4 +258,36 @@ describe('Build Model', () => {
             });
         });
     });
+
+    describe('job', () => {
+        it('has a job getter', () => {
+            jobFactoryMock.get.resolves(null);
+            // when we fetch a job it resolves to a promise
+            assert.isFunction(build.job.then);
+            // and a factory is called to create that promise
+            assert.calledWith(jobFactoryMock.get, jobId);
+
+            // When we call build.job again it is still a promise
+            assert.isFunction(build.job.then);
+            // ...but the factory was not recreated, since the promise is stored
+            // as the model's pipeline property, now
+            assert.calledOnce(jobFactoryMock.get);
+        });
+    });
+
+    describe('user', () => {
+        it('has a user getter', () => {
+            userFactoryMock.get.resolves(null);
+            // when we fetch a user it resolves to a promise
+            assert.isFunction(build.user.then);
+            // and a factory is called to create that promise
+            assert.calledWith(userFactoryMock.get, { username: config.username });
+
+            // When we call build.user again it is still a promise
+            assert.isFunction(build.user.then);
+            // ...but the factory was not recreated, since the promise is stored
+            // as the model's pipeline property, now
+            assert.calledOnce(userFactoryMock.get);
+        });
+    });
 });
