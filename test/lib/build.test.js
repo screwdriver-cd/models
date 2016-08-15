@@ -198,13 +198,12 @@ describe('Build Model', () => {
                 pipeline: new Promise(resolve => resolve({
                     id: pipelineId,
                     scmUrl,
-                    admin: 'batman'
+                    admin: new Promise(r => r(adminUser))
                 }))
             });
 
             tokenGen = sinon.stub().returns(token);
 
-            userFactoryMock.get.withArgs(adminUser).resolves(adminUser);
             githubMock.getInfo.returns({
                 user: 'screwdriver-cd',
                 repo: 'models'
@@ -288,6 +287,56 @@ describe('Build Model', () => {
             // ...but the factory was not recreated, since the promise is stored
             // as the model's pipeline property, now
             assert.calledOnce(userFactoryMock.get);
+        });
+    });
+
+    describe('pipeline', () => {
+        it('has a pipeline getter', () => {
+            const jobMock = {
+                pipeline: new Promise(r => r({}))
+            };
+
+            jobFactoryMock.get.resolves(jobMock);
+            // when we fetch a pipeline it resolves to a promise
+            assert.isFunction(build.pipeline.then);
+            // job resolves that promise
+            assert.calledWith(jobFactoryMock.get, jobId);
+
+            // When we call build.pipeline again it is still a promise
+            assert.isFunction(build.pipeline.then);
+            // ...but the job need not be bothered
+            // as the model's pipeline property, now
+            assert.calledOnce(jobFactoryMock.get);
+        });
+
+        it('rejects if pipeline is null', () => {
+            const jobMock = {
+                pipeline: new Promise(r => r(null))
+            };
+
+            jobFactoryMock.get.resolves(jobMock);
+
+            return build.pipeline
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.instanceOf(err, Error);
+                    assert.strictEqual(err.message, 'Pipeline does not exist');
+                });
+        });
+
+        it('rejects if job is null', () => {
+            jobFactoryMock.get.resolves(null);
+
+            return build.pipeline
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.instanceOf(err, Error);
+                    assert.strictEqual(err.message, 'Job does not exist');
+                });
         });
     });
 });
