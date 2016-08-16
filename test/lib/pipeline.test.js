@@ -95,11 +95,12 @@ describe('Pipeline Model', () => {
 
             jobFactoryMock.create.resolves(mockModel);
 
-            pipeline.sync()
+            return pipeline.sync()
                 .then((model) => {
                     assert.calledWith(jobFactoryMock.create, {
                         pipelineId: testId,
-                        name: 'main'
+                        name: 'main',
+                        containers: ['node:6']
                     });
                     assert.deepEqual(model, mockModel);
                 });
@@ -110,7 +111,7 @@ describe('Pipeline Model', () => {
 
             jobFactoryMock.create.rejects(error);
 
-            pipeline.sync()
+            return pipeline.sync()
                 .catch(err => {
                     assert.deepEqual(err, error);
                 });

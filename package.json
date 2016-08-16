@@ -1,6 +1,6 @@
 {
   "name": "screwdriver-models",
-  "version": "7.0.0",
+  "version": "8.0.0",
   "description": "Screwdriver models",
   "main": "index.js",
   "scripts": {
@@ -45,7 +45,7 @@
     "github": "^2.3.0",
     "hoek": "^4.0.1",
     "iron": "^4.0.1",
-    "screwdriver-data-schema": "^9.0.0",
+    "screwdriver-data-schema": "^10.0.1",
     "screwdriver-hashr": "^1.0.30"
   }
 }

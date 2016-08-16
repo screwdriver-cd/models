@@ -70,6 +70,7 @@ describe('Job Factory', () => {
         const jobId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
         const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
         const name = 'main';
+        const containers = ['node:6'];
         const saveConfig = {
             table: 'jobs',
             params: {
@@ -77,6 +78,7 @@ describe('Job Factory', () => {
                 data: {
                     name,
                     pipelineId,
+                    containers,
                     state: 'ENABLED'
                 }
             }
@@ -90,6 +92,7 @@ describe('Job Factory', () => {
             const expected = {
                 name,
                 pipelineId,
+                containers,
                 state: 'ENABLED',
                 id: jobId
             };
@@ -97,10 +100,11 @@ describe('Job Factory', () => {
             datastore.save.yieldsAsync(null, expected);
 
             return factory.create({
+                containers,
                 pipelineId,
                 name
             }).then(model => {
-                assert.isTrue(datastore.save.calledWith(saveConfig));
+                assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Job);
             });
         });

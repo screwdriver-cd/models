@@ -11,10 +11,10 @@ const startStub = sinon.stub().resolves('foo');
 
 class Build {
     constructor(config) {
-        this.datastore = config.datastore;
-        this.executor = config.executor;
         this.jobId = config.id;
         this.number = config.number;
+        this.container = config.container;
+        this.executor = config.executor;
     }
 
     start() {
@@ -110,6 +110,8 @@ describe('Build Factory', () => {
         const scmUrl = 'git@github.com:screwdriver-cd/models.git#master';
         const username = 'i_made_the_request';
         const dateNow = Date.now();
+        const container = 'node:6';
+        const containers = [container, 'node:4'];
 
         const saveConfig = {
             table: 'builds',
@@ -117,10 +119,10 @@ describe('Build Factory', () => {
                 id: testId,
                 data: {
                     cause: 'Started by user i_made_the_request',
-                    container: 'node:4',
                     createTime: dateNow,
                     number: dateNow,
                     status: 'QUEUED',
+                    container,
                     jobId,
                     sha
                 }
@@ -136,6 +138,10 @@ describe('Build Factory', () => {
             hashaMock.sha1.returns(testId);
 
             tokenGen = sinon.stub();
+
+            jobFactoryMock.get.resolves({
+                containers
+            });
         });
 
         afterEach(() => {
@@ -148,12 +154,12 @@ describe('Build Factory', () => {
             datastore.save.yieldsAsync(null, expected);
 
             return factory.create({ apiUri, username, jobId, sha }).then(model => {
-                assert.isTrue(datastore.save.calledWith(saveConfig));
                 assert.instanceOf(model, Build);
-                assert.deepEqual(model.datastore, datastore);
-                assert.deepEqual(model.executor, executor);
-                assert.isFalse(jobFactoryMock.get.called);
-                assert.isFalse(userFactoryMock.get.called);
+                assert.calledOnce(jobFactory.getInstance);
+                assert.calledWith(jobFactoryMock.get, jobId);
+                assert.calledWith(datastore.save, saveConfig);
+                assert.strictEqual(model.container, container);
+                assert.notCalled(userFactoryMock.get);
             });
         });
 
@@ -175,6 +181,7 @@ describe('Build Factory', () => {
             datastore.save.yieldsAsync(null, expected);
 
             const jobMock = {
+                containers,
                 pipeline: new Promise(resolves => resolves({ scmUrl }))
             };
 
@@ -189,7 +196,7 @@ describe('Build Factory', () => {
             });
 
             return factory.create({ apiUri, username, jobId, tokenGen }).then(model => {
-                assert.isTrue(datastore.save.calledWith(saveConfig));
+                assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Build);
                 assert.calledOnce(jobFactory.getInstance);
                 assert.calledWith(jobFactoryMock.get, jobId);
@@ -209,9 +216,8 @@ describe('Build Factory', () => {
             });
         });
 
-        it('properly handles rejection due to missing models', () => {
+        it('properly handles rejection due to missing job model', () => {
             jobFactoryMock.get.resolves(null);
-            userFactoryMock.get.resolves(null);
 
             return factory.create({ apiUri, username, jobId, tokenGen }).catch(err => {
                 assert.instanceOf(err, Error);
@@ -219,13 +225,27 @@ describe('Build Factory', () => {
             });
         });
 
-        it('properly handles rejection due to missing models', () => {
-            jobFactoryMock.get.resolves({});
+        it('properly handles rejection due to missing user model', () => {
             userFactoryMock.get.resolves(null);
 
             return factory.create({ apiUri, username, jobId, tokenGen }).catch(err => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message, 'User does not exist');
+            });
+        });
+
+        it('properly handles rejection due to missing pipeline model', () => {
+            const jobMock = {
+                containers,
+                pipeline: new Promise(resolves => resolves(null))
+            };
+
+            userFactoryMock.get.resolves({});
+            jobFactoryMock.get.resolves(jobMock);
+
+            return factory.create({ apiUri, username, jobId, tokenGen }).catch(err => {
+                assert.instanceOf(err, Error);
+                assert.strictEqual(err.message, 'Pipeline does not exist');
             });
         });
     });
