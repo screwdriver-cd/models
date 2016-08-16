@@ -195,6 +195,26 @@ describe('Build Model', () => {
                 });
         });
 
+        it('promises to update a build and update status to pending', () => {
+            datastore.update.yieldsAsync(null, {});
+            build.status = 'RUNNING';
+
+            return build.update()
+                .then(() => {
+                    assert.calledWith(githubMock.run, {
+                        user: adminUser,
+                        action: 'createStatus',
+                        params: {
+                            user: 'screwdriver-cd',
+                            repo: 'models',
+                            sha,
+                            state: 'pending',
+                            context: 'screwdriver'
+                        }
+                    });
+                });
+        });
+
         it('promises to update a build and update status to success', () => {
             datastore.update.yieldsAsync(null, {});
             build.status = 'SUCCESS';
