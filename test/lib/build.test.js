@@ -13,6 +13,9 @@ describe('Build Model', () => {
     const buildId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
     const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
     const container = 'node:4';
+    const adminUser = { username: 'batman' };
+    const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
+    const scmUrl = 'git@github.com:screwdriver-cd/models.git#master';
     let BuildModel;
     let datastore;
     let executorMock;
@@ -36,7 +39,8 @@ describe('Build Model', () => {
         datastore = {
             get: sinon.stub(),
             save: sinon.stub(),
-            scan: sinon.stub()
+            scan: sinon.stub(),
+            update: sinon.stub()
         };
         hashaMock = {
             sha1: sinon.stub()
@@ -149,15 +153,152 @@ describe('Build Model', () => {
         });
     });
 
+    describe('update', () => {
+        beforeEach(() => {
+            githubMock.getBreaker.returns(breakerMock);
+            breakerMock.runCommand.yieldsAsync(null, null);
+
+            jobFactoryMock.get.resolves({
+                id: jobId,
+                name: 'main',
+                pipeline: new Promise(resolve => resolve({
+                    id: pipelineId,
+                    scmUrl,
+                    admin: new Promise(r => r(adminUser))
+                }))
+            });
+
+            githubMock.getInfo.returns({
+                user: 'screwdriver-cd',
+                repo: 'models'
+            });
+            githubMock.run.resolves(null);
+        });
+
+        it('promises to update a build and update status to failure', () => {
+            datastore.update.yieldsAsync(null, {});
+            build.status = 'FAILURE';
+
+            return build.update()
+                .then(() => {
+                    assert.calledWith(githubMock.run, {
+                        user: adminUser,
+                        action: 'createStatus',
+                        params: {
+                            user: 'screwdriver-cd',
+                            repo: 'models',
+                            sha,
+                            state: 'failure',
+                            context: 'screwdriver'
+                        }
+                    });
+                });
+        });
+
+        it('promises to update a build and update status to success', () => {
+            datastore.update.yieldsAsync(null, {});
+            build.status = 'SUCCESS';
+
+            return build.update()
+                .then(() => {
+                    assert.calledWith(githubMock.run, {
+                        user: adminUser,
+                        action: 'createStatus',
+                        params: {
+                            user: 'screwdriver-cd',
+                            repo: 'models',
+                            sha,
+                            state: 'success',
+                            context: 'screwdriver'
+                        }
+                    });
+                });
+        });
+
+        it('promises to update a build and not update status when status is not dirty', () => {
+            datastore.update.yieldsAsync(null, {});
+
+            return build.update()
+                .then(() => {
+                    assert.notCalled(githubMock.run);
+                });
+        });
+    });
+
     describe('stop', () => {
-        it('calls executor stop with correct values', () => {
+        beforeEach(() => {
             executorMock.stop.yieldsAsync(null);
+            githubMock.getBreaker.returns(breakerMock);
+            breakerMock.runCommand.yieldsAsync(null, null);
+
+            jobFactoryMock.get.resolves({
+                id: jobId,
+                name: 'main',
+                pipeline: new Promise(resolve => resolve({
+                    id: pipelineId,
+                    scmUrl,
+                    admin: new Promise(r => r(adminUser))
+                }))
+            });
+
+            githubMock.getInfo.returns({
+                user: 'screwdriver-cd',
+                repo: 'models'
+            });
+            githubMock.run.resolves(null);
+        });
+
+        it('promises to stop a build when it is queued', () =>
+            build.stop()
+            .then(() => {
+                assert.calledWith(executorMock.stop, {
+                    buildId
+                });
+
+                assert.calledWith(githubMock.run, {
+                    user: adminUser,
+                    action: 'createStatus',
+                    params: {
+                        user: 'screwdriver-cd',
+                        repo: 'models',
+                        sha,
+                        state: 'failure',
+                        context: 'screwdriver'
+                    }
+                });
+            })
+        );
+
+        it('promises to stop a build when it is running', () => {
+            build.status = 'RUNNING';
 
             return build.stop()
                 .then(() => {
                     assert.calledWith(executorMock.stop, {
                         buildId
                     });
+
+                    assert.calledWith(githubMock.run, {
+                        user: adminUser,
+                        action: 'createStatus',
+                        params: {
+                            user: 'screwdriver-cd',
+                            repo: 'models',
+                            sha,
+                            state: 'failure',
+                            context: 'screwdriver'
+                        }
+                    });
+                });
+        });
+
+        it('does nothing if build is not queued or running', () => {
+            build.status = 'SUCCESS';
+
+            return build.stop()
+                .then(() => {
+                    assert.notCalled(executorMock.stop);
+                    assert.notCalled(githubMock.run);
                 });
         });
 
@@ -179,9 +320,6 @@ describe('Build Model', () => {
     describe('start', () => {
         let sandbox;
         let tokenGen;
-        const adminUser = { username: 'batman' };
-        const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
-        const scmUrl = 'git@github.com:screwdriver-cd/models.git#master';
         const token = 'equivalentToOneQuarter';
 
         beforeEach(() => {

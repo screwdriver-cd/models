@@ -74,21 +74,12 @@ describe('Base Model', () => {
         });
     });
 
-    describe('getter and setter', () => {
-        it('sets a value in an internal object store', () => {
-            assert.isFalse(base.isDirty);
-            base.foo = 'banana';
-            assert.equal(base.foo, 'banana');
-            assert.isTrue(base.isDirty);
-        });
-    });
-
     describe('update', () => {
         it('is a noop if no fields changed', () => {
-            assert.isFalse(base.isDirty);
+            assert.isFalse(base.isDirty());
 
             return base.update().then(model => {
-                assert.isFalse(model.isDirty);
+                assert.isFalse(model.isDirty());
                 assert.notCalled(datastore.update);
             });
         });
@@ -97,12 +88,12 @@ describe('Base Model', () => {
             datastore.update.yieldsAsync(null, { baseId: '1234' });
 
             base.foo = 'banana';
-            assert.isTrue(base.isDirty);
+            assert.isTrue(base.isDirty());
 
             return base.update(config)
                 .then(model => {
                     assert.deepEqual(model, base);
-                    assert.isFalse(model.isDirty);
+                    assert.isFalse(model.isDirty());
                     assert.isTrue(datastore.update.calledWith({
                         table: 'base',
                         params: {
@@ -129,6 +120,22 @@ describe('Base Model', () => {
                 .catch((err) => {
                     assert.strictEqual(err.message, errorMessage);
                 });
+        });
+    });
+
+    describe('isDirty', () => {
+        it('returns true if is dirty', () => {
+            assert.isFalse(base.isDirty());
+            base.foo = 'banana';
+            assert.equal(base.foo, 'banana');
+            assert.isTrue(base.isDirty());
+        });
+
+        it('returns true if key is dirty', () => {
+            assert.isFalse(base.isDirty('foo'));
+            base.foo = 'banana';
+            assert.equal(base.foo, 'banana');
+            assert.isTrue(base.isDirty('foo'));
         });
     });
 
