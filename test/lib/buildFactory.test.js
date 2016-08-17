@@ -110,6 +110,7 @@ describe('Build Factory', () => {
         const scmUrl = 'git@github.com:screwdriver-cd/models.git#master';
         const username = 'i_made_the_request';
         const dateNow = Date.now();
+        const isoTime = (new Date(dateNow)).toISOString();
         const container = 'node:6';
         const containers = [container, 'node:4'];
 
@@ -119,7 +120,7 @@ describe('Build Factory', () => {
                 id: testId,
                 data: {
                     cause: 'Started by user i_made_the_request',
-                    createTime: dateNow,
+                    createTime: isoTime,
                     number: dateNow,
                     status: 'QUEUED',
                     container,

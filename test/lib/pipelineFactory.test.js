@@ -14,6 +14,7 @@ describe('Pipeline Factory', () => {
     let hashaMock;
     let factory;
     const dateNow = 1111111111;
+    const nowTime = (new Date(dateNow)).toISOString();
     const scmUrl = 'git@github.com:screwdriver-cd/data-model.git#master';
     const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
     const admins = ['me'];
@@ -50,7 +51,7 @@ describe('Pipeline Factory', () => {
             id: testId,
             scmUrl,
             configUrl: scmUrl,
-            createTime: dateNow,
+            createTime: nowTime,
             admins
         };
 
@@ -83,7 +84,7 @@ describe('Pipeline Factory', () => {
                 id: testId,
                 data: {
                     admins,
-                    createTime: dateNow,
+                    createTime: nowTime,
                     scmUrl,
                     configUrl: scmUrl
                 }
@@ -107,7 +108,7 @@ describe('Pipeline Factory', () => {
             const expected = {
                 id: testId,
                 admins,
-                createTime: dateNow,
+                createTime: nowTime,
                 scmUrl,
                 configUrl: scmUrl
             };
@@ -118,7 +119,7 @@ describe('Pipeline Factory', () => {
                 scmUrl,
                 admins
             }).then(model => {
-                assert.isTrue(datastore.save.calledWith(saveConfig));
+                assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Pipeline);
             });
         });
