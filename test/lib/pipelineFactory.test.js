@@ -125,25 +125,25 @@ describe('Pipeline Factory', () => {
     });
 
     describe('getInstance', () => {
-        it('should encapsulate new, and act as a singleton', () => {
-            const f1 = PipelineFactory.getInstance({ datastore });
-            const f2 = PipelineFactory.getInstance({ datastore });
+        let config;
 
-            assert.equal(f1, f2);
+        beforeEach(() => {
+            config = { datastore, scmPlugin: {} };
         });
 
-        it('should not require config on second call', () => {
-            const f1 = PipelineFactory.getInstance({ datastore });
-            const f2 = PipelineFactory.getInstance();
+        it('should utilize BaseFactory to get an instance', () => {
+            const f1 = PipelineFactory.getInstance(config);
+            const f2 = PipelineFactory.getInstance(config);
+
+            assert.instanceOf(f1, PipelineFactory);
+            assert.instanceOf(f2, PipelineFactory);
 
             assert.equal(f1, f2);
         });
 
         it('should throw when config not supplied', () => {
             assert.throw(PipelineFactory.getInstance,
-                Error,
-                'No datastore provided to PipelineFactory'
-            );
+                Error, 'No datastore provided to PipelineFactory');
         });
     });
 });
