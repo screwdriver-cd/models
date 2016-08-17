@@ -11,6 +11,7 @@ describe('Base Model', () => {
     let schemaMock;
     let base;
     let config;
+    let scmPlugin;
 
     before(() => {
         mockery.enable({
@@ -20,6 +21,9 @@ describe('Base Model', () => {
     });
 
     beforeEach(() => {
+        scmPlugin = {
+            foo: 'foo'
+        };
         datastore = {
             get: sinon.stub(),
             scan: sinon.stub(),
@@ -41,6 +45,7 @@ describe('Base Model', () => {
 
         config = {
             datastore,
+            scmPlugin,
             id: 'as12345',
             foo: 'foo',
             bar: 'bar'
@@ -148,6 +153,12 @@ describe('Base Model', () => {
     describe('toJson', () => {
         it('should give an object representation of the model data', () => {
             assert.deepEqual(base.toJson(), { id: 'as12345', foo: 'foo', bar: 'bar' });
+        });
+    });
+
+    describe('scm', () => {
+        it('should have a getter for the scm plugin', () => {
+            assert.equal(base.scm, scmPlugin);
         });
     });
 });

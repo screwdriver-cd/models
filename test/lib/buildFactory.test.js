@@ -313,26 +313,29 @@ describe('Build Factory', () => {
     });
 
     describe('getInstance', () => {
-        it('should encapsulate new, and act as a singleton', () => {
-            const f1 = BuildFactory.getInstance({ datastore, executor });
-            const f2 = BuildFactory.getInstance({ datastore, executor });
+        let config;
+
+        beforeEach(() => {
+            config = { datastore, executor, scmPlugin: {} };
+        });
+
+        it('should utilize BaseFactory to get an instance', () => {
+            const f1 = BuildFactory.getInstance(config);
+            const f2 = BuildFactory.getInstance(config);
+
+            assert.instanceOf(f1, BuildFactory);
+            assert.instanceOf(f2, BuildFactory);
 
             assert.equal(f1, f2);
         });
 
-        it('should not require config on second call', () => {
-            const f1 = BuildFactory.getInstance({ datastore, executor });
-            const f2 = BuildFactory.getInstance();
+        it('should throw when config does not have everything necessary', () => {
+            assert.throw(BuildFactory.getInstance,
+                Error, 'No executor provided to BuildFactory');
 
-            assert.equal(f1, f2);
-        });
-
-        it('should throw when config not supplied', () => {
-            assert.throw(BuildFactory.getInstance, Error, 'No datastore provided to BuildFactory');
-            assert.throw(() => { BuildFactory.getInstance({ datastore }); },
-                Error,
-                'No executor provided to BuildFactory'
-            );
+            assert.throw(() => {
+                BuildFactory.getInstance({ executor, scm: {} });
+            }, Error, 'No datastore provided to BuildFactory');
         });
     });
 });

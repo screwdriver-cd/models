@@ -3,11 +3,10 @@ const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
 
-class Foo {}
-const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
-const jobId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
-const name = 'main';
-const createMock = () => new Foo();
+class Base {}
+class BF {}
+const baseId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
+const createMock = () => new Base();
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -16,6 +15,7 @@ describe('Base Factory', () => {
     let datastore;
     let hashaMock;
     let factory;
+    let schema;
 
     before(() => {
         mockery.enable({
@@ -33,13 +33,23 @@ describe('Base Factory', () => {
         hashaMock = {
             sha1: sinon.stub()
         };
+        schema = {
+            models: {
+                base: {
+                    tableName: 'base',
+                    keys: ['foo'],
+                    allKeys: ['id', 'foo', 'bar']
+                }
+            }
+        };
 
+        mockery.registerMock('screwdriver-data-schema', schema);
         mockery.registerMock('screwdriver-hashr', hashaMock);
 
         // eslint-disable-next-line global-require
         BaseFactory = require('../../lib/baseFactory');
 
-        factory = new BaseFactory('job', { datastore });
+        factory = new BaseFactory('base', { datastore });
     });
 
     afterEach(() => {
@@ -60,36 +70,36 @@ describe('Base Factory', () => {
 
     describe('create', () => {
         const saveConfig = {
-            table: 'jobs',
+            table: 'base',
             params: {
-                id: jobId,
+                id: baseId,
                 data: {
-                    name,
-                    pipelineId
+                    foo: 'foo',
+                    bar: 'bar'
                 }
             }
         };
 
         beforeEach(() => {
             factory.createClass = createMock;
-            hashaMock.sha1.returns(jobId);
+            hashaMock.sha1.returns(baseId);
         });
 
-        it('creates a new job in the datastore', () => {
+        it('creates a new "base" in the datastore', () => {
             const expected = {
-                name,
-                pipelineId,
-                id: jobId
+                foo: 'foo',
+                bar: 'bar',
+                id: baseId
             };
 
             datastore.save.yieldsAsync(null, expected);
 
             return factory.create({
-                pipelineId,
-                name
+                foo: 'foo',
+                bar: 'bar'
             }).then(model => {
                 assert.isTrue(datastore.save.calledWith(saveConfig));
-                assert.instanceOf(model, Foo);
+                assert.instanceOf(model, Base);
             });
         });
 
@@ -98,7 +108,7 @@ describe('Base Factory', () => {
 
             datastore.save.yieldsAsync(new Error(errorMessage));
 
-            return factory.create({ pipelineId, name })
+            return factory.create({ foo: 'foo', bar: 'bar' })
                 .then(() => {
                     assert.fail('This should not fail the test');
                 })
@@ -110,26 +120,26 @@ describe('Base Factory', () => {
 
     describe('get', () => {
         const baseData = {
-            id: jobId,
-            pipelineId,
-            name
+            id: baseId,
+            foo: 'foo',
+            bar: 'bar'
         };
 
         beforeEach(() => {
             factory.createClass = createMock;
             datastore.get.withArgs({
-                table: 'jobs',
+                table: 'base',
                 params: {
-                    id: jobId
+                    id: baseId
                 }
             }).yieldsAsync(null, baseData);
-            hashaMock.sha1.returns(jobId);
+            hashaMock.sha1.returns(baseId);
         });
 
         it('calls datastore get with id and returns correct values', () =>
             factory.get(baseData.id)
                 .then(model => {
-                    assert.instanceOf(model, Foo);
+                    assert.instanceOf(model, Base);
                     assert.isTrue(datastore.get.calledOnce);
                 })
         );
@@ -137,24 +147,24 @@ describe('Base Factory', () => {
         it('calls datastore get with config.id and returns correct values', () =>
             factory.get(baseData)
                 .then(model => {
-                    assert.instanceOf(model, Foo);
+                    assert.instanceOf(model, Base);
                     assert.isTrue(datastore.get.calledOnce);
                 })
         );
 
         it('calls datastore get with id generated from config and returns correct values', () =>
-            factory.get({ pipelineId, name })
+            factory.get({ foo: 'foo', bar: 'bar' })
                 .then(model => {
-                    assert.instanceOf(model, Foo);
+                    assert.instanceOf(model, Base);
                     assert.isTrue(datastore.get.calledOnce);
                 })
         );
 
         it('returns null when datastore miss occurs', () => {
             datastore.get.withArgs({
-                table: 'jobs',
+                table: 'base',
                 params: {
-                    id: jobId
+                    id: baseId
                 }
             }).yieldsAsync(null, null);
 
@@ -205,7 +215,7 @@ describe('Base Factory', () => {
                     assert.isArray(arr);
                     assert.equal(arr.length, 2);
                     arr.forEach(model => {
-                        assert.instanceOf(model, Foo);
+                        assert.instanceOf(model, Base);
                     });
                 });
         });
@@ -232,6 +242,38 @@ describe('Base Factory', () => {
                 .catch((err) => {
                     assert.strictEqual(err.message, errorMessage);
                 });
+        });
+    });
+
+    describe('getInstance', () => {
+        let config;
+
+        beforeEach(() => {
+            config = { datastore, scmPlugin: {} };
+        });
+
+        it('should encapsulate new, and act as a singleton', () => {
+            // ClasDef, instance, config
+            const f1 = BaseFactory.getInstance(BF, null, config);
+            const f2 = BaseFactory.getInstance(BF, f1, config);
+
+            assert.equal(f1, f2);
+        });
+
+        it('should not require config on second call', () => {
+            const f1 = BaseFactory.getInstance(BF, null, config);
+            const f2 = BaseFactory.getInstance(BF, f1);
+
+            assert.equal(f1, f2);
+        });
+
+        it('should throw when config not supplied or does not supply all expected params', () => {
+            assert.throw(() => {
+                BaseFactory.getInstance(BF, null);
+            }, Error, 'No datastore provided to BF');
+            assert.throw(() => {
+                BaseFactory.getInstance(BF, null, { datastore });
+            }, Error, 'No scm plugin provided to BF');
         });
     });
 });

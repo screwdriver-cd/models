@@ -111,16 +111,18 @@ describe('Job Factory', () => {
     });
 
     describe('getInstance', () => {
-        it('should encapsulate new, and act as a singleton', () => {
-            const f1 = JobFactory.getInstance({ datastore });
-            const f2 = JobFactory.getInstance({ datastore });
+        let config;
 
-            assert.equal(f1, f2);
+        beforeEach(() => {
+            config = { datastore, scmPlugin: {} };
         });
 
-        it('should not require config on second call', () => {
-            const f1 = JobFactory.getInstance({ datastore });
-            const f2 = JobFactory.getInstance();
+        it('should utilize BaseFactory to get an instance', () => {
+            const f1 = JobFactory.getInstance(config);
+            const f2 = JobFactory.getInstance(config);
+
+            assert.instanceOf(f1, JobFactory);
+            assert.instanceOf(f2, JobFactory);
 
             assert.equal(f1, f2);
         });

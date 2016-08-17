@@ -96,22 +96,25 @@ describe('User Factory', () => {
     });
 
     describe('getInstance', () => {
-        it('should encapsulate new, and act as a singleton', () => {
-            const f1 = UserFactory.getInstance({ datastore });
-            const f2 = UserFactory.getInstance({ datastore });
+        let config;
 
-            assert.equal(f1, f2);
+        beforeEach(() => {
+            config = { datastore, scmPlugin: {} };
         });
 
-        it('should not require config on second call', () => {
-            const f1 = UserFactory.getInstance({ datastore });
-            const f2 = UserFactory.getInstance();
+        it('should utilize BaseFactory to get an instance', () => {
+            const f1 = UserFactory.getInstance(config);
+            const f2 = UserFactory.getInstance(config);
+
+            assert.instanceOf(f1, UserFactory);
+            assert.instanceOf(f2, UserFactory);
 
             assert.equal(f1, f2);
         });
 
         it('should throw when config not supplied', () => {
-            assert.throw(UserFactory.getInstance, Error, 'No datastore provided to UserFactory');
+            assert.throw(UserFactory.getInstance,
+                Error, 'No datastore provided to UserFactory');
         });
     });
 });
