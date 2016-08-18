@@ -190,7 +190,7 @@ factory.get(id).then(model => {
 ```
 
 #### Update
-Update a specific job
+Update a job
 ```
 model.update()
 ```
