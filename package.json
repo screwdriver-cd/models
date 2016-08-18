@@ -45,6 +45,7 @@
     "github": "^2.3.0",
     "hoek": "^4.0.1",
     "iron": "^4.0.1",
+    "screwdriver-config-parser": "^2.0.0",
     "screwdriver-data-schema": "^10.0.1",
     "screwdriver-hashr": "^1.0.30"
   }
