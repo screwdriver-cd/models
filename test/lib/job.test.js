@@ -81,4 +81,21 @@ describe('Job Model', () => {
         // as the model's pipeline property, now
         assert.calledOnce(pipelineFactoryMock.get);
     });
+
+    it('isPR returns false if job is not a PR', () => {
+        assert.isFalse(job.isPR());
+    });
+
+    it('isPR returns true if job is a PR', () => {
+        const prConfig = {
+            datastore,
+            id: '1234',
+            name: 'PR-1',
+            pipelineId: 'abcd',
+            state: 'ENABLED'
+        };
+        const prJob = new JobModel(prConfig);
+
+        assert.isTrue(prJob.isPR());
+    });
 });
