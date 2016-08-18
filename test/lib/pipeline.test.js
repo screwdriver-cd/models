@@ -39,14 +39,16 @@ describe('Pipeline Model', () => {
         };
 
         jobFactoryMock = {
-            create: sinon.stub()
+            create: sinon.stub(),
+            list: sinon.stub()
         };
         userFactoryMock = {
             get: sinon.stub()
         };
 
         // jobModelFactory = sinon.stub().returns(jobModelMock);
-        mockery.registerMock('./jobFactory', { getInstance: sinon.stub().returns(jobFactoryMock) });
+        mockery.registerMock('./jobFactory', {
+            getInstance: sinon.stub().returns(jobFactoryMock) });
         mockery.registerMock('./userFactory', {
             getInstance: sinon.stub().returns(userFactoryMock)
         });
@@ -131,6 +133,32 @@ describe('Pipeline Model', () => {
             // ...but the factory was not recreated, since the promise is stored
             // as the model's pipeline property, now
             assert.calledOnce(userFactoryMock.get);
+        });
+    });
+
+    describe('get jobs', () => {
+        it('has a jobs getter', () => {
+            const listConfig = {
+                params: {
+                    pipelineId: pipeline.id
+                },
+                paginate: {
+                    count: 25, // This limit is set by the matrix restriction
+                    page: 1
+                }
+            };
+
+            jobFactoryMock.list.resolves(null);
+            // when we fetch jobs it resolves to a promise
+            assert.isFunction(pipeline.jobs.then);
+            // and a factory is called to create that promise
+            assert.calledWith(jobFactoryMock.list, listConfig);
+
+            // When we call pipeline.jobs again it is still a promise
+            assert.isFunction(pipeline.jobs.then);
+            // ...but the factory was not recreated, since the promise is stored
+            // as the model's pipeline property, now
+            assert.calledOnce(jobFactoryMock.list);
         });
     });
 });
