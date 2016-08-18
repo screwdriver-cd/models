@@ -6,6 +6,7 @@ const schema = require('screwdriver-data-schema');
 
 require('sinon-as-promised');
 sinon.assert.expose(assert, { prefix: '' });
+const PARSED_YAML = require('../data/parser');
 
 describe('Pipeline Model', () => {
     let PipelineModel;
@@ -13,6 +14,8 @@ describe('Pipeline Model', () => {
     let hashaMock;
     let pipeline;
     let BaseModel;
+    let parserMock;
+    let scmMock;
     let jobFactoryMock;
     let userFactoryMock;
 
@@ -45,6 +48,10 @@ describe('Pipeline Model', () => {
         userFactoryMock = {
             get: sinon.stub()
         };
+        scmMock = {
+            getFile: sinon.stub()
+        };
+        parserMock = sinon.stub();
 
         // jobModelFactory = sinon.stub().returns(jobModelMock);
         mockery.registerMock('./jobFactory', {
@@ -54,6 +61,7 @@ describe('Pipeline Model', () => {
         });
 
         mockery.registerMock('screwdriver-hashr', hashaMock);
+        mockery.registerMock('screwdriver-config-parser', parserMock);
 
         // eslint-disable-next-line global-require
         PipelineModel = require('../../lib/pipeline');
@@ -66,7 +74,8 @@ describe('Pipeline Model', () => {
             scmUrl,
             configUrl: scmUrl,
             createTime: dateNow,
-            admins
+            admins,
+            scmPlugin: scmMock
         };
 
         pipeline = new PipelineModel(pipelineConfig);
@@ -92,23 +101,47 @@ describe('Pipeline Model', () => {
     });
 
     describe('sync', () => {
-        it('creates the main job if pipeline exists', () => {
-            const mockModel = { id: 'abcd1234' };
+        let publishMock;
+        let mainMock;
 
-            jobFactoryMock.create.resolves(mockModel);
+        beforeEach(() => {
+            scmMock.getFile.resolves('superyamlcontent');
+            parserMock.withArgs('superyamlcontent').yieldsAsync(null, PARSED_YAML);
+            userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
+                unsealToken: Promise.resolve('foo')
+            });
 
-            return pipeline.sync()
-                .then((model) => {
-                    assert.calledWith(jobFactoryMock.create, {
-                        pipelineId: testId,
-                        name: 'main',
-                        containers: ['node:6']
-                    });
-                    assert.deepEqual(model, mockModel);
-                });
+            publishMock = {
+                pipelineId: testId,
+                name: 'publish',
+                containers: ['node:4']
+            };
+            mainMock = {
+                pipelineId: testId,
+                name: 'main',
+                containers: ['node:4', 'node:5', 'node:6']
+            };
+
+            jobFactoryMock.create.resolves(publishMock);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
         });
 
-        it('returns error if datastore explodes', () => {
+        it('creates the main job if pipeline exists', () =>
+            pipeline.sync()
+                .then(p => {
+                    assert.equal(p.id, testId);
+                    assert.calledWith(scmMock.getFile, {
+                        scmUrl,
+                        path: 'screwdriver.yaml',
+                        token: 'foo'
+                    });
+                    assert.calledWith(parserMock, 'superyamlcontent');
+                    assert.calledWith(jobFactoryMock.create, mainMock);
+                    assert.calledWith(jobFactoryMock.create, publishMock);
+                })
+        );
+
+        it('returns error if something explodes', () => {
             const error = new Error('blah');
 
             jobFactoryMock.create.rejects(error);
