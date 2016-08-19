@@ -23,6 +23,7 @@ describe('Pipeline Model', () => {
     const scmUrl = 'git@github.com:screwdriver-cd/data-model.git#master';
     const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
     const admins = { batman: true };
+    let jobs;
     let pipelineConfig;
 
     before(() => {
@@ -121,13 +122,15 @@ describe('Pipeline Model', () => {
                 name: 'main',
                 containers: ['node:4', 'node:5', 'node:6']
             };
-
-            jobFactoryMock.create.resolves(publishMock);
-            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
         });
 
-        it('creates the main job if pipeline exists', () =>
-            pipeline.sync()
+        it('creates new jobs', () => {
+            jobs = [];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+
+            return pipeline.sync()
                 .then(p => {
                     assert.equal(p.id, testId);
                     assert.calledWith(scmMock.getFile, {
@@ -136,10 +139,61 @@ describe('Pipeline Model', () => {
                         token: 'foo'
                     });
                     assert.calledWith(parserMock, 'superyamlcontent');
-                    assert.calledWith(jobFactoryMock.create, mainMock);
                     assert.calledWith(jobFactoryMock.create, publishMock);
-                })
-        );
+                    assert.calledWith(jobFactoryMock.create, mainMock);
+                });
+        });
+
+        it('updates existing jobs that are in the config', () => {
+            jobs = [{
+                update: sinon.stub().resolves(null),
+                isPR: sinon.stub(),
+                name: 'main',
+                containers: ['node:3'],
+                state: 'ENABLED'
+            }];
+            jobFactoryMock.list.resolves(jobs);
+            jobs[0].isPR.returns(false);
+
+            return pipeline.sync()
+                .then(() => {
+                    assert.calledOnce(jobs[0].update);
+                    assert.deepEqual(jobs[0].containers, ['node:4', 'node:5', 'node:6']);
+                });
+        });
+
+        it('disable jobs if they are not in the config', () => {
+            jobs = [{
+                update: sinon.stub().resolves(null),
+                isPR: sinon.stub(),
+                name: 'banana',
+                state: 'ENABLED'
+            }];
+            jobFactoryMock.list.resolves(jobs);
+            jobs[0].isPR.returns(false);
+
+            return pipeline.sync()
+                .then(() => {
+                    assert.calledOnce(jobs[0].update);
+                    assert.equal(jobs[0].state, 'DISABLED');
+                });
+        });
+
+        it('does nothing if the job is a PR job', () => {
+            jobs = [{
+                update: sinon.stub().resolves(null),
+                isPR: sinon.stub(),
+                name: 'PR-1',
+                state: 'ENABLED'
+            }];
+            jobFactoryMock.list.resolves(jobs);
+            jobs[0].isPR.returns(true);
+
+            return pipeline.sync()
+                .then(() => {
+                    assert.notCalled(jobs[0].update);
+                });
+        });
 
         it('returns error if something explodes', () => {
             const error = new Error('blah');
