@@ -109,7 +109,7 @@ describe('Pipeline Model', () => {
             scmMock.getFile.resolves('superyamlcontent');
             parserMock.withArgs('superyamlcontent').yieldsAsync(null, PARSED_YAML);
             userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
-                unsealToken: Promise.resolve('foo')
+                unsealToken: sinon.stub().resolves('foo')
             });
 
             publishMock = {
