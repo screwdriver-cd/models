@@ -5,6 +5,7 @@ const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
+require('sinon-as-promised');
 
 describe('Build Model', () => {
     const apiUri = 'https://notify.com/some/endpoint';
@@ -13,7 +14,7 @@ describe('Build Model', () => {
     const buildId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
     const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
     const container = 'node:4';
-    const adminUser = { username: 'batman' };
+    const adminUser = { username: 'batman', unsealToken: sinon.stub().resolves('foo') };
     const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
     const scmUrl = 'git@github.com:screwdriver-cd/models.git#master';
     let BuildModel;
@@ -21,12 +22,11 @@ describe('Build Model', () => {
     let executorMock;
     let hashaMock;
     let build;
-    let githubMock;
     let config;
     let BaseModel;
-    let breakerMock;
     let userFactoryMock;
     let jobFactoryMock;
+    let scmMock;
 
     before(() => {
         mockery.enable({
@@ -50,19 +50,14 @@ describe('Build Model', () => {
             stream: sinon.stub(),
             stop: sinon.stub()
         };
-        githubMock = {
-            getBreaker: sinon.stub(),
-            getInfo: sinon.stub(),
-            run: sinon.stub()
-        };
-        breakerMock = {
-            runCommand: sinon.stub()
-        };
         userFactoryMock = {
             get: sinon.stub()
         };
         jobFactoryMock = {
             get: sinon.stub()
+        };
+        scmMock = {
+            updateCommitStatus: sinon.stub().resolves(null)
         };
         const uF = {
             getInstance: sinon.stub().returns(userFactoryMock)
@@ -74,7 +69,6 @@ describe('Build Model', () => {
         mockery.registerMock('./userFactory', uF);
         mockery.registerMock('./jobFactory', jF);
         mockery.registerMock('screwdriver-hashr', hashaMock);
-        mockery.registerMock('./github', githubMock);
 
         // eslint-disable-next-line global-require
         BuildModel = require('../../lib/build');
@@ -92,7 +86,8 @@ describe('Build Model', () => {
             jobId,
             number: now,
             status: 'QUEUED',
-            sha
+            sha,
+            scmPlugin: scmMock
         };
         build = new BuildModel(config);
     });
@@ -121,6 +116,52 @@ describe('Build Model', () => {
         assert.strictEqual(build.username, config.username);
         // executor is private
         assert.isUndefined(build.executor);
+    });
+
+    describe('updateCommitStatus', () => {
+        let pipeline;
+
+        beforeEach(() => {
+            pipeline = {
+                scmUrl,
+                admin: Promise.resolve(adminUser)
+            };
+        });
+
+        it('should update the commit status without url', () =>
+            build.updateCommitStatus(pipeline)
+                .then(() => {
+                    assert.calledWith(scmMock.updateCommitStatus, {
+                        token: 'foo',
+                        scmUrl,
+                        sha,
+                        buildStatus: 'QUEUED'
+                    });
+                })
+        );
+
+        it('should update the commit status with url', () =>
+            build.updateCommitStatus(pipeline, apiUri)
+                .then(() => {
+                    assert.calledWith(scmMock.updateCommitStatus, {
+                        token: 'foo',
+                        scmUrl,
+                        sha,
+                        buildStatus: 'QUEUED',
+                        url: `${apiUri}/v3/builds/${buildId}/logs`
+                    });
+                })
+        );
+
+        it('reject on error', () => {
+            scmMock.updateCommitStatus.rejects(new Error('nevergonnagiveyouup'));
+
+            return build.updateCommitStatus(pipeline, apiUri)
+                .catch((err) => {
+                    assert.instanceOf(err, Error);
+                    assert.equal(err.message, 'nevergonnagiveyouup');
+                });
+        });
     });
 
     describe('stream', () => {
@@ -155,24 +196,15 @@ describe('Build Model', () => {
 
     describe('update', () => {
         beforeEach(() => {
-            githubMock.getBreaker.returns(breakerMock);
-            breakerMock.runCommand.yieldsAsync(null, null);
-
             jobFactoryMock.get.resolves({
                 id: jobId,
                 name: 'main',
-                pipeline: new Promise(resolve => resolve({
+                pipeline: Promise.resolve({
                     id: pipelineId,
                     scmUrl,
-                    admin: new Promise(r => r(adminUser))
-                }))
+                    admin: Promise.resolve(adminUser)
+                })
             });
-
-            githubMock.getInfo.returns({
-                user: 'screwdriver-cd',
-                repo: 'models'
-            });
-            githubMock.run.resolves(null);
         });
 
         it('promises to update a build and update status to failure', () => {
@@ -181,56 +213,11 @@ describe('Build Model', () => {
 
             return build.update()
                 .then(() => {
-                    assert.calledWith(githubMock.run, {
-                        user: adminUser,
-                        action: 'createStatus',
-                        params: {
-                            user: 'screwdriver-cd',
-                            repo: 'models',
-                            sha,
-                            state: 'failure',
-                            context: 'screwdriver'
-                        }
-                    });
-                });
-        });
-
-        it('promises to update a build and update status to pending', () => {
-            datastore.update.yieldsAsync(null, {});
-            build.status = 'RUNNING';
-
-            return build.update()
-                .then(() => {
-                    assert.calledWith(githubMock.run, {
-                        user: adminUser,
-                        action: 'createStatus',
-                        params: {
-                            user: 'screwdriver-cd',
-                            repo: 'models',
-                            sha,
-                            state: 'pending',
-                            context: 'screwdriver'
-                        }
-                    });
-                });
-        });
-
-        it('promises to update a build and update status to success', () => {
-            datastore.update.yieldsAsync(null, {});
-            build.status = 'SUCCESS';
-
-            return build.update()
-                .then(() => {
-                    assert.calledWith(githubMock.run, {
-                        user: adminUser,
-                        action: 'createStatus',
-                        params: {
-                            user: 'screwdriver-cd',
-                            repo: 'models',
-                            sha,
-                            state: 'success',
-                            context: 'screwdriver'
-                        }
+                    assert.calledWith(scmMock.updateCommitStatus, {
+                        token: 'foo',
+                        scmUrl,
+                        sha,
+                        buildStatus: 'FAILURE'
                     });
                 });
         });
@@ -240,7 +227,7 @@ describe('Build Model', () => {
 
             return build.update()
                 .then(() => {
-                    assert.notCalled(githubMock.run);
+                    assert.notCalled(scmMock.updateCommitStatus);
                 });
         });
     });
@@ -248,45 +235,33 @@ describe('Build Model', () => {
     describe('stop', () => {
         beforeEach(() => {
             executorMock.stop.yieldsAsync(null);
-            githubMock.getBreaker.returns(breakerMock);
-            breakerMock.runCommand.yieldsAsync(null, null);
+            datastore.update.yieldsAsync(null, {});
 
             jobFactoryMock.get.resolves({
                 id: jobId,
                 name: 'main',
-                pipeline: new Promise(resolve => resolve({
+                pipeline: Promise.resolve({
                     id: pipelineId,
                     scmUrl,
-                    admin: new Promise(r => r(adminUser))
-                }))
+                    admin: Promise.resolve(adminUser)
+                })
             });
-
-            githubMock.getInfo.returns({
-                user: 'screwdriver-cd',
-                repo: 'models'
-            });
-            githubMock.run.resolves(null);
         });
 
         it('promises to stop a build when it is queued', () =>
             build.stop()
-            .then(() => {
-                assert.calledWith(executorMock.stop, {
-                    buildId
-                });
+                .then(() => {
+                    assert.calledWith(executorMock.stop, {
+                        buildId
+                    });
 
-                assert.calledWith(githubMock.run, {
-                    user: adminUser,
-                    action: 'createStatus',
-                    params: {
-                        user: 'screwdriver-cd',
-                        repo: 'models',
+                    assert.calledWith(scmMock.updateCommitStatus, {
+                        token: 'foo',
+                        scmUrl,
                         sha,
-                        state: 'failure',
-                        context: 'screwdriver'
-                    }
-                });
-            })
+                        buildStatus: 'ABORTED'
+                    });
+                })
         );
 
         it('promises to stop a build when it is running', () => {
@@ -298,16 +273,11 @@ describe('Build Model', () => {
                         buildId
                     });
 
-                    assert.calledWith(githubMock.run, {
-                        user: adminUser,
-                        action: 'createStatus',
-                        params: {
-                            user: 'screwdriver-cd',
-                            repo: 'models',
-                            sha,
-                            state: 'failure',
-                            context: 'screwdriver'
-                        }
+                    assert.calledWith(scmMock.updateCommitStatus, {
+                        token: 'foo',
+                        scmUrl,
+                        sha,
+                        buildStatus: 'ABORTED'
                     });
                 });
         });
@@ -318,7 +288,8 @@ describe('Build Model', () => {
             return build.stop()
                 .then(() => {
                     assert.notCalled(executorMock.stop);
-                    assert.notCalled(githubMock.run);
+                    assert.notCalled(datastore.update);
+                    assert.notCalled(scmMock.updateCommitStatus);
                 });
         });
 
@@ -347,26 +318,18 @@ describe('Build Model', () => {
             sandbox.useFakeTimers(now);
 
             executorMock.start.yieldsAsync(null);
-            githubMock.getBreaker.returns(breakerMock);
-            breakerMock.runCommand.yieldsAsync(null, null);
 
             jobFactoryMock.get.resolves({
                 id: jobId,
                 name: 'main',
-                pipeline: new Promise(resolve => resolve({
+                pipeline: Promise.resolve({
                     id: pipelineId,
                     scmUrl,
-                    admin: new Promise(r => r(adminUser))
-                }))
+                    admin: Promise.resolve(adminUser)
+                })
             });
 
             tokenGen = sinon.stub().returns(token);
-
-            githubMock.getInfo.returns({
-                user: 'screwdriver-cd',
-                repo: 'models'
-            });
-            githubMock.run.resolves(null);
         });
 
         it('promises to start a build', () =>
@@ -384,16 +347,12 @@ describe('Build Model', () => {
                     token
                 });
 
-                assert.calledWith(githubMock.run, {
-                    user: adminUser,
-                    action: 'createStatus',
-                    params: {
-                        user: 'screwdriver-cd',
-                        repo: 'models',
-                        sha,
-                        state: 'pending',
-                        context: 'screwdriver'
-                    }
+                assert.calledWith(scmMock.updateCommitStatus, {
+                    token: 'foo',
+                    scmUrl,
+                    sha,
+                    buildStatus: 'QUEUED',
+                    url: `${apiUri}/v3/builds/${buildId}/logs`
                 });
             })
         );
@@ -451,7 +410,7 @@ describe('Build Model', () => {
     describe('pipeline', () => {
         it('has a pipeline getter', () => {
             const jobMock = {
-                pipeline: new Promise(r => r({}))
+                pipeline: Promise.resolve({})
             };
 
             jobFactoryMock.get.resolves(jobMock);
@@ -469,7 +428,7 @@ describe('Build Model', () => {
 
         it('rejects if pipeline is null', () => {
             const jobMock = {
-                pipeline: new Promise(r => r(null))
+                pipeline: Promise.resolve(null)
             };
 
             jobFactoryMock.get.resolves(jobMock);

@@ -42,7 +42,6 @@
   "dependencies": {
     "async": "^2.0.1",
     "circuit-fuses": "^1.0.0",
-    "github": "^2.3.0",
     "hoek": "^4.0.1",
     "iron": "^4.0.1",
     "screwdriver-config-parser": "^2.0.0",
