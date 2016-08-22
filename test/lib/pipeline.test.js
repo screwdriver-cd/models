@@ -248,4 +248,50 @@ describe('Pipeline Model', () => {
             assert.calledOnce(jobFactoryMock.list);
         });
     });
+
+    describe('getConfiguration', () => {
+        beforeEach(() => {
+            scmMock.getFile.resolves('superyamlcontent');
+            parserMock.withArgs('superyamlcontent').yieldsAsync(null, PARSED_YAML);
+            userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
+        });
+
+        it('gets pipeline config', () =>
+            pipeline.getConfiguration()
+                .then(config => {
+                    assert.equal(config, PARSED_YAML);
+                    assert.calledWith(scmMock.getFile, {
+                        scmUrl,
+                        path: 'screwdriver.yaml',
+                        token: 'foo'
+                    });
+                    assert.calledWith(parserMock, 'superyamlcontent');
+                })
+        );
+
+        it('gets pipeline config from an alternate ref', () =>
+            pipeline.getConfiguration('foobar')
+                .then(config => {
+                    assert.equal(config, PARSED_YAML);
+                    assert.calledWith(scmMock.getFile, {
+                        scmUrl: 'foobar',
+                        path: 'screwdriver.yaml',
+                        token: 'foo'
+                    });
+                    assert.calledWith(parserMock, 'superyamlcontent');
+                })
+        );
+
+        it('catches errors', () => {
+            parserMock.yieldsAsync(new Error('cannotparseit'));
+
+            return pipeline.getConfiguration('foobar')
+                .catch(err => {
+                    assert.instanceOf(err, Error);
+                    assert.equal(err.message, 'cannotparseit');
+                });
+        });
+    });
 });
