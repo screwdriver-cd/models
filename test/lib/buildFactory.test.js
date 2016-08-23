@@ -29,7 +29,7 @@ describe('Build Factory', () => {
     let hashaMock;
     let jobFactoryMock;
     let userFactoryMock;
-    let githubMock;
+    let scmMock;
     let factory;
     let jobFactory;
 
@@ -55,9 +55,8 @@ describe('Build Factory', () => {
         userFactoryMock = {
             get: sinon.stub()
         };
-        githubMock = {
-            run: sinon.stub(),
-            getInfo: sinon.stub()
+        scmMock = {
+            getCommitSha: sinon.stub()
         };
         jobFactory = {
             getInstance: sinon.stub().returns(jobFactoryMock)
@@ -72,13 +71,12 @@ describe('Build Factory', () => {
         mockery.registerMock('./userFactory', {
             getInstance: sinon.stub().returns(userFactoryMock)
         });
-        mockery.registerMock('./github', githubMock);
         mockery.registerMock('./build', Build);
 
         // eslint-disable-next-line global-require
         BuildFactory = require('../../lib/buildFactory');
 
-        factory = new BuildFactory({ datastore, executor });
+        factory = new BuildFactory({ datastore, executor, scmPlugin: scmMock });
     });
 
     afterEach(() => {
@@ -131,6 +129,8 @@ describe('Build Factory', () => {
         };
 
         beforeEach(() => {
+            scmMock.getCommitSha.resolves(sha);
+
             sandbox = sinon.sandbox.create({
                 useFakeTimers: false
             });
@@ -177,24 +177,17 @@ describe('Build Factory', () => {
 
         it('creates a new build in the datastore, looking up sha', () => {
             const expected = {};
-            const user = {};
+            const user = { unsealToken: sinon.stub().resolves('foo') };
 
             datastore.save.yieldsAsync(null, expected);
 
             const jobMock = {
                 containers,
-                pipeline: new Promise(resolves => resolves({ scmUrl }))
+                pipeline: Promise.resolve({ scmUrl })
             };
 
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
-            githubMock.getInfo.returns({
-                user: 'screwdriver-cd',
-                repo: 'models'
-            });
-            githubMock.run.resolves({
-                commit: { sha }
-            });
 
             return factory.create({ apiUri, username, jobId, tokenGen }).then(model => {
                 assert.calledWith(datastore.save, saveConfig);
@@ -202,13 +195,9 @@ describe('Build Factory', () => {
                 assert.calledOnce(jobFactory.getInstance);
                 assert.calledWith(jobFactoryMock.get, jobId);
                 assert.calledWith(userFactoryMock.get, { username });
-                assert.calledWith(githubMock.run, {
-                    user,
-                    action: 'getBranch',
-                    params: {
-                        user: 'screwdriver-cd',
-                        repo: 'models'
-                    }
+                assert.calledWith(scmMock.getCommitSha, {
+                    token: 'foo',
+                    scmUrl
                 });
                 assert.calledWith(startStub, {
                     apiUri,
@@ -238,7 +227,7 @@ describe('Build Factory', () => {
         it('properly handles rejection due to missing pipeline model', () => {
             const jobMock = {
                 containers,
-                pipeline: new Promise(resolves => resolves(null))
+                pipeline: Promise.resolve(null)
             };
 
             userFactoryMock.get.resolves({});
