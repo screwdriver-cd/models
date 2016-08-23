@@ -3,11 +3,10 @@ const assert = require('chai').assert;
 const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
 const sinon = require('sinon');
+let startStub;
 
 require('sinon-as-promised');
 sinon.assert.expose(assert, { prefix: '' });
-
-const startStub = sinon.stub().resolves('foo');
 
 class Build {
     constructor(config) {
@@ -15,10 +14,10 @@ class Build {
         this.number = config.number;
         this.container = config.container;
         this.executor = config.executor;
-    }
+        this.apiUri = config.apiUri;
+        this.tokenGen = config.tokenGen;
 
-    start() {
-        return startStub.apply(startStub, arguments);
+        this.start = startStub.resolves(this);
     }
 }
 
@@ -61,6 +60,7 @@ describe('Build Factory', () => {
         jobFactory = {
             getInstance: sinon.stub().returns(jobFactoryMock)
         };
+        startStub = sinon.stub();
 
         // Fixing mockery issue with duplicate file names
         // by re-registering data-schema with its own implementation
@@ -154,12 +154,14 @@ describe('Build Factory', () => {
 
             datastore.save.yieldsAsync(null, expected);
 
-            return factory.create({ apiUri, username, jobId, sha }).then(model => {
+            return factory.create({ apiUri, username, jobId, sha, tokenGen }).then(model => {
                 assert.instanceOf(model, Build);
                 assert.calledOnce(jobFactory.getInstance);
                 assert.calledWith(jobFactoryMock.get, jobId);
                 assert.calledWith(datastore.save, saveConfig);
                 assert.strictEqual(model.container, container);
+                assert.strictEqual(model.apiUri, apiUri);
+                assert.isFunction(model.tokenGen);
                 assert.notCalled(userFactoryMock.get);
             });
         });
@@ -170,7 +172,7 @@ describe('Build Factory', () => {
 
             datastore.save.yieldsAsync(null, expected);
 
-            return factory.create({ garbage, username, jobId, sha }).then(() => {
+            return factory.create({ garbage, username, jobId, sha, tokenGen }).then(() => {
                 assert.calledWith(datastore.save, saveConfig);
             });
         });
@@ -199,10 +201,7 @@ describe('Build Factory', () => {
                     token: 'foo',
                     scmUrl
                 });
-                assert.calledWith(startStub, {
-                    apiUri,
-                    tokenGen
-                });
+                assert.calledOnce(startStub);
             });
         });
 
