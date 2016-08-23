@@ -113,8 +113,33 @@ describe('Build Factory', () => {
         const username = 'i_made_the_request';
         const dateNow = Date.now();
         const isoTime = (new Date(dateNow)).toISOString();
-        const container = 'node:6';
-        const containers = [container, 'node:4'];
+        const container = 'node:4';
+        const steps = [
+            { name: 'init' },
+            { name: 'test' }
+        ];
+        const permutations = [{
+            commands: [
+                { command: 'npm install', name: 'init' },
+                { command: 'npm test', name: 'test' }
+            ],
+            environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
+            image: 'node:4'
+        }, {
+            commands: [
+                { command: 'npm install', name: 'init' },
+                { command: 'npm test', name: 'test' }
+            ],
+            environment: { NODE_ENV: 'test', NODE_VERSION: '5' },
+            image: 'node:5'
+        }, {
+            commands: [
+                { command: 'npm install', name: 'init' },
+                { command: 'npm test', name: 'test' }
+            ],
+            environment: { NODE_ENV: 'test', NODE_VERSION: '6' },
+            image: 'node:6'
+        }];
 
         const saveConfig = {
             table: 'builds',
@@ -126,6 +151,7 @@ describe('Build Factory', () => {
                     number: dateNow,
                     status: 'QUEUED',
                     container,
+                    steps,
                     jobId,
                     sha
                 }
@@ -143,7 +169,7 @@ describe('Build Factory', () => {
             hashaMock.sha1.returns(testId);
 
             jobFactoryMock.get.resolves({
-                containers
+                permutations
             });
         });
 
@@ -186,7 +212,7 @@ describe('Build Factory', () => {
             datastore.save.yieldsAsync(null, expected);
 
             const jobMock = {
-                containers,
+                permutations,
                 pipeline: Promise.resolve({ scmUrl })
             };
 
@@ -227,7 +253,7 @@ describe('Build Factory', () => {
 
         it('properly handles rejection due to missing pipeline model', () => {
             const jobMock = {
-                containers,
+                permutations,
                 pipeline: Promise.resolve(null)
             };
 

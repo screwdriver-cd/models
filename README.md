@@ -344,7 +344,7 @@ factory.get({ username }).then(model => {
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const factory = Model.UserFactory.getInsance({ datastore });
+const factory = Model.UserFactory.getInstance({ datastore });
 const config = {
     username: 'myself',
     token: 'eyJksd3',            // User's github token

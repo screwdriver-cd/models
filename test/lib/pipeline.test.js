@@ -115,12 +115,41 @@ describe('Pipeline Model', () => {
             publishMock = {
                 pipelineId: testId,
                 name: 'publish',
-                containers: ['node:4']
+                permutations: [{
+                    commands: [
+                        { command: 'npm run bump', name: 'bump' },
+                        { command: 'npm publish --tag $NODE_TAG', name: 'publish' },
+                        { command: 'git push origin --tags', name: 'tag' }
+                    ],
+                    environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
+                    image: 'node:4'
+                }]
             };
             mainMock = {
                 pipelineId: testId,
                 name: 'main',
-                containers: ['node:4', 'node:5', 'node:6']
+                permutations: [{
+                    commands: [
+                        { command: 'npm install', name: 'init' },
+                        { command: 'npm test', name: 'test' }
+                    ],
+                    environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
+                    image: 'node:4'
+                }, {
+                    commands: [
+                        { command: 'npm install', name: 'init' },
+                        { command: 'npm test', name: 'test' }
+                    ],
+                    environment: { NODE_ENV: 'test', NODE_VERSION: '5' },
+                    image: 'node:5'
+                }, {
+                    commands: [
+                        { command: 'npm install', name: 'init' },
+                        { command: 'npm test', name: 'test' }
+                    ],
+                    environment: { NODE_ENV: 'test', NODE_VERSION: '6' },
+                    image: 'node:6'
+                }]
             };
         });
 
@@ -149,7 +178,7 @@ describe('Pipeline Model', () => {
                 update: sinon.stub().resolves(null),
                 isPR: sinon.stub(),
                 name: 'main',
-                containers: ['node:3'],
+                permutations: ['node:3'],
                 state: 'ENABLED'
             }];
             jobFactoryMock.list.resolves(jobs);
@@ -158,7 +187,28 @@ describe('Pipeline Model', () => {
             return pipeline.sync()
                 .then(() => {
                     assert.calledOnce(jobs[0].update);
-                    assert.deepEqual(jobs[0].containers, ['node:4', 'node:5', 'node:6']);
+                    assert.deepEqual(jobs[0].permutations, [{
+                        commands: [
+                            { command: 'npm install', name: 'init' },
+                            { command: 'npm test', name: 'test' }
+                        ],
+                        environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
+                        image: 'node:4'
+                    }, {
+                        commands: [
+                            { command: 'npm install', name: 'init' },
+                            { command: 'npm test', name: 'test' }
+                        ],
+                        environment: { NODE_ENV: 'test', NODE_VERSION: '5' },
+                        image: 'node:5'
+                    }, {
+                        commands: [
+                            { command: 'npm install', name: 'init' },
+                            { command: 'npm test', name: 'test' }
+                        ],
+                        environment: { NODE_ENV: 'test', NODE_VERSION: '6' },
+                        image: 'node:6'
+                    }]);
                 });
         });
 
