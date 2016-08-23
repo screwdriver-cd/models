@@ -17,6 +17,8 @@ describe('Build Model', () => {
     const adminUser = { username: 'batman', unsealToken: sinon.stub().resolves('foo') };
     const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
     const scmUrl = 'git@github.com:screwdriver-cd/models.git#master';
+    const token = 'equivalentToOneQuarter';
+    const url = `${apiUri}/v3/builds/${buildId}/logs`;
     let BuildModel;
     let datastore;
     let executorMock;
@@ -65,6 +67,7 @@ describe('Build Model', () => {
         const jF = {
             getInstance: sinon.stub().returns(jobFactoryMock)
         };
+        const tokenGen = sinon.stub().returns(token);
 
         mockery.registerMock('./userFactory', uF);
         mockery.registerMock('./jobFactory', jF);
@@ -87,7 +90,9 @@ describe('Build Model', () => {
             number: now,
             status: 'QUEUED',
             sha,
-            scmPlugin: scmMock
+            scmPlugin: scmMock,
+            apiUri,
+            tokenGen
         };
         build = new BuildModel(config);
     });
@@ -116,6 +121,9 @@ describe('Build Model', () => {
         assert.strictEqual(build.username, config.username);
         // executor is private
         assert.isUndefined(build.executor);
+        // apiUri and tokenGen are private
+        assert.isUndefined(build.apiUri);
+        assert.isUndefined(build.tokenGen);
     });
 
     describe('updateCommitStatus', () => {
@@ -128,18 +136,6 @@ describe('Build Model', () => {
             };
         });
 
-        it('should update the commit status without url', () =>
-            build.updateCommitStatus(pipeline)
-                .then(() => {
-                    assert.calledWith(scmMock.updateCommitStatus, {
-                        token: 'foo',
-                        scmUrl,
-                        sha,
-                        buildStatus: 'QUEUED'
-                    });
-                })
-        );
-
         it('should update the commit status with url', () =>
             build.updateCommitStatus(pipeline, apiUri)
                 .then(() => {
@@ -148,7 +144,7 @@ describe('Build Model', () => {
                         scmUrl,
                         sha,
                         buildStatus: 'QUEUED',
-                        url: `${apiUri}/v3/builds/${buildId}/logs`
+                        url
                     });
                 })
         );
@@ -217,7 +213,8 @@ describe('Build Model', () => {
                         token: 'foo',
                         scmUrl,
                         sha,
-                        buildStatus: 'FAILURE'
+                        buildStatus: 'FAILURE',
+                        url
                     });
                 });
         });
@@ -259,7 +256,8 @@ describe('Build Model', () => {
                         token: 'foo',
                         scmUrl,
                         sha,
-                        buildStatus: 'ABORTED'
+                        buildStatus: 'ABORTED',
+                        url
                     });
                 })
         );
@@ -277,7 +275,8 @@ describe('Build Model', () => {
                         token: 'foo',
                         scmUrl,
                         sha,
-                        buildStatus: 'ABORTED'
+                        buildStatus: 'ABORTED',
+                        url
                     });
                 });
         });
@@ -310,8 +309,6 @@ describe('Build Model', () => {
 
     describe('start', () => {
         let sandbox;
-        let tokenGen;
-        const token = 'equivalentToOneQuarter';
 
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
@@ -328,18 +325,11 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser)
                 })
             });
-
-            tokenGen = sinon.stub().returns(token);
         });
 
         it('promises to start a build', () =>
-            build.start({
-                apiUri,
-                tokenGen
-            })
+            build.start()
             .then(() => {
-                assert.calledWith(tokenGen, buildId);
-
                 assert.calledWith(executorMock.start, {
                     apiUri,
                     buildId,
@@ -352,7 +342,7 @@ describe('Build Model', () => {
                     scmUrl,
                     sha,
                     buildStatus: 'QUEUED',
-                    url: `${apiUri}/v3/builds/${buildId}/logs`
+                    url
                 });
             })
         );
@@ -362,10 +352,7 @@ describe('Build Model', () => {
 
             executorMock.start.yieldsAsync(expectedError);
 
-            return build.start({
-                apiUri,
-                tokenGen
-            })
+            return build.start()
             .then(() => {
                 assert.fail('This should not fail the test');
             })
