@@ -31,6 +31,8 @@ describe('Build Factory', () => {
     let scmMock;
     let factory;
     let jobFactory;
+    const apiUri = 'https://notify.com/some/endpoint';
+    const tokenGen = sinon.stub();
 
     before(() => {
         mockery.enable({
@@ -77,6 +79,8 @@ describe('Build Factory', () => {
         BuildFactory = require('../../lib/buildFactory');
 
         factory = new BuildFactory({ datastore, executor, scmPlugin: scmMock });
+        factory.apiUri = apiUri;
+        factory.tokenGen = tokenGen;
     });
 
     afterEach(() => {
@@ -95,13 +99,13 @@ describe('Build Factory', () => {
 
             assert.instanceOf(model, Build);
             assert.deepEqual(model.executor, executor);
+            assert.strictEqual(model.apiUri, apiUri);
+            assert.deepEqual(model.tokenGen, tokenGen);
         });
     });
 
     describe('create', () => {
         let sandbox;
-        let tokenGen;
-        const apiUri = 'https://notify.com/some/endpoint';
         const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
         const jobId = '62089f642bbfd1886623964b4cff12db59869e5d';
         const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
@@ -138,8 +142,6 @@ describe('Build Factory', () => {
 
             hashaMock.sha1.returns(testId);
 
-            tokenGen = sinon.stub();
-
             jobFactoryMock.get.resolves({
                 containers
             });
@@ -154,14 +156,14 @@ describe('Build Factory', () => {
 
             datastore.save.yieldsAsync(null, expected);
 
-            return factory.create({ apiUri, username, jobId, sha, tokenGen }).then(model => {
+            return factory.create({ username, jobId, sha }).then(model => {
                 assert.instanceOf(model, Build);
                 assert.calledOnce(jobFactory.getInstance);
                 assert.calledWith(jobFactoryMock.get, jobId);
                 assert.calledWith(datastore.save, saveConfig);
                 assert.strictEqual(model.container, container);
                 assert.strictEqual(model.apiUri, apiUri);
-                assert.isFunction(model.tokenGen);
+                assert.deepEqual(model.tokenGen, tokenGen);
                 assert.notCalled(userFactoryMock.get);
             });
         });
@@ -172,7 +174,7 @@ describe('Build Factory', () => {
 
             datastore.save.yieldsAsync(null, expected);
 
-            return factory.create({ garbage, username, jobId, sha, tokenGen }).then(() => {
+            return factory.create({ garbage, username, jobId, sha }).then(() => {
                 assert.calledWith(datastore.save, saveConfig);
             });
         });
@@ -191,7 +193,7 @@ describe('Build Factory', () => {
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
 
-            return factory.create({ apiUri, username, jobId, tokenGen }).then(model => {
+            return factory.create({ username, jobId }).then(model => {
                 assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Build);
                 assert.calledOnce(jobFactory.getInstance);
@@ -208,7 +210,7 @@ describe('Build Factory', () => {
         it('properly handles rejection due to missing job model', () => {
             jobFactoryMock.get.resolves(null);
 
-            return factory.create({ apiUri, username, jobId, tokenGen }).catch(err => {
+            return factory.create({ username, jobId }).catch(err => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message, 'Job does not exist');
             });
@@ -217,7 +219,7 @@ describe('Build Factory', () => {
         it('properly handles rejection due to missing user model', () => {
             userFactoryMock.get.resolves(null);
 
-            return factory.create({ apiUri, username, jobId, tokenGen }).catch(err => {
+            return factory.create({ username, jobId }).catch(err => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message, 'User does not exist');
             });
@@ -232,7 +234,7 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves({});
             jobFactoryMock.get.resolves(jobMock);
 
-            return factory.create({ apiUri, username, jobId, tokenGen }).catch(err => {
+            return factory.create({ username, jobId }).catch(err => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message, 'Pipeline does not exist');
             });
