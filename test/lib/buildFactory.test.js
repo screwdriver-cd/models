@@ -115,8 +115,10 @@ describe('Build Factory', () => {
         const isoTime = (new Date(dateNow)).toISOString();
         const container = 'node:4';
         const steps = [
+            { name: 'sd-setup' },
             { name: 'init' },
-            { name: 'test' }
+            { name: 'test' },
+            { name: 'sd-teardown' }
         ];
         const permutations = [{
             commands: [
