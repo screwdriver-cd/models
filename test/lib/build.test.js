@@ -49,7 +49,6 @@ describe('Build Model', () => {
         };
         executorMock = {
             start: sinon.stub(),
-            stream: sinon.stub(),
             stop: sinon.stub()
         };
         userFactoryMock = {
@@ -111,7 +110,6 @@ describe('Build Model', () => {
         assert.instanceOf(build, BaseModel);
         assert.isFunction(build.start);
         assert.isFunction(build.stop);
-        assert.isFunction(build.stream);
 
         schema.models.build.allKeys.forEach(key => {
             assert.strictEqual(build[key], config[key]);
@@ -156,36 +154,6 @@ describe('Build Model', () => {
                 .catch((err) => {
                     assert.instanceOf(err, Error);
                     assert.equal(err.message, 'nevergonnagiveyouup');
-                });
-        });
-    });
-
-    describe('stream', () => {
-        it('promises to call executor stream', () => {
-            const expectedData = 'someDataFromStream';
-
-            executorMock.stream.yieldsAsync(null, expectedData);
-
-            return build.stream()
-                .then((data) => {
-                    assert.strictEqual(data, expectedData);
-                    assert.calledWith(executorMock.stream, {
-                        buildId
-                    });
-                });
-        });
-
-        it('rejects when exectuor stream fails', () => {
-            const expectedError = new Error('Youseemtobeusinganunblockerorproxy');
-
-            executorMock.stream.yieldsAsync(expectedError);
-
-            return build.stream({ buildId })
-                .then(() => {
-                    assert.fail('This should not fail the test');
-                })
-                .catch((err) => {
-                    assert.deepEqual(err, expectedError);
                 });
         });
     });
