@@ -9,6 +9,7 @@ require('sinon-as-promised');
 
 describe('Build Model', () => {
     const apiUri = 'https://notify.com/some/endpoint';
+    const uiUri = 'https://display.com/some/endpoint';
     const jobId = '62089f642bbfd1886623964b4cff12db59869e5d';
     const now = 112233445566;
     const buildId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
@@ -18,7 +19,7 @@ describe('Build Model', () => {
     const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
     const scmUrl = 'git@github.com:screwdriver-cd/models.git#master';
     const token = 'equivalentToOneQuarter';
-    const url = `${apiUri}/v3/builds/${buildId}/logs`;
+    const url = `${uiUri}/builds/${buildId}`;
     let BuildModel;
     let datastore;
     let executorMock;
@@ -92,7 +93,8 @@ describe('Build Model', () => {
             sha,
             scmPlugin: scmMock,
             apiUri,
-            tokenGen
+            tokenGen,
+            uiUri
         };
         build = new BuildModel(config);
     });
@@ -119,11 +121,11 @@ describe('Build Model', () => {
 
         // Also added a username members
         assert.strictEqual(build.username, config.username);
-        // executor is private
+        // private keys are private
         assert.isUndefined(build.executor);
-        // apiUri and tokenGen are private
         assert.isUndefined(build.apiUri);
         assert.isUndefined(build.tokenGen);
+        assert.isUndefined(build.uiUri);
     });
 
     describe('updateCommitStatus', () => {

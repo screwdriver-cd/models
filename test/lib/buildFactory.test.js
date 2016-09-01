@@ -16,6 +16,7 @@ class Build {
         this.executor = config.executor;
         this.apiUri = config.apiUri;
         this.tokenGen = config.tokenGen;
+        this.uiUri = config.uiUri;
 
         this.start = startStub.resolves(this);
     }
@@ -33,6 +34,7 @@ describe('Build Factory', () => {
     let jobFactory;
     const apiUri = 'https://notify.com/some/endpoint';
     const tokenGen = sinon.stub();
+    const uiUri = 'http://display.com/some/endpoint';
 
     before(() => {
         mockery.enable({
@@ -78,7 +80,7 @@ describe('Build Factory', () => {
         // eslint-disable-next-line global-require
         BuildFactory = require('../../lib/buildFactory');
 
-        factory = new BuildFactory({ datastore, executor, scmPlugin: scmMock });
+        factory = new BuildFactory({ datastore, executor, scmPlugin: scmMock, uiUri });
         factory.apiUri = apiUri;
         factory.tokenGen = tokenGen;
     });
@@ -101,6 +103,7 @@ describe('Build Factory', () => {
             assert.deepEqual(model.executor, executor);
             assert.strictEqual(model.apiUri, apiUri);
             assert.deepEqual(model.tokenGen, tokenGen);
+            assert.strictEqual(model.uiUri, uiUri);
         });
     });
 
@@ -192,6 +195,7 @@ describe('Build Factory', () => {
                 assert.strictEqual(model.container, container);
                 assert.strictEqual(model.apiUri, apiUri);
                 assert.deepEqual(model.tokenGen, tokenGen);
+                assert.strictEqual(model.uiUri, uiUri);
                 assert.notCalled(userFactoryMock.get);
             });
         });
@@ -335,7 +339,7 @@ describe('Build Factory', () => {
         let config;
 
         beforeEach(() => {
-            config = { datastore, executor, scmPlugin: {} };
+            config = { datastore, executor, scmPlugin: {}, uiUri };
         });
 
         it('should utilize BaseFactory to get an instance', () => {
@@ -353,8 +357,12 @@ describe('Build Factory', () => {
                 Error, 'No executor provided to BuildFactory');
 
             assert.throw(() => {
-                BuildFactory.getInstance({ executor, scm: {} });
+                BuildFactory.getInstance({ executor, scm: {}, uiUri });
             }, Error, 'No datastore provided to BuildFactory');
+
+            assert.throw(() => {
+                BuildFactory.getInstance({ executor, scm: {}, datastore });
+            }, Error, 'No uiUri provided to BuildFactory');
         });
     });
 });
