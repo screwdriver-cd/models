@@ -18,6 +18,7 @@ describe('Pipeline Model', () => {
     let scmMock;
     let jobFactoryMock;
     let userFactoryMock;
+    let secretFactoryMock;
 
     const dateNow = 1111111111;
     const scmUrl = 'git@github.com:screwdriver-cd/data-model.git#master';
@@ -49,6 +50,9 @@ describe('Pipeline Model', () => {
         userFactoryMock = {
             get: sinon.stub()
         };
+        secretFactoryMock = {
+            list: sinon.stub()
+        };
         scmMock = {
             getFile: sinon.stub()
         };
@@ -60,6 +64,8 @@ describe('Pipeline Model', () => {
         mockery.registerMock('./userFactory', {
             getInstance: sinon.stub().returns(userFactoryMock)
         });
+        mockery.registerMock('./secretFactory', {
+            getInstance: sinon.stub().returns(secretFactoryMock) });
 
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('screwdriver-config-parser', parserMock);
@@ -296,6 +302,32 @@ describe('Pipeline Model', () => {
             // ...but the factory was not recreated, since the promise is stored
             // as the model's pipeline property, now
             assert.calledOnce(jobFactoryMock.list);
+        });
+    });
+
+    describe('get secrets', () => {
+        it('has a secrets getter', () => {
+            const listConfig = {
+                params: {
+                    pipelineId: pipeline.id
+                },
+                paginate: {
+                    count: 25, // This limit is set by the matrix restriction
+                    page: 1
+                }
+            };
+
+            secretFactoryMock.list.resolves(null);
+            // when we fetch secrets it resolves to a promise
+            assert.isFunction(pipeline.secrets.then);
+            // and a factory is called to create that promise
+            assert.calledWith(secretFactoryMock.list, listConfig);
+
+            // When we call pipeline.secrets again it is still a promise
+            assert.isFunction(pipeline.secrets.then);
+            // ...but the factory was not recreated, since the promise is stored
+            // as the model's pipeline property, now
+            assert.calledOnce(secretFactoryMock.list);
         });
     });
 

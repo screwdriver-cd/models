@@ -112,9 +112,17 @@ describe('User Factory', () => {
             assert.equal(f1, f2);
         });
 
-        it('should throw when config not supplied', () => {
+        it('should throw when config does not have everything necessary', () => {
             assert.throw(UserFactory.getInstance,
-                Error, 'No datastore provided to UserFactory');
+                Error, 'No scm plugin provided to UserFactory');
+
+            assert.throw(() => {
+                UserFactory.getInstance({ datastore });
+            }, Error, 'No scm plugin provided to UserFactory');
+
+            assert.throw(() => {
+                UserFactory.getInstance({ scmPlugin: {} });
+            }, Error, 'No datastore provided to UserFactory');
         });
     });
 });
