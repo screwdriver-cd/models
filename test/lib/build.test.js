@@ -30,6 +30,7 @@ describe('Build Model', () => {
     let userFactoryMock;
     let jobFactoryMock;
     let scmMock;
+    let tokenGen;
 
     before(() => {
         mockery.enable({
@@ -61,13 +62,13 @@ describe('Build Model', () => {
         scmMock = {
             updateCommitStatus: sinon.stub().resolves(null)
         };
+        tokenGen = sinon.stub().returns(token);
         const uF = {
             getInstance: sinon.stub().returns(userFactoryMock)
         };
         const jF = {
             getInstance: sinon.stub().returns(jobFactoryMock)
         };
-        const tokenGen = sinon.stub().returns(token);
 
         mockery.registerMock('./userFactory', uF);
         mockery.registerMock('./jobFactory', jF);
@@ -293,7 +294,8 @@ describe('Build Model', () => {
                     id: pipelineId,
                     scmUrl,
                     admin: Promise.resolve(adminUser)
-                })
+                }),
+                isPR: () => false
             });
         });
 
@@ -305,6 +307,12 @@ describe('Build Model', () => {
                     buildId,
                     container,
                     token
+                });
+
+                assert.calledWith(tokenGen, buildId, {
+                    isPR: false,
+                    jobId,
+                    pipelineId
                 });
 
                 assert.calledWith(scmMock.updateCommitStatus, {
