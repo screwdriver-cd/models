@@ -508,6 +508,12 @@ factory.create(config)
     });
 ```
 
+#### Update
+Update a specific secret
+```
+model.update()
+```
+
 ## Testing
 
 ```bash
