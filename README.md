@@ -15,7 +15,10 @@ npm install screwdriver-models
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const factory = Model.PipelineFactory.getInstance({ datastore });
+const factory = Model.PipelineFactory.getInstance({
+    datastore,
+    scmPlugin
+});
 const config = {
     params: {
         configUrl: 'banana'
@@ -82,7 +85,10 @@ Example:
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const factory = Model.PipelineFactory.getInstance({ datastore });
+const factory = Model.PipelineFactory.getInstance({
+    datastore,
+    scmPlugin
+});
 const scmUrl = 'git@git.corp.yahoo.com:foo/BAR.git';
 factory.get({ scmUrl }).then(model => {
     model.configUrl = 'git@git.corp.yahoo.com:foo/bar.git#master';
@@ -110,7 +116,10 @@ Example:
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const factory = Model.PipelineFactory.getInstance({ datastore });
+const factory = Model.PipelineFactory.getInstance({
+    datastore,
+    scmPlugin
+});
 const scmUrl = 'git@git.corp.yahoo.com:foo/BAR.git';
 factory.get({ scmUrl }).then(model => {
     const formattedScmUrl = model.formatScmUrl(model.scmUrl);
@@ -123,7 +132,9 @@ factory.get({ scmUrl }).then(model => {
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const factory = Model.JobFactory.getInstance({ datastore });
+const factory = Model.JobFactory.getInstance({
+    datastore
+});
 const config = {
     params: {
         pipelineId: 'aabbccdd1234'
@@ -181,7 +192,9 @@ factory.get({ pipelineId, name }).then(model => {
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const factory = Model.JobFactory.getInstance({ datastore });
+const factory = Model.JobFactory.getInstance({
+    datastore
+});
 
 factory.get(id).then(model => {
     model.name = 'hello';
@@ -200,7 +213,12 @@ model.update()
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const factory = Model.BuildFactory.getInstance({ datastore });
+const factory = Model.BuildFactory.getInstance({  
+    datastore,
+    scmPlugin,
+    executor,
+    uiUri
+});
 const config = {
     params: {
         jobId: 'aaabbccdd1234'
@@ -261,7 +279,12 @@ factory.get({ jobId, number }).then(model => {
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const factory = Model.BuildFactory.getInstance(config);
+const factory = Model.BuildFactory.getInstance({  
+    datastore,
+    scmPlugin,
+    executor,
+    uiUri
+});
 
 factory.get(id).then(model => {
     model.state = 'FAILURE';
@@ -286,7 +309,11 @@ model.stream()
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const factory = Model.UserFactory.getInstance({ datastore });
+const factory = Model.UserFactory.getInstance({
+    datastore,
+    scmPlugin,
+    password            // Password to seal/unseal user's token
+});
 const config = {
     params: {
         username: 'batman'
@@ -344,7 +371,11 @@ factory.get({ username }).then(model => {
 ```js
 'use strict';
 const Model = require('screwdriver-models');
-const factory = Model.UserFactory.getInstance({ datastore });
+const factory = Model.UserFactory.getInstance({
+    datastore,
+    scmPlugin,
+    password                    // Password to seal/unseal user's token
+});
 const config = {
     username: 'myself',
     token: 'eyJksd3',            // User's github token
@@ -390,6 +421,98 @@ model.getPermissions(scmUrl)
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
 | scmUrl | String | The scmUrl of the repo |
+
+
+### Secret Factory
+#### Search
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.SecretFactory.getInstance({
+    datastore,
+    password            // Password for encryption operations
+});
+const config = {
+    params: {
+        pipelineId: '2d991790bab1ac8576097ca87f170df73410b55c'
+    },
+    paginate {
+        page: 2,
+        count: 3
+    }
+}
+
+factory.list(config).then(secrets => {
+    // Do stuff with list of secrets
+});
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Config Object |
+| config.paginate.page | Number | The page for pagination |
+| config.paginate.count | Number | The count for pagination |
+| config.params | Object | fields to search on |
+
+#### Create
+```js
+factory.create(config).then(model => {
+    // do stuff with secret model
+});
+```
+
+| Parameter        | Type  |  Required | Description |
+| :-------------   | :---- | :-------------|  :-------------|
+| config        | Object | Yes | Configuration Object |
+| config.pipelineId | String | Yes | Pipeline that this secret belongs to |
+| config.name | String | Yes | Secret name |
+| config.value | String | Yes | Secret value |
+| config.allowInPR | String | Yes | Flag to denote if this secret can be shown in PR builds |
+
+#### Get
+Get a secret based on id. Can pass the generatedId for the secret, or the combination of pipelineId and secret name, and the id will be determined automatically.
+```js
+factory.get(id).then(model => {
+    // do stuff with secret model
+});
+
+factory.get({ pipelineId, name }).then(model => {
+    // do stuff with secret model
+});
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| id | String | The unique ID for the build |
+| config.pipelineId | String | Pipeline that the secret belongs to |
+| config.name | String | Secret name |
+
+
+### Secret Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.SecretFactory.getInstance({
+    datastore,
+    password            // Password for encryption operations
+});
+const config = {
+    pipelineId: '2d991790bab1ac8576097ca87f170df73410b55c',
+    name: 'NPM_TOKEN',
+    value: banana,
+    allowInPR: false
+}
+
+factory.create(config)
+    .then(model => // do something
+    });
+```
+
+#### Update
+Update a specific secret
+```
+model.update()
+```
 
 ## Testing
 

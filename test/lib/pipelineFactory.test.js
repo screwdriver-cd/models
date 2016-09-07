@@ -142,9 +142,17 @@ describe('Pipeline Factory', () => {
             assert.equal(f1, f2);
         });
 
-        it('should throw when config not supplied', () => {
+        it('should throw when config does not have everything necessary', () => {
             assert.throw(PipelineFactory.getInstance,
-                Error, 'No datastore provided to PipelineFactory');
+                Error, 'No scm plugin provided to PipelineFactory');
+
+            assert.throw(() => {
+                PipelineFactory.getInstance({ datastore });
+            }, Error, 'No scm plugin provided to PipelineFactory');
+
+            assert.throw(() => {
+                PipelineFactory.getInstance({ scmPlugin: {} });
+            }, Error, 'No datastore provided to PipelineFactory');
         });
     });
 });

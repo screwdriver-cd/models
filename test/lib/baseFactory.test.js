@@ -288,9 +288,6 @@ describe('Base Factory', () => {
             assert.throw(() => {
                 BaseFactory.getInstance(BF, null);
             }, Error, 'No datastore provided to BF');
-            assert.throw(() => {
-                BaseFactory.getInstance(BF, null, { datastore });
-            }, Error, 'No scm plugin provided to BF');
         });
     });
 });

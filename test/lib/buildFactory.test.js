@@ -357,11 +357,15 @@ describe('Build Factory', () => {
                 Error, 'No executor provided to BuildFactory');
 
             assert.throw(() => {
-                BuildFactory.getInstance({ executor, scm: {}, uiUri });
+                BuildFactory.getInstance({ executor, scmPlugin: {}, uiUri });
             }, Error, 'No datastore provided to BuildFactory');
 
             assert.throw(() => {
-                BuildFactory.getInstance({ executor, scm: {}, datastore });
+                BuildFactory.getInstance({ executor, datastore, uiUri });
+            }, Error, 'No scm plugin provided to BuildFactory');
+
+            assert.throw(() => {
+                BuildFactory.getInstance({ executor, scmPlugin: {}, datastore });
             }, Error, 'No uiUri provided to BuildFactory');
         });
     });
