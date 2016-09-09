@@ -82,7 +82,7 @@ describe('Base Factory', () => {
                 id: baseId,
                 data: {
                     foo: 'foo',
-                    bar: 'bar'
+                    bar: false
                 }
             }
         };
@@ -95,7 +95,7 @@ describe('Base Factory', () => {
         it('creates a new "base" in the datastore', () => {
             const expected = {
                 foo: 'foo',
-                bar: 'bar',
+                bar: false,
                 id: baseId
             };
 
@@ -103,7 +103,7 @@ describe('Base Factory', () => {
 
             return factory.create({
                 foo: 'foo',
-                bar: 'bar'
+                bar: false
             }).then(model => {
                 assert.isTrue(datastore.save.calledWith(saveConfig));
                 assert.instanceOf(model, Base);

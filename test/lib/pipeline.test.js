@@ -42,7 +42,6 @@ describe('Pipeline Model', () => {
         hashaMock = {
             sha1: sinon.stub()
         };
-
         jobFactoryMock = {
             create: sinon.stub(),
             list: sinon.stub()
