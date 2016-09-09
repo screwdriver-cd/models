@@ -27,7 +27,25 @@ describe('Job Model', () => {
             update: sinon.stub()
         };
         pipelineFactoryMock = {
-            get: sinon.stub().resolves({})
+            get: sinon.stub().resolves({
+                secrets: Promise.resolve([
+                    {
+                        name: 'NORMAL',
+                        value: '1',
+                        allowInPR: true
+                    },
+                    {
+                        name: 'NOPR',
+                        value: '2',
+                        allowInPR: false
+                    },
+                    {
+                        name: 'NOTINJOB',
+                        value: '3',
+                        allowInPR: true
+                    }
+                ])
+            })
         };
 
         mockery.registerMock('./pipelineFactory', {
@@ -44,6 +62,14 @@ describe('Job Model', () => {
             id: '1234',
             name: 'main',
             pipelineId: 'abcd',
+            permutations: [
+                {
+                    secrets: [
+                        'NORMAL',
+                        'NOPR'
+                    ]
+                }
+            ],
             state: 'ENABLED'
         };
 
@@ -80,6 +106,47 @@ describe('Job Model', () => {
         // ...but the factory was not recreated, since the promise is stored
         // as the model's pipeline property, now
         assert.calledOnce(pipelineFactoryMock.get);
+    });
+
+    it('can get secrets', () => (
+        job.secrets.then((secrets) => {
+            assert.isArray(secrets);
+            assert.equal(secrets.length, 2);
+        })
+    ));
+
+    it('throws error if pipeline missing', () => {
+        pipelineFactoryMock.get.resolves(null);
+
+        return job.secrets.then(() => {
+            assert.fail('nope');
+        }).catch(err => {
+            assert.equal('Pipeline does not exist', err.message);
+        });
+    });
+
+    it('can get PR secrets', () => {
+        const prConfig = {
+            datastore,
+            id: '1234',
+            name: 'PR-1',
+            pipelineId: 'abcd',
+            state: 'ENABLED',
+            permutations: [
+                {
+                    secrets: [
+                        'NORMAL',
+                        'NOPR'
+                    ]
+                }
+            ]
+        };
+        const prJob = new JobModel(prConfig);
+
+        return prJob.secrets.then((secrets) => {
+            assert.isArray(secrets);
+            assert.equal(secrets.length, 1);
+        });
     });
 
     it('isPR returns false if job is not a PR', () => {

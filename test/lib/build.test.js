@@ -340,6 +340,40 @@ describe('Build Model', () => {
         });
     });
 
+    describe('secrets', () => {
+        beforeEach(() => {
+            jobFactoryMock.get.resolves({
+                id: jobId,
+                name: 'main',
+                secrets: Promise.resolve([
+                    {
+                        name: 'NORMAL',
+                        value: 'value',
+                        allowInPR: true
+                    }
+                ]),
+                isPR: () => false
+            });
+        });
+
+        it('returns the list of secrets', () =>
+            build.secrets.then((secrets) => {
+                assert.isArray(secrets);
+                assert.equal(secrets.length, 1);
+            })
+        );
+
+        it('throws error if job missing', () => {
+            jobFactoryMock.get.resolves(null);
+
+            return build.secrets.then(() => {
+                assert.fail('nope');
+            }).catch(err => {
+                assert.equal('Job does not exist', err.message);
+            });
+        });
+    });
+
     describe('job', () => {
         it('has a job getter', () => {
             jobFactoryMock.get.resolves(null);
