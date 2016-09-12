@@ -78,6 +78,7 @@
         ]
     },
     "workflow": [
+        "main",
         "publish"
     ]
 }

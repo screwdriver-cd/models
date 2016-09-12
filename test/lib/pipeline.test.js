@@ -37,7 +37,8 @@ describe('Pipeline Model', () => {
     beforeEach(() => {
         datastore = {
             get: sinon.stub(),
-            save: sinon.stub()
+            save: sinon.stub(),
+            update: sinon.stub()
         };
         hashaMock = {
             sha1: sinon.stub()
@@ -111,6 +112,7 @@ describe('Pipeline Model', () => {
         let mainMock;
 
         beforeEach(() => {
+            datastore.update.yieldsAsync(null, null);
             scmMock.getFile.resolves('superyamlcontent');
             parserMock.withArgs('superyamlcontent').yieldsAsync(null, PARSED_YAML);
             userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
@@ -156,6 +158,17 @@ describe('Pipeline Model', () => {
                     image: 'node:6'
                 }]
             };
+        });
+
+        it('store workflow to pipeline', () => {
+            jobs = [];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+
+            return pipeline.sync().then(() => {
+                assert.deepEqual(pipeline.workflow, ['main', 'publish']);
+            });
         });
 
         it('creates new jobs', () => {
