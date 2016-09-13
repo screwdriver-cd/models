@@ -60,12 +60,14 @@ describe('Pipeline Model', () => {
 
         // jobModelFactory = sinon.stub().returns(jobModelMock);
         mockery.registerMock('./jobFactory', {
-            getInstance: sinon.stub().returns(jobFactoryMock) });
+            getInstance: sinon.stub().returns(jobFactoryMock)
+        });
         mockery.registerMock('./userFactory', {
             getInstance: sinon.stub().returns(userFactoryMock)
         });
         mockery.registerMock('./secretFactory', {
-            getInstance: sinon.stub().returns(secretFactoryMock) });
+            getInstance: sinon.stub().returns(secretFactoryMock)
+        });
 
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('screwdriver-config-parser', parserMock);
@@ -340,6 +342,46 @@ describe('Pipeline Model', () => {
             // ...but the factory was not recreated, since the promise is stored
             // as the model's pipeline property, now
             assert.calledOnce(secretFactoryMock.list);
+        });
+    });
+
+    describe('get workflowJobs', () => {
+        it('get the jobs in the workflow', () => {
+            const listConfig = {
+                params: {
+                    pipelineId: pipeline.id
+                },
+                paginate: {
+                    count: 25, // This limit is set by the matrix restriction
+                    page: 1
+                }
+            };
+            const job1 = {
+                id: 'ae4b71b93b39fb564b5b5c50d71f1a988f400aa3',
+                name: 'publish'
+            };
+            const job2 = {
+                id: '12855123cc7f1b808aac07feff24d7d5362cc215',
+                name: 'blah'    // This job is not in workflow
+            };
+            const job3 = {
+                id: '2s780cf3059eadfed0c60c0dd0194146105ae46c',
+                name: 'main'
+            };
+            const jobList = [job1, job2, job3];
+            const expected = [job3, job1];
+
+            jobFactoryMock.list.resolves(jobList);
+            pipeline.workflow = ['main', 'publish'];
+
+            const wfJobs = pipeline.workflowJobs;
+
+            return wfJobs.then((results) => {
+                assert.calledWith(jobFactoryMock.list, listConfig);
+                assert.deepEqual(results, expected);
+
+                return pipeline.workflowJobs;
+            }).then(() => assert.calledOnce(jobFactoryMock.list));
         });
     });
 
