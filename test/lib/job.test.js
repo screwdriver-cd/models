@@ -9,6 +9,7 @@ require('sinon-as-promised');
 
 describe('Job Model', () => {
     let pipelineFactoryMock;
+    let buildFactoryMock;
     let JobModel;
     let datastore;
     let job;
@@ -48,8 +49,16 @@ describe('Job Model', () => {
             })
         };
 
+        buildFactoryMock = {
+            list: sinon.stub().resolves(null)
+        };
+
         mockery.registerMock('./pipelineFactory', {
             getInstance: sinon.stub().returns(pipelineFactoryMock)
+        });
+
+        mockery.registerMock('./buildFactory', {
+            getInstance: sinon.stub().returns(buildFactoryMock)
         });
 
         // eslint-disable-next-line global-require
@@ -149,20 +158,63 @@ describe('Job Model', () => {
         });
     });
 
-    it('isPR returns false if job is not a PR', () => {
-        assert.isFalse(job.isPR());
+    describe('isPR', () => {
+        it('returns false if job is not a PR', () => {
+            assert.isFalse(job.isPR());
+        });
+
+        it('returns true if job is a PR', () => {
+            const prConfig = {
+                datastore,
+                id: '1234',
+                name: 'PR-1',
+                pipelineId: 'abcd',
+                state: 'ENABLED'
+            };
+            const prJob = new JobModel(prConfig);
+
+            assert.isTrue(prJob.isPR());
+        });
     });
 
-    it('isPR returns true if job is a PR', () => {
-        const prConfig = {
-            datastore,
-            id: '1234',
-            name: 'PR-1',
-            pipelineId: 'abcd',
-            state: 'ENABLED'
-        };
-        const prJob = new JobModel(prConfig);
+    describe('getBuilds', () => {
+        it('use the default config when not passed in', () => {
+            const expected = {
+                params: {
+                    jobId: '1234'
+                },
+                sort: 'descending',
+                paginate: {
+                    page: 1,
+                    count: 50
+                }
+            };
 
-        assert.isTrue(prJob.isPR());
+            return job.getBuilds().then(() => {
+                assert.calledWith(buildFactoryMock.list, expected);
+            });
+        });
+
+        it('merge the passed in config with the default config', () => {
+            const expected = {
+                params: {
+                    jobId: '1234'
+                },
+                sort: 'ascending',
+                paginate: {
+                    page: 1,
+                    count: 100
+                }
+            };
+
+            return job.getBuilds({
+                sort: 'Ascending',
+                paginate: {
+                    count: 100
+                }
+            }).then(() => {
+                assert.calledWith(buildFactoryMock.list, expected);
+            });
+        });
     });
 });

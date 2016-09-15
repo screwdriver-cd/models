@@ -237,6 +237,20 @@ describe('Base Factory', () => {
                 });
         });
 
+        it('calls datastore scan with sorting option returns correct values', () => {
+            datastore.scan.yieldsAsync(null, returnValue);
+
+            return factory.list({ paginate, sort: 'ascending' })
+                .then(() => {
+                    assert.calledWith(datastore.scan, {
+                        table: 'base',
+                        params: {},
+                        paginate,
+                        sort: 'ascending'
+                    });
+                });
+        });
+
         it('handles when the scan does not return an array', () => {
             datastore.scan.yieldsAsync(null, null);
 
