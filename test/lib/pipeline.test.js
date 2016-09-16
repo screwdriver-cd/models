@@ -2,6 +2,7 @@
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
+const hoek = require('hoek');
 const schema = require('screwdriver-data-schema');
 
 require('sinon-as-promised');
@@ -24,8 +25,28 @@ describe('Pipeline Model', () => {
     const scmUrl = 'git@github.com:screwdriver-cd/data-model.git#master';
     const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
     const admins = { batman: true };
+    const paginate = {
+        page: 1,
+        count: 100
+    };
     let jobs;
     let pipelineConfig;
+
+    const decorateJobMock = (job) => {
+        const decorated = hoek.clone(job);
+
+        decorated.isPR = sinon.stub().returns(false);
+
+        return decorated;
+    };
+
+    const getJobMocks = (j) => {
+        if (Array.isArray(j)) {
+            return jobs.map(decorateJobMock);
+        }
+
+        return decorateJobMock(j);
+    };
 
     before(() => {
         mockery.enable({
@@ -297,10 +318,7 @@ describe('Pipeline Model', () => {
                 params: {
                     pipelineId: pipeline.id
                 },
-                paginate: {
-                    count: 25, // This limit is set by the matrix restriction
-                    page: 1
-                }
+                paginate
             };
 
             jobFactoryMock.list.resolves(null);
@@ -323,10 +341,7 @@ describe('Pipeline Model', () => {
                 params: {
                     pipelineId: pipeline.id
                 },
-                paginate: {
-                    count: 25, // This limit is set by the matrix restriction
-                    page: 1
-                }
+                paginate
             };
 
             secretFactoryMock.list.resolves(null);
@@ -340,6 +355,98 @@ describe('Pipeline Model', () => {
             // ...but the factory was not recreated, since the promise is stored
             // as the model's pipeline property, now
             assert.calledOnce(secretFactoryMock.list);
+        });
+    });
+
+    describe('get active jobs', () => {
+        const publishJob = getJobMocks({
+            id: 'ae4b71b93b39fb564b5b5c50d71f1a988f400aa3',
+            name: 'publish'
+        });
+        const blahJob = getJobMocks({
+            id: '12855123cc7f1b808aac07feff24d7d5362cc215',
+            name: 'blah'    // This job is not in workflow
+        });
+        const mainJob = getJobMocks({
+            id: '2s780cf3059eadfed0c60c0dd0194146105ae46c',
+            name: 'main'
+        });
+
+        it('Get jobs in workflow in order', () => {
+            const expected = {
+                params: {
+                    pipelineId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    archived: false
+                },
+                paginate
+            };
+
+            const jobList = [publishJob, blahJob, mainJob];
+            const expectedJobs = [mainJob, publishJob];
+
+            pipeline.workflow = ['main', 'publish'];
+            jobFactoryMock.list.resolves(jobList);
+
+            return pipeline.getJobs().then((result) => {
+                assert.calledWith(jobFactoryMock.list, expected);
+                assert.deepEqual(result, expectedJobs);
+            });
+        });
+
+        it('Get PR jobs and sort them by name', () => {
+            const expected = {
+                params: {
+                    pipelineId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    archived: false
+                },
+                paginate
+            };
+            const pr10 = getJobMocks({
+                id: '5eee38381388b6f30efdd5c5c6f067dbf32c0bb3',
+                name: 'PR-10'
+            });
+            const pr3 = getJobMocks({
+                id: 'fbbef3051eae334be97dea11d895cbbb6735987f',
+                name: 'PR-3'
+            });
+
+            pr10.isPR.returns(true);
+            pr3.isPR.returns(true);
+
+            const jobList = [publishJob, blahJob, mainJob, pr10, pr3];
+            const expectedJobs = [mainJob, pr3, pr10];
+
+            pipeline.workflow = ['main'];
+            jobFactoryMock.list.resolves(jobList);
+
+            return pipeline.getJobs().then((result) => {
+                assert.calledWith(jobFactoryMock.list, expected);
+                assert.deepEqual(result, expectedJobs);
+            });
+        });
+
+        it('Get archived jobs', () => {
+            const config = {
+                params: {
+                    archived: true
+                }
+            };
+            const expected = {
+                params: {
+                    pipelineId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    archived: true
+                },
+                paginate
+            };
+
+            const jobList = [blahJob, publishJob];
+
+            jobFactoryMock.list.resolves(jobList);
+
+            return pipeline.getJobs(config).then((result) => {
+                assert.calledWith(jobFactoryMock.list, expected);
+                assert.deepEqual(result, [blahJob, publishJob]);
+            });
         });
     });
 
