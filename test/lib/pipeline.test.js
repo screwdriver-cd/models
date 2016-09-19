@@ -27,7 +27,7 @@ describe('Pipeline Model', () => {
     const admins = { batman: true };
     const paginate = {
         page: 1,
-        count: 100
+        count: 50
     };
     let jobs;
     let pipelineConfig;
@@ -36,6 +36,7 @@ describe('Pipeline Model', () => {
         const decorated = hoek.clone(job);
 
         decorated.isPR = sinon.stub().returns(false);
+        decorated.prNum = null;
 
         return decorated;
     };
@@ -412,6 +413,8 @@ describe('Pipeline Model', () => {
 
             pr10.isPR.returns(true);
             pr3.isPR.returns(true);
+            pr10.prNum = 10;
+            pr3.prNum = 3;
 
             const jobList = [publishJob, blahJob, mainJob, pr10, pr3];
             const expectedJobs = [mainJob, pr3, pr10];
