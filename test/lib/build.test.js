@@ -131,6 +131,15 @@ describe('Build Model', () => {
         let pipeline;
 
         beforeEach(() => {
+            jobFactoryMock.get.resolves({
+                id: jobId,
+                name: 'main',
+                pipeline: Promise.resolve({
+                    id: pipelineId,
+                    scmUrl,
+                    admin: Promise.resolve(adminUser)
+                })
+            });
             pipeline = {
                 scmUrl,
                 admin: Promise.resolve(adminUser)
@@ -144,6 +153,7 @@ describe('Build Model', () => {
                         token: 'foo',
                         scmUrl,
                         sha,
+                        jobName: 'main',
                         buildStatus: 'QUEUED',
                         url
                     });
@@ -184,6 +194,7 @@ describe('Build Model', () => {
                         token: 'foo',
                         scmUrl,
                         sha,
+                        jobName: 'main',
                         buildStatus: 'FAILURE',
                         url
                     });
@@ -227,6 +238,7 @@ describe('Build Model', () => {
                         token: 'foo',
                         scmUrl,
                         sha,
+                        jobName: 'main',
                         buildStatus: 'ABORTED',
                         url
                     });
@@ -246,6 +258,7 @@ describe('Build Model', () => {
                         token: 'foo',
                         scmUrl,
                         sha,
+                        jobName: 'main',
                         buildStatus: 'ABORTED',
                         url
                     });
@@ -319,6 +332,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUrl,
                     sha,
+                    jobName: 'main',
                     buildStatus: 'QUEUED',
                     url
                 });
