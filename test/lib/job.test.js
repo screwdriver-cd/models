@@ -177,6 +177,25 @@ describe('Job Model', () => {
         });
     });
 
+    describe('prNum', () => {
+        it('returns null if job is not a PR', () => {
+            assert.equal(job.prNum, null);
+        });
+
+        it('returns PR number if job is a PR', () => {
+            const prConfig = {
+                datastore,
+                id: '1234',
+                name: 'PR-142',
+                pipelineId: 'abcd',
+                state: 'ENABLED'
+            };
+            const prJob = new JobModel(prConfig);
+
+            assert.equal(prJob.prNum, 142);
+        });
+    });
+
     describe('getBuilds', () => {
         it('use the default config when not passed in', () => {
             const expected = {
