@@ -77,7 +77,8 @@ describe('Job Factory', () => {
                 data: {
                     name,
                     pipelineId,
-                    state: 'ENABLED'
+                    state: 'ENABLED',
+                    archived: false
                 }
             }
         };
@@ -91,6 +92,7 @@ describe('Job Factory', () => {
                 name,
                 pipelineId,
                 state: 'ENABLED',
+                archived: false,
                 id: jobId
             };
 

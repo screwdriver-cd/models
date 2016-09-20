@@ -227,6 +227,7 @@ describe('Pipeline Model', () => {
             return pipeline.sync()
                 .then(() => {
                     assert.calledOnce(jobs[0].update);
+                    assert.deepEqual(jobs[0].archived, false);
                     assert.deepEqual(jobs[0].permutations, [{
                         commands: [
                             { command: 'npm install', name: 'init' },
@@ -265,7 +266,7 @@ describe('Pipeline Model', () => {
             return pipeline.sync()
                 .then(() => {
                     assert.calledOnce(jobs[0].update);
-                    assert.equal(jobs[0].state, 'DISABLED');
+                    assert.equal(jobs[0].archived, true);
                 });
         });
 
