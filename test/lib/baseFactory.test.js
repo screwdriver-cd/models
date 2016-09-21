@@ -44,7 +44,7 @@ describe('Base Factory', () => {
             models: {
                 base: {
                     tableName: 'base',
-                    keys: ['foo'],
+                    keys: ['foo.key'],
                     allKeys: ['id', 'foo', 'bar']
                 }
             }
@@ -81,20 +81,29 @@ describe('Base Factory', () => {
             params: {
                 id: baseId,
                 data: {
-                    foo: 'foo',
+                    foo: {
+                        key: 'foo',
+                        notkey: 'bar'
+                    },
                     bar: false
                 }
             }
         };
+        const filteredKey = {
+            'foo.key': 'foo'
+        };
 
         beforeEach(() => {
             factory.createClass = createMock;
-            hashaMock.sha1.returns(baseId);
+            hashaMock.sha1.withArgs(filteredKey).returns(baseId);
         });
 
         it('creates a new "base" in the datastore', () => {
             const expected = {
-                foo: 'foo',
+                foo: {
+                    key: 'foo',
+                    notkey: 'bar'
+                },
                 bar: false,
                 id: baseId
             };
@@ -102,7 +111,10 @@ describe('Base Factory', () => {
             datastore.save.yieldsAsync(null, expected);
 
             return factory.create({
-                foo: 'foo',
+                foo: {
+                    key: 'foo',
+                    notkey: 'bar'
+                },
                 bar: false
             }).then(model => {
                 assert.isTrue(datastore.save.calledWith(saveConfig));
