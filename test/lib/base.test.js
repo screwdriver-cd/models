@@ -27,7 +27,8 @@ describe('Base Model', () => {
         datastore = {
             get: sinon.stub(),
             scan: sinon.stub(),
-            update: sinon.stub()
+            update: sinon.stub(),
+            remove: sinon.stub()
         };
 
         schemaMock = {
@@ -90,7 +91,7 @@ describe('Base Model', () => {
         });
 
         it('promises to call datastore update', () => {
-            datastore.update.yieldsAsync(null, { baseId: '1234' });
+            datastore.update.resolves({ baseId: '1234' });
 
             base.foo = 'banana';
             assert.isTrue(base.isDirty());
@@ -114,7 +115,7 @@ describe('Base Model', () => {
         it('rejects with a failure from the datastore update', () => {
             const errorMessage = 'iLessThanThreeMocha';
 
-            datastore.update.yieldsAsync(new Error(errorMessage));
+            datastore.update.rejects(new Error(errorMessage));
             // update won't call datastore unless values have changed
             base.foo = 'banana';
 
@@ -124,6 +125,37 @@ describe('Base Model', () => {
                 })
                 .catch((err) => {
                     assert.strictEqual(err.message, errorMessage);
+                });
+        });
+    });
+
+    describe('remove', () => {
+        const params = {
+            table: 'base',
+            params: {
+                id: 'as12345'
+            }
+        };
+
+        it('calls datastore remove with id and returns null', () => {
+            datastore.remove.resolves(null);
+
+            return base.remove()
+                .then((data) => {
+                    assert.calledWith(datastore.remove, params);
+                    assert.isNull(data);
+                });
+        });
+
+        it('rejects with a failure from the datastore remove', () => {
+            datastore.remove.rejects(new Error('teehee'));
+
+            return base.remove()
+                .then(() => {
+                    assert.fail('this shall not pass');
+                })
+                .catch((err) => {
+                    assert.strictEqual(err.message, 'teehee');
                 });
         });
     });

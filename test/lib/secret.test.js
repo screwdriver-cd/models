@@ -76,7 +76,7 @@ describe('Secret Model', () => {
         });
 
         it('promises to update a secret and seal the value before datastore saves it', () => {
-            datastore.update.yieldsAsync(null, {});
+            datastore.update.resolves({});
 
             secret.value = 'spiderman';
 
