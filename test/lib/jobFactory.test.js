@@ -96,7 +96,7 @@ describe('Job Factory', () => {
                 id: jobId
             };
 
-            datastore.save.yieldsAsync(null, expected);
+            datastore.save.resolves(expected);
 
             return factory.create({
                 pipelineId,

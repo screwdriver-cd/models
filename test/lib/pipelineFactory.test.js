@@ -110,7 +110,7 @@ describe('Pipeline Factory', () => {
                 scmUrl
             };
 
-            datastore.save.yieldsAsync(null, expected);
+            datastore.save.resolves(expected);
 
             return factory.create({
                 scmUrl,

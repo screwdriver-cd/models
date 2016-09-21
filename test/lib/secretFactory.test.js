@@ -90,7 +90,7 @@ describe('Secret Factory', () => {
 
             ironMock.seal.yieldsAsync(null, sealed);
             hashaMock.sha1.returns(generatedId);
-            datastore.save.yieldsAsync(null, expected);
+            datastore.save.resolves(expected);
 
             return factory.create({
                 pipelineId,
@@ -123,7 +123,7 @@ describe('Secret Factory', () => {
                 params: {
                     id
                 }
-            }).yieldsAsync(null, secretData);
+            }).resolves(secretData);
             hashaMock.sha1.returns(id);
             ironMock.unseal.yieldsAsync(null, unsealed);
         });
@@ -199,7 +199,7 @@ describe('Secret Factory', () => {
         }];
 
         it('calls datastore scan and returns correct values', () => {
-            datastore.scan.yieldsAsync(null, datastoreReturnValue);
+            datastore.scan.resolves(datastoreReturnValue);
             ironMock.unseal.withArgs('sealedsecret1value', password).yieldsAsync(null, 'batman');
             ironMock.unseal.withArgs('sealedsecret2value', password).yieldsAsync(null, 'superman');
 

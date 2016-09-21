@@ -184,7 +184,7 @@ describe('Build Factory', () => {
         it('creates a new build in the datastore, without looking up sha', () => {
             const expected = {};
 
-            datastore.save.yieldsAsync(null, expected);
+            datastore.save.resolves(expected);
 
             return factory.create({ username, jobId, sha }).then(model => {
                 assert.instanceOf(model, Build);
@@ -203,7 +203,7 @@ describe('Build Factory', () => {
             const expected = {};
             const garbage = 'garbageData';
 
-            datastore.save.yieldsAsync(null, expected);
+            datastore.save.resolves(expected);
 
             return factory.create({ garbage, username, jobId, sha }).then(() => {
                 assert.calledWith(datastore.save, saveConfig);
@@ -214,7 +214,7 @@ describe('Build Factory', () => {
             const expected = {};
             const user = { unsealToken: sinon.stub().resolves('foo') };
 
-            datastore.save.yieldsAsync(null, expected);
+            datastore.save.resolves(expected);
 
             const jobMock = {
                 permutations,
@@ -292,7 +292,7 @@ describe('Build Factory', () => {
         }];
 
         beforeEach(() => {
-            datastore.scan.yieldsAsync(null, buildData);
+            datastore.scan.resolves(buildData);
         });
 
         it('promises to call getBuildsForJobId', () =>
@@ -322,7 +322,7 @@ describe('Build Factory', () => {
         it('rejects when datastore.scan fails', () => {
             const expectedError = new Error('noBuildsNoJobsNoService');
 
-            datastore.scan.yieldsAsync(expectedError);
+            datastore.scan.rejects(expectedError);
 
             return factory.getBuildsForJobId(config)
                 .then(() => {
