@@ -213,7 +213,7 @@ describe('Build Model', () => {
 
     describe('stop', () => {
         beforeEach(() => {
-            executorMock.stop.yieldsAsync(null);
+            executorMock.stop.resolves(null);
             datastore.update.yieldsAsync(null, {});
 
             jobFactoryMock.get.resolves({
@@ -279,7 +279,7 @@ describe('Build Model', () => {
         it('rejects on executor failure', () => {
             const expectedError = new Error('cantStopTheRock');
 
-            executorMock.stop.yieldsAsync(expectedError);
+            executorMock.stop.rejects(expectedError);
 
             return build.stop()
                 .then(() => {
@@ -298,7 +298,7 @@ describe('Build Model', () => {
             sandbox = sinon.sandbox.create();
             sandbox.useFakeTimers(now);
 
-            executorMock.start.yieldsAsync(null);
+            executorMock.start.resolves(null);
 
             jobFactoryMock.get.resolves({
                 id: jobId,
@@ -342,7 +342,7 @@ describe('Build Model', () => {
         it('rejects when the executor fails', () => {
             const expectedError = new Error('brokenGun');
 
-            executorMock.start.yieldsAsync(expectedError);
+            executorMock.start.rejects(expectedError);
 
             return build.start()
             .then(() => {
