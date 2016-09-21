@@ -120,8 +120,7 @@ describe('Build Factory', () => {
         const steps = [
             { name: 'sd-setup' },
             { name: 'init' },
-            { name: 'test' },
-            { name: 'sd-teardown' }
+            { name: 'test' }
         ];
         const permutations = [{
             commands: [
