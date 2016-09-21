@@ -76,7 +76,8 @@ describe('Pipeline Model', () => {
             list: sinon.stub()
         };
         scmMock = {
-            getFile: sinon.stub()
+            getFile: sinon.stub(),
+            getRepoId: sinon.stub()
         };
         parserMock = sinon.stub();
 
@@ -101,7 +102,6 @@ describe('Pipeline Model', () => {
             datastore,
             id: testId,
             scmUrl,
-            configUrl: scmUrl,
             createTime: dateNow,
             admins,
             scmPlugin: scmMock
@@ -129,6 +129,38 @@ describe('Pipeline Model', () => {
         });
     });
 
+    describe('refreshScmRepo', () => {
+        beforeEach(() => {
+            scmMock.getRepoId.resolves({ name: 'foo' });
+            userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
+        });
+
+        it('stores scmRepo to pipeline', () => {
+            const newScmUrl = 'git@github.com:screwdriver-cd/data-model.git#foobar';
+
+            pipeline.scmUrl = newScmUrl;
+
+            return pipeline.refreshScmRepo().then(() => {
+                assert.calledWith(scmMock.getRepoId, {
+                    scmUrl: newScmUrl,
+                    token: 'foo'
+                });
+                assert.deepEqual(pipeline.scmRepo, { name: 'foo' });
+            });
+        });
+
+        it('skips storing scmRepo to pipeline if no changes', () => {
+            pipeline.scmRepo = { name: 'bar' };
+
+            return pipeline.refreshScmRepo().then(() => {
+                assert.notCalled(scmMock.getRepoId);
+                assert.deepEqual(pipeline.scmRepo, { name: 'bar' });
+            });
+        });
+    });
+
     describe('sync', () => {
         let publishMock;
         let mainMock;
@@ -136,6 +168,7 @@ describe('Pipeline Model', () => {
         beforeEach(() => {
             datastore.update.yieldsAsync(null, null);
             scmMock.getFile.resolves('superyamlcontent');
+            scmMock.getRepoId.resolves({ name: 'foo' });
             parserMock.withArgs('superyamlcontent').yieldsAsync(null, PARSED_YAML);
             userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
@@ -190,6 +223,36 @@ describe('Pipeline Model', () => {
 
             return pipeline.sync().then(() => {
                 assert.deepEqual(pipeline.workflow, ['main', 'publish']);
+            });
+        });
+
+        it('store scmRepo to pipeline', () => {
+            const newScmUrl = 'git@github.com:screwdriver-cd/data-model.git#foobar';
+
+            jobs = [];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+            pipeline.scmUrl = newScmUrl;
+
+            return pipeline.sync().then(() => {
+                assert.calledWith(scmMock.getRepoId, {
+                    scmUrl: newScmUrl,
+                    token: 'foo'
+                });
+                assert.deepEqual(pipeline.scmRepo, { name: 'foo' });
+            });
+        });
+
+        it('skips storing scmRepo to pipeline if no changes', () => {
+            jobs = [];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+            pipeline.scmRepo = { name: 'bar' };
+
+            return pipeline.sync().then(() => {
+                assert.notCalled(scmMock.getRepoId);
             });
         });
 

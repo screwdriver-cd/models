@@ -21,7 +21,7 @@ const factory = Model.PipelineFactory.getInstance({
 });
 const config = {
     params: {
-        configUrl: 'banana'
+        scmUrl: 'banana'
     },
     paginate {
         page: 2,
@@ -53,7 +53,6 @@ factory.create(config).then(model => {
 | config        | Object | Yes | Configuration Object |
 | config.admins | Object | Yes | Admins for this pipeline, e.g { batman: true } |
 | config.scmUrl | String | Yes | Source Code URL for the application |
-| config.configUrl | String | No | Source Code URL for Screwdriver configuration |
 
 #### Get
 Get a pipeline based on id. Can pass the generatedId for the pipeline, or the unique keys for the model, and the id will be determined automatically.
@@ -91,7 +90,7 @@ const factory = Model.PipelineFactory.getInstance({
 });
 const scmUrl = 'git@git.corp.yahoo.com:foo/BAR.git';
 factory.get({ scmUrl }).then(model => {
-    model.configUrl = 'git@git.corp.yahoo.com:foo/bar.git#master';
+    model.scmUrl = 'git@git.corp.yahoo.com:foo/bar.git#master';
     return model.update();
 })
 ```

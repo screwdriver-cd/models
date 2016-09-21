@@ -50,7 +50,6 @@ describe('Pipeline Factory', () => {
             datastore,
             id: testId,
             scmUrl,
-            configUrl: scmUrl,
             createTime: nowTime,
             admins
         };
@@ -85,8 +84,7 @@ describe('Pipeline Factory', () => {
                 data: {
                     admins,
                     createTime: nowTime,
-                    scmUrl,
-                    configUrl: scmUrl
+                    scmUrl
                 }
             }
         };
@@ -109,8 +107,7 @@ describe('Pipeline Factory', () => {
                 id: testId,
                 admins,
                 createTime: nowTime,
-                scmUrl,
-                configUrl: scmUrl
+                scmUrl
             };
 
             datastore.save.yieldsAsync(null, expected);
