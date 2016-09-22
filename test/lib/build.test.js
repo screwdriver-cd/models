@@ -173,6 +173,7 @@ describe('Build Model', () => {
 
     describe('update', () => {
         beforeEach(() => {
+            executorMock.stop.resolves(null);
             jobFactoryMock.get.resolves({
                 id: jobId,
                 name: 'main',
@@ -184,12 +185,15 @@ describe('Build Model', () => {
             });
         });
 
-        it('promises to update a build and update status to failure', () => {
+        it('promises to update a build, stop the executor, and update status to failure', () => {
             datastore.update.yieldsAsync(null, {});
             build.status = 'FAILURE';
 
             return build.update()
                 .then(() => {
+                    assert.calledWith(executorMock.stop, {
+                        buildId
+                    });
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
                         scmUrl,
@@ -201,12 +205,31 @@ describe('Build Model', () => {
                 });
         });
 
-        it('promises to update a build and not update status when status is not dirty', () => {
+        it('promises to update a build, but not status or executor when untouched status', () => {
             datastore.update.yieldsAsync(null, {});
 
             return build.update()
                 .then(() => {
                     assert.notCalled(scmMock.updateCommitStatus);
+                    assert.notCalled(executorMock.stop);
+                });
+        });
+
+        it('promises to update a build, but not executor when status is running', () => {
+            datastore.update.yieldsAsync(null, {});
+            build.status = 'RUNNING';
+
+            return build.update()
+                .then(() => {
+                    assert.calledWith(scmMock.updateCommitStatus, {
+                        token: 'foo',
+                        scmUrl,
+                        sha,
+                        jobName: 'main',
+                        buildStatus: 'RUNNING',
+                        url
+                    });
+                    assert.notCalled(executorMock.stop);
                 });
         });
     });
@@ -214,67 +237,16 @@ describe('Build Model', () => {
     describe('stop', () => {
         beforeEach(() => {
             executorMock.stop.resolves(null);
-            datastore.update.yieldsAsync(null, {});
-
-            jobFactoryMock.get.resolves({
-                id: jobId,
-                name: 'main',
-                pipeline: Promise.resolve({
-                    id: pipelineId,
-                    scmUrl,
-                    admin: Promise.resolve(adminUser)
-                })
-            });
         });
 
-        it('promises to stop a build when it is queued', () =>
+        it('promises to stop a build', () =>
             build.stop()
                 .then(() => {
                     assert.calledWith(executorMock.stop, {
                         buildId
                     });
-
-                    assert.calledWith(scmMock.updateCommitStatus, {
-                        token: 'foo',
-                        scmUrl,
-                        sha,
-                        jobName: 'main',
-                        buildStatus: 'ABORTED',
-                        url
-                    });
                 })
         );
-
-        it('promises to stop a build when it is running', () => {
-            build.status = 'RUNNING';
-
-            return build.stop()
-                .then(() => {
-                    assert.calledWith(executorMock.stop, {
-                        buildId
-                    });
-
-                    assert.calledWith(scmMock.updateCommitStatus, {
-                        token: 'foo',
-                        scmUrl,
-                        sha,
-                        jobName: 'main',
-                        buildStatus: 'ABORTED',
-                        url
-                    });
-                });
-        });
-
-        it('does nothing if build is not queued or running', () => {
-            build.status = 'SUCCESS';
-
-            return build.stop()
-                .then(() => {
-                    assert.notCalled(executorMock.stop);
-                    assert.notCalled(datastore.update);
-                    assert.notCalled(scmMock.updateCommitStatus);
-                });
-        });
 
         it('rejects on executor failure', () => {
             const expectedError = new Error('cantStopTheRock');
@@ -288,6 +260,17 @@ describe('Build Model', () => {
                 .catch((err) => {
                     assert.deepEqual(err, expectedError);
                 });
+        });
+    });
+
+    describe('isDone', () => {
+        it('returns true if the build is done', () => {
+            build.status = 'ABORTED';
+            assert.isTrue(build.isDone());
+        });
+
+        it('returns false if the build is not done', () => {
+            assert.isFalse(build.isDone());
         });
     });
 
