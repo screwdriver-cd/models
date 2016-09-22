@@ -108,7 +108,7 @@ describe('Base Factory', () => {
                 id: baseId
             };
 
-            datastore.save.yieldsAsync(null, expected);
+            datastore.save.resolves(expected);
 
             return factory.create({
                 foo: {
@@ -127,7 +127,7 @@ describe('Base Factory', () => {
         it('rejects when a datastore save fails', () => {
             const errorMessage = 'datastoreSaveFailureMessage';
 
-            datastore.save.yieldsAsync(new Error(errorMessage));
+            datastore.save.rejects(new Error(errorMessage));
 
             return factory.create({ foo: 'foo', bar: 'bar' })
                 .then(() => {
@@ -153,7 +153,7 @@ describe('Base Factory', () => {
                 params: {
                     id: baseId
                 }
-            }).yieldsAsync(null, baseData);
+            }).resolves(baseData);
             hashaMock.sha1.returns(baseId);
         });
 
@@ -193,7 +193,7 @@ describe('Base Factory', () => {
                 params: {
                     id: baseId
                 }
-            }).yieldsAsync(null, null);
+            }).resolves(null);
 
             return factory.get(baseData.id)
                 .then(model => {
@@ -202,7 +202,7 @@ describe('Base Factory', () => {
         });
 
         it('rejects with a failure from the datastore get', () => {
-            datastore.get.yieldsAsync(new Error('teehee'));
+            datastore.get.rejects(new Error('teehee'));
 
             return factory.get('doesntMatter')
                 .then(() => {
@@ -232,12 +232,11 @@ describe('Base Factory', () => {
 
         beforeEach(() => {
             factory.createClass = createMock;
+            datastore.scan.resolves(returnValue);
         });
 
-        it('calls datastore scan and returns correct values', () => {
-            datastore.scan.yieldsAsync(null, returnValue);
-
-            return factory.list({ paginate })
+        it('calls datastore scan and returns correct values', () =>
+            factory.list({ paginate })
                 .then(arr => {
                     assert.isArray(arr);
                     assert.equal(arr.length, 2);
@@ -246,13 +245,11 @@ describe('Base Factory', () => {
                         assert.deepEqual(model.datastore, datastore);
                         assert.deepEqual(model.scmPlugin, scmPlugin);
                     });
-                });
-        });
+                })
+        );
 
-        it('calls datastore scan with sorting option returns correct values', () => {
-            datastore.scan.yieldsAsync(null, returnValue);
-
-            return factory.list({ paginate, sort: 'ascending' })
+        it('calls datastore scan with sorting option returns correct values', () =>
+            factory.list({ paginate, sort: 'ascending' })
                 .then(() => {
                     assert.calledWith(datastore.scan, {
                         table: 'base',
@@ -260,11 +257,11 @@ describe('Base Factory', () => {
                         paginate,
                         sort: 'ascending'
                     });
-                });
-        });
+                })
+        );
 
         it('handles when the scan does not return an array', () => {
-            datastore.scan.yieldsAsync(null, null);
+            datastore.scan.resolves(null);
 
             return factory.list({ paginate })
                 .catch(err => {
@@ -276,7 +273,7 @@ describe('Base Factory', () => {
         it('rejects with a failure from the datastore scan', () => {
             const errorMessage = 'genericScanError';
 
-            datastore.scan.yieldsAsync(new Error(errorMessage));
+            datastore.scan.rejects(new Error(errorMessage));
 
             return factory.list({ paginate })
                 .then(() => {

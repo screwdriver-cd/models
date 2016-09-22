@@ -166,7 +166,7 @@ describe('Pipeline Model', () => {
         let mainMock;
 
         beforeEach(() => {
-            datastore.update.yieldsAsync(null, null);
+            datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
             scmMock.getRepoId.resolves({ name: 'foo' });
             parserMock.withArgs('superyamlcontent').yieldsAsync(null, PARSED_YAML);

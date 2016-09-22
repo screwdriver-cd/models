@@ -183,10 +183,10 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser)
                 })
             });
+            datastore.update.resolves({});
         });
 
         it('promises to update a build, stop the executor, and update status to failure', () => {
-            datastore.update.yieldsAsync(null, {});
             build.status = 'FAILURE';
 
             return build.update()
@@ -205,18 +205,15 @@ describe('Build Model', () => {
                 });
         });
 
-        it('promises to update a build, but not status or executor when untouched status', () => {
-            datastore.update.yieldsAsync(null, {});
-
-            return build.update()
+        it('promises to update a build, but not status or executor when untouched status', () => (
+            build.update()
                 .then(() => {
                     assert.notCalled(scmMock.updateCommitStatus);
                     assert.notCalled(executorMock.stop);
-                });
-        });
+                })
+        ));
 
         it('promises to update a build, but not executor when status is running', () => {
-            datastore.update.yieldsAsync(null, {});
             build.status = 'RUNNING';
 
             return build.update()

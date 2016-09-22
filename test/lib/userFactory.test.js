@@ -80,7 +80,7 @@ describe('User Factory', () => {
 
             ironMock.seal.yieldsAsync(null, sealedToken);
             hashaMock.sha1.returns(generatedId);
-            datastore.save.yieldsAsync(null, expected);
+            datastore.save.resolves(expected);
 
             return factory.create({
                 username: 'batman',
