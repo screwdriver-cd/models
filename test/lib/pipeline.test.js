@@ -37,17 +37,44 @@ describe('Pipeline Model', () => {
 
         decorated.isPR = sinon.stub().returns(false);
         decorated.prNum = null;
+        decorated.remove = sinon.stub().resolves(null);
 
         return decorated;
     };
 
     const getJobMocks = (j) => {
         if (Array.isArray(j)) {
-            return jobs.map(decorateJobMock);
+            return j.map(decorateJobMock);
         }
 
         return decorateJobMock(j);
     };
+
+    const publishJob = getJobMocks({
+        id: 'ae4b71b93b39fb564b5b5c50d71f1a988f400aa3',
+        name: 'publish'
+    });
+    const blahJob = getJobMocks({
+        id: '12855123cc7f1b808aac07feff24d7d5362cc215',
+        name: 'blah'    // This job is not in workflow
+    });
+    const mainJob = getJobMocks({
+        id: '2s780cf3059eadfed0c60c0dd0194146105ae46c',
+        name: 'main'
+    });
+    const pr10 = getJobMocks({
+        id: '5eee38381388b6f30efdd5c5c6f067dbf32c0bb3',
+        name: 'PR-10'
+    });
+    const pr3 = getJobMocks({
+        id: 'fbbef3051eae334be97dea11d895cbbb6735987f',
+        name: 'PR-3'
+    });
+
+    pr10.isPR.returns(true);
+    pr3.isPR.returns(true);
+    pr10.prNum = 10;
+    pr3.prNum = 3;
 
     before(() => {
         mockery.enable({
@@ -60,7 +87,8 @@ describe('Pipeline Model', () => {
         datastore = {
             get: sinon.stub(),
             save: sinon.stub(),
-            update: sinon.stub()
+            update: sinon.stub(),
+            remove: sinon.stub().resolves(null)
         };
         hashaMock = {
             sha1: sinon.stub()
@@ -423,20 +451,7 @@ describe('Pipeline Model', () => {
         });
     });
 
-    describe('get active jobs', () => {
-        const publishJob = getJobMocks({
-            id: 'ae4b71b93b39fb564b5b5c50d71f1a988f400aa3',
-            name: 'publish'
-        });
-        const blahJob = getJobMocks({
-            id: '12855123cc7f1b808aac07feff24d7d5362cc215',
-            name: 'blah'    // This job is not in workflow
-        });
-        const mainJob = getJobMocks({
-            id: '2s780cf3059eadfed0c60c0dd0194146105ae46c',
-            name: 'main'
-        });
-
+    describe('get jobs', () => {
         it('Get jobs in workflow in order', () => {
             const expected = {
                 params: {
@@ -466,20 +481,6 @@ describe('Pipeline Model', () => {
                 },
                 paginate
             };
-            const pr10 = getJobMocks({
-                id: '5eee38381388b6f30efdd5c5c6f067dbf32c0bb3',
-                name: 'PR-10'
-            });
-            const pr3 = getJobMocks({
-                id: 'fbbef3051eae334be97dea11d895cbbb6735987f',
-                name: 'PR-3'
-            });
-
-            pr10.isPR.returns(true);
-            pr3.isPR.returns(true);
-            pr10.prNum = 10;
-            pr3.prNum = 3;
-
             const jobList = [publishJob, blahJob, mainJob, pr10, pr3];
             const expectedJobs = [mainJob, pr3, pr10];
 
@@ -560,6 +561,80 @@ describe('Pipeline Model', () => {
                     assert.instanceOf(err, Error);
                     assert.equal(err.message, 'cannotparseit');
                 });
+        });
+    });
+
+    describe('remove', () => {
+        let archived;
+
+        beforeEach(() => {
+            archived = {
+                params: {
+                    pipelineId: testId,
+                    archived: true
+                },
+                paginate
+            };
+        });
+
+        afterEach(() => {
+            jobFactoryMock.list.reset();
+            publishJob.remove.reset();
+            mainJob.remove.reset();
+            blahJob.remove.reset();
+        });
+
+        it('remove jobs recursively', () => {
+            const nonArchived = hoek.clone(archived);
+            let i;
+
+            nonArchived.params.archived = false;
+            pipeline.workflow = ['main', 'publish'];
+
+            for (i = 0; i < 4; i++) {
+                jobFactoryMock.list.withArgs(nonArchived).onCall(i).resolves([publishJob, mainJob]);
+            }
+            jobFactoryMock.list.withArgs(nonArchived).onCall(i).resolves([]);
+
+            for (i = 0; i < 2; i++) {
+                jobFactoryMock.list.withArgs(archived).onCall(i).resolves([blahJob]);
+            }
+            jobFactoryMock.list.withArgs(archived).onCall(i).resolves([]);
+
+            return pipeline.remove().then(() => {
+                assert.callCount(jobFactoryMock.list, 8);
+
+                // Delete all the jobs
+                assert.callCount(publishJob.remove, 4);
+                assert.callCount(mainJob.remove, 4);
+                assert.callCount(blahJob.remove, 2);
+
+                // Delete the pipeline
+                assert.calledOnce(datastore.remove);
+            });
+        });
+
+        it('fail if getJobs returns error', () => {
+            jobFactoryMock.list.rejects('error');
+
+            return pipeline.remove().then(() => {
+                assert.fail('should not get here');
+            }).catch(err => {
+                assert.isOk(err);
+                assert.equal(err.message, 'error');
+            });
+        });
+
+        it('fail if job.remove returns error', () => {
+            publishJob.remove.rejects('error removing job');
+            jobFactoryMock.list.resolves([publishJob, mainJob]);
+
+            return pipeline.remove().then(() => {
+                assert.fail('should not get here');
+            }).catch(err => {
+                assert.isOk(err);
+                assert.equal(err.message, 'error removing job');
+            });
         });
     });
 });
