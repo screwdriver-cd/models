@@ -163,6 +163,22 @@ describe('Secret Factory', () => {
                     });
                 })
         );
+
+        it('skip unseal when secret not found', () => {
+            datastore.get.withArgs({
+                table: 'secrets',
+                params: {
+                    id
+                }
+            }).resolves(null);
+
+            return factory.get({ pipelineId, name })
+                .then(model => {
+                    assert.isTrue(datastore.get.calledOnce);
+                    assert.notCalled(ironMock.unseal);
+                    assert.isNull(model);
+                });
+        });
     });
 
     describe('list', () => {
