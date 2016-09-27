@@ -3,6 +3,7 @@ const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
+const hoek = require('hoek');
 
 sinon.assert.expose(assert, { prefix: '' });
 require('sinon-as-promised');
@@ -16,6 +17,31 @@ describe('Job Model', () => {
     let BaseModel;
     let config;
 
+    const decorateBuildMock = (build) => {
+        const decorated = hoek.clone(build);
+
+        decorated.remove = sinon.stub().returns(null);
+
+        return decorated;
+    };
+
+    const getBuildMocks = (b) => {
+        if (Array.isArray(b)) {
+            return b.map(decorateBuildMock);
+        }
+
+        return decorateBuildMock(b);
+    };
+
+    const build1 = getBuildMocks({
+        id: 'c1ee62a4df19a625c3ec90d03200434a98309715',
+        jobId: '1234'
+    });
+    const build2 = getBuildMocks({
+        id: '998f49fbdef86091da4c87b541416e4fff9ecce5',
+        jobId: '1234'
+    });
+
     before(() => {
         mockery.enable({
             useCleanCache: true,
@@ -25,7 +51,8 @@ describe('Job Model', () => {
 
     beforeEach(() => {
         datastore = {
-            update: sinon.stub()
+            update: sinon.stub(),
+            remove: sinon.stub().resolves(null)
         };
         pipelineFactoryMock = {
             get: sinon.stub().resolves({
@@ -233,6 +260,54 @@ describe('Job Model', () => {
                 }
             }).then(() => {
                 assert.calledWith(buildFactoryMock.list, expected);
+            });
+        });
+    });
+
+    describe('remove', () => {
+        afterEach(() => {
+            buildFactoryMock.list.reset();
+            build1.remove.reset();
+            build2.remove.reset();
+        });
+
+        it('remove builds recursively', () => {
+            let i;
+
+            for (i = 0; i < 4; i++) {
+                buildFactoryMock.list.onCall(i).resolves([build1, build2]);
+            }
+
+            buildFactoryMock.list.onCall(i).resolves([]);
+
+            return job.remove().then(() => {
+                assert.callCount(buildFactoryMock.list, 5);
+                assert.callCount(build1.remove, 4);     // remove builds recursively
+                assert.callCount(build2.remove, 4);
+                assert.calledOnce(datastore.remove);    // remove the job
+            });
+        });
+
+        it('fail if getBuilds returns error', () => {
+            buildFactoryMock.list.rejects('error');
+
+            return job.remove().then(() => {
+                assert.fail('should not get here');
+            }).catch(err => {
+                assert.isOk(err);
+                assert.equal(err.message, 'error');
+            });
+        });
+
+        it('fail if build.remove returns error', () => {
+            build1.remove.rejects('error removing build');
+            buildFactoryMock.list.resolves([build1, build2]);
+
+            return job.remove().then(() => {
+                assert.fail('should not get here');
+            }).catch(err => {
+                assert.isOk(err);
+                assert.equal(err.message, 'error removing build');
             });
         });
     });
