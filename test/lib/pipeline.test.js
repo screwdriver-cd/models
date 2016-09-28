@@ -566,6 +566,13 @@ describe('Pipeline Model', () => {
 
     describe('remove', () => {
         let archived;
+        const secret = {
+            name: 'TEST',
+            value: 'testvalue',
+            allowInPR: true,
+            pipelineId: testId,
+            remove: sinon.stub().resolves(null)
+        };
 
         beforeEach(() => {
             archived = {
@@ -575,6 +582,9 @@ describe('Pipeline Model', () => {
                 },
                 paginate
             };
+
+            jobFactoryMock.list.resolves([]);
+            secretFactoryMock.list.resolves([secret]);
         });
 
         afterEach(() => {
@@ -583,6 +593,13 @@ describe('Pipeline Model', () => {
             mainJob.remove.reset();
             blahJob.remove.reset();
         });
+
+        it('remove secrets', () =>
+            pipeline.remove().then(() => {
+                assert.calledOnce(secretFactoryMock.list);
+                assert.calledOnce(secret.remove);
+            })
+        );
 
         it('remove jobs recursively', () => {
             const nonArchived = hoek.clone(archived);
@@ -634,6 +651,17 @@ describe('Pipeline Model', () => {
             }).catch(err => {
                 assert.isOk(err);
                 assert.equal(err.message, 'error removing job');
+            });
+        });
+
+        it('fail if secret.remove returns error', () => {
+            secret.remove.rejects('error removing secret');
+
+            return pipeline.remove().then(() => {
+                assert.fail('should not get here');
+            }).catch(err => {
+                assert.isOk(err);
+                assert.equal(err.message, 'error removing secret');
             });
         });
     });
