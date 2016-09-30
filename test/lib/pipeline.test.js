@@ -8,6 +8,7 @@ const schema = require('screwdriver-data-schema');
 require('sinon-as-promised');
 sinon.assert.expose(assert, { prefix: '' });
 const PARSED_YAML = require('../data/parser');
+const PR_PARSED_YAML = require('../data/prParser');
 
 describe('Pipeline Model', () => {
     let PipelineModel;
@@ -192,12 +193,14 @@ describe('Pipeline Model', () => {
     describe('sync', () => {
         let publishMock;
         let mainMock;
+        let functionalMock;
 
         beforeEach(() => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
             scmMock.getRepoId.resolves({ name: 'foo' });
             parserMock.withArgs('superyamlcontent').yieldsAsync(null, PARSED_YAML);
+            parserMock.withArgs('pryamlcontent').yieldsAsync(null, PR_PARSED_YAML);
             userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
@@ -241,6 +244,16 @@ describe('Pipeline Model', () => {
                     image: 'node:6'
                 }]
             };
+            functionalMock = {
+                pipelineId: testId,
+                name: 'functional',
+                permutations: [{
+                    commands: [
+                        { command: 'npm run functional', name: 'functional' }
+                    ],
+                    image: 'node:4'
+                }]
+            };
         });
 
         it('store workflow to pipeline', () => {
@@ -282,6 +295,29 @@ describe('Pipeline Model', () => {
             return pipeline.sync().then(() => {
                 assert.notCalled(scmMock.getRepoId);
             });
+        });
+
+        it('sync with optional scmUrl param', () => {
+            const prScmUrl = 'git@github.com:screwdriver-cd/data-model.git#myPRbranch';
+
+            scmMock.getFile.resolves('pryamlcontent');
+            jobs = [];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(functionalMock).resolves(functionalMock);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+
+            return pipeline.sync(prScmUrl)
+                .then(p => {
+                    assert.equal(p.id, testId);
+                    assert.calledWith(scmMock.getFile, {
+                        scmUrl: prScmUrl,
+                        path: 'screwdriver.yaml',
+                        token: 'foo'
+                    });
+                    assert.calledWith(parserMock, 'pryamlcontent');
+                    assert.calledWith(jobFactoryMock.create, functionalMock);
+                    assert.calledWith(jobFactoryMock.create, mainMock);
+                });
         });
 
         it('creates new jobs', () => {

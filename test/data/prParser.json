@@ -1,0 +1,72 @@
+{
+    "jobs": {
+        "main": [
+            {
+                "image": "node:4",
+                "commands": [
+                    {
+                        "name": "init",
+                        "command": "npm install"
+                    },
+                    {
+                        "name": "test",
+                        "command": "npm test"
+                    }
+                ],
+                "environment": {
+                    "NODE_ENV": "test",
+                    "NODE_VERSION": "4"
+                }
+            },
+            {
+                "image": "node:5",
+                "commands": [
+                    {
+                        "name": "init",
+                        "command": "npm install"
+                    },
+                    {
+                        "name": "test",
+                        "command": "npm test"
+                    }
+                ],
+                "environment": {
+                    "NODE_ENV": "test",
+                    "NODE_VERSION": "5"
+                }
+            },
+            {
+                "image": "node:6",
+                "commands": [
+                    {
+                        "name": "init",
+                        "command": "npm install"
+                    },
+                    {
+                        "name": "test",
+                        "command": "npm test"
+                    }
+                ],
+                "environment": {
+                    "NODE_ENV": "test",
+                    "NODE_VERSION": "6"
+                }
+            }
+        ],
+        "functional": [
+            {
+                "image": "node:4",
+                "commands": [
+                    {
+                        "name": "functional",
+                        "command": "npm run functional"
+                    }
+                ]
+            }
+        ]
+    },
+    "workflow": [
+        "main",
+        "functional"
+    ]
+}
