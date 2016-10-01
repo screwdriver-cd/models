@@ -12,10 +12,17 @@ describe('Pipeline Factory', () => {
     let PipelineFactory;
     let datastore;
     let hashaMock;
+    let userFactoryMock;
+    let scmPlugin;
     let factory;
     const dateNow = 1111111111;
     const nowTime = (new Date(dateNow)).toISOString();
     const scmUrl = 'git@github.com:screwdriver-cd/data-model.git#master';
+    const scmRepo = {
+        id: 'github.com:123456:master',
+        url: 'https://github.com/screwdriver-cd/data-model/tree/master',
+        name: 'screwdriver-cd/data-model'
+    };
     const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
     const admins = ['me'];
     let pipelineConfig;
@@ -36,18 +43,28 @@ describe('Pipeline Factory', () => {
         hashaMock = {
             sha1: sinon.stub()
         };
+        scmPlugin = {
+            getRepoId: sinon.stub()
+        };
+        userFactoryMock = {
+            get: sinon.stub()
+        };
 
         // Fixing mockery issue with duplicate file names
         // by re-registering data-schema with its own implementation
         mockery.registerMock('screwdriver-data-schema', schema);
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('./pipeline', Pipeline);
+        mockery.registerMock('./userFactory', {
+            getInstance: sinon.stub().returns(userFactoryMock)
+        });
 
         // eslint-disable-next-line global-require
         PipelineFactory = require('../../lib/pipelineFactory');
 
         pipelineConfig = {
             datastore,
+            scmPlugin,
             id: testId,
             scmUrl,
             createTime: nowTime,
@@ -75,6 +92,22 @@ describe('Pipeline Factory', () => {
         });
     });
 
+    describe('getUser', () => {
+        it('should return a user', () => {
+            const name = 'foo';
+            const userObject = {
+                id: name
+            };
+
+            userFactoryMock.get.withArgs({ username: name }).resolves(userObject);
+
+            return factory.getUser(name)
+                .then(user => {
+                    assert.equal(user, userObject);
+                });
+        });
+    });
+
     describe('create', () => {
         let sandbox;
         const saveConfig = {
@@ -84,7 +117,8 @@ describe('Pipeline Factory', () => {
                 data: {
                     admins,
                     createTime: nowTime,
-                    scmUrl
+                    scmUrl,
+                    scmRepo
                 }
             }
         };
@@ -94,6 +128,8 @@ describe('Pipeline Factory', () => {
                 useFakeTimers: false
             });
             sandbox.useFakeTimers(dateNow);
+
+            sandbox.stub(factory, 'get');
 
             hashaMock.sha1.returns(testId);
         });
@@ -107,10 +143,16 @@ describe('Pipeline Factory', () => {
                 id: testId,
                 admins,
                 createTime: nowTime,
-                scmUrl
+                scmUrl,
+                scmRepo
             };
 
             datastore.save.resolves(expected);
+            userFactoryMock.get.withArgs({ username: 'me' }).resolves({
+                unsealToken: sinon.stub().resolves('token')
+            });
+            factory.get.withArgs(scmRepo).resolves(null);
+            scmPlugin.getRepoId.resolves(scmRepo);
 
             return factory.create({
                 scmUrl,
@@ -118,6 +160,31 @@ describe('Pipeline Factory', () => {
             }).then(model => {
                 assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Pipeline);
+            });
+        });
+
+        it('fails to creates a new pipeline if already exists', () => {
+            const expected = {
+                id: testId,
+                admins,
+                createTime: nowTime,
+                scmUrl,
+                scmRepo
+            };
+
+            datastore.save.resolves(expected);
+            userFactoryMock.get.withArgs({ username: 'me' }).resolves({
+                unsealToken: sinon.stub().resolves('token')
+            });
+            factory.get.withArgs(scmRepo).resolves(new Pipeline());
+            scmPlugin.getRepoId.resolves(scmRepo);
+
+            return factory.create({
+                scmUrl,
+                admins
+            }).catch(err => {
+                assert.instanceOf(err, Error);
+                assert(err.getMessage(), 'scmUrl needs to be unique');
             });
         });
     });
