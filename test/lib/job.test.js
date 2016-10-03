@@ -264,6 +264,21 @@ describe('Job Model', () => {
         });
     });
 
+    describe('getRunningBuilds', () => {
+        it('gets all running builds', () => {
+            const expected = {
+                params: {
+                    jobId: '1234',
+                    status: ['RUNNING', 'QUEUED']
+                }
+            };
+
+            return job.getRunningBuilds().then(() => {
+                assert.calledWith(buildFactoryMock.list, expected);
+            });
+        });
+    });
+
     describe('remove', () => {
         afterEach(() => {
             buildFactoryMock.list.reset();
