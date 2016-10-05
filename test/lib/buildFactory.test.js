@@ -272,68 +272,6 @@ describe('Build Factory', () => {
         });
     });
 
-    describe('getBuildsForJobId', () => {
-        const config = {
-            jobId: 'jobId',
-            paginate: {
-                page: 1,
-                count: 25
-            }
-        };
-        const buildData = [{
-            jobId: 'jobId',
-            number: 1
-        }, {
-            jobId: 'jobId',
-            number: 3
-        }, {
-            jobId: 'jobId',
-            number: 2
-        }];
-
-        beforeEach(() => {
-            datastore.scan.resolves(buildData);
-        });
-
-        it('promises to call getBuildsForJobId', () =>
-            factory.getBuildsForJobId(config)
-                .then((builds) => {
-                    assert.isArray(builds);
-                    assert.calledWith(datastore.scan, {
-                        table: 'builds',
-                        params: {
-                            jobId: 'jobId'
-                        },
-                        paginate: {
-                            page: 1,
-                            count: 25
-                        }
-                    });
-
-                    // make result is sorted Build models
-                    builds.forEach((model, iter) => {
-                        assert.instanceOf(model, Build);
-                        // TODO: should these be sorted decending?
-                        assert.equal(model.number, iter + 1);
-                    });
-                })
-        );
-
-        it('rejects when datastore.scan fails', () => {
-            const expectedError = new Error('noBuildsNoJobsNoService');
-
-            datastore.scan.rejects(expectedError);
-
-            return factory.getBuildsForJobId(config)
-                .then(() => {
-                    assert.fail('This should not fail the test');
-                })
-                .catch((err) => {
-                    assert.deepEqual(err, expectedError);
-                });
-        });
-    });
-
     describe('getInstance', () => {
         let config;
 
