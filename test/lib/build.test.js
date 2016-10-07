@@ -172,7 +172,13 @@ describe('Build Model', () => {
     });
 
     describe('update', () => {
+        const step0 = { name: 'task0', startTime: 'now', endTime: 'then', code: 0 };
+        const step1 = { name: 'task1', startTime: 'now' };
+        const step2 = { name: 'task2' };
+
         beforeEach(() => {
+            build.steps = [step0, step1, step2];
+
             executorMock.stop.resolves(null);
             jobFactoryMock.get.resolves({
                 id: jobId,
@@ -194,12 +200,49 @@ describe('Build Model', () => {
                     assert.calledWith(executorMock.stop, {
                         buildId
                     });
+
+                    // Completed step is not modified
+                    assert.deepEqual(build.steps[0], step0);
+                    // In progress step is aborted
+                    assert.ok(build.steps[1].endTime);
+                    assert.equal(build.steps[1].code, 130);
+                    // Unstarted step is not modified
+                    assert.deepEqual(build.steps[2], step2);
+
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
                         scmUrl,
                         sha,
                         jobName: 'main',
                         buildStatus: 'FAILURE',
+                        url
+                    });
+                });
+        });
+
+        it('aborts running steps, and sets an endTime', () => {
+            build.status = 'ABORTED';
+
+            return build.update()
+                .then(() => {
+                    assert.calledWith(executorMock.stop, {
+                        buildId
+                    });
+
+                    // Completed step is not modified
+                    assert.deepEqual(build.steps[0], step0);
+                    // In progress step is aborted
+                    assert.ok(build.steps[1].endTime);
+                    assert.equal(build.steps[1].code, 130);
+                    // Unstarted step is not modified
+                    assert.deepEqual(build.steps[2], step2);
+
+                    assert.calledWith(scmMock.updateCommitStatus, {
+                        token: 'foo',
+                        scmUrl,
+                        sha,
+                        jobName: 'main',
+                        buildStatus: 'ABORTED',
                         url
                     });
                 });
