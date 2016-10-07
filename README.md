@@ -1,5 +1,5 @@
 # Screwdriver Models
-[![Version][npm-image]][npm-url] ![Downloads][downloads-image] [![Build Status][wercker-image]][wercker-url] [![Open Issues][issues-image]][issues-url] [![Dependency Status][daviddm-image]][daviddm-url] ![License][license-image]
+[![Version][npm-image]][npm-url] ![Downloads][downloads-image] [![Build Status][status-image]][status-url] [![Open Issues][issues-image]][issues-url] [![Dependency Status][daviddm-image]][daviddm-url] ![License][license-image]
 
 > Screwdriver models
 
@@ -530,7 +530,7 @@ Code licensed under the BSD 3-Clause license. See LICENSE file for terms.
 [license-image]: https://img.shields.io/npm/l/screwdriver-models.svg
 [issues-image]: https://img.shields.io/github/issues/screwdriver-cd/models.svg
 [issues-url]: https://github.com/screwdriver-cd/models/issues
-[wercker-image]: https://app.wercker.com/status/b397acf533ad968db3955e1b2e834c8b
-[wercker-url]: https://app.wercker.com/project/bykey/b397acf533ad968db3955e1b2e834c8b
+[status-image]: https://cd.screwdriver.cd/pipelines/4c499806ad2cac5ec98f5cf4805fd3a2bd43203a/badge
+[status-url]: https://cd.screwdriver.cd/pipelines/4c499806ad2cac5ec98f5cf4805fd3a2bd43203a
 [daviddm-image]: https://david-dm.org/screwdriver-cd/models.svg?theme=shields.io
 [daviddm-url]: https://david-dm.org/screwdriver-cd/models

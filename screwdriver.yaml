@@ -1,6 +1,22 @@
+workflow:
+    - publish
+
+shared:
+    image: node:6
+
 jobs:
     main:
-        image: node:6
         steps:
             - install: npm install
             - test: npm test
+
+    publish:
+        steps:
+            - setup-ci: git clone https://gist.github.com/3d2388b2a7ba658cdcdaffa8cd874e50.git ci
+            - install-ci: npm install npm-auto-version
+            - publish-npm: ./ci/publish.sh
+        secrets:
+            # Publishing to NPM
+            - NPM_TOKEN
+            # Pushing tags to Git
+            - GIT_KEY
