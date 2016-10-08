@@ -248,6 +248,20 @@ describe('Base Factory', () => {
                 })
         );
 
+        it('sets default paginate values', () =>
+            factory.list({})
+                .then(() => {
+                    assert.calledWith(datastore.scan, {
+                        table: 'base',
+                        params: {},
+                        paginate: {
+                            page: 1,
+                            count: 50
+                        }
+                    });
+                })
+        );
+
         it('calls datastore scan with sorting option returns correct values', () =>
             factory.list({ paginate, sort: 'ascending' })
                 .then(() => {
