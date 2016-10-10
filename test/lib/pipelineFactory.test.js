@@ -126,7 +126,7 @@ describe('Pipeline Factory', () => {
         let config;
 
         beforeEach(() => {
-            config = { datastore, scmPlugin: {} };
+            config = { datastore, scm: {} };
         });
 
         it('should utilize BaseFactory to get an instance', () => {
@@ -148,7 +148,7 @@ describe('Pipeline Factory', () => {
             }, Error, 'No scm plugin provided to PipelineFactory');
 
             assert.throw(() => {
-                PipelineFactory.getInstance({ scmPlugin: {} });
+                PipelineFactory.getInstance({ scm: {} });
             }, Error, 'No datastore provided to PipelineFactory');
         });
     });

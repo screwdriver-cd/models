@@ -11,7 +11,7 @@ describe('Base Model', () => {
     let schemaMock;
     let base;
     let config;
-    let scmPlugin;
+    let scm;
 
     before(() => {
         mockery.enable({
@@ -21,7 +21,7 @@ describe('Base Model', () => {
     });
 
     beforeEach(() => {
-        scmPlugin = {
+        scm = {
             foo: 'foo'
         };
         datastore = {
@@ -46,7 +46,7 @@ describe('Base Model', () => {
 
         config = {
             datastore,
-            scmPlugin,
+            scm,
             id: 'as12345',
             foo: 'foo',
             bar: 'bar'
@@ -190,7 +190,7 @@ describe('Base Model', () => {
 
     describe('scm', () => {
         it('should have a getter for the scm plugin', () => {
-            assert.equal(base.scm, scmPlugin);
+            assert.equal(base.scm, scm);
         });
     });
 });

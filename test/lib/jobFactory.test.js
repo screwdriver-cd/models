@@ -112,7 +112,7 @@ describe('Job Factory', () => {
         let config;
 
         beforeEach(() => {
-            config = { datastore, scmPlugin: {} };
+            config = { datastore, scm: {} };
         });
 
         it('should utilize BaseFactory to get an instance', () => {

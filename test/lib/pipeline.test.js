@@ -132,7 +132,7 @@ describe('Pipeline Model', () => {
             scmUrl,
             createTime: dateNow,
             admins,
-            scmPlugin: scmMock
+            scm: scmMock
         };
 
         pipeline = new PipelineModel(pipelineConfig);
