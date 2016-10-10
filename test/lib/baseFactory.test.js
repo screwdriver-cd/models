@@ -5,7 +5,7 @@ const sinon = require('sinon');
 
 class Base {
     constructor(config) {
-        this.scmPlugin = config.scmPlugin;
+        this.scm = config.scm;
         this.datastore = config.datastore;
     }
 }
@@ -18,7 +18,7 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('Base Factory', () => {
     let BaseFactory;
     let datastore;
-    let scmPlugin;
+    let scm;
     let hashaMock;
     let factory;
     let schema;
@@ -31,7 +31,7 @@ describe('Base Factory', () => {
     });
 
     beforeEach(() => {
-        scmPlugin = {};
+        scm = {};
         datastore = {
             save: sinon.stub(),
             scan: sinon.stub(),
@@ -56,7 +56,7 @@ describe('Base Factory', () => {
         // eslint-disable-next-line global-require
         BaseFactory = require('../../lib/baseFactory');
 
-        factory = new BaseFactory('base', { datastore, scmPlugin });
+        factory = new BaseFactory('base', { datastore, scm });
     });
 
     afterEach(() => {
@@ -120,7 +120,7 @@ describe('Base Factory', () => {
                 assert.isTrue(datastore.save.calledWith(saveConfig));
                 assert.instanceOf(model, Base);
                 assert.deepEqual(model.datastore, datastore);
-                assert.deepEqual(model.scmPlugin, scmPlugin);
+                assert.deepEqual(model.scm, scm);
             });
         });
 
@@ -163,7 +163,7 @@ describe('Base Factory', () => {
                     assert.instanceOf(model, Base);
                     assert.isTrue(datastore.get.calledOnce);
                     assert.deepEqual(model.datastore, datastore);
-                    assert.deepEqual(model.scmPlugin, scmPlugin);
+                    assert.deepEqual(model.scm, scm);
                 })
         );
 
@@ -173,7 +173,7 @@ describe('Base Factory', () => {
                     assert.instanceOf(model, Base);
                     assert.isTrue(datastore.get.calledOnce);
                     assert.deepEqual(model.datastore, datastore);
-                    assert.deepEqual(model.scmPlugin, scmPlugin);
+                    assert.deepEqual(model.scm, scm);
                 })
         );
 
@@ -183,7 +183,7 @@ describe('Base Factory', () => {
                     assert.instanceOf(model, Base);
                     assert.isTrue(datastore.get.calledOnce);
                     assert.deepEqual(model.datastore, datastore);
-                    assert.deepEqual(model.scmPlugin, scmPlugin);
+                    assert.deepEqual(model.scm, scm);
                 })
         );
 
@@ -243,7 +243,7 @@ describe('Base Factory', () => {
                     arr.forEach(model => {
                         assert.instanceOf(model, Base);
                         assert.deepEqual(model.datastore, datastore);
-                        assert.deepEqual(model.scmPlugin, scmPlugin);
+                        assert.deepEqual(model.scm, scm);
                     });
                 })
         );
@@ -303,7 +303,7 @@ describe('Base Factory', () => {
         let config;
 
         beforeEach(() => {
-            config = { datastore, scmPlugin };
+            config = { datastore, scm };
         });
 
         it('should encapsulate new, and act as a singleton', () => {

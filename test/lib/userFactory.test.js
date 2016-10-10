@@ -99,7 +99,7 @@ describe('User Factory', () => {
         let config;
 
         beforeEach(() => {
-            config = { datastore, scmPlugin: {} };
+            config = { datastore, scm: {} };
         });
 
         it('should utilize BaseFactory to get an instance', () => {
@@ -121,7 +121,7 @@ describe('User Factory', () => {
             }, Error, 'No scm plugin provided to UserFactory');
 
             assert.throw(() => {
-                UserFactory.getInstance({ scmPlugin: {} });
+                UserFactory.getInstance({ scm: {} });
             }, Error, 'No datastore provided to UserFactory');
         });
     });

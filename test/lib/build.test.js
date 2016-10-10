@@ -91,7 +91,7 @@ describe('Build Model', () => {
             number: now,
             status: 'QUEUED',
             sha,
-            scmPlugin: scmMock,
+            scm: scmMock,
             apiUri,
             tokenGen,
             uiUri

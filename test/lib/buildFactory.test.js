@@ -80,7 +80,7 @@ describe('Build Factory', () => {
         // eslint-disable-next-line global-require
         BuildFactory = require('../../lib/buildFactory');
 
-        factory = new BuildFactory({ datastore, executor, scmPlugin: scmMock, uiUri });
+        factory = new BuildFactory({ datastore, executor, scm: scmMock, uiUri });
         factory.apiUri = apiUri;
         factory.tokenGen = tokenGen;
     });
@@ -276,7 +276,7 @@ describe('Build Factory', () => {
         let config;
 
         beforeEach(() => {
-            config = { datastore, executor, scmPlugin: {}, uiUri };
+            config = { datastore, executor, scm: {}, uiUri };
         });
 
         it('should utilize BaseFactory to get an instance', () => {
@@ -294,7 +294,7 @@ describe('Build Factory', () => {
                 Error, 'No executor provided to BuildFactory');
 
             assert.throw(() => {
-                BuildFactory.getInstance({ executor, scmPlugin: {}, uiUri });
+                BuildFactory.getInstance({ executor, scm: {}, uiUri });
             }, Error, 'No datastore provided to BuildFactory');
 
             assert.throw(() => {
@@ -302,7 +302,7 @@ describe('Build Factory', () => {
             }, Error, 'No scm plugin provided to BuildFactory');
 
             assert.throw(() => {
-                BuildFactory.getInstance({ executor, scmPlugin: {}, datastore });
+                BuildFactory.getInstance({ executor, scm: {}, datastore });
             }, Error, 'No uiUri provided to BuildFactory');
         });
     });

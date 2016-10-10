@@ -57,7 +57,7 @@ describe('User Model', () => {
             username: 'me',
             token,
             password,
-            scmPlugin: scmMock
+            scm: scmMock
         };
         user = new UserModel(createConfig);
     });

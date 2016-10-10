@@ -17,7 +17,7 @@ npm install screwdriver-models
 const Model = require('screwdriver-models');
 const factory = Model.PipelineFactory.getInstance({
     datastore,
-    scmPlugin
+    scm
 });
 const config = {
     params: {
@@ -86,7 +86,7 @@ Example:
 const Model = require('screwdriver-models');
 const factory = Model.PipelineFactory.getInstance({
     datastore,
-    scmPlugin
+    scm
 });
 const scmUrl = 'git@git.corp.yahoo.com:foo/BAR.git';
 factory.get({ scmUrl }).then(model => {
@@ -99,31 +99,6 @@ factory.get({ scmUrl }).then(model => {
 Sync the pipeline. Look up the configuration in the repo to create and delete jobs if necessary.
 ```
 model.sync()
-```
-
-#### Format the Scm Url
-Format the scm url. Will make the scm url lower case and add a #master branch name if a branch name is not already specified.
-```
-model.formatScmUrl(scmUrl)
-```
-
-| Parameter        | Type  | Required  |  Description |
-| :-------------   | :---- | :---- | :-------------|
-| scmUrl        | String | Yes | Github scm url |
-
-Example:
-```js
-'use strict';
-const Model = require('screwdriver-models');
-const factory = Model.PipelineFactory.getInstance({
-    datastore,
-    scmPlugin
-});
-const scmUrl = 'git@git.corp.yahoo.com:foo/BAR.git';
-factory.get({ scmUrl }).then(model => {
-    const formattedScmUrl = model.formatScmUrl(model.scmUrl);
-    console.log(formattedScmUrl);   // Prints 'git@git.corp.yahoo.com:foo/bar.git#master'
-})
 ```
 
 ### Job Factory
@@ -214,7 +189,7 @@ model.update()
 const Model = require('screwdriver-models');
 const factory = Model.BuildFactory.getInstance({  
     datastore,
-    scmPlugin,
+    scm,
     executor,
     uiUri
 });
@@ -280,7 +255,7 @@ factory.get({ jobId, number }).then(model => {
 const Model = require('screwdriver-models');
 const factory = Model.BuildFactory.getInstance({  
     datastore,
-    scmPlugin,
+    scm,
     executor,
     uiUri
 });
@@ -310,7 +285,7 @@ model.stream()
 const Model = require('screwdriver-models');
 const factory = Model.UserFactory.getInstance({
     datastore,
-    scmPlugin,
+    scm,
     password            // Password to seal/unseal user's token
 });
 const config = {
@@ -372,7 +347,7 @@ factory.get({ username }).then(model => {
 const Model = require('screwdriver-models');
 const factory = Model.UserFactory.getInstance({
     datastore,
-    scmPlugin,
+    scm,
     password                    // Password to seal/unseal user's token
 });
 const config = {
