@@ -1,4 +1,5 @@
 'use strict';
+
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
@@ -17,7 +18,7 @@ describe('Build Model', () => {
     const container = 'node:4';
     const adminUser = { username: 'batman', unsealToken: sinon.stub().resolves('foo') };
     const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
-    const scmUrl = 'git@github.com:screwdriver-cd/models.git#master';
+    const scmUri = 'github.com:12345:master';
     const token = 'equivalentToOneQuarter';
     const url = `${uiUri}/builds/${buildId}`;
     let BuildModel;
@@ -114,7 +115,7 @@ describe('Build Model', () => {
         assert.isFunction(build.start);
         assert.isFunction(build.stop);
 
-        schema.models.build.allKeys.forEach(key => {
+        schema.models.build.allKeys.forEach((key) => {
             assert.strictEqual(build[key], config[key]);
         });
 
@@ -136,12 +137,12 @@ describe('Build Model', () => {
                 name: 'main',
                 pipeline: Promise.resolve({
                     id: pipelineId,
-                    scmUrl,
+                    scmUri,
                     admin: Promise.resolve(adminUser)
                 })
             });
             pipeline = {
-                scmUrl,
+                scmUri,
                 admin: Promise.resolve(adminUser)
             };
         });
@@ -151,7 +152,7 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
-                        scmUrl,
+                        scmUri,
                         sha,
                         jobName: 'main',
                         buildStatus: 'QUEUED',
@@ -185,7 +186,7 @@ describe('Build Model', () => {
                 name: 'main',
                 pipeline: Promise.resolve({
                     id: pipelineId,
-                    scmUrl,
+                    scmUri,
                     admin: Promise.resolve(adminUser)
                 })
             });
@@ -211,7 +212,7 @@ describe('Build Model', () => {
 
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
-                        scmUrl,
+                        scmUri,
                         sha,
                         jobName: 'main',
                         buildStatus: 'FAILURE',
@@ -239,7 +240,7 @@ describe('Build Model', () => {
 
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
-                        scmUrl,
+                        scmUri,
                         sha,
                         jobName: 'main',
                         buildStatus: 'ABORTED',
@@ -263,7 +264,7 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
-                        scmUrl,
+                        scmUri,
                         sha,
                         jobName: 'main',
                         buildStatus: 'RUNNING',
@@ -328,7 +329,7 @@ describe('Build Model', () => {
                 name: 'main',
                 pipeline: Promise.resolve({
                     id: pipelineId,
-                    scmUrl,
+                    scmUri,
                     admin: Promise.resolve(adminUser)
                 }),
                 isPR: () => false
@@ -353,7 +354,7 @@ describe('Build Model', () => {
 
                 assert.calledWith(scmMock.updateCommitStatus, {
                     token: 'foo',
-                    scmUrl,
+                    scmUri,
                     sha,
                     jobName: 'main',
                     buildStatus: 'QUEUED',
@@ -405,7 +406,7 @@ describe('Build Model', () => {
 
             return build.secrets.then(() => {
                 assert.fail('nope');
-            }).catch(err => {
+            }).catch((err) => {
                 assert.equal('Job does not exist', err.message);
             });
         });
@@ -473,7 +474,7 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.fail('should not get here');
                 })
-                .catch(err => {
+                .catch((err) => {
                     assert.instanceOf(err, Error);
                     assert.strictEqual(err.message, 'Pipeline does not exist');
                 });
@@ -486,7 +487,7 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.fail('should not get here');
                 })
-                .catch(err => {
+                .catch((err) => {
                     assert.instanceOf(err, Error);
                     assert.strictEqual(err.message, 'Job does not exist');
                 });

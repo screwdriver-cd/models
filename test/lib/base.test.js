@@ -1,4 +1,5 @@
 'use strict';
+
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
@@ -68,7 +69,7 @@ describe('Base Model', () => {
     describe('constructor', () => {
         it('constructs properly', () => {
             assert.instanceOf(base, BaseModel);
-            schemaMock.models.base.allKeys.forEach(key => {
+            schemaMock.models.base.allKeys.forEach((key) => {
                 assert.strictEqual(base[key], config[key]);
             });
             // datastore is private
@@ -84,7 +85,7 @@ describe('Base Model', () => {
         it('is a noop if no fields changed', () => {
             assert.isFalse(base.isDirty());
 
-            return base.update().then(model => {
+            return base.update().then((model) => {
                 assert.isFalse(model.isDirty());
                 assert.notCalled(datastore.update);
             });
@@ -97,7 +98,7 @@ describe('Base Model', () => {
             assert.isTrue(base.isDirty());
 
             return base.update(config)
-                .then(model => {
+                .then((model) => {
                     assert.deepEqual(model, base);
                     assert.isFalse(model.isDirty());
                     assert.isTrue(datastore.update.calledWith({

@@ -1,4 +1,5 @@
 'use strict';
+
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
@@ -12,10 +13,12 @@ describe('Pipeline Factory', () => {
     let PipelineFactory;
     let datastore;
     let hashaMock;
+    let scm;
     let factory;
     const dateNow = 1111111111;
     const nowTime = (new Date(dateNow)).toISOString();
-    const scmUrl = 'git@github.com:screwdriver-cd/data-model.git#master';
+    const checkoutUrl = 'git@github.com:screwdriver-cd/data-model.git#master';
+    const scmUri = 'github.com:12345:master';
     const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
     const admins = ['me'];
     let pipelineConfig;
@@ -36,6 +39,9 @@ describe('Pipeline Factory', () => {
         hashaMock = {
             sha1: sinon.stub()
         };
+        scm = {
+            parseUrl: sinon.stub()
+        };
 
         // Fixing mockery issue with duplicate file names
         // by re-registering data-schema with its own implementation
@@ -48,8 +54,9 @@ describe('Pipeline Factory', () => {
 
         pipelineConfig = {
             datastore,
+            scm,
             id: testId,
-            scmUrl,
+            scmUri,
             createTime: nowTime,
             admins
         };
@@ -84,7 +91,7 @@ describe('Pipeline Factory', () => {
                 data: {
                     admins,
                     createTime: nowTime,
-                    scmUrl
+                    scmUri
                 }
             }
         };
@@ -107,15 +114,16 @@ describe('Pipeline Factory', () => {
                 id: testId,
                 admins,
                 createTime: nowTime,
-                scmUrl
+                scmUri
             };
 
             datastore.save.resolves(expected);
+            scm.parseUrl.resolves(scmUri);
 
             return factory.create({
-                scmUrl,
+                checkoutUrl,
                 admins
-            }).then(model => {
+            }).then((model) => {
                 assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Pipeline);
             });

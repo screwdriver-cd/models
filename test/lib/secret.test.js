@@ -1,4 +1,5 @@
 'use strict';
+
 const assert = require('chai').assert;
 const sinon = require('sinon');
 const mockery = require('mockery');
@@ -65,7 +66,7 @@ describe('Secret Model', () => {
     it('is constructed properly', () => {
         assert.instanceOf(secret, SecretModel);
         assert.instanceOf(secret, BaseModel);
-        schema.models.secret.allKeys.forEach(key => {
+        schema.models.secret.allKeys.forEach((key) => {
             assert.strictEqual(secret[key], createConfig[key]);
         });
     });

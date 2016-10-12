@@ -21,7 +21,7 @@ const factory = Model.PipelineFactory.getInstance({
 });
 const config = {
     params: {
-        scmUrl: 'banana'
+        scmUri: 'github.com:12345:banana'
     },
     paginate {
         page: 2,
@@ -52,7 +52,7 @@ factory.create(config).then(model => {
 | :-------------   | :---- | :---- | :-------------|
 | config        | Object | Yes | Configuration Object |
 | config.admins | Object | Yes | Admins for this pipeline, e.g { batman: true } |
-| config.scmUrl | String | Yes | Source Code URL for the application |
+| config.scmUri | String | Yes | Source Code URI for the application |
 
 #### Get
 Get a pipeline based on id. Can pass the generatedId for the pipeline, or the unique keys for the model, and the id will be determined automatically.
@@ -61,7 +61,7 @@ factory.get(id).then(model => {
     // do stuff with pipeline model
 });
 
-factory.get({ scmUrl }).then(model => {
+factory.get({ scmUri }).then(model => {
     // do stuff with pipeline model
 });
 ```
@@ -69,7 +69,7 @@ factory.get({ scmUrl }).then(model => {
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
 | id | String | The unique ID for the pipeline |
-| config.scmUrl | String | Source Code URL for the application |
+| config.scmUri | String | Source Code URI for the application |
 
 
 ### Pipeline Model
@@ -88,9 +88,9 @@ const factory = Model.PipelineFactory.getInstance({
     datastore,
     scm
 });
-const scmUrl = 'git@git.corp.yahoo.com:foo/BAR.git';
-factory.get({ scmUrl }).then(model => {
-    model.scmUrl = 'git@git.corp.yahoo.com:foo/bar.git#master';
+const scmUri = 'github.com:12345:master';
+factory.get({ scmUri }).then(model => {
+    model.scmUri = 'github.com:12345:foo';
     return model.update();
 })
 ```
@@ -226,7 +226,7 @@ factory.create(config).then(model => {
 | :-------------   | :---- | :-------------|  :-------------|
 | config        | Object | Yes | Configuration Object |
 | config.apiUri | String | Yes | URI back to the API |
-| config.tokenGen | FUnction | Yes | Generator for building tokens |
+| config.tokenGen | Function | Yes | Generator for building tokens |
 | config.username | String | Yes | User who made the change to kick off the build |
 | config.container | String | No | Container for the build to run in |
 | config.sha | String | No | SHA used to kick off the build |
@@ -357,7 +357,7 @@ const config = {
 }
 
 factory.create(config)
-    .then(user => user.getPermissions(scmUrl))
+    .then(user => user.getPermissions(scmUri))
     .then(permissions => {
         // do stuff here
     });
@@ -389,12 +389,12 @@ model.unsealToken()
 #### Get User's Permissions For a Repo
 Get user's permissions for a specific repo
 ```
-model.getPermissions(scmUrl)
+model.getPermissions(scmUri)
 ```
 
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
-| scmUrl | String | The scmUrl of the repo |
+| scmUri | String | The scmUri of the repo |
 
 
 ### Secret Factory

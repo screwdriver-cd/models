@@ -1,4 +1,5 @@
 'use strict';
+
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
@@ -85,10 +86,10 @@ describe('User Factory', () => {
             return factory.create({
                 username: 'batman',
                 token: 'hero'
-            }).then(model => {
+            }).then((model) => {
                 assert.calledWith(ironMock.seal, 'hero', password, 'defaults');
                 assert.instanceOf(model, User);
-                Object.keys(expected).forEach(key => {
+                Object.keys(expected).forEach((key) => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });

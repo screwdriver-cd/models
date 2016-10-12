@@ -1,4 +1,5 @@
 'use strict';
+
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
@@ -75,7 +76,7 @@ describe('User Model', () => {
     it('is constructed properly', () => {
         assert.instanceOf(user, UserModel);
         assert.instanceOf(user, BaseModel);
-        schema.models.user.allKeys.forEach(key => {
+        schema.models.user.allKeys.forEach((key) => {
             assert.strictEqual(user[key], createConfig[key]);
         });
         // password is private
@@ -146,7 +147,7 @@ describe('User Model', () => {
     });
 
     describe('getPermissions', () => {
-        const scmUrl = 'git@github.com:screwdriver-cd/models.git';
+        const scmUri = 'github.com:12345:master';
         const repo = {
             permissions: {
                 admin: true,
@@ -161,11 +162,11 @@ describe('User Model', () => {
         });
 
         it('promises to get permissions', () =>
-            user.getPermissions(scmUrl)
-                .then(data => {
+            user.getPermissions(scmUri)
+                .then((data) => {
                     assert.calledWith(scmMock.getPermissions, {
                         token: '12345',
-                        scmUrl
+                        scmUri
                     });
                     assert.deepEqual(data, repo.permissions);
                 })
@@ -176,11 +177,11 @@ describe('User Model', () => {
 
             scmMock.getPermissions.rejects(expectedError);
 
-            return user.getPermissions(scmUrl)
+            return user.getPermissions(scmUri)
                 .then(() => {
                     assert.fail('This should not fail the test');
                 })
-                .catch(err => {
+                .catch((err) => {
                     assert.deepEqual(err, expectedError);
                 });
         });

@@ -1,4 +1,5 @@
 'use strict';
+
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
@@ -22,7 +23,7 @@ describe('Pipeline Model', () => {
     let secretFactoryMock;
 
     const dateNow = 1111111111;
-    const scmUrl = 'git@github.com:screwdriver-cd/data-model.git#master';
+    const scmUri = 'github.com:12345:master';
     const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
     const admins = { batman: true };
     const paginate = {
@@ -105,7 +106,8 @@ describe('Pipeline Model', () => {
         };
         scmMock = {
             getFile: sinon.stub(),
-            getRepoId: sinon.stub()
+            decorateUrl: sinon.stub(),
+            parseUrl: sinon.stub()
         };
         parserMock = sinon.stub();
 
@@ -129,7 +131,7 @@ describe('Pipeline Model', () => {
         pipelineConfig = {
             datastore,
             id: testId,
-            scmUrl,
+            scmUri,
             createTime: dateNow,
             admins,
             scm: scmMock
@@ -152,27 +154,28 @@ describe('Pipeline Model', () => {
         assert.instanceOf(pipeline, PipelineModel);
         assert.instanceOf(pipeline, BaseModel);
 
-        schema.models.pipeline.allKeys.forEach(key => {
+        schema.models.pipeline.allKeys.forEach((key) => {
             assert.strictEqual(pipeline[key], pipelineConfig[key]);
         });
     });
 
     describe('refreshScmRepo', () => {
         beforeEach(() => {
-            scmMock.getRepoId.resolves({ name: 'foo' });
+            scmMock.decorateUrl.resolves({ name: 'foo' });
             userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
+            scmMock.parseUrl.resolves('bar');
         });
 
         it('stores scmRepo to pipeline', () => {
-            const newScmUrl = 'git@github.com:screwdriver-cd/data-model.git#foobar';
+            const newCheckoutUrl = 'git@github.com:screwdriver-cd/data-model.git#foobar';
 
-            pipeline.scmUrl = newScmUrl;
+            pipeline.checkoutUrl = newCheckoutUrl;
 
             return pipeline.refreshScmRepo().then(() => {
-                assert.calledWith(scmMock.getRepoId, {
-                    scmUrl: newScmUrl,
+                assert.calledWith(scmMock.decorateUrl, {
+                    scmUri: 'bar',
                     token: 'foo'
                 });
                 assert.deepEqual(pipeline.scmRepo, { name: 'foo' });
@@ -183,7 +186,7 @@ describe('Pipeline Model', () => {
             pipeline.scmRepo = { name: 'bar' };
 
             return pipeline.refreshScmRepo().then(() => {
-                assert.notCalled(scmMock.getRepoId);
+                assert.notCalled(scmMock.decorateUrl);
                 assert.deepEqual(pipeline.scmRepo, { name: 'bar' });
             });
         });
@@ -196,11 +199,12 @@ describe('Pipeline Model', () => {
         beforeEach(() => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
-            scmMock.getRepoId.resolves({ name: 'foo' });
+            scmMock.decorateUrl.resolves({ name: 'foo' });
             parserMock.withArgs('superyamlcontent').yieldsAsync(null, PARSED_YAML);
             userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
+            scmMock.parseUrl.resolves('bar');
 
             publishMock = {
                 pipelineId: testId,
@@ -255,17 +259,14 @@ describe('Pipeline Model', () => {
         });
 
         it('store scmRepo to pipeline', () => {
-            const newScmUrl = 'git@github.com:screwdriver-cd/data-model.git#foobar';
-
             jobs = [];
             jobFactoryMock.list.resolves(jobs);
             jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
             jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
-            pipeline.scmUrl = newScmUrl;
 
             return pipeline.sync().then(() => {
-                assert.calledWith(scmMock.getRepoId, {
-                    scmUrl: newScmUrl,
+                assert.calledWith(scmMock.decorateUrl, {
+                    scmUri: 'bar',
                     token: 'foo'
                 });
                 assert.deepEqual(pipeline.scmRepo, { name: 'foo' });
@@ -280,7 +281,7 @@ describe('Pipeline Model', () => {
             pipeline.scmRepo = { name: 'bar' };
 
             return pipeline.sync().then(() => {
-                assert.notCalled(scmMock.getRepoId);
+                assert.notCalled(scmMock.decorateUrl);
             });
         });
 
@@ -291,10 +292,10 @@ describe('Pipeline Model', () => {
             jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
 
             return pipeline.sync()
-                .then(p => {
+                .then((p) => {
                     assert.equal(p.id, testId);
                     assert.calledWith(scmMock.getFile, {
-                        scmUrl,
+                        scmUri: 'bar',
                         path: 'screwdriver.yaml',
                         token: 'foo'
                     });
@@ -383,7 +384,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.create.rejects(error);
 
             return pipeline.sync()
-                .catch(err => {
+                .catch((err) => {
                     assert.deepEqual(err, error);
                 });
         });
@@ -529,10 +530,10 @@ describe('Pipeline Model', () => {
 
         it('gets pipeline config', () =>
             pipeline.getConfiguration()
-                .then(config => {
+                .then((config) => {
                     assert.equal(config, PARSED_YAML);
                     assert.calledWith(scmMock.getFile, {
-                        scmUrl,
+                        scmUri,
                         path: 'screwdriver.yaml',
                         token: 'foo'
                     });
@@ -541,11 +542,11 @@ describe('Pipeline Model', () => {
         );
 
         it('gets pipeline config from an alternate ref', () =>
-            pipeline.getConfiguration('foobar')
-                .then(config => {
+            pipeline.getConfiguration('bar')
+                .then((config) => {
                     assert.equal(config, PARSED_YAML);
                     assert.calledWith(scmMock.getFile, {
-                        scmUrl: 'foobar',
+                        scmUri: 'bar',
                         path: 'screwdriver.yaml',
                         token: 'foo'
                     });
@@ -557,7 +558,7 @@ describe('Pipeline Model', () => {
             parserMock.yieldsAsync(new Error('cannotparseit'));
 
             return pipeline.getConfiguration('foobar')
-                .catch(err => {
+                .catch((err) => {
                     assert.instanceOf(err, Error);
                     assert.equal(err.message, 'cannotparseit');
                 });
@@ -608,12 +609,12 @@ describe('Pipeline Model', () => {
             nonArchived.params.archived = false;
             pipeline.workflow = ['main', 'publish'];
 
-            for (i = 0; i < 4; i++) {
+            for (i = 0; i < 4; i += 1) {
                 jobFactoryMock.list.withArgs(nonArchived).onCall(i).resolves([publishJob, mainJob]);
             }
             jobFactoryMock.list.withArgs(nonArchived).onCall(i).resolves([]);
 
-            for (i = 0; i < 2; i++) {
+            for (i = 0; i < 2; i += 1) {
                 jobFactoryMock.list.withArgs(archived).onCall(i).resolves([blahJob]);
             }
             jobFactoryMock.list.withArgs(archived).onCall(i).resolves([]);
@@ -636,7 +637,7 @@ describe('Pipeline Model', () => {
 
             return pipeline.remove().then(() => {
                 assert.fail('should not get here');
-            }).catch(err => {
+            }).catch((err) => {
                 assert.isOk(err);
                 assert.equal(err.message, 'error');
             });
@@ -648,7 +649,7 @@ describe('Pipeline Model', () => {
 
             return pipeline.remove().then(() => {
                 assert.fail('should not get here');
-            }).catch(err => {
+            }).catch((err) => {
                 assert.isOk(err);
                 assert.equal(err.message, 'error removing job');
             });
@@ -659,7 +660,7 @@ describe('Pipeline Model', () => {
 
             return pipeline.remove().then(() => {
                 assert.fail('should not get here');
-            }).catch(err => {
+            }).catch((err) => {
                 assert.isOk(err);
                 assert.equal(err.message, 'error removing secret');
             });
