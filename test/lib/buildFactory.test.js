@@ -1,4 +1,5 @@
 'use strict';
+
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
@@ -59,7 +60,8 @@ describe('Build Factory', () => {
             get: sinon.stub()
         };
         scmMock = {
-            getCommitSha: sinon.stub()
+            getCommitSha: sinon.stub(),
+            decorateCommit: sinon.stub()
         };
         jobFactory = {
             getInstance: sinon.stub().returns(jobFactoryMock)
@@ -112,7 +114,7 @@ describe('Build Factory', () => {
         const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
         const jobId = '62089f642bbfd1886623964b4cff12db59869e5d';
         const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
-        const scmUrl = 'git@github.com:screwdriver-cd/models.git#master';
+        const scmUri = 'github.com:12345:master';
         const username = 'i_made_the_request';
         const dateNow = Date.now();
         const isoTime = (new Date(dateNow)).toISOString();
@@ -145,12 +147,24 @@ describe('Build Factory', () => {
             image: 'node:6'
         }];
 
+        const commit = {
+            url: 'foo',
+            message: 'bar',
+            author: {
+                name: 'Batman',
+                username: 'batman',
+                url: 'stuff',
+                avatar: 'moreStuff'
+            }
+        };
+
         const saveConfig = {
             table: 'builds',
             params: {
                 id: testId,
                 data: {
                     cause: 'Started by user i_made_the_request',
+                    commit,
                     createTime: isoTime,
                     number: dateNow,
                     status: 'QUEUED',
@@ -164,6 +178,7 @@ describe('Build Factory', () => {
 
         beforeEach(() => {
             scmMock.getCommitSha.resolves(sha);
+            scmMock.decorateCommit.resolves(commit);
 
             sandbox = sinon.sandbox.create({
                 useFakeTimers: false
@@ -181,29 +196,20 @@ describe('Build Factory', () => {
             sandbox.restore();
         });
 
-        it('creates a new build in the datastore, without looking up sha', () => {
-            const expected = {};
-
-            datastore.save.resolves(expected);
-
-            return factory.create({ username, jobId, sha }).then(model => {
-                assert.instanceOf(model, Build);
-                assert.calledOnce(jobFactory.getInstance);
-                assert.calledWith(jobFactoryMock.get, jobId);
-                assert.calledWith(datastore.save, saveConfig);
-                assert.strictEqual(model.container, container);
-                assert.strictEqual(model.apiUri, apiUri);
-                assert.deepEqual(model.tokenGen, tokenGen);
-                assert.strictEqual(model.uiUri, uiUri);
-                assert.notCalled(userFactoryMock.get);
-            });
-        });
-
         it('ignores extraneous parameters', () => {
             const expected = {};
             const garbage = 'garbageData';
+            const user = { unsealToken: sinon.stub().resolves('foo') };
 
             datastore.save.resolves(expected);
+
+            const jobMock = {
+                permutations,
+                pipeline: Promise.resolve({ scmUri })
+            };
+
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
 
             return factory.create({ garbage, username, jobId, sha }).then(() => {
                 assert.calledWith(datastore.save, saveConfig);
@@ -218,13 +224,13 @@ describe('Build Factory', () => {
 
             const jobMock = {
                 permutations,
-                pipeline: Promise.resolve({ scmUrl })
+                pipeline: Promise.resolve({ scmUri })
             };
 
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
 
-            return factory.create({ username, jobId }).then(model => {
+            return factory.create({ username, jobId }).then((model) => {
                 assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Build);
                 assert.calledOnce(jobFactory.getInstance);
@@ -232,7 +238,12 @@ describe('Build Factory', () => {
                 assert.calledWith(userFactoryMock.get, { username });
                 assert.calledWith(scmMock.getCommitSha, {
                     token: 'foo',
-                    scmUrl
+                    scmUri
+                });
+                assert.calledWith(scmMock.decorateCommit, {
+                    token: 'foo',
+                    sha,
+                    scmUri
                 });
                 assert.calledOnce(startStub);
             });
@@ -241,7 +252,7 @@ describe('Build Factory', () => {
         it('properly handles rejection due to missing job model', () => {
             jobFactoryMock.get.resolves(null);
 
-            return factory.create({ username, jobId }).catch(err => {
+            return factory.create({ username, jobId }).catch((err) => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message, 'Job does not exist');
             });
@@ -250,7 +261,7 @@ describe('Build Factory', () => {
         it('properly handles rejection due to missing user model', () => {
             userFactoryMock.get.resolves(null);
 
-            return factory.create({ username, jobId }).catch(err => {
+            return factory.create({ username, jobId }).catch((err) => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message, 'User does not exist');
             });
@@ -265,7 +276,7 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves({});
             jobFactoryMock.get.resolves(jobMock);
 
-            return factory.create({ username, jobId }).catch(err => {
+            return factory.create({ username, jobId }).catch((err) => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message, 'Pipeline does not exist');
             });

@@ -1,4 +1,5 @@
 'use strict';
+
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
@@ -101,7 +102,7 @@ describe('Job Factory', () => {
             return factory.create({
                 pipelineId,
                 name
-            }).then(model => {
+            }).then((model) => {
                 assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Job);
             });

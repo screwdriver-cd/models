@@ -1,4 +1,5 @@
 'use strict';
+
 const assert = require('chai').assert;
 const nodeify = require('../../lib/nodeify');
 const sinon = require('sinon');

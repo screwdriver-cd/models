@@ -1,4 +1,5 @@
 'use strict';
+
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
@@ -126,7 +127,7 @@ describe('Job Model', () => {
         assert.instanceOf(job, BaseModel);
         assert.isFunction(job.update);
 
-        schema.models.job.allKeys.forEach(key => {
+        schema.models.job.allKeys.forEach((key) => {
             assert.strictEqual(job[key], config[key]);
         });
     });
@@ -156,7 +157,7 @@ describe('Job Model', () => {
 
         return job.secrets.then(() => {
             assert.fail('nope');
-        }).catch(err => {
+        }).catch((err) => {
             assert.equal('Pipeline does not exist', err.message);
         });
     });
@@ -289,7 +290,7 @@ describe('Job Model', () => {
         it('remove builds recursively', () => {
             let i;
 
-            for (i = 0; i < 4; i++) {
+            for (i = 0; i < 4; i += 1) {
                 buildFactoryMock.list.onCall(i).resolves([build1, build2]);
             }
 
@@ -308,7 +309,7 @@ describe('Job Model', () => {
 
             return job.remove().then(() => {
                 assert.fail('should not get here');
-            }).catch(err => {
+            }).catch((err) => {
                 assert.isOk(err);
                 assert.equal(err.message, 'error');
             });
@@ -320,7 +321,7 @@ describe('Job Model', () => {
 
             return job.remove().then(() => {
                 assert.fail('should not get here');
-            }).catch(err => {
+            }).catch((err) => {
                 assert.isOk(err);
                 assert.equal(err.message, 'error removing build');
             });

@@ -1,4 +1,5 @@
 'use strict';
+
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
@@ -11,7 +12,7 @@ class Base {
 }
 class BF {}
 const baseId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
-const createMock = (c) => new Base(c);
+const createMock = c => new Base(c);
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -116,7 +117,7 @@ describe('Base Factory', () => {
                     notkey: 'bar'
                 },
                 bar: false
-            }).then(model => {
+            }).then((model) => {
                 assert.isTrue(datastore.save.calledWith(saveConfig));
                 assert.instanceOf(model, Base);
                 assert.deepEqual(model.datastore, datastore);
@@ -159,7 +160,7 @@ describe('Base Factory', () => {
 
         it('calls datastore get with id and returns correct values', () =>
             factory.get(baseData.id)
-                .then(model => {
+                .then((model) => {
                     assert.instanceOf(model, Base);
                     assert.isTrue(datastore.get.calledOnce);
                     assert.deepEqual(model.datastore, datastore);
@@ -169,7 +170,7 @@ describe('Base Factory', () => {
 
         it('calls datastore get with config.id and returns correct values', () =>
             factory.get(baseData)
-                .then(model => {
+                .then((model) => {
                     assert.instanceOf(model, Base);
                     assert.isTrue(datastore.get.calledOnce);
                     assert.deepEqual(model.datastore, datastore);
@@ -179,7 +180,7 @@ describe('Base Factory', () => {
 
         it('calls datastore get with id generated from config and returns correct values', () =>
             factory.get({ foo: 'foo', bar: 'bar' })
-                .then(model => {
+                .then((model) => {
                     assert.instanceOf(model, Base);
                     assert.isTrue(datastore.get.calledOnce);
                     assert.deepEqual(model.datastore, datastore);
@@ -196,7 +197,7 @@ describe('Base Factory', () => {
             }).resolves(null);
 
             return factory.get(baseData.id)
-                .then(model => {
+                .then((model) => {
                     assert.isNull(model);
                 });
         });
@@ -237,10 +238,10 @@ describe('Base Factory', () => {
 
         it('calls datastore scan and returns correct values', () =>
             factory.list({ paginate })
-                .then(arr => {
+                .then((arr) => {
                     assert.isArray(arr);
                     assert.equal(arr.length, 2);
-                    arr.forEach(model => {
+                    arr.forEach((model) => {
                         assert.instanceOf(model, Base);
                         assert.deepEqual(model.datastore, datastore);
                         assert.deepEqual(model.scm, scm);
@@ -278,7 +279,7 @@ describe('Base Factory', () => {
             datastore.scan.resolves(null);
 
             return factory.list({ paginate })
-                .catch(err => {
+                .catch((err) => {
                     assert.strictEqual(err.message, 'Unexpected response from datastore, ' +
                         'expected Array, got object');
                 });

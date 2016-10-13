@@ -1,4 +1,5 @@
 'use strict';
+
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
@@ -97,10 +98,10 @@ describe('Secret Factory', () => {
                 name,
                 value: unsealed,
                 allowInPR
-            }).then(model => {
+            }).then((model) => {
                 assert.calledWith(ironMock.seal, unsealed, password, 'defaults');
                 assert.instanceOf(model, Secret);
-                Object.keys(expected).forEach(key => {
+                Object.keys(expected).forEach((key) => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -130,11 +131,11 @@ describe('Secret Factory', () => {
 
         it('calls datastore get with id and returns correct values', () =>
             factory.get(id)
-                .then(model => {
+                .then((model) => {
                     assert.calledWith(ironMock.unseal, sealed, password, 'defaults');
                     assert.instanceOf(model, Secret);
                     assert.isTrue(datastore.get.calledOnce);
-                    Object.keys(expected).forEach(key => {
+                    Object.keys(expected).forEach((key) => {
                         assert.strictEqual(model[key], expected[key]);
                     });
                 })
@@ -142,11 +143,11 @@ describe('Secret Factory', () => {
 
         it('calls datastore get with config.id and returns correct values', () =>
             factory.get({ id })
-                .then(model => {
+                .then((model) => {
                     assert.calledWith(ironMock.unseal, sealed, password, 'defaults');
                     assert.instanceOf(model, Secret);
                     assert.isTrue(datastore.get.calledOnce);
-                    Object.keys(expected).forEach(key => {
+                    Object.keys(expected).forEach((key) => {
                         assert.strictEqual(model[key], expected[key]);
                     });
                 })
@@ -154,11 +155,11 @@ describe('Secret Factory', () => {
 
         it('calls datastore get with id generated from config and returns correct values', () =>
             factory.get({ pipelineId, name })
-                .then(model => {
+                .then((model) => {
                     assert.calledWith(ironMock.unseal, sealed, password, 'defaults');
                     assert.instanceOf(model, Secret);
                     assert.isTrue(datastore.get.calledOnce);
-                    Object.keys(expected).forEach(key => {
+                    Object.keys(expected).forEach((key) => {
                         assert.strictEqual(model[key], expected[key]);
                     });
                 })
@@ -173,7 +174,7 @@ describe('Secret Factory', () => {
             }).resolves(null);
 
             return factory.get({ pipelineId, name })
-                .then(model => {
+                .then((model) => {
                     assert.isTrue(datastore.get.calledOnce);
                     assert.notCalled(ironMock.unseal);
                     assert.isNull(model);
@@ -220,11 +221,11 @@ describe('Secret Factory', () => {
             ironMock.unseal.withArgs('sealedsecret2value', password).yieldsAsync(null, 'superman');
 
             return factory.list({ paginate })
-                .then(arr => {
+                .then((arr) => {
                     assert.isArray(arr);
                     assert.equal(arr.length, 2);
                     assert.deepEqual(arr, returnValue);
-                    arr.forEach(model => {
+                    arr.forEach((model) => {
                         assert.instanceOf(model, Secret);
                     });
                 });
