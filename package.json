@@ -43,7 +43,7 @@
     "async": "^2.0.1",
     "hoek": "^4.0.1",
     "iron": "^4.0.1",
-    "screwdriver-config-parser": "^2.0.0",
+    "screwdriver-config-parser": "^3.0.1",
     "screwdriver-data-schema": "^14.0.0",
     "screwdriver-hashr": "^1.0.30"
   }
