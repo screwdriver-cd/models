@@ -200,7 +200,7 @@ describe('Pipeline Model', () => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
             scmMock.decorateUrl.resolves({ name: 'foo' });
-            parserMock.withArgs('superyamlcontent').yieldsAsync(null, PARSED_YAML);
+            parserMock.withArgs('superyamlcontent').resolves(PARSED_YAML);
             userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
@@ -522,7 +522,7 @@ describe('Pipeline Model', () => {
     describe('getConfiguration', () => {
         beforeEach(() => {
             scmMock.getFile.resolves('superyamlcontent');
-            parserMock.withArgs('superyamlcontent').yieldsAsync(null, PARSED_YAML);
+            parserMock.withArgs('superyamlcontent').resolves(PARSED_YAML);
             userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
@@ -555,12 +555,12 @@ describe('Pipeline Model', () => {
         );
 
         it('catches errors', () => {
-            parserMock.yieldsAsync(new Error('cannotparseit'));
+            scmMock.getFile.rejects(new Error('cannotgetit'));
 
             return pipeline.getConfiguration('foobar')
                 .catch((err) => {
                     assert.instanceOf(err, Error);
-                    assert.equal(err.message, 'cannotparseit');
+                    assert.equal(err.message, 'cannotgetit');
                 });
         });
     });
