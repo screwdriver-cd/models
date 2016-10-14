@@ -15,12 +15,17 @@ describe('Pipeline Factory', () => {
     let hashaMock;
     let scm;
     let factory;
+    let userFactoryMock;
     const dateNow = 1111111111;
     const nowTime = (new Date(dateNow)).toISOString();
-    const checkoutUrl = 'git@github.com:screwdriver-cd/data-model.git#master';
     const scmUri = 'github.com:12345:master';
     const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
     const admins = ['me'];
+    const scmRepo = {
+        name: 'foo/bar',
+        branch: 'master',
+        url: 'https://github.com/foo/bar/tree/master'
+    };
     let pipelineConfig;
 
     before(() => {
@@ -40,7 +45,10 @@ describe('Pipeline Factory', () => {
             sha1: sinon.stub()
         };
         scm = {
-            parseUrl: sinon.stub()
+            decorateUrl: sinon.stub()
+        };
+        userFactoryMock = {
+            get: sinon.stub()
         };
 
         // Fixing mockery issue with duplicate file names
@@ -48,6 +56,9 @@ describe('Pipeline Factory', () => {
         mockery.registerMock('screwdriver-data-schema', schema);
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('./pipeline', Pipeline);
+        mockery.registerMock('./userFactory', {
+            getInstance: sinon.stub().returns(userFactoryMock)
+        });
 
         // eslint-disable-next-line global-require
         PipelineFactory = require('../../lib/pipelineFactory');
@@ -91,7 +102,8 @@ describe('Pipeline Factory', () => {
                 data: {
                     admins,
                     createTime: nowTime,
-                    scmUri
+                    scmUri,
+                    scmRepo
                 }
             }
         };
@@ -114,16 +126,21 @@ describe('Pipeline Factory', () => {
                 id: testId,
                 admins,
                 createTime: nowTime,
-                scmUri
+                scmUri,
+                scmRepo
             };
 
             datastore.save.resolves(expected);
-            scm.parseUrl.resolves(scmUri);
+            scm.decorateUrl.resolves(scmRepo);
+            userFactoryMock.get.withArgs({ username: Object.keys(admins)[0] }).resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
 
             return factory.create({
-                checkoutUrl,
+                scmUri,
                 admins
             }).then((model) => {
+                assert.calledWith(scm.decorateUrl, { scmUri, token: 'foo' });
                 assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Pipeline);
             });
