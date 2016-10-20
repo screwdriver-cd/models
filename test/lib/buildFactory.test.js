@@ -147,34 +147,9 @@ describe('Build Factory', () => {
             image: 'node:6'
         }];
 
-        const commit = {
-            url: 'foo',
-            message: 'bar',
-            author: {
-                name: 'Batman',
-                username: 'batman',
-                url: 'stuff',
-                avatar: 'moreStuff'
-            }
-        };
+        let commit;
 
-        const saveConfig = {
-            table: 'builds',
-            params: {
-                id: testId,
-                data: {
-                    cause: 'Started by user i_made_the_request',
-                    commit,
-                    createTime: isoTime,
-                    number: dateNow,
-                    status: 'QUEUED',
-                    container,
-                    steps,
-                    jobId,
-                    sha
-                }
-            }
-        };
+        let saveConfig;
 
         beforeEach(() => {
             scmMock.getCommitSha.resolves(sha);
@@ -190,6 +165,35 @@ describe('Build Factory', () => {
             jobFactoryMock.get.resolves({
                 permutations
             });
+
+            commit = {
+                url: 'foo',
+                message: 'bar',
+                author: {
+                    name: 'Batman',
+                    username: 'batman',
+                    url: 'stuff',
+                    avatar: 'moreStuff'
+                }
+            };
+
+            saveConfig = {
+                table: 'builds',
+                params: {
+                    id: testId,
+                    data: {
+                        cause: 'Started by user i_made_the_request',
+                        commit,
+                        createTime: isoTime,
+                        number: dateNow,
+                        status: 'QUEUED',
+                        container,
+                        steps,
+                        jobId,
+                        sha
+                    }
+                }
+            };
         });
 
         afterEach(() => {
@@ -210,6 +214,7 @@ describe('Build Factory', () => {
 
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
+            delete saveConfig.params.data.commit;
 
             return factory.create({ garbage, username, jobId, sha }).then(() => {
                 assert.calledWith(datastore.save, saveConfig);
@@ -245,6 +250,28 @@ describe('Build Factory', () => {
                     sha,
                     scmUri
                 });
+                assert.calledOnce(startStub);
+            });
+        });
+
+        it('creates a new build in the datastore, without looking up sha', () => {
+            const expected = {};
+
+            datastore.save.resolves(expected);
+
+            const jobMock = {
+                permutations,
+                pipeline: Promise.resolve({ scmUri })
+            };
+
+            jobFactoryMock.get.resolves(jobMock);
+            delete saveConfig.params.data.commit;
+
+            return factory.create({ username, jobId, sha }).then((model) => {
+                assert.calledWith(datastore.save, saveConfig);
+                assert.instanceOf(model, Build);
+                assert.calledOnce(jobFactory.getInstance);
+                assert.calledWith(jobFactoryMock.get, jobId);
                 assert.calledOnce(startStub);
             });
         });
