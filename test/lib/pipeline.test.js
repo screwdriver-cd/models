@@ -483,7 +483,7 @@ describe('Pipeline Model', () => {
                 .then((config) => {
                     assert.equal(config, PARSED_YAML);
                     assert.calledWith(scmMock.getFile, {
-                        scmUri: 'bar',
+                        ref: 'bar',
                         path: 'screwdriver.yaml',
                         token: 'foo'
                     });
