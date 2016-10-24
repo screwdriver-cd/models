@@ -505,7 +505,7 @@ Code licensed under the BSD 3-Clause license. See LICENSE file for terms.
 [license-image]: https://img.shields.io/npm/l/screwdriver-models.svg
 [issues-image]: https://img.shields.io/github/issues/screwdriver-cd/models.svg
 [issues-url]: https://github.com/screwdriver-cd/models/issues
-[status-image]: https://cd.screwdriver.cd/pipelines/4c499806ad2cac5ec98f5cf4805fd3a2bd43203a/badge
-[status-url]: https://cd.screwdriver.cd/pipelines/4c499806ad2cac5ec98f5cf4805fd3a2bd43203a
+[status-image]: https://cd.screwdriver.cd/pipelines/2aa2e1da381e398a9c42e739bf85b33a813520c0/badge
+[status-url]: https://cd.screwdriver.cd/pipelines/2aa2e1da381e398a9c42e739bf85b33a813520c0
 [daviddm-image]: https://david-dm.org/screwdriver-cd/models.svg?theme=shields.io
 [daviddm-url]: https://david-dm.org/screwdriver-cd/models
