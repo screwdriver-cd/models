@@ -21,6 +21,7 @@ describe('Pipeline Model', () => {
     let jobFactoryMock;
     let userFactoryMock;
     let secretFactoryMock;
+    let eventFactoryMock;
 
     const dateNow = 1111111111;
     const scmUri = 'github.com:12345:master';
@@ -98,6 +99,9 @@ describe('Pipeline Model', () => {
             create: sinon.stub(),
             list: sinon.stub()
         };
+        eventFactoryMock = {
+            list: sinon.stub()
+        };
         userFactoryMock = {
             get: sinon.stub()
         };
@@ -113,6 +117,8 @@ describe('Pipeline Model', () => {
         // jobModelFactory = sinon.stub().returns(jobModelMock);
         mockery.registerMock('./jobFactory', {
             getInstance: sinon.stub().returns(jobFactoryMock) });
+        mockery.registerMock('./eventFactory', {
+            getInstance: sinon.stub().returns(eventFactoryMock) });
         mockery.registerMock('./userFactory', {
             getInstance: sinon.stub().returns(userFactoryMock)
         });
@@ -453,6 +459,68 @@ describe('Pipeline Model', () => {
                 assert.calledWith(jobFactoryMock.list, expected);
                 assert.deepEqual(result, [blahJob, publishJob]);
             });
+        });
+    });
+
+    describe('get events', () => {
+        const events = [{
+            id: '12345f642bbfd1886623964b4cff12db59869e5d'
+        }, {
+            id: '12855123cc7f1b808aac07feff24d7d5362cc215'
+        }];
+
+        it('Get list of events', () => {
+            const expected = {
+                params: {
+                    pipelineId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    type: 'pipeline'
+                },
+                sort: 'descending',
+                paginate
+            };
+
+            eventFactoryMock.list.resolves(events);
+
+            return pipeline.getEvents().then((result) => {
+                assert.calledWith(eventFactoryMock.list, expected);
+                assert.deepEqual(result, events);
+            });
+        });
+
+        it('Merge the passed in config with the default config', () => {
+            const expected = {
+                params: {
+                    pipelineId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    type: 'pr'
+                },
+                sort: 'descending',
+                paginate: {
+                    page: 1,
+                    count: 50
+                }
+            };
+
+            eventFactoryMock.list.resolves(events);
+
+            return pipeline.getEvents({
+                params: {
+                    type: 'pr'
+                }
+            }).then(() => {
+                assert.calledWith(eventFactoryMock.list, expected);
+            });
+        });
+
+        it('Rejects with errors', () => {
+            eventFactoryMock.list.rejects(new Error('cannotgetit'));
+
+            return pipeline.getEvents()
+                .then(() => {
+                    assert.fail('Should not get here');
+                }).catch((err) => {
+                    assert.instanceOf(err, Error);
+                    assert.equal(err.message, 'cannotgetit');
+                });
         });
     });
 
