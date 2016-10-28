@@ -112,6 +112,7 @@ describe('Build Factory', () => {
     describe('create', () => {
         let sandbox;
         const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
+        const eventId = '50dc14f719cdc2c9cb1fb0e49dd2acc4cf6189a0';
         const jobId = '62089f642bbfd1886623964b4cff12db59869e5d';
         const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
         const scmUri = 'github.com:12345:master';
@@ -189,6 +190,7 @@ describe('Build Factory', () => {
                         status: 'QUEUED',
                         container,
                         steps,
+                        eventId,
                         jobId,
                         sha
                     }
@@ -216,7 +218,7 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves(user);
             delete saveConfig.params.data.commit;
 
-            return factory.create({ garbage, username, jobId, sha }).then(() => {
+            return factory.create({ garbage, username, jobId, eventId, sha }).then(() => {
                 assert.calledWith(datastore.save, saveConfig);
             });
         });
@@ -235,7 +237,7 @@ describe('Build Factory', () => {
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
 
-            return factory.create({ username, jobId }).then((model) => {
+            return factory.create({ username, jobId, eventId }).then((model) => {
                 assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Build);
                 assert.calledOnce(jobFactory.getInstance);
@@ -267,7 +269,7 @@ describe('Build Factory', () => {
             jobFactoryMock.get.resolves(jobMock);
             delete saveConfig.params.data.commit;
 
-            return factory.create({ username, jobId, sha }).then((model) => {
+            return factory.create({ username, jobId, eventId, sha }).then((model) => {
                 assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Build);
                 assert.calledOnce(jobFactory.getInstance);
@@ -279,7 +281,7 @@ describe('Build Factory', () => {
         it('properly handles rejection due to missing job model', () => {
             jobFactoryMock.get.resolves(null);
 
-            return factory.create({ username, jobId }).catch((err) => {
+            return factory.create({ username, jobId, eventId }).catch((err) => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message, 'Job does not exist');
             });
@@ -288,7 +290,7 @@ describe('Build Factory', () => {
         it('properly handles rejection due to missing user model', () => {
             userFactoryMock.get.resolves(null);
 
-            return factory.create({ username, jobId }).catch((err) => {
+            return factory.create({ username, jobId, eventId }).catch((err) => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message, 'User does not exist');
             });
@@ -303,7 +305,7 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves({});
             jobFactoryMock.get.resolves(jobMock);
 
-            return factory.create({ username, jobId }).catch((err) => {
+            return factory.create({ username, jobId, eventId }).catch((err) => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message, 'Pipeline does not exist');
             });
