@@ -460,6 +460,7 @@ describe('Pipeline Model', () => {
         beforeEach(() => {
             scmMock.getFile.resolves('superyamlcontent');
             parserMock.withArgs('superyamlcontent').resolves(PARSED_YAML);
+            parserMock.withArgs('').resolves('DEFAULT_YAML');
             userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
@@ -492,13 +493,19 @@ describe('Pipeline Model', () => {
                 })
         );
 
-        it('catches errors', () => {
+        it('converts fetch errors to empty file', () => {
             scmMock.getFile.rejects(new Error('cannotgetit'));
 
             return pipeline.getConfiguration('foobar')
-                .catch((err) => {
-                    assert.instanceOf(err, Error);
-                    assert.equal(err.message, 'cannotgetit');
+                .then((config) => {
+                    assert.equal(config, 'DEFAULT_YAML');
+                    assert.calledWith(scmMock.getFile, {
+                        scmUri,
+                        path: 'screwdriver.yaml',
+                        token: 'foo',
+                        ref: 'foobar'
+                    });
+                    assert.calledWith(parserMock, '');
                 });
         });
     });
