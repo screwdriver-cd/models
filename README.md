@@ -76,7 +76,7 @@ factory.get({ scmUri }).then(model => {
 
 #### Update
 Update a specific pipeline model
-```
+```js
 model.update()
 ```
 
@@ -97,9 +97,45 @@ factory.get({ scmUri }).then(model => {
 
 #### Sync
 Sync the pipeline. Look up the configuration in the repo to create and delete jobs if necessary.
-```
+```js
 model.sync()
 ```
+
+#### Get Configuration
+Get the screwdriver configuration for the pipeline at the given ref
+```js
+model.getConfiguration(config)
+```
+
+| Parameter        | Type  | Required | Description |
+| :-------------   | :---- | : --- | :--- | :-------------|
+| ref        | String | No | | Reference to the branch or PR |
+
+
+#### Get Jobs
+Return a list of jobs that belong to this pipeline
+```js
+model.getJobs(config)
+```
+
+| Parameter        | Type  | Required | Default | Description |
+| :-------------   | :---- | : --- | :--- | :-------------|
+| config        | Object | No | | Configuration Object |
+| config.params | Object | No | | Fields to search on |
+| config.params.sort | Boolean | No | false| Sorting by createTime |
+
+
+#### Get Events
+Return a list of events that belong to this pipeline
+```js
+model.getEvents(config)
+```
+
+| Parameter        | Type  | Required | Default | Description |
+| :-------------   | :---- | : --- | :--- | :-------------|
+| config        | Object | No | | Config Object |
+| config.type | Number | No | `pipeline` | Type of event: `pipeline` or `pr` |
+| config.sort | Number | No | `descending`| Sorting by createTime |
 
 ### Job Factory
 #### Search
@@ -126,7 +162,7 @@ factory.list(config).then(jobs => {
 
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
-| config        | Object | Config Object |
+| config        | Object | Configuration Object |
 | config.paginate.page | Number | The page for pagination |
 | config.paginate.count | Number | The count for pagination |
 | config.params | Object | fields to search on |
@@ -178,8 +214,25 @@ factory.get(id).then(model => {
 
 #### Update
 Update a job
-```
+```js
 model.update()
+```
+
+#### Get builds
+Return builds that belong to this job
+```js
+mode..getBuilds(config)
+```
+
+| Parameter        | Type  | Required | Default |  Description |
+| :-------------   | :---- | :--- | :---- | :-------------|
+| config        | Object | No | | Configuration Object |
+| config.sort | String | No | descending | `ascending` or `descending` |
+
+#### Get running builds
+Return all running builds that belong to this jobId
+```js
+model.getRunningBuilds()
 ```
 
 ### Build Factory
@@ -268,14 +321,39 @@ factory.get(id).then(model => {
 
 #### Update
 Update a specific build
-```
+```js
 model.update()
 ```
 
 #### Stream
 Stream the log of a build
-```
+```js
 model.stream()
+```
+
+#### Update commit status
+Update  a commit status
+```js
+model.updateCommitStatus(pipeline)
+```
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| pipeline        | Pipeline | The pipeline that this build belongs to |
+
+#### Start a build
+Start the build and update commit status as pending
+```js
+model.start()
+```
+
+#### Stop a build
+```js
+model.stop()
+```
+
+#### Check if a build is done
+```js
+model.isDone()
 ```
 
 ### User Factory
@@ -365,13 +443,13 @@ factory.create(config)
 
 #### Update
 Update a specific user
-```
+```js
 model.update()
 ```
 
 #### Seal Token
 Seal a token
-```
+```js
 model.sealToken(token)
 ```
 
@@ -382,13 +460,13 @@ model.sealToken(token)
 
 #### Unseal Token
 Unseal the user's token
-```
+```js
 model.unsealToken()
 ```
 
 #### Get User's Permissions For a Repo
 Get user's permissions for a specific repo
-```
+```js
 model.getPermissions(scmUri)
 ```
 
@@ -484,8 +562,129 @@ factory.create(config)
 
 #### Update
 Update a specific secret
-```
+```js
 model.update()
+```
+
+### Event Factory
+#### Search
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.EventFactory.getInstance({
+    datastore,
+    scm
+});
+const config = {
+    params: {
+        pipelineId: '2d991790bab1ac8576097ca87f170df73410b55c'
+    }
+}
+
+factory.list(config).then(events => {
+    // Do stuff with list of events
+});
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Config Object |
+| config.params | Object | fields to search on |
+
+#### Create
+```js
+factory.create(config).then(model => {
+    // do stuff with event model
+});
+```
+
+| Parameter        | Type  |  Required | Description |
+| :-------------   | :---- | :-------------|  :-------------|
+| config        | Object | Yes | Configuration Object |
+| config.type | String | No | Event type: pipeline or pr |
+| config.pipelineId | String | Yes | Unique identifier of pipeline |
+| config.sha | String | Yes | Commit sha that the event was based on |
+| config.workflow | Array | Yes | Workflow of the pipeline |
+| config.username | String | Yes | Username of the user that creates this event |
+| config.causeMessage | String | No | Message that describes why the event was created |
+
+#### Get
+Get an event based on id. Can pass the generatedId for the event, or { pipelineId, sha } and the id will be determined automatically.
+```js
+factory.get(id).then(model => {
+    // do stuff with event model
+});
+
+factory.get({ pipelineId, sha }).then(model => {
+    // do stuff with event model
+});
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| id | String | The unique ID for the build |
+| config.pipelineId | String | Unique identifier of pipeline |
+| config.sha | String | Commit sha that the event was based on |
+
+### Event Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.EventFactory.getInstance({
+    datastore,
+    scm
+});
+const config = {
+    pipelineId: '12345f642bbfd1886623964b4cff12db59869e5d',
+    sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
+    workflow: ['main', 'publish'],    
+    username: 'stjohn',
+    causeMessage: 'Merge pull request #26 from screwdriver-cd/models'
+}
+
+factory.create(config)
+    .then(model => {    // do something
+    });
+```
+
+Example event model that got created:
+```json
+{
+    "type": "pipeline",
+    "pipelineId": "12345f642bbfd1886623964b4cff12db59869e5d",
+    "sha": "ccc49349d3cffbd12ea9e3d41521480b4aa5de5f",
+    "createTime": "2038-01-19T03:14:08.131Z",
+    "commit": {
+        "url": "https://link.to/commitDiff",
+        "message": "some commit message that is here",
+        "author": {
+            "avatar": "https://avatars.githubusercontent.com/u/1234567?v=3",
+            "name": "Batman",
+            "url": "https://internal-ghe.mycompany.com/imbatman",
+            "username": "imbatman"
+        }
+    },
+    "workflow": ["main", "publish"],
+    "causeMessage": "Merge pull request #26 from screwdriver-cd/models",
+    "creator": {
+        "avatar": "https://avatars.githubusercontent.com/u/2042?v=3",
+        "name": "St John",
+        "url": "https://github.com/stjohn",
+        "username": "stjohn"
+    }
+}
+```
+
+#### Update
+Update a specific event
+```js
+model.update()
+```
+
+#### Get builds
+Get builds that belong to this event
+```js
+model.getBuilds()
 ```
 
 ## Testing
@@ -505,7 +704,7 @@ Code licensed under the BSD 3-Clause license. See LICENSE file for terms.
 [license-image]: https://img.shields.io/npm/l/screwdriver-models.svg
 [issues-image]: https://img.shields.io/github/issues/screwdriver-cd/models.svg
 [issues-url]: https://github.com/screwdriver-cd/models/issues
-[status-image]: https://cd.screwdriver.cd/pipelines/4c499806ad2cac5ec98f5cf4805fd3a2bd43203a/badge
-[status-url]: https://cd.screwdriver.cd/pipelines/4c499806ad2cac5ec98f5cf4805fd3a2bd43203a
+[status-image]: https://cd.screwdriver.cd/pipelines/2aa2e1da381e398a9c42e739bf85b33a813520c0/badge
+[status-url]: https://cd.screwdriver.cd/pipelines/2aa2e1da381e398a9c42e739bf85b33a813520c0
 [daviddm-image]: https://david-dm.org/screwdriver-cd/models.svg?theme=shields.io
 [daviddm-url]: https://david-dm.org/screwdriver-cd/models
