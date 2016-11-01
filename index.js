@@ -1,9 +1,17 @@
 'use strict';
 
 const BuildFactory = require('./lib/buildFactory');
+const EventFactory = require('./lib/eventFactory');
 const JobFactory = require('./lib/jobFactory');
 const PipelineFactory = require('./lib/pipelineFactory');
-const UserFactory = require('./lib/userFactory');
 const SecretFactory = require('./lib/secretFactory');
+const UserFactory = require('./lib/userFactory');
 
-module.exports = { BuildFactory, JobFactory, PipelineFactory, SecretFactory, UserFactory };
+module.exports = {
+    BuildFactory,
+    EventFactory,
+    JobFactory,
+    PipelineFactory,
+    SecretFactory,
+    UserFactory
+};
