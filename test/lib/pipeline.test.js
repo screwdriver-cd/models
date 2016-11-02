@@ -580,6 +580,15 @@ describe('Pipeline Model', () => {
 
     describe('remove', () => {
         let archived;
+        let prType;
+        const testEvent = {
+            pipelineId: testId,
+            remove: sinon.stub().resolves(null),
+            sha: '1a6559a40e72c8bbe7def302e85d63f68ef177e4',
+            type: 'pipeline',
+            username: 'd2lam',
+            workflow: ['main']
+        };
         const secret = {
             name: 'TEST',
             value: 'testvalue',
@@ -597,11 +606,22 @@ describe('Pipeline Model', () => {
                 paginate
             };
 
+            prType = {
+                params: {
+                    pipelineId: testId,
+                    type: 'pr'
+                },
+                paginate,
+                sort: 'descending'
+            };
+
+            eventFactoryMock.list.resolves([]);
             jobFactoryMock.list.resolves([]);
             secretFactoryMock.list.resolves([secret]);
         });
 
         afterEach(() => {
+            eventFactoryMock.list.reset();
             jobFactoryMock.list.reset();
             publishJob.remove.reset();
             mainJob.remove.reset();
@@ -665,6 +685,56 @@ describe('Pipeline Model', () => {
             }).catch((err) => {
                 assert.isOk(err);
                 assert.equal(err.message, 'error removing job');
+            });
+        });
+
+        it('remove events recursively', () => {
+            const pipelineType = hoek.clone(prType);
+            let i;
+
+            pipelineType.params.type = 'pipeline';
+
+            for (i = 0; i < 4; i += 1) {
+                eventFactoryMock.list.withArgs(pipelineType).onCall(i).resolves([testEvent]);
+            }
+            eventFactoryMock.list.withArgs(pipelineType).onCall(i).resolves([]);
+
+            for (i = 0; i < 2; i += 1) {
+                eventFactoryMock.list.withArgs(prType).onCall(i).resolves([testEvent]);
+            }
+            eventFactoryMock.list.withArgs(prType).onCall(i).resolves([]);
+
+            return pipeline.remove().then(() => {
+                assert.callCount(eventFactoryMock.list, 8);
+
+                // Delete all the events
+                assert.callCount(testEvent.remove, 6);
+
+                // Delete the pipeline
+                assert.calledOnce(datastore.remove);
+            });
+        });
+
+        it('fail if getEvents returns error', () => {
+            eventFactoryMock.list.rejects('error');
+
+            return pipeline.remove().then(() => {
+                assert.fail('should not get here');
+            }).catch((err) => {
+                assert.isOk(err);
+                assert.equal(err.message, 'error');
+            });
+        });
+
+        it('fail if event.remove returns error', () => {
+            testEvent.remove.rejects('error removing event');
+            eventFactoryMock.list.resolves([testEvent]);
+
+            return pipeline.remove().then(() => {
+                assert.fail('should not get here');
+            }).catch((err) => {
+                assert.isOk(err);
+                assert.equal(err.message, 'error removing event');
             });
         });
 
