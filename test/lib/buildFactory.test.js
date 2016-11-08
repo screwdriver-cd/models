@@ -122,9 +122,10 @@ describe('Build Factory', () => {
         const container = 'node:4';
         const steps = [
             { name: 'sd-setup' },
-            { name: 'init' },
-            { name: 'test' }
+            { command: 'npm install', name: 'init' },
+            { command: 'npm test', name: 'test' }
         ];
+        const environment = { NODE_ENV: 'test', NODE_VERSION: '4' };
         const permutations = [{
             commands: [
                 { command: 'npm install', name: 'init' },
@@ -190,6 +191,7 @@ describe('Build Factory', () => {
                         number: dateNow,
                         status: 'QUEUED',
                         container,
+                        environment,
                         steps,
                         jobId,
                         sha
