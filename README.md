@@ -283,6 +283,8 @@ factory.create(config).then(model => {
 | config.username | String | Yes | User who made the change to kick off the build |
 | config.container | String | No | Container for the build to run in |
 | config.sha | String | No | SHA used to kick off the build |
+| config.prRef | String | No | PR branch or reference; required for PR jobs |
+| config.eventId | String | No | Id of the event this build belongs to |
 
 #### Get
 Get a build based on id. Can pass the generatedId for the build, or the unique keys for the model, and the id will be determined automatically.
