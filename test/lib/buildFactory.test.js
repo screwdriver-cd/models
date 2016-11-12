@@ -61,7 +61,8 @@ describe('Build Factory', () => {
         };
         scmMock = {
             getCommitSha: sinon.stub(),
-            decorateCommit: sinon.stub()
+            decorateCommit: sinon.stub(),
+            getCheckoutCommand: sinon.stub()
         };
         jobFactory = {
             getInstance: sinon.stub().returns(jobFactoryMock)
@@ -116,12 +117,17 @@ describe('Build Factory', () => {
         const eventId = '12345f642bbfd1886623964b4cff12db59869e5d';
         const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
         const scmUri = 'github.com:12345:master';
+        const scmRepo = {
+            name: 'screwdriver-cd/models'
+        };
+        const prRef = 'pull/3/merge';
         const username = 'i_made_the_request';
         const dateNow = Date.now();
         const isoTime = (new Date(dateNow)).toISOString();
         const container = 'node:4';
         const steps = [
             { name: 'sd-setup' },
+            { command: 'git clone', name: 'sd-checkout-code' },
             { command: 'npm install', name: 'init' },
             { command: 'npm test', name: 'test' }
         ];
@@ -156,6 +162,7 @@ describe('Build Factory', () => {
         beforeEach(() => {
             scmMock.getCommitSha.resolves(sha);
             scmMock.decorateCommit.resolves(commit);
+            scmMock.getCheckoutCommand.resolves(steps[1]);
 
             sandbox = sinon.sandbox.create({
                 useFakeTimers: false
@@ -213,7 +220,7 @@ describe('Build Factory', () => {
 
             const jobMock = {
                 permutations,
-                pipeline: Promise.resolve({ scmUri })
+                pipeline: Promise.resolve({ scmUri, scmRepo })
             };
 
             jobFactoryMock.get.resolves(jobMock);
@@ -233,14 +240,13 @@ describe('Build Factory', () => {
 
             const jobMock = {
                 permutations,
-                pipeline: Promise.resolve({ scmUri })
+                pipeline: Promise.resolve({ scmUri, scmRepo })
             };
 
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
 
-            return factory.create({ username, jobId, eventId }).then((model) => {
-                assert.calledWith(datastore.save, saveConfig);
+            return factory.create({ username, jobId, eventId, prRef }).then((model) => {
                 assert.instanceOf(model, Build);
                 assert.calledOnce(jobFactory.getInstance);
                 assert.calledWith(jobFactoryMock.get, jobId);
@@ -254,7 +260,16 @@ describe('Build Factory', () => {
                     sha,
                     scmUri
                 });
+                assert.calledWith(scmMock.getCheckoutCommand, {
+                    branch: 'master',
+                    host: 'github.com',
+                    org: 'screwdriver-cd',
+                    repo: 'models',
+                    prRef,
+                    sha
+                });
                 assert.calledOnce(startStub);
+                assert.calledWith(datastore.save, saveConfig);
             });
         });
 
@@ -265,7 +280,7 @@ describe('Build Factory', () => {
 
             const jobMock = {
                 permutations,
-                pipeline: Promise.resolve({ scmUri })
+                pipeline: Promise.resolve({ scmUri, scmRepo })
             };
 
             jobFactoryMock.get.resolves(jobMock);
