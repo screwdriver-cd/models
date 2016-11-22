@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 19.0.0
+
+Breaking changes:
+  * A [`bookend`][https://github.com/screwdriver-cd/build-bookend] is now required for `BuildFactory` configuration.
+
 ## 18.0.0
 
 Breaking changes:

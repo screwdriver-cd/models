@@ -18,12 +18,14 @@ class Build {
         this.apiUri = config.apiUri;
         this.tokenGen = config.tokenGen;
         this.uiUri = config.uiUri;
+        this.steps = config.steps;
 
         this.start = startStub.resolves(this);
     }
 }
 
 describe('Build Factory', () => {
+    let bookendMock;
     let BuildFactory;
     let datastore;
     let executor;
@@ -45,6 +47,10 @@ describe('Build Factory', () => {
     });
 
     beforeEach(() => {
+        bookendMock = {
+            getSetupCommands: sinon.stub(),
+            getTeardownCommands: sinon.stub()
+        };
         executor = {};
         datastore = {
             save: sinon.stub(),
@@ -73,6 +79,8 @@ describe('Build Factory', () => {
         // by re-registering data-schema with its own implementation
         mockery.registerMock('screwdriver-data-schema', schema);
 
+        mockery.registerMock('screwdriver-build-bookend', bookendMock);
+
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('./jobFactory', jobFactory);
         mockery.registerMock('./userFactory', {
@@ -83,7 +91,13 @@ describe('Build Factory', () => {
         // eslint-disable-next-line global-require
         BuildFactory = require('../../lib/buildFactory');
 
-        factory = new BuildFactory({ datastore, executor, scm: scmMock, uiUri });
+        factory = new BuildFactory({
+            datastore,
+            executor,
+            scm: scmMock,
+            uiUri,
+            bookend: bookendMock
+        });
         factory.apiUri = apiUri;
         factory.tokenGen = tokenGen;
     });
@@ -126,8 +140,7 @@ describe('Build Factory', () => {
         const isoTime = (new Date(dateNow)).toISOString();
         const container = 'node:4';
         const steps = [
-            { name: 'sd-setup' },
-            { command: 'git clone', name: 'sd-checkout-code' },
+            { name: 'sd-setup', command: 'git clone' },
             { command: 'npm install', name: 'init' },
             { command: 'npm test', name: 'test' }
         ];
@@ -162,7 +175,8 @@ describe('Build Factory', () => {
         beforeEach(() => {
             scmMock.getCommitSha.resolves(sha);
             scmMock.decorateCommit.resolves(commit);
-            scmMock.getCheckoutCommand.resolves(steps[1]);
+            bookendMock.getSetupCommands.resolves([steps[0]]);
+            bookendMock.getTeardownCommands.resolves([]);
 
             sandbox = sinon.sandbox.create({
                 useFakeTimers: false
@@ -260,16 +274,48 @@ describe('Build Factory', () => {
                     sha,
                     scmUri
                 });
-                assert.calledWith(scmMock.getCheckoutCommand, {
-                    branch: 'master',
-                    host: 'github.com',
-                    org: 'screwdriver-cd',
-                    repo: 'models',
-                    prRef,
-                    sha
+                assert.calledWith(bookendMock.getSetupCommands, {
+                    pipeline: { scmUri, scmRepo },
+                    job: jobMock,
+                    build: sinon.match.object
+                });
+                assert.calledWith(bookendMock.getTeardownCommands, {
+                    pipeline: { scmUri, scmRepo },
+                    job: jobMock,
+                    build: sinon.match.object
                 });
                 assert.calledOnce(startStub);
                 assert.calledWith(datastore.save, saveConfig);
+            });
+        });
+
+        it('adds a teardown command if one exists', () => {
+            const expected = {};
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+
+            datastore.save.resolves(expected);
+
+            const jobMock = {
+                permutations,
+                pipeline: Promise.resolve({ scmUri, scmRepo })
+            };
+            const teardown = {
+                name: 'sd-teardown',
+                command: 'echo "hello"'
+            };
+
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+            bookendMock.getTeardownCommands.resolves([teardown]);
+            bookendMock.getSetupCommands.resolves([]);
+
+            const expectedSteps = steps.slice(1);
+
+            expectedSteps.push(teardown);
+
+            return factory.create({ username, jobId, eventId, prRef }).then((model) => {
+                assert.instanceOf(model, Build);
+                assert.deepEqual(model.steps, expectedSteps);
             });
         });
 
@@ -333,7 +379,7 @@ describe('Build Factory', () => {
         let config;
 
         beforeEach(() => {
-            config = { datastore, executor, scm: {}, uiUri };
+            config = { datastore, executor, scm: {}, uiUri, bookend: bookendMock };
         });
 
         it('should utilize BaseFactory to get an instance', () => {
@@ -351,16 +397,20 @@ describe('Build Factory', () => {
                 Error, 'No executor provided to BuildFactory');
 
             assert.throw(() => {
-                BuildFactory.getInstance({ executor, scm: {}, uiUri });
+                BuildFactory.getInstance({ executor, scm: {}, uiUri, bookend: bookendMock });
             }, Error, 'No datastore provided to BuildFactory');
 
             assert.throw(() => {
-                BuildFactory.getInstance({ executor, datastore, uiUri });
+                BuildFactory.getInstance({ executor, datastore, uiUri, bookend: bookendMock });
             }, Error, 'No scm plugin provided to BuildFactory');
 
             assert.throw(() => {
-                BuildFactory.getInstance({ executor, scm: {}, datastore });
+                BuildFactory.getInstance({ executor, scm: {}, datastore, bookend: bookendMock });
             }, Error, 'No uiUri provided to BuildFactory');
+
+            assert.throw(() => {
+                BuildFactory.getInstance({ executor, scm: {}, datastore, uiUri });
+            }, Error, 'No bookend plugin provided to BuildFactory');
         });
     });
 });
