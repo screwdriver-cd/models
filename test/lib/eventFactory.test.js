@@ -12,7 +12,6 @@ describe('Event Factory', () => {
     let EventFactory;
     let datastore;
     let factory;
-    let userFactoryMock;
     let pipelineFactoryMock;
     let scm;
     let Event;
@@ -31,9 +30,6 @@ describe('Event Factory', () => {
         pipelineFactoryMock = {
             get: sinon.stub()
         };
-        userFactoryMock = {
-            get: sinon.stub()
-        };
         scm = {
             decorateAuthor: sinon.stub(),
             decorateCommit: sinon.stub()
@@ -41,9 +37,6 @@ describe('Event Factory', () => {
 
         mockery.registerMock('./pipelineFactory', {
             getInstance: sinon.stub().returns(pipelineFactoryMock)
-        });
-        mockery.registerMock('./userFactory', {
-            getInstance: sinon.stub().returns(userFactoryMock)
         });
 
         // eslint-disable-next-line global-require
@@ -130,10 +123,8 @@ describe('Event Factory', () => {
 
             pipelineFactoryMock.get.withArgs(pipelineId).resolves({
                 pipelineId,
-                scmUri: 'github.com:1234:branch'
-            });
-            userFactoryMock.get.withArgs({ username: 'stjohn' }).resolves({
-                unsealToken: sinon.stub().resolves('foo')
+                scmUri: 'github.com:1234:branch',
+                token: Promise.resolve('foo')
             });
             scm.decorateAuthor.resolves(creator);
             scm.decorateCommit.resolves(commit);
