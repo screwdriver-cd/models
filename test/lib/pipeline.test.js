@@ -349,6 +349,20 @@ describe('Pipeline Model', () => {
         });
     });
 
+    describe('get token', () => {
+        beforeEach(() => {
+            userFactoryMock.get.resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
+        });
+
+        it('has an token getter', () =>
+            pipeline.token.then((token) => {
+                assert.equal(token, 'foo');
+            })
+        );
+    });
+
     describe('get jobs', () => {
         it('has a jobs getter', () => {
             const listConfig = {
