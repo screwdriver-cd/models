@@ -706,7 +706,7 @@ Code licensed under the BSD 3-Clause license. See LICENSE file for terms.
 [license-image]: https://img.shields.io/npm/l/screwdriver-models.svg
 [issues-image]: https://img.shields.io/github/issues/screwdriver-cd/models.svg
 [issues-url]: https://github.com/screwdriver-cd/models/issues
-[status-image]: https://cd.screwdriver.cd/pipelines/2aa2e1da381e398a9c42e739bf85b33a813520c0/badge
-[status-url]: https://cd.screwdriver.cd/pipelines/2aa2e1da381e398a9c42e739bf85b33a813520c0
+[status-image]: https://cd.screwdriver.cd/pipelines/df3ed329f40b71da57982d071c5bb3f9db5bfcb8/badge
+[status-url]: https://cd.screwdriver.cd/pipelines/df3ed329f40b71da57982d071c5bb3f9db5bfcb8
 [daviddm-image]: https://david-dm.org/screwdriver-cd/models.svg?theme=shields.io
 [daviddm-url]: https://david-dm.org/screwdriver-cd/models
