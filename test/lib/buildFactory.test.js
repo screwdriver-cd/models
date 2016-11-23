@@ -140,7 +140,8 @@ describe('Build Factory', () => {
         const isoTime = (new Date(dateNow)).toISOString();
         const container = 'node:4';
         const steps = [
-            { name: 'sd-setup', command: 'git clone' },
+            { name: 'sd-setup' },
+            { name: 'setup-sd-scm', command: 'git clone' },
             { command: 'npm install', name: 'init' },
             { command: 'npm test', name: 'test' }
         ];
@@ -175,7 +176,7 @@ describe('Build Factory', () => {
         beforeEach(() => {
             scmMock.getCommitSha.resolves(sha);
             scmMock.decorateCommit.resolves(commit);
-            bookendMock.getSetupCommands.resolves([steps[0]]);
+            bookendMock.getSetupCommands.resolves([steps[1]]);
             bookendMock.getTeardownCommands.resolves([]);
 
             sandbox = sinon.sandbox.create({
@@ -309,7 +310,7 @@ describe('Build Factory', () => {
             bookendMock.getTeardownCommands.resolves([teardown]);
             bookendMock.getSetupCommands.resolves([]);
 
-            const expectedSteps = steps.slice(1);
+            const expectedSteps = steps.slice(0, 1).concat(steps.slice(2));
 
             expectedSteps.push(teardown);
 
