@@ -20,7 +20,7 @@ describe('Build Model', () => {
     const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
     const scmUri = 'github.com:12345:master';
     const token = 'equivalentToOneQuarter';
-    const url = `${uiUri}/builds/${buildId}`;
+    const url = `${uiUri}/pipelines/${pipelineId}/builds/${buildId}`;
     let BuildModel;
     let datastore;
     let executorMock;
@@ -32,6 +32,8 @@ describe('Build Model', () => {
     let jobFactoryMock;
     let scmMock;
     let tokenGen;
+    let pipelineMock;
+    let jobMock;
 
     before(() => {
         mockery.enable({
@@ -59,6 +61,17 @@ describe('Build Model', () => {
         };
         jobFactoryMock = {
             get: sinon.stub()
+        };
+        pipelineMock = {
+            id: pipelineId,
+            scmUri,
+            admin: Promise.resolve(adminUser),
+            getToken: sinon.stub().resolves('foo')
+        };
+        jobMock = {
+            id: jobId,
+            name: 'main',
+            pipeline: Promise.resolve(pipelineMock)
         };
         scmMock = {
             updateCommitStatus: sinon.stub().resolves(null)
@@ -129,26 +142,12 @@ describe('Build Model', () => {
     });
 
     describe('updateCommitStatus', () => {
-        let pipeline;
-
         beforeEach(() => {
-            jobFactoryMock.get.resolves({
-                id: jobId,
-                name: 'main',
-                pipeline: Promise.resolve({
-                    id: pipelineId,
-                    scmUri,
-                    admin: Promise.resolve(adminUser)
-                })
-            });
-            pipeline = {
-                scmUri,
-                admin: Promise.resolve(adminUser)
-            };
+            jobFactoryMock.get.resolves(jobMock);
         });
 
         it('should update the commit status with url', () =>
-            build.updateCommitStatus(pipeline, apiUri)
+            build.updateCommitStatus(pipelineMock, apiUri)
                 .then(() => {
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
@@ -164,7 +163,7 @@ describe('Build Model', () => {
         it('reject on error', () => {
             scmMock.updateCommitStatus.rejects(new Error('nevergonnagiveyouup'));
 
-            return build.updateCommitStatus(pipeline, apiUri)
+            return build.updateCommitStatus(pipelineMock, apiUri)
                 .catch((err) => {
                     assert.instanceOf(err, Error);
                     assert.equal(err.message, 'nevergonnagiveyouup');
@@ -181,15 +180,7 @@ describe('Build Model', () => {
             build.steps = [step0, step1, step2];
 
             executorMock.stop.resolves(null);
-            jobFactoryMock.get.resolves({
-                id: jobId,
-                name: 'main',
-                pipeline: Promise.resolve({
-                    id: pipelineId,
-                    scmUri,
-                    admin: Promise.resolve(adminUser)
-                })
-            });
+            jobFactoryMock.get.resolves(jobMock);
             datastore.update.resolves({});
         });
 
@@ -330,7 +321,8 @@ describe('Build Model', () => {
                 pipeline: Promise.resolve({
                     id: pipelineId,
                     scmUri,
-                    admin: Promise.resolve(adminUser)
+                    admin: Promise.resolve(adminUser),
+                    getToken: sinon.stub().resolves('foo')
                 }),
                 isPR: () => false
             });
@@ -446,7 +438,7 @@ describe('Build Model', () => {
 
     describe('pipeline', () => {
         it('has a pipeline getter', () => {
-            const jobMock = {
+            jobMock = {
                 pipeline: Promise.resolve({})
             };
 
@@ -464,7 +456,7 @@ describe('Build Model', () => {
         });
 
         it('rejects if pipeline is null', () => {
-            const jobMock = {
+            jobMock = {
                 pipeline: Promise.resolve(null)
             };
 
