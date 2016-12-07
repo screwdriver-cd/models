@@ -66,7 +66,7 @@ describe('Build Model', () => {
             id: pipelineId,
             scmUri,
             admin: Promise.resolve(adminUser),
-            getToken: sinon.stub().resolves('foo')
+            token: Promise.resolve('foo')
         };
         jobMock = {
             id: jobId,
@@ -322,7 +322,7 @@ describe('Build Model', () => {
                     id: pipelineId,
                     scmUri,
                     admin: Promise.resolve(adminUser),
-                    getToken: sinon.stub().resolves('foo')
+                    token: Promise.resolve('foo')
                 }),
                 isPR: () => false
             });
