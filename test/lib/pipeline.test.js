@@ -109,6 +109,7 @@ describe('Pipeline Model', () => {
             list: sinon.stub()
         };
         scmMock = {
+            addWebhook: sinon.stub(),
             getFile: sinon.stub(),
             decorateUrl: sinon.stub()
         };
@@ -171,6 +172,7 @@ describe('Pipeline Model', () => {
         beforeEach(() => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
+            scmMock.addWebhook.resolves();
             parserMock.withArgs('superyamlcontent').resolves(PARSED_YAML);
             userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
@@ -329,6 +331,36 @@ describe('Pipeline Model', () => {
             return pipeline.sync()
                 .catch((err) => {
                     assert.deepEqual(err, error);
+                });
+        });
+
+        it('updates the webhook', () => {
+            jobFactoryMock.list.resolves([]);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+            scmMock.addWebhook.resolves(null);
+
+            return pipeline.sync()
+                .then(() => {
+                    assert.calledWith(scmMock.addWebhook, {
+                        scmUri,
+                        token: 'foo',
+                        webhookUrl: 'https://api.screwdriver.cd/v4/webhooks'
+                    });
+                });
+        });
+
+        it('does not reject if there is a failure to update the webhook', () => {
+            jobFactoryMock.list.resolves([]);
+            scmMock.addWebhook.rejects(new Error('thisShouldNotFailSync'));
+
+            return pipeline.sync()
+                .then(() => {
+                    assert.calledWith(scmMock.addWebhook, {
+                        scmUri,
+                        token: 'foo',
+                        webhookUrl: 'https://api.screwdriver.cd/v4/webhooks'
+                    });
                 });
         });
     });
