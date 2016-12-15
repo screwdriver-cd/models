@@ -12,11 +12,10 @@ jobs:
 
     publish:
         steps:
-            - setup-ci: git clone https://gist.github.com/3d2388b2a7ba658cdcdaffa8cd874e50.git ci
-            - install-ci: npm install npm-auto-version
-            - publish-npm: ./ci/publish.sh
+            - install: npm install semantic-release
+            - publish: npm run semantic-release
         secrets:
             # Publishing to NPM
             - NPM_TOKEN
             # Pushing tags to Git
-            - GIT_KEY
+            - GH_TOKEN
