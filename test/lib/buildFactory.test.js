@@ -140,8 +140,8 @@ describe('Build Factory', () => {
         const isoTime = (new Date(dateNow)).toISOString();
         const container = 'node:4';
         const steps = [
-            { name: 'sd-setup' },
-            { name: 'setup-sd-scm', command: 'git clone' },
+            { name: 'sd-setup-launcher' },
+            { name: 'sd-setup-scm', command: 'git clone' },
             { command: 'npm install', name: 'init' },
             { command: 'npm test', name: 'test' }
         ];
