@@ -11,7 +11,7 @@ class Base {
     }
 }
 class BF {}
-const baseId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
+const baseId = 135323;
 const createMock = c => new Base(c);
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -20,7 +20,6 @@ describe('Base Factory', () => {
     let BaseFactory;
     let datastore;
     let scm;
-    let hashaMock;
     let factory;
     let schema;
 
@@ -38,21 +37,17 @@ describe('Base Factory', () => {
             scan: sinon.stub(),
             get: sinon.stub()
         };
-        hashaMock = {
-            sha1: sinon.stub()
-        };
         schema = {
             models: {
                 base: {
                     tableName: 'base',
-                    keys: ['foo.key'],
+                    keys: ['foo'],
                     allKeys: ['id', 'foo', 'bar']
                 }
             }
         };
 
         mockery.registerMock('screwdriver-data-schema', schema);
-        mockery.registerMock('screwdriver-hashr', hashaMock);
 
         // eslint-disable-next-line global-require
         BaseFactory = require('../../lib/baseFactory');
@@ -80,23 +75,16 @@ describe('Base Factory', () => {
         const saveConfig = {
             table: 'base',
             params: {
-                id: baseId,
-                data: {
-                    foo: {
-                        key: 'foo',
-                        notkey: 'bar'
-                    },
-                    bar: false
-                }
+                foo: {
+                    key: 'foo',
+                    notkey: 'bar'
+                },
+                bar: false
             }
-        };
-        const filteredKey = {
-            'foo.key': 'foo'
         };
 
         beforeEach(() => {
             factory.createClass = createMock;
-            hashaMock.sha1.withArgs(filteredKey).returns(baseId);
         });
 
         it('creates a new "base" in the datastore', () => {
@@ -155,7 +143,12 @@ describe('Base Factory', () => {
                     id: baseId
                 }
             }).resolves(baseData);
-            hashaMock.sha1.returns(baseId);
+            datastore.get.withArgs({
+                table: 'base',
+                params: {
+                    foo: 'foo'
+                }
+            }).resolves(baseData);
         });
 
         it('calls datastore get with id and returns correct values', () =>
@@ -178,7 +171,7 @@ describe('Base Factory', () => {
                 })
         );
 
-        it('calls datastore get with id generated from config and returns correct values', () =>
+        it('calls datastore get with config object and returns correct values', () =>
             factory.get({ foo: 'foo', bar: 'bar' })
                 .then((model) => {
                     assert.instanceOf(model, Base);

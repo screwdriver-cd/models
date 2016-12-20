@@ -43,8 +43,8 @@ describe('Secret Model', () => {
 
         createConfig = {
             datastore,
-            id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
-            pipelineId: 'e124fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+            id: 12345,
+            pipelineId: 54321,
             name: 'secret',
             value: 'batman',
             allowInPR: true,
@@ -87,10 +87,8 @@ describe('Secret Model', () => {
                     assert.isTrue(datastore.update.calledWith({
                         table: 'secrets',
                         params: {
-                            id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
-                            data: {
-                                value: 'sealedspiderman'
-                            }
+                            id: 12345,
+                            value: 'sealedspiderman'
                         }
                     }));
                 });

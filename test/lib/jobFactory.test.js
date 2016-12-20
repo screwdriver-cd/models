@@ -12,7 +12,6 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('Job Factory', () => {
     let JobFactory;
     let datastore;
-    let hashaMock;
     let factory;
 
     before(() => {
@@ -28,14 +27,10 @@ describe('Job Factory', () => {
             scan: sinon.stub(),
             get: sinon.stub()
         };
-        hashaMock = {
-            sha1: sinon.stub()
-        };
 
         // Fixing mockery issue with duplicate file names
         // by re-registering data-schema with its own implementation
         mockery.registerMock('screwdriver-data-schema', schema);
-        mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('./job', Job);
 
         // eslint-disable-next-line global-require
@@ -74,19 +69,12 @@ describe('Job Factory', () => {
         const saveConfig = {
             table: 'jobs',
             params: {
-                id: jobId,
-                data: {
-                    name,
-                    pipelineId,
-                    state: 'ENABLED',
-                    archived: false
-                }
+                name,
+                pipelineId,
+                state: 'ENABLED',
+                archived: false
             }
         };
-
-        beforeEach(() => {
-            hashaMock.sha1.returns(jobId);
-        });
 
         it('creates a new job in the datastore', () => {
             const expected = {
