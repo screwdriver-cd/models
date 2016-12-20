@@ -171,6 +171,16 @@ describe('Base Factory', () => {
                 })
         );
 
+        it('converts string id to a number', () =>
+            factory.get('135323')
+                .then((model) => {
+                    assert.instanceOf(model, Base);
+                    assert.isTrue(datastore.get.calledOnce);
+                    assert.deepEqual(model.datastore, datastore);
+                    assert.deepEqual(model.scm, scm);
+                })
+        );
+
         it('calls datastore get with config object and returns correct values', () =>
             factory.get({ foo: 'foo', bar: 'bar' })
                 .then((model) => {
