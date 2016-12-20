@@ -12,7 +12,6 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('Pipeline Factory', () => {
     let PipelineFactory;
     let datastore;
-    let hashaMock;
     let scm;
     let factory;
     let userFactoryMock;
@@ -41,9 +40,6 @@ describe('Pipeline Factory', () => {
             scan: sinon.stub(),
             get: sinon.stub()
         };
-        hashaMock = {
-            sha1: sinon.stub()
-        };
         scm = {
             decorateUrl: sinon.stub()
         };
@@ -54,7 +50,6 @@ describe('Pipeline Factory', () => {
         // Fixing mockery issue with duplicate file names
         // by re-registering data-schema with its own implementation
         mockery.registerMock('screwdriver-data-schema', schema);
-        mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('./pipeline', Pipeline);
         mockery.registerMock('./userFactory', {
             getInstance: sinon.stub().returns(userFactoryMock)
@@ -98,13 +93,10 @@ describe('Pipeline Factory', () => {
         const saveConfig = {
             table: 'pipelines',
             params: {
-                id: testId,
-                data: {
-                    admins,
-                    createTime: nowTime,
-                    scmUri,
-                    scmRepo
-                }
+                admins,
+                createTime: nowTime,
+                scmUri,
+                scmRepo
             }
         };
 
@@ -113,8 +105,6 @@ describe('Pipeline Factory', () => {
                 useFakeTimers: false
             });
             sandbox.useFakeTimers(dateNow);
-
-            hashaMock.sha1.returns(testId);
         });
 
         afterEach(() => {

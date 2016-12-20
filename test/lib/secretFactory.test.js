@@ -8,13 +8,13 @@ sinon.assert.expose(assert, { prefix: '' });
 
 describe('Secret Factory', () => {
     const password = 'totallySecurePassword';
-    const pipelineId = 'pipeline1';
+    const pipelineId = 4321;
     const allowInPR = true;
     const name = 'npm_token';
     const sealed = 'erwijx342';
     const unsealed = 'batman';
     const secretData = {
-        id: 'abc123',
+        id: 12345,
         pipelineId,
         name,
         value: sealed,
@@ -22,7 +22,6 @@ describe('Secret Factory', () => {
     };
     let SecretFactory;
     let datastore;
-    let hashaMock;
     let ironMock;
     let factory;
     let Secret;
@@ -40,16 +39,12 @@ describe('Secret Factory', () => {
             scan: sinon.stub(),
             get: sinon.stub()
         };
-        hashaMock = {
-            sha1: sinon.stub()
-        };
         ironMock = {
             seal: sinon.stub(),
             unseal: sinon.stub(),
             defaults: 'defaults'
         };
 
-        mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('iron', ironMock);
 
         // eslint-disable-next-line global-require
@@ -80,7 +75,7 @@ describe('Secret Factory', () => {
 
     describe('create', () => {
         it('should create a Secret', () => {
-            const generatedId = 'aabbccdd';
+            const generatedId = 1234135;
             const expected = {
                 pipelineId,
                 name,
@@ -90,7 +85,6 @@ describe('Secret Factory', () => {
             };
 
             ironMock.seal.yieldsAsync(null, sealed);
-            hashaMock.sha1.returns(generatedId);
             datastore.save.resolves(expected);
 
             return factory.create({
@@ -109,7 +103,7 @@ describe('Secret Factory', () => {
     });
 
     describe('get', () => {
-        const id = 'abc123';
+        const id = 12345;
         const expected = {
             pipelineId,
             name,
@@ -125,7 +119,13 @@ describe('Secret Factory', () => {
                     id
                 }
             }).resolves(secretData);
-            hashaMock.sha1.returns(id);
+            datastore.get.withArgs({
+                table: 'secrets',
+                params: {
+                    pipelineId,
+                    name
+                }
+            }).resolves(secretData);
             ironMock.unseal.yieldsAsync(null, unsealed);
         });
 
@@ -173,7 +173,7 @@ describe('Secret Factory', () => {
                 }
             }).resolves(null);
 
-            return factory.get({ pipelineId, name })
+            return factory.get(id)
                 .then((model) => {
                     assert.isTrue(datastore.get.calledOnce);
                     assert.notCalled(ironMock.unseal);
@@ -188,28 +188,28 @@ describe('Secret Factory', () => {
             count: 2
         };
         const datastoreReturnValue = [{
-            id: '151c9b11e4a9a27e9e374daca6e59df37d8cf00f',
-            pipelineId: 'pipeline1',
+            id: 1234512,
+            pipelineId: 4321,
             name: 'secret1',
             value: 'sealedsecret1value',
             allowInPR: true
         }, {
-            id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
-            pipelineId: 'pipeline1',
+            id: 5315423,
+            pipelineId: 4321,
             name: 'secret2',
             value: 'sealedsecret2value',
             allowInPR: false
         }];
 
         const returnValue = [{
-            id: '151c9b11e4a9a27e9e374daca6e59df37d8cf00f',
-            pipelineId: 'pipeline1',
+            id: 1234512,
+            pipelineId: 4321,
             name: 'secret1',
             value: 'batman',
             allowInPR: true
         }, {
-            id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
-            pipelineId: 'pipeline1',
+            id: 5315423,
+            pipelineId: 4321,
             name: 'secret2',
             value: 'superman',
             allowInPR: false

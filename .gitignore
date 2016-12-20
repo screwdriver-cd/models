@@ -3,3 +3,4 @@ artifacts/
 npm-debug.log
 .DS_STORE
 .*.swp
+.nyc_output

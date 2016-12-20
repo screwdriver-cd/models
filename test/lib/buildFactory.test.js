@@ -29,7 +29,6 @@ describe('Build Factory', () => {
     let BuildFactory;
     let datastore;
     let executor;
-    let hashaMock;
     let jobFactoryMock;
     let userFactoryMock;
     let scmMock;
@@ -56,9 +55,6 @@ describe('Build Factory', () => {
             save: sinon.stub(),
             scan: sinon.stub()
         };
-        hashaMock = {
-            sha1: sinon.stub()
-        };
         jobFactoryMock = {
             get: sinon.stub()
         };
@@ -81,7 +77,6 @@ describe('Build Factory', () => {
 
         mockery.registerMock('screwdriver-build-bookend', bookendMock);
 
-        mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('./jobFactory', jobFactory);
         mockery.registerMock('./userFactory', {
             getInstance: sinon.stub().returns(userFactoryMock)
@@ -126,9 +121,8 @@ describe('Build Factory', () => {
 
     describe('create', () => {
         let sandbox;
-        const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
-        const jobId = '62089f642bbfd1886623964b4cff12db59869e5d';
-        const eventId = '12345f642bbfd1886623964b4cff12db59869e5d';
+        const jobId = 12345;
+        const eventId = 123456;
         const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
         const scmUri = 'github.com:12345:master';
         const scmRepo = {
@@ -184,8 +178,6 @@ describe('Build Factory', () => {
             });
             sandbox.useFakeTimers(dateNow);
 
-            hashaMock.sha1.returns(testId);
-
             jobFactoryMock.get.resolves({
                 permutations
             });
@@ -204,20 +196,17 @@ describe('Build Factory', () => {
             saveConfig = {
                 table: 'builds',
                 params: {
-                    id: testId,
-                    data: {
-                        eventId,
-                        cause: 'Started by user i_made_the_request',
-                        commit,
-                        createTime: isoTime,
-                        number: dateNow,
-                        status: 'QUEUED',
-                        container,
-                        environment,
-                        steps,
-                        jobId,
-                        sha
-                    }
+                    eventId,
+                    cause: 'Started by user i_made_the_request',
+                    commit,
+                    createTime: isoTime,
+                    number: dateNow,
+                    status: 'QUEUED',
+                    container,
+                    environment,
+                    steps,
+                    jobId,
+                    sha
                 }
             };
         });
@@ -240,7 +229,7 @@ describe('Build Factory', () => {
 
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
-            delete saveConfig.params.data.commit;
+            delete saveConfig.params.commit;
 
             return factory.create({ garbage, username, jobId, eventId, sha }).then(() => {
                 assert.calledWith(datastore.save, saveConfig);
@@ -331,7 +320,7 @@ describe('Build Factory', () => {
             };
 
             jobFactoryMock.get.resolves(jobMock);
-            delete saveConfig.params.data.commit;
+            delete saveConfig.params.commit;
 
             return factory.create({ username, jobId, eventId, sha }).then((model) => {
                 assert.calledWith(datastore.save, saveConfig);

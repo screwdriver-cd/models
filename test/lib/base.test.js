@@ -48,7 +48,7 @@ describe('Base Model', () => {
         config = {
             datastore,
             scm,
-            id: 'as12345',
+            id: 12345,
             foo: 'foo',
             bar: 'bar'
         };
@@ -104,10 +104,8 @@ describe('Base Model', () => {
                     assert.isTrue(datastore.update.calledWith({
                         table: 'base',
                         params: {
-                            id: 'as12345',
-                            data: {
-                                foo: 'banana'
-                            }
+                            id: 12345,
+                            foo: 'banana'
                         }
                     }));
                 });
@@ -134,7 +132,7 @@ describe('Base Model', () => {
         const params = {
             table: 'base',
             params: {
-                id: 'as12345'
+                id: 12345
             }
         };
 
@@ -179,13 +177,13 @@ describe('Base Model', () => {
 
     describe('toString', () => {
         it('should give a string representation of the model', () => {
-            assert.strictEqual(base.toString(), '{"id":"as12345","foo":"foo","bar":"bar"}');
+            assert.strictEqual(base.toString(), '{"id":12345,"foo":"foo","bar":"bar"}');
         });
     });
 
     describe('toJson', () => {
         it('should give an object representation of the model data', () => {
-            assert.deepEqual(base.toJson(), { id: 'as12345', foo: 'foo', bar: 'bar' });
+            assert.deepEqual(base.toJson(), { id: 12345, foo: 'foo', bar: 'bar' });
         });
     });
 
