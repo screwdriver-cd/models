@@ -95,6 +95,17 @@ factory.get({ scmUri }).then(model => {
 })
 ```
 
+#### Add Screwdriver webhook
+Attach Screwdriver webhook to the pipeline's repository
+```js
+model.addWebhook(webhookUrl)
+```
+
+| Parameter        | Type  | Description |
+| :-------------   | :---- | :--------|
+| webhookUrl        | String | The webhook url to be added |
+
+
 #### Sync
 Sync the pipeline. Look up the configuration in the repo to create and delete jobs if necessary.
 ```js
@@ -108,8 +119,8 @@ model.getConfiguration(config)
 ```
 
 | Parameter        | Type  | Required | Description |
-| :-------------   | :---- | : --- | :--- | :-------------|
-| ref        | String | No | | Reference to the branch or PR |
+| :-------------   | :---- | :--- | :--------|
+| ref        | String | No | Reference to the branch or PR |
 
 
 #### Get Jobs
@@ -119,7 +130,7 @@ model.getJobs(config)
 ```
 
 | Parameter        | Type  | Required | Default | Description |
-| :-------------   | :---- | : --- | :--- | :-------------|
+| :-------------   | :---- | :--- | :--- | :-------------|
 | config        | Object | No | | Configuration Object |
 | config.params | Object | No | | Fields to search on |
 | config.params.sort | Boolean | No | false| Sorting by createTime |
@@ -132,7 +143,7 @@ model.getEvents(config)
 ```
 
 | Parameter        | Type  | Required | Default | Description |
-| :-------------   | :---- | : --- | :--- | :-------------|
+| :-------------   | :---- | :--- | :--- | :-------------|
 | config        | Object | No | | Config Object |
 | config.type | Number | No | `pipeline` | Type of event: `pipeline` or `pr` |
 | config.sort | Number | No | `descending`| Sorting by createTime |

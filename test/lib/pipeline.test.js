@@ -165,6 +165,37 @@ describe('Pipeline Model', () => {
         });
     });
 
+    describe('addWebhook', () => {
+        beforeEach(() => {
+            userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
+        });
+
+        it('updates the webhook', () => {
+            scmMock.addWebhook.resolves(null);
+
+            return pipeline.addWebhook('https://api.screwdriver.cd/v4/webhooks')
+                .then(() => {
+                    assert.calledWith(scmMock.addWebhook, {
+                        scmUri,
+                        token: 'foo',
+                        webhookUrl: 'https://api.screwdriver.cd/v4/webhooks'
+                    });
+                });
+        });
+
+        it('rejects if there is a failure to update the webhook', () => {
+            scmMock.addWebhook.rejects(new Error('error adding webhooks'));
+
+            return pipeline.addWebhook('https://api.screwdriver.cd/v4/webhooks')
+                .then(() => assert.fail('should not get here'), (err) => {
+                    assert.instanceOf(err, Error);
+                    assert.equal(err.message, 'error adding webhooks');
+                });
+        });
+    });
+
     describe('sync', () => {
         let publishMock;
         let mainMock;
@@ -331,36 +362,6 @@ describe('Pipeline Model', () => {
             return pipeline.sync()
                 .catch((err) => {
                     assert.deepEqual(err, error);
-                });
-        });
-
-        it('updates the webhook', () => {
-            jobFactoryMock.list.resolves([]);
-            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
-            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
-            scmMock.addWebhook.resolves(null);
-
-            return pipeline.sync()
-                .then(() => {
-                    assert.calledWith(scmMock.addWebhook, {
-                        scmUri,
-                        token: 'foo',
-                        webhookUrl: 'https://api.screwdriver.cd/v4/webhooks'
-                    });
-                });
-        });
-
-        it('does not reject if there is a failure to update the webhook', () => {
-            jobFactoryMock.list.resolves([]);
-            scmMock.addWebhook.rejects(new Error('thisShouldNotFailSync'));
-
-            return pipeline.sync()
-                .then(() => {
-                    assert.calledWith(scmMock.addWebhook, {
-                        scmUri,
-                        token: 'foo',
-                        webhookUrl: 'https://api.screwdriver.cd/v4/webhooks'
-                    });
                 });
         });
     });
