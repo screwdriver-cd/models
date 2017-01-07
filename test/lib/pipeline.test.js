@@ -111,7 +111,8 @@ describe('Pipeline Model', () => {
         scmMock = {
             addWebhook: sinon.stub(),
             getFile: sinon.stub(),
-            decorateUrl: sinon.stub()
+            decorateUrl: sinon.stub(),
+            getOpenedPRs: sinon.stub()
         };
         parserMock = sinon.stub();
 
@@ -362,6 +363,80 @@ describe('Pipeline Model', () => {
             return pipeline.sync()
                 .catch((err) => {
                     assert.deepEqual(err, error);
+                });
+        });
+    });
+
+    describe('syncPRs', () => {
+        let prJob;
+
+        beforeEach(() => {
+            datastore.update.resolves(null);
+            scmMock.getFile.resolves('superyamlcontent');
+            parserMock.withArgs('superyamlcontent').resolves(PARSED_YAML);
+            userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
+            prJob = {
+                update: sinon.stub().resolves(null),
+                isPR: sinon.stub().returns(true),
+                name: 'PR-1',
+                state: 'ENABLED',
+                archived: false
+            };
+            jobs = [mainJob, prJob];
+            jobFactoryMock.list.resolves(jobs);
+        });
+
+        it('archive PR job if it is closed', () => {
+            scmMock.getOpenedPRs.resolves([]);
+
+            return pipeline.syncPRs()
+                .then(() => {
+                    assert.calledOnce(prJob.update);
+                    assert.equal(prJob.archived, true);
+                });
+        });
+
+        it('create PR job if it is opened and not in the existing jobs', () => {
+            prJob.archived = true;
+            const prJob2 = {
+                pipelineId: testId,
+                name: 'PR-2',
+                permutations: PARSED_YAML.jobs.main
+            };
+
+            scmMock.getOpenedPRs.resolves([{ name: 'PR-2', ref: 'abc' }]);
+            jobFactoryMock.create.resolves(prJob2);
+
+            return pipeline.syncPRs()
+                .then(() => {
+                    assert.calledWith(jobFactoryMock.create, {
+                        pipelineId: testId,
+                        name: 'PR-2',
+                        permutations: PARSED_YAML.jobs.main
+                    });
+                });
+        });
+
+        it('unarchive PR job if it was previously archived', () => {
+            prJob.archived = true;
+            scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
+
+            return pipeline.syncPRs()
+                .then(() => {
+                    assert.calledOnce(prJob.update);
+                    assert.equal(prJob.archived, false);
+                });
+        });
+
+        it('does nothing if it PR is not archived', () => {
+            scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
+
+            return pipeline.syncPRs()
+                .then(() => {
+                    assert.notCalled(prJob.update);
+                    assert.notCalled(jobFactoryMock.create);
                 });
         });
     });
