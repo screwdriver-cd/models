@@ -5,4 +5,4 @@ jobs:
     main:
         steps:
             - write-file: echo "hello" > $SD_ARTIFACTS_DIR/test
-            - curl: curl -X PUT -d 'hello' http://store.screwdriver.cd/v1/builds/1058/hello
+            - curl: curl -X PUT -T $SD_ARTIFACTS_DIR/test http://store.screwdriver.cd/v1/builds/test
