@@ -6,4 +6,4 @@ jobs:
         steps:
             - write-file: echo "hello" > $SD_ARTIFACTS_DIR/test
             - read-file: cat $SD_ARTIFACTS_DIR/test
-            - curl: curl -X PUT -T $SD_ARTIFACTS_DIR/test https://store.screwdriver.cd/v1/builds/1097/
+            - curl: curl -X PUT -T $SD_ARTIFACTS_DIR/test https://store.screwdriver.cd/v1/builds/1101/
