@@ -1,6 +1,3 @@
-workflow:
-    - publish
-
 shared:
     image: node:6
 
@@ -9,13 +6,5 @@ jobs:
         steps:
             - install: npm install
             - test: npm test
-
-    publish:
-        steps:
-            - install: npm install semantic-release
-            - publish: npm run semantic-release
-        secrets:
-            # Publishing to NPM
-            - NPM_TOKEN
-            # Pushing tags to Git
-            - GH_TOKEN
+            - write-file: echo "hello" > $SD_ARTIFACTS_DIR/test
+            - sleep: sleep 5000
