@@ -7,4 +7,4 @@ jobs:
             - install: npm install
             - test: npm test
             - write-file: echo "hello" > $SD_ARTIFACTS_DIR/test
-            - curl: curl -X PUT -d 'hello' http://store.screwdriver.cd/builds/1057/hello
+            - curl: curl -X PUT -d 'hello' http://store.screwdriver.cd/v1/builds/1058/hello
