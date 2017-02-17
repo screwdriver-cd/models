@@ -7,5 +7,5 @@ jobs:
             - write-file: echo "hello" > $SD_ARTIFACTS_DIR/test
             - read-file: cat $SD_ARTIFACTS_DIR/test
             - dangerous: echo $SD_TOKEN
-            - curl: curl -H "Authorization: Bearer ${SD_TOKEN}" -X PUT https://store.screwdriver.cd/v1/builds/1101/mytest -d $SD_ARTIFACTS_DIR/mytest
+            - curl: curl -X PUT https://store.screwdriver.cd/v1/builds/1101/mytest -d $SD_ARTIFACTS_DIR/mytest
             - sleep: sleep 5000
