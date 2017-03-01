@@ -700,6 +700,64 @@ Get builds that belong to this event
 model.getBuilds()
 ```
 
+### Template Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.TemplateFactory.getInstance({
+    datastore
+});
+const config = {
+    name: 'testTemplate',
+    version: '1.3',
+    description: 'I am a test template',    
+    maintainer: 'foo@bar.com',
+    scmUri: 'github:123:master',
+    config: { image: 'node:6'},
+    labels: ['beta', 'stable']
+}
+
+factory.create(config)
+    .then(model => {    // do something
+    });
+```
+
+#### Update
+Update a specific template
+```js
+model.update()
+```
+
+### Template Factory
+#### Create
+```js
+factory.create(config).then(model => {
+    // do stuff with template model
+});
+```
+
+| Parameter        | Type  |  Required | Description |
+| :-------------   | :---- | :-------------|  :-------------|
+| config        | Object | Yes | Configuration Object |
+| config.name | String | Yes | The template name |
+| config.version | String | Yes | Version of the template |
+| config.description | String | Yes | Description of the template |
+| config.maintainer | Array | Yes | Maintainer's email |
+| config.config | Object | Yes | Config of the screwdriver-template.yaml |
+| config.scmUri | String | Yes | ScmUri of the template pipeline |
+| config.labels | Array | No | Labels attached to the template |
+
+#### Get
+Get an template based on id.
+```js
+factory.get(id).then(model => {
+    // do stuff with template model
+});
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| id | String | The unique ID for the Template |
 ## Testing
 
 ```bash
