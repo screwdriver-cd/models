@@ -38,7 +38,8 @@ describe('Template Factory', () => {
     beforeEach(() => {
         datastore = {
             save: sinon.stub(),
-            get: sinon.stub()
+            get: sinon.stub(),
+            scan: sinon.stub()
         };
 
         // eslint-disable-next-line global-require
@@ -121,5 +122,47 @@ describe('Template Factory', () => {
             assert.throw(TemplateFactory.getInstance,
                 Error, 'No datastore provided to TemplateFactory');
         });
+    });
+
+    describe.only('getTemplate', () => {
+        let config;
+        const returnValue = [
+            {
+                id: '151c9b11e4a9a27e9e374daca6e59df37d8cf00f',
+                name: 'testTemplateName',
+                version: '1.0.1',
+                labels: ['firstLabel', 'secondLabel']
+            },
+            {
+                id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                name: 'deploy',
+                version: '2.3.1',
+                labels: ['thirdLabel', 'fourthLabel']
+            }
+        ];
+
+        beforeEach(() => {
+            config = {
+                name: 'testTemplateName',
+                version: '1.0.0',
+                label: 'testLabel'
+            };
+
+            datastore.scan.resolves(returnValue);
+        });
+
+        it('should get the template for a given config', () => {
+            return factory.getTemplate(config).then((template) => {
+                assert.instanceOf(model, Template);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
+
+        // it('should throw when config not supplied', () => {
+        //     assert.throw(TemplateFactory.getInstance,
+        //         Error, 'No datastore provided to TemplateFactory');
+        // });
     });
 });
