@@ -124,35 +124,51 @@ describe('Template Factory', () => {
         });
     });
 
-    describe.only('getTemplate', () => {
+    describe('getTemplate', () => {
         let config;
-        const returnValue = [
-            {
-                id: '151c9b11e4a9a27e9e374daca6e59df37d8cf00f',
-                name: 'testTemplateName',
-                version: '1.0.1',
-                labels: ['firstLabel', 'secondLabel']
-            },
-            {
-                id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
-                name: 'deploy',
-                version: '2.3.1',
-                labels: ['thirdLabel', 'fourthLabel']
-            }
-        ];
+        let expected;
+        let returnValue;
 
         beforeEach(() => {
             config = {
                 name: 'testTemplateName',
-                version: '1.0.0',
-                label: 'testLabel'
+                version: '1.0'
             };
 
-            datastore.scan.resolves(returnValue);
+            returnValue = [
+                {
+                    id: '151c9b11e4a9a27e9e374daca6e59df37d8cf00f',
+                    name: 'testTemplateName',
+                    version: '1.0.1',
+                    labels: ['testLabel', 'otherLabel']
+                },
+                {
+                    id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    name: 'testTemplateName',
+                    version: '1.0.3',
+                    labels: ['otherLabel']
+                },
+                {
+                    id: '151c9b11e4a9a27e9e374daca6e59df37d8cf00f',
+                    name: 'testTemplateName',
+                    version: '1.0.2',
+                    labels: ['testLabel', 'otherLabel']
+                },
+                {
+                    id: '151c9b11e4a9a27e9e374daca6e59df37d8cf00f',
+                    name: 'testTemplateName',
+                    version: '2.0.1',
+                    labels: ['testLabel', 'otherLabel']
+                }
+            ];
         });
 
-        it('should get the template for a given config', () => {
-            return factory.getTemplate(config).then((template) => {
+        it('should get the correct template for a given config with label', () => {
+            expected = Object.assign({}, returnValue[2]);
+            config.label = 'testLabel';
+            datastore.scan.resolves(returnValue);
+
+            return factory.getTemplate(config).then((model) => {
                 assert.instanceOf(model, Template);
                 Object.keys(expected).forEach((key) => {
                     assert.strictEqual(model[key], expected[key]);
@@ -160,9 +176,24 @@ describe('Template Factory', () => {
             });
         });
 
-        // it('should throw when config not supplied', () => {
-        //     assert.throw(TemplateFactory.getInstance,
-        //         Error, 'No datastore provided to TemplateFactory');
-        // });
+        it('should get the correct template for a given config without label', () => {
+            expected = Object.assign({}, returnValue[1]);
+            datastore.scan.resolves(returnValue);
+
+            return factory.getTemplate(config).then((model) => {
+                assert.instanceOf(model, Template);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
+
+        it('should return undefined if no template returned by list ', () => {
+            datastore.scan.resolves([]);
+
+            return factory.getTemplate(config).then((model) => {
+                assert.equal(model, undefined);
+            });
+        });
     });
 });
