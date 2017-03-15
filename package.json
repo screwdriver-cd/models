@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "async": "^2.0.1",
+    "compare-versions": "^3.0.0",
     "hoek": "^4.0.1",
     "iron": "^4.0.1",
     "screwdriver-config-parser": "^3.0.1",

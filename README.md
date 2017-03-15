@@ -748,7 +748,7 @@ factory.create(config).then(model => {
 | config.labels | Array | No | Labels attached to the template |
 
 #### Get
-Get an template based on id.
+Get a template based on id.
 ```js
 factory.get(id).then(model => {
     // do stuff with template model
@@ -758,6 +758,22 @@ factory.get(id).then(model => {
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
 | id | String | The unique ID for the Template |
+
+#### Get Template
+Get the latest template by name, version with/without label. The version can be in any valid version format. It can can be only major, or major.minor, or major.minor.patch. If label is specified, then the latest version with that label will be resolved. If no match found, the function will resolve undefined.
+```js
+factory.get(config).then(model => {
+    // do stuff with template model
+});
+```
+
+| Parameter        | Type  |  Required | Description |
+| :-------------   | :---- | :-------------|  :-------------|
+| config        | Object | Yes | Configuration Object |
+| config.name | String | Yes | The template name |
+| config.version | String | Yes | Version of the template |
+| config.label | String | No | Label of the template |
+
 ## Testing
 
 ```bash
