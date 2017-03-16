@@ -69,9 +69,11 @@ describe('Template Factory', () => {
     });
 
     describe('create', () => {
-        it('should create a Template', () => {
-            const generatedId = 1234135;
-            const expected = {
+        const generatedId = 1234135;
+        let expected;
+
+        beforeEach(() => {
+            expected = {
                 name,
                 version,
                 maintainer,
@@ -81,8 +83,68 @@ describe('Template Factory', () => {
                 scmUri,
                 id: generatedId
             };
+        });
+
+        it('creates a Template given major/minor version and no latest templates', () => {
+            expected.version = `${version}.0`;
 
             datastore.save.resolves(expected);
+            datastore.scan.resolves([]);
+
+            return factory.create({
+                name,
+                version,
+                maintainer,
+                description,
+                labels,
+                config: templateConfig,
+                scmUri
+            }).then((model) => {
+                assert.instanceOf(model, Template);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
+
+        it('creates a Template given major version and no latest templates', () => {
+            expected.version = '1.0.0';
+
+            datastore.save.resolves(expected);
+            datastore.scan.resolves([]);
+
+            return factory.create({
+                name,
+                version: 1,
+                maintainer,
+                description,
+                labels,
+                config: templateConfig,
+                scmUri
+            }).then((model) => {
+                assert.instanceOf(model, Template);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
+
+        it('creates a Template and auto-bumps version when latest returns something', () => {
+            const latest = {
+                name,
+                version: `${version}.0`,
+                maintainer,
+                description,
+                labels,
+                config: templateConfig,
+                scmUri,
+                id: generatedId
+            };
+
+            expected.version = `${version}.1`;
+
+            datastore.save.resolves(expected);
+            datastore.scan.resolves([latest]);
 
             return factory.create({
                 name,
