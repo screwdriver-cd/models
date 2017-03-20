@@ -22,6 +22,7 @@ describe('Pipeline Model', () => {
     let userFactoryMock;
     let secretFactoryMock;
     let eventFactoryMock;
+    let templateFactoryMock;
 
     const dateNow = 1111111111;
     const scmUri = 'github.com:12345:master';
@@ -108,6 +109,8 @@ describe('Pipeline Model', () => {
         secretFactoryMock = {
             list: sinon.stub()
         };
+        templateFactoryMock = {
+        };
         scmMock = {
             addWebhook: sinon.stub(),
             getFile: sinon.stub(),
@@ -126,6 +129,8 @@ describe('Pipeline Model', () => {
         });
         mockery.registerMock('./secretFactory', {
             getInstance: sinon.stub().returns(secretFactoryMock) });
+        mockery.registerMock('./templateFactory', {
+            getInstance: sinon.stub().returns(templateFactoryMock) });
 
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('screwdriver-config-parser', parserMock);
@@ -205,7 +210,7 @@ describe('Pipeline Model', () => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
             scmMock.addWebhook.resolves();
-            parserMock.withArgs('superyamlcontent').resolves(PARSED_YAML);
+            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
             userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
@@ -276,7 +281,7 @@ describe('Pipeline Model', () => {
                         path: 'screwdriver.yaml',
                         token: 'foo'
                     });
-                    assert.calledWith(parserMock, 'superyamlcontent');
+                    assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock);
                     assert.calledWith(jobFactoryMock.create, publishMock);
                     assert.calledWith(jobFactoryMock.create, mainMock);
                 });
@@ -373,7 +378,7 @@ describe('Pipeline Model', () => {
         beforeEach(() => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
-            parserMock.withArgs('superyamlcontent').resolves(PARSED_YAML);
+            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
             userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
@@ -649,8 +654,8 @@ describe('Pipeline Model', () => {
     describe('getConfiguration', () => {
         beforeEach(() => {
             scmMock.getFile.resolves('superyamlcontent');
-            parserMock.withArgs('superyamlcontent').resolves(PARSED_YAML);
-            parserMock.withArgs('').resolves('DEFAULT_YAML');
+            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
+            parserMock.withArgs('', templateFactoryMock).resolves('DEFAULT_YAML');
             userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
@@ -665,7 +670,7 @@ describe('Pipeline Model', () => {
                         path: 'screwdriver.yaml',
                         token: 'foo'
                     });
-                    assert.calledWith(parserMock, 'superyamlcontent');
+                    assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock);
                 })
         );
 
@@ -679,7 +684,7 @@ describe('Pipeline Model', () => {
                         token: 'foo',
                         ref: 'bar'
                     });
-                    assert.calledWith(parserMock, 'superyamlcontent');
+                    assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock);
                 })
         );
 
@@ -695,7 +700,7 @@ describe('Pipeline Model', () => {
                         token: 'foo',
                         ref: 'foobar'
                     });
-                    assert.calledWith(parserMock, '');
+                    assert.calledWith(parserMock, '', templateFactoryMock);
                 });
         });
     });
