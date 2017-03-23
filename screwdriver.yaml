@@ -1,11 +1,3 @@
-shared:
-    image: node:6
-
 jobs:
     main:
-        steps:
-            - write-file: echo "hello" > $SD_ARTIFACTS_DIR/test
-            - read-file: cat $SD_ARTIFACTS_DIR/test
-            - dangerous: echo $SD_TOKEN
-            - curl: curl -X PUT https://store.screwdriver.cd/v1/builds/1101/mytest -d $SD_ARTIFACTS_DIR/mytest
-            - sleep: sleep 5000
+        template: node/test@1-stable
