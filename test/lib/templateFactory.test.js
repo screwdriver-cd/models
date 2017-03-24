@@ -231,6 +231,7 @@ describe('Template Factory', () => {
             datastore.scan.resolves(returnValue);
 
             return factory.getTemplate(config).then((model) => {
+                assert.calledWithMatch(datastore.scan, { params: { name: config.name } });
                 assert.instanceOf(model, Template);
                 Object.keys(expected).forEach((key) => {
                     assert.strictEqual(model[key], expected[key]);
