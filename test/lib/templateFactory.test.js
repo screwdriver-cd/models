@@ -13,7 +13,7 @@ describe('Template Factory', () => {
     const description = 'this is a template';
     const labels = ['test', 'beta'];
     const templateConfig = { image: 'node:6' };
-    const scmUri = 'github.com:123:master';
+    const pipelineId = '123';
     const metaData = {
         name,
         version,
@@ -21,7 +21,7 @@ describe('Template Factory', () => {
         description,
         labels,
         config: templateConfig,
-        scmUri
+        pipelineId
     };
     let TemplateFactory;
     let datastore;
@@ -80,7 +80,7 @@ describe('Template Factory', () => {
                 description,
                 labels,
                 config: templateConfig,
-                scmUri,
+                pipelineId,
                 id: generatedId
             };
         });
@@ -98,7 +98,7 @@ describe('Template Factory', () => {
                 description,
                 labels,
                 config: templateConfig,
-                scmUri
+                pipelineId
             }).then((model) => {
                 assert.instanceOf(model, Template);
                 Object.keys(expected).forEach((key) => {
@@ -120,7 +120,7 @@ describe('Template Factory', () => {
                 description,
                 labels,
                 config: templateConfig,
-                scmUri
+                pipelineId
             }).then((model) => {
                 assert.instanceOf(model, Template);
                 Object.keys(expected).forEach((key) => {
@@ -137,7 +137,7 @@ describe('Template Factory', () => {
                 description,
                 labels,
                 config: templateConfig,
-                scmUri,
+                pipelineId,
                 id: generatedId
             };
 
@@ -153,7 +153,7 @@ describe('Template Factory', () => {
                 description,
                 labels,
                 config: templateConfig,
-                scmUri
+                pipelineId
             }).then((model) => {
                 assert.instanceOf(model, Template);
                 Object.keys(expected).forEach((key) => {

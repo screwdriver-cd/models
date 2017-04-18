@@ -744,7 +744,7 @@ factory.create(config).then(model => {
 | config.description | String | Yes | Description of the template |
 | config.maintainer | Array | Yes | Maintainer's email |
 | config.config | Object | Yes | Config of the screwdriver-template.yaml |
-| config.scmUri | String | Yes | ScmUri of the template pipeline |
+| config.pipelineId | String | Yes | pipelineId of the template |
 | config.labels | Array | No | Labels attached to the template |
 
 #### Get
