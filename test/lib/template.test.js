@@ -41,7 +41,7 @@ describe('Template Model', () => {
             description: 'this is a template',
             labels: ['test', 'beta'],
             config: { image: 'node:6' },
-            scmUri: 'github.com:123:master'
+            pipelineId: '123'
         };
         template = new TemplateModel(createConfig);
     });
