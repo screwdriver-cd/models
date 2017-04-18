@@ -20,7 +20,7 @@ describe('Build Model', () => {
     const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
     const scmUri = 'github.com:12345:master';
     const token = 'equivalentToOneQuarter';
-    const url = `${uiUri}/pipelines/${pipelineId}/build/${buildId}`;
+    const url = `${uiUri}/pipelines/${pipelineId}/builds/${buildId}`;
     let BuildModel;
     let datastore;
     let executorMock;
