@@ -134,30 +134,30 @@ describe('Build Factory', () => {
         const isoTime = (new Date(dateNow)).toISOString();
         const container = 'node:4';
         const steps = [
-            { name: 'sd-setup-launcher', alwaysRun: true },
-            { name: 'sd-setup-scm', command: 'git clone', alwaysRun: true },
-            { command: 'npm install', name: 'init', alwaysRun: false },
-            { command: 'npm test', name: 'test', alwaysRun: false }
+            { name: 'sd-setup-launcher' },
+            { name: 'sd-setup-scm', command: 'git clone' },
+            { command: 'npm install', name: 'init' },
+            { command: 'npm test', name: 'test' }
         ];
         const environment = { NODE_ENV: 'test', NODE_VERSION: '4' };
         const permutations = [{
             commands: [
-                { command: 'npm install', name: 'init', alwaysRun: false },
-                { command: 'npm test', name: 'test', alwaysRun: false }
+                { command: 'npm install', name: 'init' },
+                { command: 'npm test', name: 'test' }
             ],
             environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
             image: 'node:4'
         }, {
             commands: [
-                { command: 'npm install', name: 'init', alwaysRun: false },
-                { command: 'npm test', name: 'test', alwaysRun: false }
+                { command: 'npm install', name: 'init' },
+                { command: 'npm test', name: 'test' }
             ],
             environment: { NODE_ENV: 'test', NODE_VERSION: '5' },
             image: 'node:5'
         }, {
             commands: [
-                { command: 'npm install', name: 'init', alwaysRun: false },
-                { command: 'npm test', name: 'test', alwaysRun: false }
+                { command: 'npm install', name: 'init' },
+                { command: 'npm test', name: 'test' }
             ],
             environment: { NODE_ENV: 'test', NODE_VERSION: '6' },
             image: 'node:6'
