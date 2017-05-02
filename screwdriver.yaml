@@ -3,4 +3,4 @@ jobs:
         steps:
             - echo: echo $FOO
     secrets:
-        - FOO
+        FOO
