@@ -1,3 +1,4 @@
 jobs:
     main:
         template: node/test@1-stable
+        echo: echo $FOO
