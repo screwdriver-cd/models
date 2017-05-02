@@ -1,6 +1,6 @@
 jobs:
     main:
         steps:
-            echo: echo $FOO
+            - echo: echo $FOO
     secrets:
         - FOO
