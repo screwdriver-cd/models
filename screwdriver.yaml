@@ -1,3 +1,4 @@
+image: node:6
 jobs:
     main:
         steps:
