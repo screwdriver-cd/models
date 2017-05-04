@@ -1,6 +1,7 @@
 jobs:
     main:
         steps:
-            - echo: echo $FOO
-    secrets:
-        FOO
+            - set: meta set dirs.foo true
+    second:
+        steps:
+            - get: meta get dirs.foo
