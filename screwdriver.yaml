@@ -4,6 +4,7 @@ shared:
 jobs:
     main:
         steps:
+            - set0: meta set dirs {}
             - set: meta set dirs.foo true
             - set2: meta set dirs.bar false
     publish:
