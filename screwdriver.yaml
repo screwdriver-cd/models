@@ -4,7 +4,7 @@ shared:
 jobs:
     main:
         steps:
-            - set0: meta set dirs {foo: true, bar: false}
+            - set0: meta set dirs {}
     publish:
         steps:
             - get: meta get dirs
