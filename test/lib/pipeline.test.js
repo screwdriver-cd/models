@@ -98,7 +98,8 @@ describe('Pipeline Model', () => {
         };
         jobFactoryMock = {
             create: sinon.stub(),
-            list: sinon.stub()
+            list: sinon.stub(),
+            get: sinon.stub()
         };
         eventFactoryMock = {
             list: sinon.stub()
@@ -115,7 +116,8 @@ describe('Pipeline Model', () => {
             addWebhook: sinon.stub(),
             getFile: sinon.stub(),
             decorateUrl: sinon.stub(),
-            getOpenedPRs: sinon.stub()
+            getOpenedPRs: sinon.stub(),
+            getPrInfo: sinon.stub()
         };
         parserMock = sinon.stub();
 
@@ -369,6 +371,62 @@ describe('Pipeline Model', () => {
                 .catch((err) => {
                     assert.deepEqual(err, error);
                 });
+        });
+    });
+
+    describe('syncPR', () => {
+        let prJob;
+
+        beforeEach(() => {
+            datastore.update.resolves(null);
+            scmMock.getFile.resolves('superyamlcontent');
+            scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge' });
+            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
+            userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
+            prJob = {
+                update: sinon.stub().resolves(null),
+                isPR: sinon.stub().returns(true),
+                name: 'PR-1',
+                state: 'ENABLED',
+                archived: false
+            };
+        });
+
+        it('update PR config', () => {
+            jobFactoryMock.get.resolves(prJob);
+
+            return pipeline.syncPR(1).then(() => {
+                assert.calledWith(scmMock.getFile, {
+                    path: 'screwdriver.yaml',
+                    ref: 'pulls/1/merge',
+                    scmUri: 'github.com:12345:master',
+                    token: 'foo'
+                });
+                assert.called(prJob.update);
+                assert.deepEqual(prJob.permutations, PARSED_YAML.jobs.main);
+            });
+        });
+
+        it('returns error if fails to get configuration', () => {
+            const error = new Error('fails to get config');
+
+            scmMock.getFile.rejects(error);
+
+            return pipeline.syncPR(1).catch((err) => {
+                assert.deepEqual(err, error);
+            });
+        });
+
+        it('returns error if fails to get PR job', () => {
+            const error = new Error('fails to get job');
+
+            jobFactoryMock.get.rejects(error);
+
+            return pipeline.syncPR(1).catch((err) => {
+                assert.deepEqual(err, error);
+            });
         });
     });
 
