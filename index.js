@@ -7,6 +7,7 @@ const PipelineFactory = require('./lib/pipelineFactory');
 const SecretFactory = require('./lib/secretFactory');
 const UserFactory = require('./lib/userFactory');
 const TemplateFactory = require('./lib/templateFactory');
+const TokenFactory = require('./lib/tokenFactory');
 
 module.exports = {
     BuildFactory,
@@ -15,5 +16,6 @@ module.exports = {
     PipelineFactory,
     SecretFactory,
     UserFactory,
-    TemplateFactory
+    TemplateFactory,
+    TokenFactory
 };

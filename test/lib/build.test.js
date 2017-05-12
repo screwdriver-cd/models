@@ -328,6 +328,10 @@ describe('Build Model', () => {
             });
         });
 
+        afterEach(() => {
+            sandbox.restore();
+        });
+
         it('promises to start a build', () =>
             build.start()
             .then(() => {
