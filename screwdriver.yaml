@@ -5,10 +5,10 @@ jobs:
     main:
         steps:
             - set0: meta set dirs {}
-    publish:
+    publish_long_name:
         steps:
             - get: meta get dirs
-    job3:
+    job3_very_long_name:
         steps:
             - echo: echo blah
     job4:
