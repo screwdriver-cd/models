@@ -8,3 +8,9 @@ jobs:
     publish:
         steps:
             - get: meta get dirs
+    job3:
+        steps:
+            - echo: echo blah
+    job4:
+        steps:
+            - echo: echo bye
