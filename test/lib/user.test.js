@@ -6,6 +6,7 @@ const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
+require('sinon-as-promised');
 
 describe('User Model', () => {
     const password = 'password';
@@ -15,6 +16,7 @@ describe('User Model', () => {
     let scmMock;
     let hashaMock;
     let ironMock;
+    let tokenFactoryMock;
     let user;
     let BaseModel;
     let createConfig;
@@ -42,15 +44,19 @@ describe('User Model', () => {
             unseal: sinon.stub(),
             defaults: {}
         };
+        tokenFactoryMock = {
+            list: sinon.stub()
+        };
 
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('iron', ironMock);
+        mockery.registerMock('./tokenFactory', {
+            getInstance: sinon.stub().returns(tokenFactoryMock) });
 
-        // eslint-disable-next-line global-require
+        /* eslint-disable global-require */
         UserModel = require('../../lib/user');
-
-        // eslint-disable-next-line global-require
         BaseModel = require('../../lib/base');
+        /* eslint-enable global-require */
 
         createConfig = {
             datastore,
@@ -64,7 +70,6 @@ describe('User Model', () => {
     });
 
     afterEach(() => {
-        datastore = null;
         mockery.deregisterAll();
         mockery.resetCache();
     });
@@ -184,6 +189,78 @@ describe('User Model', () => {
                 .catch((err) => {
                     assert.deepEqual(err, expectedError);
                 });
+        });
+    });
+
+    describe('get tokens', () => {
+        const paginate = {
+            page: 1,
+            count: 50
+        };
+
+        it('has a tokens getter', () => {
+            const listConfig = {
+                params: {
+                    userId: createConfig.id
+                },
+                paginate
+            };
+
+            tokenFactoryMock.list.resolves(null);
+            // when we fetch tokens it resolves to a promise
+            assert.isFunction(user.tokens.then);
+            // and a factory is called to create that promise
+            assert.calledWith(tokenFactoryMock.list, listConfig);
+
+            // When we call user.tokens again it is still a promise
+            assert.isFunction(user.tokens.then);
+            // ...but the factory was not recreated, since the promise is stored
+            // as the model's tokens property, now
+            assert.calledOnce(tokenFactoryMock.list);
+        });
+    });
+
+    describe('validateToken', () => {
+        let sandbox;
+        let mockToken;
+
+        beforeEach(() => {
+            sandbox = sinon.sandbox.create();
+            sandbox.useFakeTimers(0);
+
+            mockToken = {
+                id: 123,
+                uuid: '110ec58a-a0f2-4ac4-8393-c866d813b8d1',
+                userId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                name: 'token1',
+                description: 'token number 1',
+                lastUsed: null,
+                update: sinon.stub()
+            };
+
+            tokenFactoryMock.list.resolves([mockToken]);
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+        });
+
+        it('validates a valid token and updates its lastUsed property', () =>
+            user.validateToken('110ec58a-a0f2-4ac4-8393-c866d813b8d1')
+            .then(() => {
+                assert.calledOnce(mockToken.update);
+                assert.equal(mockToken.lastUsed, '1970-01-01T00:00:00.000Z');
+            }));
+
+        it('rejects an invalid token', () => {
+            user.validateToken('a different token')
+            .then(() => {
+                assert.fail('Should not get here.');
+            })
+            .catch((err) => {
+                assert.equal(err.message, 'Token has been revoked.');
+                assert.notCalled(mockToken.update);
+            });
         });
     });
 });

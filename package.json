@@ -51,6 +51,6 @@
     "hoek": "^4.0.1",
     "iron": "^4.0.1",
     "screwdriver-config-parser": "^3.0.1",
-    "screwdriver-data-schema": "^16.0.0"
+    "screwdriver-data-schema": "^16.8.2"
   }
 }
