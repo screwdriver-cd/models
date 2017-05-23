@@ -32,7 +32,7 @@ describe('Token Model', () => {
         createConfig = {
             datastore,
             userId: 12345,
-            uuid: '1a2b3c',
+            value: '1a2b3c',
             id: 6789,
             name: 'Mobile client auth token',
             description: 'For the mobile app',

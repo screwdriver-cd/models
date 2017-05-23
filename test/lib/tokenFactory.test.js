@@ -10,7 +10,7 @@ require('sinon-as-promised');
 describe('Token Factory', () => {
     const name = 'mobile_token';
     const description = 'a token for a mobile app';
-    const uuid = 'abc123';
+    const value = 'abc123';
     const userId = 6789;
     const tokenId = 12345;
     const tokenData = {
@@ -18,7 +18,7 @@ describe('Token Factory', () => {
         userId,
         description,
         name,
-        uuid,
+        value,
         lastUsed: null
     };
     let TokenFactory;
@@ -70,7 +70,7 @@ describe('Token Factory', () => {
                 userId,
                 name,
                 description,
-                uuid,
+                value,
                 lastUsed: null
             };
 
@@ -80,7 +80,7 @@ describe('Token Factory', () => {
                 userId,
                 name,
                 description,
-                uuid
+                value
             }).then((model) => {
                 assert.isTrue(datastore.save.calledOnce);
                 assert.calledWith(datastore.save, {

@@ -244,23 +244,5 @@ describe('User Model', () => {
         afterEach(() => {
             sandbox.restore();
         });
-
-        it('validates a valid token and updates its lastUsed property', () =>
-            user.validateToken('110ec58a-a0f2-4ac4-8393-c866d813b8d1')
-            .then(() => {
-                assert.calledOnce(mockToken.update);
-                assert.equal(mockToken.lastUsed, '1970-01-01T00:00:00.000Z');
-            }));
-
-        it('rejects an invalid token', () => {
-            user.validateToken('a different token')
-            .then(() => {
-                assert.fail('Should not get here.');
-            })
-            .catch((err) => {
-                assert.equal(err.message, 'Token has been revoked.');
-                assert.notCalled(mockToken.update);
-            });
-        });
     });
 });
