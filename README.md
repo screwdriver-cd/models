@@ -417,6 +417,7 @@ factory.create(config).then(model => {
 
 #### Get
 Get a user based on id. Can pass the generatedId for the user, or the username, and the id will be determined automatically.
+Can also pass a Screwdriver access token, and will get the user associated with that token.
 ```js
 factory.get(id).then(model => {
     // do stuff with user model
@@ -425,12 +426,17 @@ factory.get(id).then(model => {
 factory.get({ username }).then(model => {
     // do stuff with user model
 });
+
+factory.get({ token }).then(model => {
+    // do stuff with user model
+});
 ```
 
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
 | id | String | The unique ID for the build |
 | config.username | String | User name |
+| config.accessToken | String | A user access token value |
 
 ### User Model
 ```js

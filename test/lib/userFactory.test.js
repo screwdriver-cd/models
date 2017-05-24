@@ -5,6 +5,7 @@ const mockery = require('mockery');
 const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
+require('sinon-as-promised');
 
 describe('User Factory', () => {
     const password = 'totallySecurePassword';
@@ -12,6 +13,7 @@ describe('User Factory', () => {
     let datastore;
     let hashaMock;
     let ironMock;
+    let tokenFactoryMock;
     let factory;
     let User;
 
@@ -35,9 +37,15 @@ describe('User Factory', () => {
             seal: sinon.stub(),
             defaults: 'defaults'
         };
+        tokenFactoryMock = {
+            get: sinon.stub()
+        };
 
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('iron', ironMock);
+        mockery.registerMock('./tokenFactory', {
+            getInstance: sinon.stub().returns(tokenFactoryMock)
+        });
 
         // eslint-disable-next-line global-require
         User = require('../../lib/user');
@@ -93,6 +101,59 @@ describe('User Factory', () => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
+        });
+    });
+
+    describe('get a user by access token', () => {
+        const accessToken = 'an access token goes here';
+        const now = 1111;
+        const tokenMock = {
+            userId: 123,
+            lastUsed: null,
+            update: sinon.stub()
+        };
+        let sandbox;
+
+        beforeEach(() => {
+            sandbox = sinon.sandbox.create();
+            sandbox.useFakeTimers(now);
+            tokenFactoryMock.get.resolves(tokenMock);
+            tokenMock.update.resolves(tokenMock);
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+        });
+
+        it('should return a user and update the last used field of the token', () => {
+            const expected = {
+                id: 123,
+                username: 'frodo'
+            };
+
+            datastore.get.resolves(expected);
+
+            return factory.get({ accessToken })
+                .then((user) => {
+                    assert.isOk(user);
+                    assert.calledWith(tokenFactoryMock.get, { value: accessToken });
+                    assert.calledOnce(tokenMock.update);
+                    assert.equal(tokenMock.lastUsed, (new Date(now)).toISOString());
+                });
+        });
+
+        it('should return null if the user doesn\'t exist', () => {
+            datastore.get.resolves(null);
+
+            return factory.get({ accessToken })
+                .then(user => assert.isNull(user));
+        });
+
+        it('should return null if the token doesn\'t exist', () => {
+            tokenFactoryMock.get.resolves(null);
+
+            return factory.get({ accessToken })
+                .then(user => assert.isNull(user));
         });
     });
 
