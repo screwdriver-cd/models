@@ -18,7 +18,6 @@ describe('Token Factory', () => {
         userId,
         description,
         name,
-        uuid,
         lastUsed: null
     };
     let TokenFactory;
@@ -70,7 +69,6 @@ describe('Token Factory', () => {
                 userId,
                 name,
                 description,
-                uuid,
                 lastUsed: null
             };
 
