@@ -219,48 +219,4 @@ describe('User Model', () => {
             assert.calledOnce(tokenFactoryMock.list);
         });
     });
-
-    describe('validateToken', () => {
-        let sandbox;
-        let mockToken;
-
-        beforeEach(() => {
-            sandbox = sinon.sandbox.create();
-            sandbox.useFakeTimers(0);
-
-            mockToken = {
-                id: 123,
-                uuid: '110ec58a-a0f2-4ac4-8393-c866d813b8d1',
-                userId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
-                name: 'token1',
-                description: 'token number 1',
-                lastUsed: null,
-                update: sinon.stub()
-            };
-
-            tokenFactoryMock.list.resolves([mockToken]);
-        });
-
-        afterEach(() => {
-            sandbox.restore();
-        });
-
-        it('validates a valid token and updates its lastUsed property', () =>
-            user.validateToken('110ec58a-a0f2-4ac4-8393-c866d813b8d1')
-            .then(() => {
-                assert.calledOnce(mockToken.update);
-                assert.equal(mockToken.lastUsed, '1970-01-01T00:00:00.000Z');
-            }));
-
-        it('rejects an invalid token', () => {
-            user.validateToken('a different token')
-            .then(() => {
-                assert.fail('Should not get here.');
-            })
-            .catch((err) => {
-                assert.equal(err.message, 'Token has been revoked.');
-                assert.notCalled(mockToken.update);
-            });
-        });
-    });
 });

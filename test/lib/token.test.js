@@ -4,8 +4,6 @@ const assert = require('chai').assert;
 const sinon = require('sinon');
 const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
-const BaseModel = require('../../lib/base');
-const TokenModel = require('../../lib/token');
 
 sinon.assert.expose(assert, { prefix: '' });
 require('sinon-as-promised');
@@ -13,6 +11,9 @@ require('sinon-as-promised');
 describe('Token Model', () => {
     const password = 'password';
     let datastore;
+    let generateTokenMock;
+    let BaseModel;
+    let TokenModel;
     let createConfig;
     let token;
 
@@ -24,6 +25,17 @@ describe('Token Model', () => {
         datastore = {
             update: sinon.stub()
         };
+        generateTokenMock = {
+            generateValue: sinon.stub(),
+            hashValue: sinon.stub()
+        };
+        mockery.registerMock('./generateToken', generateTokenMock);
+
+        // Lazy load Token Model so it registers the mocks
+        /* eslint-disable global-require */
+        BaseModel = require('../../lib/base');
+        TokenModel = require('../../lib/token');
+        /* eslint-enable global-require */
     });
 
     beforeEach(() => {
@@ -32,7 +44,7 @@ describe('Token Model', () => {
         createConfig = {
             datastore,
             userId: 12345,
-            uuid: '1a2b3c',
+            hash: '1a2b3c',
             id: 6789,
             name: 'Mobile client auth token',
             description: 'For the mobile app',
@@ -43,6 +55,7 @@ describe('Token Model', () => {
     });
 
     after(() => {
+        mockery.deregisterAll();
         mockery.disable();
     });
 
@@ -70,6 +83,24 @@ describe('Token Model', () => {
                     }
                 });
             });
+        });
+    });
+
+    describe('regenerate', () => {
+        it('generates a new token value and returns it once', () => {
+            const newValue = 'a new value';
+            const newHash = 'a new hash';
+
+            generateTokenMock.generateValue.resolves(newValue);
+            generateTokenMock.hashValue.returns(newHash);
+
+            return token.regenerate()
+                .then((model) => {
+                    assert.calledOnce(generateTokenMock.generateValue);
+                    assert.calledWith(generateTokenMock.hashValue, newValue);
+                    assert.strictEqual(model.value, newValue);
+                    assert.strictEqual(model.hash, newHash);
+                });
         });
     });
 });
