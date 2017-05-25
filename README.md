@@ -487,6 +487,15 @@ model.getPermissions(scmUri)
 | :-------------   | :---- | :-------------|
 | scmUri | String | The scmUri of the repo |
 
+#### Tokens
+Get the user's access tokens
+```js
+model.tokens
+    .then((tokens) => {
+        // do stuff with tokens
+    });
+```
+
 
 ### Secret Factory
 #### Search
@@ -773,6 +782,100 @@ factory.get(config).then(model => {
 | config.name | String | Yes | The template name |
 | config.version | String | Yes | Version of the template |
 | config.label | String | No | Label of the template |
+
+### Token Factory
+#### Search
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.TokenFactory.getInstance({
+    datastore
+});
+const config = {
+    params: {
+        userId: 12345
+    },
+    paginate {
+        page: 1,
+        count: 3
+    }
+}
+
+factory.list(config).then(tokens => {
+    // Do stuff with list of tokens
+});
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Config Object |
+| config.paginate.page | Number | The page for pagination |
+| config.paginate.count | Number | The count for pagination |
+| config.params | Object | fields to search on |
+
+#### Create
+```js
+factory.create(config).then(model => {
+    // do stuff with token model
+});
+```
+
+| Parameter        | Type  |  Required | Description |
+| :-------------   | :---- | :-------------|  :-------------|
+| config        | Object | Yes | Configuration Object |
+| config.userId | Number | Yes | User that this token belongs to |
+| config.name | String | Yes | Token name |
+| config.description | String | No | Description of the token |
+
+#### Get
+Get a token based on id. Can pass the generatedId for the token, or the token value, and the id will be determined automatically.
+```js
+factory.get(id).then(model => {
+    // do stuff with token model
+});
+
+factory.get({ value }).then(model => {
+    // do stuff with token model
+});
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| id | Number | The unique ID for the token |
+| config.value | String | The value of the token |
+
+
+### Token Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.TokenFactory.getInstance({
+    datastore,
+});
+const config = {
+    userId: 12345,
+    name: 'NPM_TOKEN',
+    description: 'A token for use by npm'
+}
+
+factory.create(config)
+    .then(model => // do something
+    });
+```
+
+#### Update
+Update a specific token
+```js
+model.update()
+```
+
+#### Regenerate
+Regenerate a token's value while preserving its other metadata. Attaches a temporary "value" field to the model
+```js
+token.regenerate()
+    .then(model => // do something with the new model.value
+    });
+```
 
 ## Testing
 

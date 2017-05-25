@@ -10,18 +10,28 @@ require('sinon-as-promised');
 describe('Token Factory', () => {
     const name = 'mobile_token';
     const description = 'a token for a mobile app';
-    const uuid = 'abc123';
     const userId = 6789;
     const tokenId = 12345;
+    const randomBytes = 'some random bytes';
+    const hash = 'abc123';
     const tokenData = {
         id: tokenId,
         userId,
         description,
         name,
+        hash,
+        lastUsed: null
+    };
+    const expected = {
+        userId,
+        name,
+        description,
+        hash,
         lastUsed: null
     };
     let TokenFactory;
     let datastore;
+    let generateTokenMock;
     let factory;
     let Token;
 
@@ -30,11 +40,21 @@ describe('Token Factory', () => {
             useCleanCache: true,
             warnOnUnregistered: false
         });
+        generateTokenMock = {
+            generateValue: sinon.stub(),
+            hashValue: sinon.stub()
+        };
+
+        generateTokenMock.generateValue.resolves(randomBytes);
+        generateTokenMock.hashValue.returns(hash);
+
+        mockery.registerMock('./generateToken', generateTokenMock);
     });
 
     beforeEach(() => {
         datastore = {
-            save: sinon.stub()
+            save: sinon.stub(),
+            get: sinon.stub()
         };
 
         /* eslint-disable global-require */
@@ -46,12 +66,11 @@ describe('Token Factory', () => {
     });
 
     afterEach(() => {
-        datastore = null;
-        mockery.deregisterAll();
         mockery.resetCache();
     });
 
     after(() => {
+        mockery.deregisterAll();
         mockery.disable();
     });
 
@@ -65,22 +84,17 @@ describe('Token Factory', () => {
 
     describe('create', () => {
         it('should create a Token', () => {
-            const expected = {
-                userId,
-                name,
-                description,
-                lastUsed: null
-            };
-
             datastore.save.resolves(tokenData);
 
             return factory.create({
                 userId,
                 name,
                 description,
-                uuid
+                hash
             }).then((model) => {
                 assert.isTrue(datastore.save.calledOnce);
+                assert.calledOnce(generateTokenMock.generateValue);
+                assert.calledWith(generateTokenMock.hashValue, randomBytes);
                 assert.calledWith(datastore.save, {
                     params: expected,
                     table: 'tokens'
@@ -89,7 +103,52 @@ describe('Token Factory', () => {
                 Object.keys(tokenData).forEach((key) => {
                     assert.strictEqual(model[key], tokenData[key]);
                 });
+                assert.strictEqual(model.value, randomBytes);
             });
+        });
+    });
+
+    describe('get', () => {
+        beforeEach(() => {
+            datastore.get.resolves(tokenData);
+        });
+
+        it('should get a token by ID', () =>
+            Promise.all([factory.get(tokenId), factory.get({ id: tokenId })])
+                .then(([token1, token2]) => {
+                    Object.keys(token1).forEach((key) => {
+                        assert.strictEqual(token1[key], tokenData[key]);
+                        assert.strictEqual(token2[key], tokenData[key]);
+                    });
+                }));
+
+        it('should get a token by value', () =>
+            factory.get({ value: randomBytes })
+                .then((token) => {
+                    Object.keys(token).forEach((key) => {
+                        assert.strictEqual(token[key], tokenData[key]);
+                    });
+                    assert.calledWith(datastore.get, {
+                        params: {
+                            hash
+                        },
+                        table: 'tokens'
+                    });
+                }));
+
+        it('should return null when trying to get a token by value', () => {
+            datastore.get.resolves(null);
+
+            return factory.get({ value: randomBytes })
+                .then((token) => {
+                    assert.isNull(token);
+                    assert.calledWith(datastore.get, {
+                        params: {
+                            hash
+                        },
+                        table: 'tokens'
+                    });
+                });
         });
     });
 
@@ -98,6 +157,10 @@ describe('Token Factory', () => {
 
         beforeEach(() => {
             config = { datastore };
+
+            /* eslint-disable global-require */
+            TokenFactory = require('../../lib/tokenFactory');
+            /* eslint-enable global-require */
         });
 
         it('should get an instance', () => {
