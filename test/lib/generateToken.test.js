@@ -5,7 +5,6 @@ const sinon = require('sinon');
 const generateToken = require('../../lib/generateToken');
 
 sinon.assert.expose(assert, { prefix: '' });
-require('sinon-as-promised');
 
 describe('generateToken', () => {
     const RANDOM_BYTES = 'some random bytes';

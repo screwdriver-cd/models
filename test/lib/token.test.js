@@ -6,7 +6,6 @@ const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
-require('sinon-as-promised');
 
 describe('Token Model', () => {
     const password = 'password';

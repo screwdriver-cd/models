@@ -6,7 +6,6 @@ const schema = require('screwdriver-data-schema');
 const sinon = require('sinon');
 let startStub;
 
-require('sinon-as-promised');
 sinon.assert.expose(assert, { prefix: '' });
 
 class Build {
