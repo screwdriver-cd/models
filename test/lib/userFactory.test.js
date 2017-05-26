@@ -5,7 +5,6 @@ const mockery = require('mockery');
 const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
-require('sinon-as-promised');
 
 describe('User Factory', () => {
     const password = 'totallySecurePassword';

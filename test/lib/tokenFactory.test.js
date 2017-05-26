@@ -5,7 +5,6 @@ const mockery = require('mockery');
 const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
-require('sinon-as-promised');
 
 describe('Token Factory', () => {
     const name = 'mobile_token';

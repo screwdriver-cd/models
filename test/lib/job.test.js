@@ -7,7 +7,6 @@ const schema = require('screwdriver-data-schema');
 const hoek = require('hoek');
 
 sinon.assert.expose(assert, { prefix: '' });
-require('sinon-as-promised');
 
 describe('Job Model', () => {
     let pipelineFactoryMock;
@@ -305,7 +304,7 @@ describe('Job Model', () => {
         });
 
         it('fail if getBuilds returns error', () => {
-            buildFactoryMock.list.rejects('error');
+            buildFactoryMock.list.rejects(new Error('error'));
 
             return job.remove().then(() => {
                 assert.fail('should not get here');
@@ -316,7 +315,7 @@ describe('Job Model', () => {
         });
 
         it('fail if build.remove returns error', () => {
-            build1.remove.rejects('error removing build');
+            build1.remove.rejects(new Error('error removing build'));
             buildFactoryMock.list.resolves([build1, build2]);
 
             return job.remove().then(() => {

@@ -6,7 +6,6 @@ const sinon = require('sinon');
 const hoek = require('hoek');
 const schema = require('screwdriver-data-schema');
 
-require('sinon-as-promised');
 sinon.assert.expose(assert, { prefix: '' });
 const PARSED_YAML = require('../data/parser');
 
@@ -851,7 +850,7 @@ describe('Pipeline Model', () => {
         });
 
         it('fail if getJobs returns error', () => {
-            jobFactoryMock.list.rejects('error');
+            jobFactoryMock.list.rejects(new Error('error'));
 
             return pipeline.remove().then(() => {
                 assert.fail('should not get here');
@@ -862,7 +861,7 @@ describe('Pipeline Model', () => {
         });
 
         it('fail if job.remove returns error', () => {
-            publishJob.remove.rejects('error removing job');
+            publishJob.remove.rejects(new Error('error removing job'));
             jobFactoryMock.list.resolves([publishJob, mainJob]);
 
             return pipeline.remove().then(() => {
@@ -901,7 +900,7 @@ describe('Pipeline Model', () => {
         });
 
         it('fail if getEvents returns error', () => {
-            eventFactoryMock.list.rejects('error');
+            eventFactoryMock.list.rejects(new Error('error'));
 
             return pipeline.remove().then(() => {
                 assert.fail('should not get here');
@@ -912,7 +911,7 @@ describe('Pipeline Model', () => {
         });
 
         it('fail if event.remove returns error', () => {
-            testEvent.remove.rejects('error removing event');
+            testEvent.remove.rejects(new Error('error removing event'));
             eventFactoryMock.list.resolves([testEvent]);
 
             return pipeline.remove().then(() => {
@@ -924,7 +923,7 @@ describe('Pipeline Model', () => {
         });
 
         it('fail if secret.remove returns error', () => {
-            secret.remove.rejects('error removing secret');
+            secret.remove.rejects(new Error('error removing secret'));
 
             return pipeline.remove().then(() => {
                 assert.fail('should not get here');

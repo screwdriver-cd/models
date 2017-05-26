@@ -6,7 +6,6 @@ const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
-require('sinon-as-promised');
 
 describe('Build Model', () => {
     const apiUri = 'https://notify.com/some/endpoint';
