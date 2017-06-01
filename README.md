@@ -875,10 +875,10 @@ Update a specific token
 model.update()
 ```
 
-#### Regenerate
-Regenerate a token's value while preserving its other metadata. Attaches a temporary "value" field to the model
+#### Refresh
+Refresh a token's value while preserving its other metadata. Attaches a temporary "value" field to the model
 ```js
-token.regenerate()
+token.refresh()
     .then(model => // do something with the new model.value
     });
 ```

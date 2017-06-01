@@ -85,7 +85,7 @@ describe('Token Model', () => {
         });
     });
 
-    describe('regenerate', () => {
+    describe('refresh', () => {
         it('generates a new token value and returns it once', () => {
             const newValue = 'a new value';
             const newHash = 'a new hash';
@@ -93,7 +93,7 @@ describe('Token Model', () => {
             generateTokenMock.generateValue.resolves(newValue);
             generateTokenMock.hashValue.returns(newHash);
 
-            return token.regenerate()
+            return token.refresh()
                 .then((model) => {
                     assert.calledOnce(generateTokenMock.generateValue);
                     assert.calledWith(generateTokenMock.hashValue, newValue);
