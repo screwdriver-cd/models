@@ -19,14 +19,14 @@ describe('Token Factory', () => {
         description,
         name,
         hash,
-        lastUsed: null
+        lastUsed: ''
     };
     const expected = {
         userId,
         name,
         description,
         hash,
-        lastUsed: null
+        lastUsed: ''
     };
     let TokenFactory;
     let datastore;
