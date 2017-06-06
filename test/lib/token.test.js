@@ -8,7 +8,6 @@ const schema = require('screwdriver-data-schema');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('Token Model', () => {
-    const password = 'password';
     let datastore;
     let generateTokenMock;
     let BaseModel;
@@ -47,8 +46,7 @@ describe('Token Model', () => {
             id: 6789,
             name: 'Mobile client auth token',
             description: 'For the mobile app',
-            lastUsed: '2017-05-10T01:49:59.327Z',
-            password
+            lastUsed: '2017-05-10T01:49:59.327Z'
         };
         token = new TokenModel(createConfig);
     });
@@ -100,6 +98,29 @@ describe('Token Model', () => {
                     assert.strictEqual(model.value, newValue);
                     assert.strictEqual(model.hash, newHash);
                 });
+        });
+    });
+
+    describe('toJson', () => {
+        const expected = {
+            userId: 12345,
+            id: 6789,
+            name: 'Mobile client auth token',
+            description: 'For the mobile app',
+            lastUsed: '2017-05-10T01:49:59.327Z'
+        };
+        const value = 'tokenValue';
+
+        it('functions normally if no value is present', () => {
+            const output = token.toJson();
+
+            assert.deepEqual(output, expected);
+        });
+
+        it('adds the value field if present', () => {
+            token.value = value;
+
+            assert.deepEqual(token.toJson(), Object.assign({}, expected, { value }));
         });
     });
 });
