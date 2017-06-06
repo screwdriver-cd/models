@@ -8,16 +8,16 @@ sinon.assert.expose(assert, { prefix: '' });
 
 describe('generateToken', () => {
     const RANDOM_BYTES = 'some random bytes';
-    // Result of passing 'some random bytes' through a sha256 hash, in base64
-    const HASH = 'mF0EvjvxWMrVz5ZGJcnbe0ZPooUlv/DAB9VrV6bmZmg=';
+    // Result of passing 'some random bytes' through a sha256 hash, in hex
+    const HASH = '985d04be3bf158cad5cf964625c9db7b464fa28525bff0c007d56b57a6e66668';
     let firstValue;
 
     it('generates a value', () =>
         generateToken.generateValue()
             .then((value) => {
                 firstValue = value;
-                // Check that it's a base64 value of the right length
-                assert.match(value, /[a-zA-Z0-9+/]{43}=/);
+                // Check that it's a hex value of the right length
+                assert.match(value, /[a-f0-9]{64}/);
             }));
 
     it('generates a different value on a second call', () => {
