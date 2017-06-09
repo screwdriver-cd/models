@@ -10,13 +10,13 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('Build Model', () => {
     const apiUri = 'https://notify.com/some/endpoint';
     const uiUri = 'https://display.com/some/endpoint';
-    const jobId = '62089f642bbfd1886623964b4cff12db59869e5d';
+    const jobId = 777;
     const now = 112233445566;
-    const buildId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
+    const buildId = 9876;
     const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
     const container = 'node:4';
     const adminUser = { username: 'batman', unsealToken: sinon.stub().resolves('foo') };
-    const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
+    const pipelineId = 1234;
     const scmUri = 'github.com:12345:master';
     const token = 'equivalentToOneQuarter';
     const url = `${uiUri}/pipelines/${pipelineId}/builds/${buildId}`;
@@ -154,7 +154,8 @@ describe('Build Model', () => {
                         sha,
                         jobName: 'main',
                         buildStatus: 'QUEUED',
-                        url
+                        url,
+                        pipelineId
                     });
                 })
         );
@@ -206,7 +207,8 @@ describe('Build Model', () => {
                         sha,
                         jobName: 'main',
                         buildStatus: 'FAILURE',
-                        url
+                        url,
+                        pipelineId
                     });
                 });
         });
@@ -234,7 +236,8 @@ describe('Build Model', () => {
                         sha,
                         jobName: 'main',
                         buildStatus: 'ABORTED',
-                        url
+                        url,
+                        pipelineId
                     });
                 });
         });
@@ -258,7 +261,8 @@ describe('Build Model', () => {
                         sha,
                         jobName: 'main',
                         buildStatus: 'RUNNING',
-                        url
+                        url,
+                        pipelineId
                     });
                     assert.notCalled(executorMock.stop);
                 });
@@ -353,7 +357,8 @@ describe('Build Model', () => {
                     sha,
                     jobName: 'main',
                     buildStatus: 'QUEUED',
-                    url
+                    url,
+                    pipelineId
                 });
             })
         );
