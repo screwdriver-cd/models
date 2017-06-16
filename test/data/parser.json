@@ -80,5 +80,8 @@
     "workflow": [
         "main",
         "publish"
-    ]
+    ],
+    "annotations": {
+        "beta.screwdriver.cd/executor" : "screwdriver-executor-vm"
+    }
 }

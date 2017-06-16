@@ -257,7 +257,7 @@ describe('Pipeline Model', () => {
             };
         });
 
-        it('store workflow to pipeline', () => {
+        it('stores workflow to pipeline', () => {
             jobs = [];
             jobFactoryMock.list.resolves(jobs);
             jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
@@ -265,6 +265,19 @@ describe('Pipeline Model', () => {
 
             return pipeline.sync().then(() => {
                 assert.deepEqual(pipeline.workflow, ['main', 'publish']);
+            });
+        });
+
+        it('stores annotations to pipeline', () => {
+            jobs = [];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+
+            return pipeline.sync().then(() => {
+                assert.deepEqual(pipeline.annotations, {
+                    'beta.screwdriver.cd/executor': 'screwdriver-executor-vm'
+                });
             });
         });
 
