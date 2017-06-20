@@ -775,6 +775,73 @@ describe('Pipeline Model', () => {
         });
     });
 
+    describe('update', () => {
+        const scmRepo = {
+            name: 'foo/bar',
+            branch: 'master',
+            url: 'https://github.com/foo/bar/tree/master'
+        };
+
+        it('updates a pipeline with a different scm repository and branch', () => {
+            const expected = {
+                params: {
+                    admins: { d2lam: true },
+                    id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    scmRepo: {
+                        branch: 'master',
+                        name: 'foo/bar',
+                        url: 'https://github.com/foo/bar/tree/master'
+                    },
+                    scmUri: 'github.com:12345:master'
+                },
+                table: 'pipelines'
+            };
+
+            scmMock.decorateUrl.resolves(scmRepo);
+            userFactoryMock.get.withArgs({ username: 'd2lam' }).resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
+            datastore.update.resolves({});
+
+            pipeline.scmUri = 'github.com:12345:master';
+            pipeline.admins = {
+                d2lam: true
+            };
+
+            return pipeline.update().then((p) => {
+                assert.calledWith(scmMock.decorateUrl, { scmUri, token: 'foo' });
+                assert.calledWith(datastore.update, expected);
+                assert.ok(p);
+            });
+        });
+
+        it('updates a pipeline without updating scmUri when it has not changes', () => {
+            const expected = {
+                params: {
+                    admins: { d2lam: true },
+                    id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c'
+                },
+                table: 'pipelines'
+            };
+
+            scmMock.decorateUrl.resolves(scmRepo);
+            userFactoryMock.get.withArgs({ username: 'd2lam' }).resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
+            datastore.update.resolves({});
+
+            pipeline.admins = {
+                d2lam: true
+            };
+
+            return pipeline.update().then((p) => {
+                assert.notCalled(scmMock.decorateUrl);
+                assert.calledWith(datastore.update, expected);
+                assert.ok(p);
+            });
+        });
+    });
+
     describe('remove', () => {
         let archived;
         let prType;
