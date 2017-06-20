@@ -48,6 +48,7 @@
     "async": "^2.0.1",
     "base64url": "^2.0.0",
     "compare-versions": "^3.0.0",
+    "docker-parse-image": "^3.0.1",
     "hoek": "^4.0.1",
     "iron": "^4.0.1",
     "screwdriver-config-parser": "^3.6.0",

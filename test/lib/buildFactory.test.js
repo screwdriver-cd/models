@@ -106,6 +106,21 @@ describe('Build Factory', () => {
         mockery.disable();
     });
 
+    describe('constructor', () => {
+        it('constructs with a designated docker registry', () => {
+            factory = new BuildFactory({
+                datastore,
+                dockerRegistry: 'registry.com:1234',
+                executor,
+                scm: scmMock,
+                uiUri,
+                bookend: bookendMock
+            });
+
+            assert.strictEqual(factory.dockerRegistry, 'registry.com:1234');
+        });
+    });
+
     describe('createClass', () => {
         it('should return a Build', () => {
             const model = factory.createClass({});
@@ -360,6 +375,29 @@ describe('Build Factory', () => {
             return factory.create({ username, jobId, eventId }).catch((err) => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message, 'Pipeline does not exist');
+            });
+        });
+
+        it('creates a new build with a custom docker registry', () => {
+            const jobMock = {
+                permutations,
+                pipeline: Promise.resolve({ scmUri, scmRepo })
+            };
+
+            factory = new BuildFactory({
+                datastore,
+                dockerRegistry: 'registry.com:1234',
+                executor,
+                scm: scmMock,
+                uiUri,
+                bookend: bookendMock
+            });
+
+            datastore.save.resolves({});
+            jobFactoryMock.get.resolves(jobMock);
+
+            return factory.create({ username, jobId, eventId, sha }).then((model) => {
+                assert.strictEqual(model.container, 'registry.com:1234/library/node:4');
             });
         });
     });
