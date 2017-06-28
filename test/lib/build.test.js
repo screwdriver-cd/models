@@ -8,6 +8,7 @@ const schema = require('screwdriver-data-schema');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('Build Model', () => {
+    const annotations = {};
     const apiUri = 'https://notify.com/some/endpoint';
     const uiUri = 'https://display.com/some/endpoint';
     const jobId = 777;
@@ -70,7 +71,8 @@ describe('Build Model', () => {
         jobMock = {
             id: jobId,
             name: 'main',
-            pipeline: Promise.resolve(pipelineMock)
+            pipeline: Promise.resolve(pipelineMock),
+            permutations: [{ annotations }]
         };
         scmMock = {
             updateCommitStatus: sinon.stub().resolves(null)
@@ -190,7 +192,8 @@ describe('Build Model', () => {
             return build.update()
                 .then(() => {
                     assert.calledWith(executorMock.stop, {
-                        buildId
+                        buildId,
+                        annotations
                     });
 
                     // Completed step is not modified
@@ -219,7 +222,8 @@ describe('Build Model', () => {
             return build.update()
                 .then(() => {
                     assert.calledWith(executorMock.stop, {
-                        buildId
+                        buildId,
+                        annotations
                     });
 
                     // Completed step is not modified
@@ -272,13 +276,15 @@ describe('Build Model', () => {
     describe('stop', () => {
         beforeEach(() => {
             executorMock.stop.resolves(null);
+            jobFactoryMock.get.resolves(jobMock);
         });
 
         it('promises to stop a build', () =>
             build.stop()
                 .then(() => {
                     assert.calledWith(executorMock.stop, {
-                        buildId
+                        buildId,
+                        annotations
                     });
                 })
         );
@@ -327,6 +333,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
+                permutations: [{ annotations }],
                 isPR: () => false
             });
         });
@@ -339,6 +346,7 @@ describe('Build Model', () => {
             build.start()
             .then(() => {
                 assert.calledWith(executorMock.start, {
+                    annotations,
                     apiUri,
                     buildId,
                     container,
@@ -362,6 +370,48 @@ describe('Build Model', () => {
                 });
             })
         );
+
+        it('promises to start a build with the executor specified in job annotations', () => {
+            jobFactoryMock.get.resolves({
+                id: jobId,
+                name: 'main',
+                pipeline: Promise.resolve({
+                    id: pipelineId,
+                    scmUri,
+                    admin: Promise.resolve(adminUser),
+                    token: Promise.resolve('foo')
+                }),
+                permutations: [{ annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' } }],
+                isPR: () => false
+            });
+
+            return build.start()
+                .then(() => {
+                    assert.calledWith(executorMock.start, {
+                        annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' },
+                        apiUri,
+                        buildId,
+                        container,
+                        token
+                    });
+
+                    assert.calledWith(tokenGen, buildId, {
+                        isPR: false,
+                        jobId,
+                        pipelineId
+                    });
+
+                    assert.calledWith(scmMock.updateCommitStatus, {
+                        token: 'foo',
+                        scmUri,
+                        sha,
+                        jobName: 'main',
+                        buildStatus: 'QUEUED',
+                        url,
+                        pipelineId
+                    });
+                });
+        });
 
         it('rejects when the executor fails', () => {
             const expectedError = new Error('brokenGun');
