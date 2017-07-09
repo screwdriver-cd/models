@@ -883,6 +883,92 @@ token.refresh()
     });
 ```
 
+### Collection Factory
+#### Search
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.CollectionFactory.getInstance({
+    datastore
+});
+const config = {
+    params: {
+        userId: 12345
+    }
+};
+
+factory.list(config).then(collections => {
+    // Do stuff with list of collections
+});
+```
+
+| Parameter     | Type   | Description         |
+| :-------------| :------| :-------------------|
+| config        | Object | Config object       |
+| config.params | Object | Fields to search on |
+
+#### Create
+```js
+factory.create(config).then(model => {
+    // do stuff with collection model
+});
+```
+
+| Parameter          | Type   | Required | Description                                              |
+| :------------------| :------| :--------| :--------------------------------------------------------|
+| config             | Object | Yes      | Configuration Object                                     |
+| config.userId      | Number | Yes      | User that this collection belongs to                     |
+| config.name        | String | Yes      | Collection name                                          |
+| config.description | String | No       | Collection description                                   |
+| config.pipelineIds | Array  | No       | List of ids of pipelines associated with this collection |
+
+#### Get
+Get a collection based on unique id of collection. Can also pass in a combination of userId and collection name, and the id will be determined automatically.
+```js
+factory.get(id).then(model => {
+    // do stuff with collection model
+});
+
+factory.get({ userId, name }).then(model => {
+    // do stuff with collection model
+})
+```
+
+| Parameter | Type   | Description                      |
+| :---------| :------| :--------------------------------|
+| id        | Number | The unique id for the collection |
+
+### Collection Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.CollectionFactory.getInstance({
+    datastore
+});
+const config = {
+    userId: 12345,
+    name: 'Screwdriver',
+    description: 'Collection of screwdriver pipelines'
+};
+
+factory.create(config)
+    .then(model => {
+        // do something with model
+    });
+```
+
+#### Update
+Update a specific collection
+```js
+model.update()
+```
+
+#### Remove
+Remove a specific collection
+```js
+model.remove()
+```
+
 ## Testing
 
 ```bash
