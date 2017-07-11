@@ -789,6 +789,60 @@ factory.get(config).then(model => {
 | config.version | String | Yes | Version of the template |
 | config.label | String | No | Label of the template |
 
+### Template Tag Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.TemplateTagFactory.getInstance({
+    datastore
+});
+const config = {
+    name: 'testTemplate',
+    tag: 'stable',
+    version: '1.3'
+}
+
+factory.create(config)
+    .then(model => {    // do something
+    });
+```
+
+#### Update
+Update a specific template tag
+```js
+// update template version value
+model.version = '2.4';
+
+model.update()
+```
+
+### Template Tag Factory
+#### Create
+```js
+factory.create(config).then(model => {
+    // do stuff with template tag model
+});
+```
+
+| Parameter        | Type  |  Required | Description |
+| :-------------   | :---- | :-------------|  :-------------|
+| config        | Object | Yes | Configuration Object |
+| config.name | String | Yes | The template name |
+| config.tag | String | Yes | The template tag (e.g. stable, latest, etc) |
+| config.version | String | Yes | Version of the template |
+
+#### Get
+Get a template tag based on id.
+```js
+factory.get(id).then(model => {
+    // do stuff with template model
+});
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| id | String | The unique ID for the Template Tag |
+
 ### Token Factory
 #### Search
 ```js
