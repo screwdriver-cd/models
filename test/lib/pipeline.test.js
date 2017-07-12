@@ -188,6 +188,7 @@ describe('Pipeline Model', () => {
                 .then(() => {
                     assert.calledWith(scmMock.addWebhook, {
                         scmUri,
+                        scmContext,
                         token: 'foo',
                         webhookUrl: 'https://api.screwdriver.cd/v4/webhooks'
                     });
