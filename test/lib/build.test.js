@@ -97,6 +97,7 @@ describe('Build Model', () => {
         config = {
             datastore,
             username: 'me',
+            scmContext: 'github:github.com',
             executor: executorMock,
             id: buildId,
             cause: 'Started by user i_made_the_request',
@@ -484,7 +485,10 @@ describe('Build Model', () => {
             // when we fetch a user it resolves to a promise
             assert.isFunction(build.user.then);
             // and a factory is called to create that promise
-            assert.calledWith(userFactoryMock.get, { username: config.username });
+            assert.calledWith(userFactoryMock.get, {
+                username: config.username,
+                scmContext: config.scmContext
+            });
 
             // When we call build.user again it is still a promise
             assert.isFunction(build.user.then);

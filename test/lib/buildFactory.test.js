@@ -142,6 +142,7 @@ describe('Build Factory', () => {
         const scmRepo = {
             name: 'screwdriver-cd/models'
         };
+        const scmContext = 'github:github.com';
         const prRef = 'pull/3/merge';
         const username = 'i_made_the_request';
         const dateNow = Date.now();
@@ -264,11 +265,11 @@ describe('Build Factory', () => {
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
 
-            return factory.create({ username, jobId, eventId, prRef }).then((model) => {
+            return factory.create({ username, scmContext, jobId, eventId, prRef }).then((model) => {
                 assert.instanceOf(model, Build);
                 assert.calledOnce(jobFactory.getInstance);
                 assert.calledWith(jobFactoryMock.get, jobId);
-                assert.calledWith(userFactoryMock.get, { username });
+                assert.calledWith(userFactoryMock.get, { username, scmContext });
                 assert.calledWith(scmMock.getCommitSha, {
                     token: 'foo',
                     scmUri

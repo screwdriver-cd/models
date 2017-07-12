@@ -292,6 +292,7 @@ factory.create(config).then(model => {
 | config.apiUri | String | Yes | URI back to the API |
 | config.tokenGen | Function | Yes | Generator for building tokens |
 | config.username | String | Yes | User who made the change to kick off the build |
+| config.scmContext | String | Yes | Scm context to which user blongs |
 | config.container | String | No | Container for the build to run in |
 | config.sha | String | No | SHA used to kick off the build |
 | config.prRef | String | No | PR branch or reference; required for PR jobs |
@@ -381,7 +382,8 @@ const factory = Model.UserFactory.getInstance({
 });
 const config = {
     params: {
-        username: 'batman'
+        username: 'batman',
+        scmContext: 'github:github.com'
     },
     paginate {
         page: 2,
@@ -413,6 +415,7 @@ factory.create(config).then(model => {
 | config        | Object | Yes | Configuration Object |
 | config.username | String | Yes | User who made the change to kick off the build |
 | config.token | String | Yes | unsealed token |
+| config.scmContext | String | Yes | Scm context to which user belongs |
 | config.password | String | Yes | User's password used to seal/unseal token, not saved in datastore |
 
 #### Get
@@ -436,6 +439,7 @@ factory.get({ token }).then(model => {
 | :-------------   | :---- | :-------------|
 | id | String | The unique ID for the build |
 | config.username | String | User name |
+| config.scmContext | String | Scm context to which user belongs |
 | config.accessToken | String | A user access token value |
 
 ### User Model
@@ -450,6 +454,7 @@ const factory = Model.UserFactory.getInstance({
 const config = {
     username: 'myself',
     token: 'eyJksd3',            // User's github token
+    scmContext: 'github:github.com',          // Scm context to which user belongs
     password
 }
 
