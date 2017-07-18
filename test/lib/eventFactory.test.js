@@ -107,7 +107,8 @@ describe('Event Factory', () => {
                 pipelineId,
                 sha,
                 workflow: ['main', 'publish'],
-                username: 'stjohn'
+                username: 'stjohn',
+                scmContext: 'github.com'
             };
 
             expected = {
@@ -115,7 +116,7 @@ describe('Event Factory', () => {
                 sha,
                 type: 'pipeline',
                 workflow: ['main', 'publish'],
-                causeMessage: 'Started by stjohn',
+                causeMessage: 'Started by stjohn@github.com',
                 createTime: nowTime,
                 creator,
                 commit
@@ -124,6 +125,7 @@ describe('Event Factory', () => {
             pipelineFactoryMock.get.withArgs(pipelineId).resolves({
                 pipelineId,
                 scmUri: 'github.com:1234:branch',
+                scmContext: 'github.com',
                 token: Promise.resolve('foo')
             });
             scm.decorateAuthor.resolves(creator);
@@ -136,10 +138,12 @@ describe('Event Factory', () => {
                 assert.instanceOf(model, Event);
                 assert.calledWith(scm.decorateAuthor, {
                     username: 'stjohn',
+                    scmContext: 'github.com',
                     token: 'foo'
                 });
                 assert.calledWith(scm.decorateCommit, {
                     scmUri: 'github.com:1234:branch',
+                    scmContext: 'github.com',
                     sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
                     token: 'foo'
                 });

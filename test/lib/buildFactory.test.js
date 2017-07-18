@@ -142,7 +142,7 @@ describe('Build Factory', () => {
         const scmRepo = {
             name: 'screwdriver-cd/models'
         };
-        const scmContext = 'github:github.com';
+        const scmContext = 'github.com';
         const prRef = 'pull/3/merge';
         const username = 'i_made_the_request';
         const dateNow = Date.now();
@@ -272,12 +272,14 @@ describe('Build Factory', () => {
                 assert.calledWith(userFactoryMock.get, { username, scmContext });
                 assert.calledWith(scmMock.getCommitSha, {
                     token: 'foo',
-                    scmUri
+                    scmUri,
+                    scmContext
                 });
                 assert.calledWith(scmMock.decorateCommit, {
                     token: 'foo',
                     sha,
-                    scmUri
+                    scmUri,
+                    scmContext
                 });
                 assert.calledWith(bookendMock.getSetupCommands, {
                     pipeline: { scmUri, scmRepo },

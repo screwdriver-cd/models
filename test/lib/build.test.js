@@ -19,6 +19,7 @@ describe('Build Model', () => {
     const adminUser = { username: 'batman', unsealToken: sinon.stub().resolves('foo') };
     const pipelineId = 1234;
     const scmUri = 'github.com:12345:master';
+    const scmContext = 'github.com';
     const token = 'equivalentToOneQuarter';
     const url = `${uiUri}/pipelines/${pipelineId}/builds/${buildId}`;
     let BuildModel;
@@ -65,6 +66,7 @@ describe('Build Model', () => {
         pipelineMock = {
             id: pipelineId,
             scmUri,
+            scmContext,
             admin: Promise.resolve(adminUser),
             token: Promise.resolve('foo')
         };
@@ -97,7 +99,6 @@ describe('Build Model', () => {
         config = {
             datastore,
             username: 'me',
-            scmContext: 'github:github.com',
             executor: executorMock,
             id: buildId,
             cause: 'Started by user i_made_the_request',
@@ -154,6 +155,7 @@ describe('Build Model', () => {
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
                         scmUri,
+                        scmContext,
                         sha,
                         jobName: 'main',
                         buildStatus: 'QUEUED',
@@ -208,6 +210,7 @@ describe('Build Model', () => {
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
                         scmUri,
+                        scmContext,
                         sha,
                         jobName: 'main',
                         buildStatus: 'FAILURE',
@@ -238,6 +241,7 @@ describe('Build Model', () => {
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
                         scmUri,
+                        scmContext,
                         sha,
                         jobName: 'main',
                         buildStatus: 'ABORTED',
@@ -263,6 +267,7 @@ describe('Build Model', () => {
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
                         scmUri,
+                        scmContext,
                         sha,
                         jobName: 'main',
                         buildStatus: 'RUNNING',
@@ -331,6 +336,7 @@ describe('Build Model', () => {
                 pipeline: Promise.resolve({
                     id: pipelineId,
                     scmUri,
+                    scmContext,
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
@@ -363,6 +369,7 @@ describe('Build Model', () => {
                 assert.calledWith(scmMock.updateCommitStatus, {
                     token: 'foo',
                     scmUri,
+                    scmContext,
                     sha,
                     jobName: 'main',
                     buildStatus: 'QUEUED',
@@ -379,6 +386,7 @@ describe('Build Model', () => {
                 pipeline: Promise.resolve({
                     id: pipelineId,
                     scmUri,
+                    scmContext,
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
@@ -405,6 +413,7 @@ describe('Build Model', () => {
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
                         scmUri,
+                        scmContext,
                         sha,
                         jobName: 'main',
                         buildStatus: 'QUEUED',

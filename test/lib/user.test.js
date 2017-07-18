@@ -61,7 +61,7 @@ describe('User Model', () => {
             datastore,
             id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
             username: 'me',
-            scmContext: 'github:github.com',
+            scmContext: 'github.com',
             token,
             password,
             scm: scmMock
@@ -171,7 +171,8 @@ describe('User Model', () => {
                 .then((data) => {
                     assert.calledWith(scmMock.getPermissions, {
                         token: '12345',
-                        scmUri
+                        scmUri,
+                        scmContext: 'github.com'
                     });
                     assert.deepEqual(data, repo.permissions);
                 })
