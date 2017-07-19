@@ -118,7 +118,7 @@ describe('Event Factory', () => {
                 sha,
                 type: 'pipeline',
                 workflow: ['main', 'publish'],
-                causeMessage: 'Started by stjohn:github',
+                causeMessage: 'Started by github:stjohn',
                 createTime: nowTime,
                 creator,
                 commit

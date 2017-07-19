@@ -215,7 +215,7 @@ describe('Build Factory', () => {
                 table: 'builds',
                 params: {
                     eventId,
-                    cause: 'Started by user i_made_the_request:github',
+                    cause: 'Started by user github:i_made_the_request',
                     commit,
                     createTime: isoTime,
                     number: dateNow,
