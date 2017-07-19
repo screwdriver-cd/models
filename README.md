@@ -53,6 +53,7 @@ factory.create(config).then(model => {
 | config        | Object | Yes | Configuration Object |
 | config.admins | Object | Yes | Admins for this pipeline, e.g { batman: true } |
 | config.scmUri | String | Yes | Source Code URI for the application |
+| config.scmContext | String | Yes | Scm context to which user belongs |
 
 #### Get
 Get a pipeline based on id. Can pass the generatedId for the pipeline, or the unique keys for the model, and the id will be determined automatically.
@@ -292,7 +293,7 @@ factory.create(config).then(model => {
 | config.apiUri | String | Yes | URI back to the API |
 | config.tokenGen | Function | Yes | Generator for building tokens |
 | config.username | String | Yes | User who made the change to kick off the build |
-| config.scmContext | String | Yes | Scm context to which user blongs |
+| config.scmContext | String | Yes | Scm context to which user belongs |
 | config.container | String | No | Container for the build to run in |
 | config.sha | String | No | SHA used to kick off the build |
 | config.prRef | String | No | PR branch or reference; required for PR jobs |

@@ -832,7 +832,8 @@ describe('Pipeline Model', () => {
             const expected = {
                 params: {
                     admins: { d2lam: true },
-                    id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c'
+                    id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    scmContext: 'github.com'
                 },
                 table: 'pipelines'
             };

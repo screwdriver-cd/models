@@ -32,7 +32,8 @@ describe('Event Factory', () => {
         };
         scm = {
             decorateAuthor: sinon.stub(),
-            decorateCommit: sinon.stub()
+            decorateCommit: sinon.stub(),
+            getDisplayName: sinon.stub()
         };
 
         mockery.registerMock('./pipelineFactory', {
@@ -83,6 +84,7 @@ describe('Event Factory', () => {
 
         const pipelineId = '12345f642bbfd1886623964b4cff12db59869e5d';
         const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
+        const displayName = 'github';
         const creator = {
             avatar: 'https://avatars.githubusercontent.com/u/2042?v=3',
             name: 'St John',
@@ -116,7 +118,7 @@ describe('Event Factory', () => {
                 sha,
                 type: 'pipeline',
                 workflow: ['main', 'publish'],
-                causeMessage: 'Started by stjohn@github.com',
+                causeMessage: 'Started by stjohn:github',
                 createTime: nowTime,
                 creator,
                 commit
@@ -130,6 +132,7 @@ describe('Event Factory', () => {
             });
             scm.decorateAuthor.resolves(creator);
             scm.decorateCommit.resolves(commit);
+            scm.getDisplayName.returns(displayName);
             datastore.save.resolves({ id: 'xzy1234' });
         });
 

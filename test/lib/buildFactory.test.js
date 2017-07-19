@@ -63,7 +63,8 @@ describe('Build Factory', () => {
         scmMock = {
             getCommitSha: sinon.stub(),
             decorateCommit: sinon.stub(),
-            getCheckoutCommand: sinon.stub()
+            getCheckoutCommand: sinon.stub(),
+            getDisplayName: sinon.stub()
         };
         jobFactory = {
             getInstance: sinon.stub().returns(jobFactoryMock)
@@ -143,6 +144,7 @@ describe('Build Factory', () => {
             name: 'screwdriver-cd/models'
         };
         const scmContext = 'github.com';
+        const displayName = 'github';
         const prRef = 'pull/3/merge';
         const username = 'i_made_the_request';
         const dateNow = Date.now();
@@ -185,6 +187,7 @@ describe('Build Factory', () => {
         beforeEach(() => {
             scmMock.getCommitSha.resolves(sha);
             scmMock.decorateCommit.resolves(commit);
+            scmMock.getDisplayName.returns(displayName);
             bookendMock.getSetupCommands.resolves([steps[1]]);
             bookendMock.getTeardownCommands.resolves([]);
 
@@ -212,7 +215,7 @@ describe('Build Factory', () => {
                 table: 'builds',
                 params: {
                     eventId,
-                    cause: 'Started by user i_made_the_request',
+                    cause: 'Started by user i_made_the_request:github',
                     commit,
                     createTime: isoTime,
                     number: dateNow,
@@ -239,7 +242,7 @@ describe('Build Factory', () => {
 
             const jobMock = {
                 permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo })
+                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
             };
 
             jobFactoryMock.get.resolves(jobMock);
@@ -259,7 +262,7 @@ describe('Build Factory', () => {
 
             const jobMock = {
                 permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo })
+                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
             };
 
             jobFactoryMock.get.resolves(jobMock);
@@ -282,12 +285,12 @@ describe('Build Factory', () => {
                     scmContext
                 });
                 assert.calledWith(bookendMock.getSetupCommands, {
-                    pipeline: { scmUri, scmRepo },
+                    pipeline: { scmUri, scmRepo, scmContext },
                     job: jobMock,
                     build: sinon.match.object
                 });
                 assert.calledWith(bookendMock.getTeardownCommands, {
-                    pipeline: { scmUri, scmRepo },
+                    pipeline: { scmUri, scmRepo, scmContext },
                     job: jobMock,
                     build: sinon.match.object
                 });
@@ -304,7 +307,7 @@ describe('Build Factory', () => {
 
             const jobMock = {
                 permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo })
+                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
             };
             const teardown = {
                 name: 'sd-teardown',
@@ -333,7 +336,7 @@ describe('Build Factory', () => {
 
             const jobMock = {
                 permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo })
+                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
             };
 
             jobFactoryMock.get.resolves(jobMock);
@@ -384,7 +387,7 @@ describe('Build Factory', () => {
         it('creates a new build with a custom docker registry', () => {
             const jobMock = {
                 permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo })
+                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
             };
 
             factory = new BuildFactory({
