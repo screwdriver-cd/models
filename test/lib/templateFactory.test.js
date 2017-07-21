@@ -25,6 +25,7 @@ describe('Template Factory', () => {
     };
     let TemplateFactory;
     let datastore;
+    let templateTagFactoryMock;
     let factory;
     let Template;
 
@@ -41,11 +42,18 @@ describe('Template Factory', () => {
             get: sinon.stub(),
             scan: sinon.stub()
         };
+        templateTagFactoryMock = {
+            get: sinon.stub()
+        };
 
-        // eslint-disable-next-line global-require
+        mockery.registerMock('./templateTagFactory', {
+            getInstance: sinon.stub().returns(templateTagFactoryMock)
+        });
+
+        /* eslint-disable global-require */
         Template = require('../../lib/template');
-        // eslint-disable-next-line global-require
         TemplateFactory = require('../../lib/templateFactory');
+        /* eslint-enable global-require */
 
         factory = new TemplateFactory({ datastore });
     });
@@ -187,51 +195,45 @@ describe('Template Factory', () => {
     });
 
     describe('getTemplate', () => {
-        let config;
+        const templateName = 'testTemplateName';
+        const templateVersion = '1.0';
+        let fullTemplateName;
         let expected;
         let returnValue;
 
         beforeEach(() => {
-            config = {
-                name: 'testTemplateName',
-                version: '1.0'
-            };
+            fullTemplateName = `${templateName}@${templateVersion}`;
 
             returnValue = [
                 {
-                    id: '151c9b11e4a9a27e9e374daca6e59df37d8cf00f',
+                    id: '1',
                     name: 'testTemplateName',
-                    version: '1.0.1',
-                    labels: ['testLabel', 'otherLabel']
+                    version: '1.0.1'
                 },
                 {
-                    id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    id: '3',
                     name: 'testTemplateName',
-                    version: '1.0.3',
-                    labels: ['otherLabel']
+                    version: '1.0.3'
                 },
                 {
-                    id: '151c9b11e4a9a27e9e374daca6e59df37d8cf00f',
+                    id: '2',
                     name: 'testTemplateName',
-                    version: '1.0.2',
-                    labels: ['testLabel', 'otherLabel']
+                    version: '1.0.2'
                 },
                 {
-                    id: '151c9b11e4a9a27e9e374daca6e59df37d8cf00f',
+                    id: '4',
                     name: 'testTemplateName',
-                    version: '2.0.1',
-                    labels: ['testLabel', 'otherLabel']
+                    version: '2.0.1'
                 }
             ];
         });
 
-        it('should get the correct template for a given config with label', () => {
+        it('should get the correct template for a given name@exactVersion 1.0.2', () => {
+            fullTemplateName = `${templateName}@1.0.2`;
             expected = Object.assign({}, returnValue[2]);
-            config.label = 'testLabel';
-            datastore.scan.resolves(returnValue);
+            datastore.get.resolves(returnValue[2]);
 
-            return factory.getTemplate(config).then((model) => {
-                assert.calledWithMatch(datastore.scan, { params: { name: config.name } });
+            return factory.getTemplate(fullTemplateName).then((model) => {
                 assert.instanceOf(model, Template);
                 Object.keys(expected).forEach((key) => {
                     assert.strictEqual(model[key], expected[key]);
@@ -239,11 +241,11 @@ describe('Template Factory', () => {
             });
         });
 
-        it('should get the correct template for a given config without label', () => {
+        it('should get the correct template for a given name@version 1.0', () => {
             expected = Object.assign({}, returnValue[1]);
             datastore.scan.resolves(returnValue);
 
-            return factory.getTemplate(config).then((model) => {
+            return factory.getTemplate(fullTemplateName).then((model) => {
                 assert.instanceOf(model, Template);
                 Object.keys(expected).forEach((key) => {
                     assert.strictEqual(model[key], expected[key]);
@@ -251,11 +253,47 @@ describe('Template Factory', () => {
             });
         });
 
-        it('should return undefined if no template returned by list ', () => {
+        it('should get the correct template for a given name@tag', () => {
+            fullTemplateName = `${templateName}@latest`;
+            expected = Object.assign({}, returnValue[2]);
+            templateTagFactoryMock.get.resolves({ version: '1.0.2' });
+            datastore.get.resolves(returnValue[2]);
+
+            return factory.getTemplate(fullTemplateName).then((model) => {
+                assert.instanceOf(model, Template);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
+
+        it('should return null if no template tag returned by get', () => {
+            fullTemplateName = `${templateName}@latest`;
+            templateTagFactoryMock.get.resolves(null);
+
+            return factory.getTemplate(fullTemplateName).then((model) => {
+                assert.isNull(model);
+            });
+        });
+
+        it('should get the correct template for a given name with no version or tag', () => {
+            fullTemplateName = templateName;
+            expected = Object.assign({}, returnValue[0]);
+            datastore.scan.resolves(returnValue);
+
+            return factory.getTemplate(fullTemplateName).then((model) => {
+                assert.instanceOf(model, Template);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
+
+        it('should return null if no template returned by list', () => {
             datastore.scan.resolves([]);
 
-            return factory.getTemplate(config).then((model) => {
-                assert.equal(model, undefined);
+            return factory.getTemplate(fullTemplateName).then((model) => {
+                assert.strictEqual(model, null);
             });
         });
     });
