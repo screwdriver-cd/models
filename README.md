@@ -775,19 +775,16 @@ factory.get(id).then(model => {
 | id | String | The unique ID for the Template |
 
 #### Get Template
-Get the latest template by name, version with/without label. The version can be in any valid version format. It can can be only major, or major.minor, or major.minor.patch. If label is specified, then the latest version with that label will be resolved. If no match found, the function will resolve undefined.
+Get the latest template by name or get a specific template using name and version or name and tag. The version can be in any valid version format: either major, major.minor, or major.minor.patch. If no version is specified, the function will resolve with the latest version published. If no match is found, the function will resolve null.
 ```js
-factory.get(config).then(model => {
+factory.getTemplate(fullTemplateName).then(model => {
     // do stuff with template model
 });
 ```
 
-| Parameter        | Type  |  Required | Description |
-| :-------------   | :---- | :-------------|  :-------------|
-| config        | Object | Yes | Configuration Object |
-| config.name | String | Yes | The template name |
-| config.version | String | Yes | Version of the template |
-| config.label | String | No | Label of the template |
+| Parameter        | Type   |  Required | Description |
+| :-------------   | :----- | :-------------|  :-------------|
+| fullTemplateName | String | Yes | Name of the template and the version or tag (e.g. chef/publish@1.2.3 or chef/publish@latest). Can also be just name of the template (e.g. chef/publish) |
 
 ### Template Tag Model
 ```js
