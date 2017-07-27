@@ -90,6 +90,32 @@ describe('Collection Factory', () => {
                 });
             });
         });
+
+        it('should create a Collection without pipelineIds', () => {
+            const dataWithoutPipelineIds = Object.assign({}, collectionData);
+
+            dataWithoutPipelineIds.pipelineIds = [];
+            datastore.save.resolves(dataWithoutPipelineIds);
+
+            return factory.create({
+                userId,
+                name,
+                description
+            }).then((model) => {
+                assert.isTrue(datastore.save.calledOnce);
+                assert.calledWith(datastore.save, {
+                    params: {
+                        userId,
+                        name,
+                        description,
+                        pipelineIds: [] // The collectionFactory should add this field
+                    },
+                    table: 'collections'
+                });
+                assert.instanceOf(model, Collection);
+                assert.deepEqual(model, dataWithoutPipelineIds);
+            });
+        });
     });
 
     describe('get', () => {
