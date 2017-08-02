@@ -143,7 +143,7 @@ describe('Build Factory', () => {
         const scmRepo = {
             name: 'screwdriver-cd/models'
         };
-        const scmContext = 'github.com';
+        const scmContext = 'github:github.com';
         const displayName = 'github';
         const prRef = 'pull/3/merge';
         const username = 'i_made_the_request';

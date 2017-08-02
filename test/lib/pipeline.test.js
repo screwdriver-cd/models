@@ -25,7 +25,7 @@ describe('Pipeline Model', () => {
 
     const dateNow = 1111111111;
     const scmUri = 'github.com:12345:master';
-    const scmContext = 'github.com';
+    const scmContext = 'github:github.com';
     const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
     const admins = { batman: true };
     const paginate = {
@@ -795,7 +795,7 @@ describe('Pipeline Model', () => {
                 params: {
                     admins: { d2lam: true },
                     id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
-                    scmContext: 'github.com',
+                    scmContext,
                     scmRepo: {
                         branch: 'master',
                         name: 'foo/bar',
@@ -809,14 +809,14 @@ describe('Pipeline Model', () => {
             scmMock.decorateUrl.resolves(scmRepo);
             userFactoryMock.get.withArgs({
                 username: 'd2lam',
-                scmContext: 'github.com'
+                scmContext
             }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
             datastore.update.resolves({});
 
             pipeline.scmUri = 'github.com:12345:master';
-            pipeline.scmContext = 'github.com';
+            pipeline.scmContext = scmContext;
             pipeline.admins = {
                 d2lam: true
             };
@@ -833,7 +833,7 @@ describe('Pipeline Model', () => {
                 params: {
                     admins: { d2lam: true },
                     id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
-                    scmContext: 'github.com'
+                    scmContext
                 },
                 table: 'pipelines'
             };

@@ -19,7 +19,7 @@ describe('Build Model', () => {
     const adminUser = { username: 'batman', unsealToken: sinon.stub().resolves('foo') };
     const pipelineId = 1234;
     const scmUri = 'github.com:12345:master';
-    const scmContext = 'github.com';
+    const scmContext = 'github:github.com';
     const token = 'equivalentToOneQuarter';
     const url = `${uiUri}/pipelines/${pipelineId}/builds/${buildId}`;
     let BuildModel;

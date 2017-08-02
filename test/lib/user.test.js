@@ -10,6 +10,7 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('User Model', () => {
     const password = 'password';
     const token = 'token';
+    const scmContext = 'github:github.com';
     let UserModel;
     let datastore;
     let scmMock;
@@ -61,7 +62,7 @@ describe('User Model', () => {
             datastore,
             id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
             username: 'me',
-            scmContext: 'github.com',
+            scmContext,
             token,
             password,
             scm: scmMock
@@ -172,7 +173,7 @@ describe('User Model', () => {
                     assert.calledWith(scmMock.getPermissions, {
                         token: '12345',
                         scmUri,
-                        scmContext: 'github.com'
+                        scmContext
                     });
                     assert.deepEqual(data, repo.permissions);
                 })
