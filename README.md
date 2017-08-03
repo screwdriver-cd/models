@@ -781,10 +781,49 @@ factory.get(id).then(model => {
 | id | String | The unique ID for the Template |
 
 #### Get Template
-Get the latest template by name, version with/without label. The version can be in any valid version format. It can can be only major, or major.minor, or major.minor.patch. If label is specified, then the latest version with that label will be resolved. If no match found, the function will resolve undefined.
+Get the latest template by name or get a specific template using name and version or name and tag. The version can be in any valid version format: either major, major.minor, or major.minor.patch. If no version is specified, the function will resolve with the latest version published. If no match is found, the function will resolve null.
 ```js
-factory.get(config).then(model => {
+factory.getTemplate(fullTemplateName).then(model => {
     // do stuff with template model
+});
+```
+
+| Parameter        | Type   |  Required | Description |
+| :-------------   | :----- | :-------------|  :-------------|
+| fullTemplateName | String | Yes | Name of the template and the version or tag (e.g. chef/publish@1.2.3 or chef/publish@latest). Can also be just name of the template (e.g. chef/publish) |
+
+### Template Tag Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.TemplateTagFactory.getInstance({
+    datastore
+});
+const config = {
+    name: 'testTemplate',
+    tag: 'stable',
+    version: '1.3'
+}
+
+factory.create(config)
+    .then(model => {    // do something
+    });
+```
+
+#### Update
+Update a specific template tag
+```js
+// update template version value
+model.version = '2.4';
+
+model.update()
+```
+
+### Template Tag Factory
+#### Create
+```js
+factory.create(config).then(model => {
+    // do stuff with template tag model
 });
 ```
 
@@ -792,8 +831,20 @@ factory.get(config).then(model => {
 | :-------------   | :---- | :-------------|  :-------------|
 | config        | Object | Yes | Configuration Object |
 | config.name | String | Yes | The template name |
+| config.tag | String | Yes | The template tag (e.g. stable, latest, etc) |
 | config.version | String | Yes | Version of the template |
-| config.label | String | No | Label of the template |
+
+#### Get
+Get a template tag based on id.
+```js
+factory.get(id).then(model => {
+    // do stuff with template model
+});
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| id | String | The unique ID for the Template Tag |
 
 ### Token Factory
 #### Search
@@ -887,6 +938,92 @@ Refresh a token's value while preserving its other metadata. Attaches a temporar
 token.refresh()
     .then(model => // do something with the new model.value
     });
+```
+
+### Collection Factory
+#### Search
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.CollectionFactory.getInstance({
+    datastore
+});
+const config = {
+    params: {
+        userId: 12345
+    }
+};
+
+factory.list(config).then(collections => {
+    // Do stuff with list of collections
+});
+```
+
+| Parameter     | Type   | Description         |
+| :-------------| :------| :-------------------|
+| config        | Object | Config object       |
+| config.params | Object | Fields to search on |
+
+#### Create
+```js
+factory.create(config).then(model => {
+    // do stuff with collection model
+});
+```
+
+| Parameter          | Type   | Required | Description                                              |
+| :------------------| :------| :--------| :--------------------------------------------------------|
+| config             | Object | Yes      | Configuration Object                                     |
+| config.userId      | Number | Yes      | User that this collection belongs to                     |
+| config.name        | String | Yes      | Collection name                                          |
+| config.description | String | No       | Collection description                                   |
+| config.pipelineIds | Array  | No       | List of ids of pipelines associated with this collection |
+
+#### Get
+Get a collection based on unique id of collection. Can also pass in a combination of userId and collection name, and the id will be determined automatically.
+```js
+factory.get(id).then(model => {
+    // do stuff with collection model
+});
+
+factory.get({ userId, name }).then(model => {
+    // do stuff with collection model
+})
+```
+
+| Parameter | Type   | Description                      |
+| :---------| :------| :--------------------------------|
+| id        | Number | The unique id for the collection |
+
+### Collection Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.CollectionFactory.getInstance({
+    datastore
+});
+const config = {
+    userId: 12345,
+    name: 'Screwdriver',
+    description: 'Collection of screwdriver pipelines'
+};
+
+factory.create(config)
+    .then(model => {
+        // do something with model
+    });
+```
+
+#### Update
+Update a specific collection
+```js
+model.update()
+```
+
+#### Remove
+Remove a specific collection
+```js
+model.remove()
 ```
 
 ## Testing

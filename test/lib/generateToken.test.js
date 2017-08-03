@@ -17,7 +17,7 @@ describe('generateToken', () => {
             .then((value) => {
                 firstValue = value;
                 // Check that it's a base64 value of the right length
-                assert.match(value, /[a-zA-Z0-9_-]{43}/);
+                assert.match(value, /^[a-zA-Z0-9_-]{43}$/);
             }));
 
     it('generates a different value on a second call', () => {
