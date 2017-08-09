@@ -25,6 +25,7 @@ describe('Pipeline Model', () => {
 
     const dateNow = 1111111111;
     const scmUri = 'github.com:12345:master';
+    const scmContext = 'github:github.com';
     const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
     const admins = { batman: true };
     const paginate = {
@@ -145,6 +146,7 @@ describe('Pipeline Model', () => {
             datastore,
             id: testId,
             scmUri,
+            scmContext,
             createTime: dateNow,
             admins,
             scm: scmMock
@@ -174,7 +176,7 @@ describe('Pipeline Model', () => {
 
     describe('addWebhook', () => {
         beforeEach(() => {
-            userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
+            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
         });
@@ -186,6 +188,7 @@ describe('Pipeline Model', () => {
                 .then(() => {
                     assert.calledWith(scmMock.addWebhook, {
                         scmUri,
+                        scmContext,
                         token: 'foo',
                         webhookUrl: 'https://api.screwdriver.cd/v4/webhooks'
                     });
@@ -212,7 +215,7 @@ describe('Pipeline Model', () => {
             scmMock.getFile.resolves('superyamlcontent');
             scmMock.addWebhook.resolves();
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
-            userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
+            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
 
@@ -292,6 +295,7 @@ describe('Pipeline Model', () => {
                     assert.equal(p.id, testId);
                     assert.calledWith(scmMock.getFile, {
                         scmUri,
+                        scmContext,
                         path: 'screwdriver.yaml',
                         token: 'foo'
                     });
@@ -394,7 +398,7 @@ describe('Pipeline Model', () => {
             scmMock.getFile.resolves('superyamlcontent');
             scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge' });
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
-            userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
+            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
             prJob = {
@@ -413,7 +417,8 @@ describe('Pipeline Model', () => {
                 assert.calledWith(scmMock.getFile, {
                     path: 'screwdriver.yaml',
                     ref: 'pulls/1/merge',
-                    scmUri: 'github.com:12345:master',
+                    scmUri,
+                    scmContext,
                     token: 'foo'
                 });
                 assert.called(prJob.update);
@@ -449,7 +454,7 @@ describe('Pipeline Model', () => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
-            userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
+            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
             prJob = {
@@ -522,7 +527,7 @@ describe('Pipeline Model', () => {
             // when we fetch a user it resolves to a promise
             assert.isFunction(pipeline.admin.then);
             // and a factory is called to create that promise
-            assert.calledWith(userFactoryMock.get, { username: 'batman' });
+            assert.calledWith(userFactoryMock.get, { username: 'batman', scmContext });
 
             // When we call pipeline.admin again it is still a promise
             assert.isFunction(pipeline.admin.then);
@@ -726,7 +731,7 @@ describe('Pipeline Model', () => {
             scmMock.getFile.resolves('superyamlcontent');
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
             parserMock.withArgs('', templateFactoryMock).resolves('DEFAULT_YAML');
-            userFactoryMock.get.withArgs({ username: 'batman' }).resolves({
+            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
         });
@@ -737,6 +742,7 @@ describe('Pipeline Model', () => {
                     assert.equal(config, PARSED_YAML);
                     assert.calledWith(scmMock.getFile, {
                         scmUri,
+                        scmContext,
                         path: 'screwdriver.yaml',
                         token: 'foo'
                     });
@@ -750,6 +756,7 @@ describe('Pipeline Model', () => {
                     assert.equal(config, PARSED_YAML);
                     assert.calledWith(scmMock.getFile, {
                         scmUri,
+                        scmContext,
                         path: 'screwdriver.yaml',
                         token: 'foo',
                         ref: 'bar'
@@ -766,6 +773,7 @@ describe('Pipeline Model', () => {
                     assert.equal(config, 'DEFAULT_YAML');
                     assert.calledWith(scmMock.getFile, {
                         scmUri,
+                        scmContext,
                         path: 'screwdriver.yaml',
                         token: 'foo',
                         ref: 'foobar'
@@ -787,6 +795,7 @@ describe('Pipeline Model', () => {
                 params: {
                     admins: { d2lam: true },
                     id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    scmContext,
                     scmRepo: {
                         branch: 'master',
                         name: 'foo/bar',
@@ -798,18 +807,22 @@ describe('Pipeline Model', () => {
             };
 
             scmMock.decorateUrl.resolves(scmRepo);
-            userFactoryMock.get.withArgs({ username: 'd2lam' }).resolves({
+            userFactoryMock.get.withArgs({
+                username: 'd2lam',
+                scmContext
+            }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
             datastore.update.resolves({});
 
             pipeline.scmUri = 'github.com:12345:master';
+            pipeline.scmContext = scmContext;
             pipeline.admins = {
                 d2lam: true
             };
 
             return pipeline.update().then((p) => {
-                assert.calledWith(scmMock.decorateUrl, { scmUri, token: 'foo' });
+                assert.calledWith(scmMock.decorateUrl, { scmUri, scmContext, token: 'foo' });
                 assert.calledWith(datastore.update, expected);
                 assert.ok(p);
             });
@@ -819,7 +832,8 @@ describe('Pipeline Model', () => {
             const expected = {
                 params: {
                     admins: { d2lam: true },
-                    id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c'
+                    id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    scmContext
                 },
                 table: 'pipelines'
             };

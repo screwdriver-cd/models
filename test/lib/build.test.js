@@ -19,6 +19,7 @@ describe('Build Model', () => {
     const adminUser = { username: 'batman', unsealToken: sinon.stub().resolves('foo') };
     const pipelineId = 1234;
     const scmUri = 'github.com:12345:master';
+    const scmContext = 'github:github.com';
     const token = 'equivalentToOneQuarter';
     const url = `${uiUri}/pipelines/${pipelineId}/builds/${buildId}`;
     let BuildModel;
@@ -65,6 +66,7 @@ describe('Build Model', () => {
         pipelineMock = {
             id: pipelineId,
             scmUri,
+            scmContext,
             admin: Promise.resolve(adminUser),
             token: Promise.resolve('foo')
         };
@@ -96,7 +98,6 @@ describe('Build Model', () => {
 
         config = {
             datastore,
-            username: 'me',
             executor: executorMock,
             id: buildId,
             cause: 'Started by user i_made_the_request',
@@ -133,8 +134,6 @@ describe('Build Model', () => {
             assert.strictEqual(build[key], config[key]);
         });
 
-        // Also added a username members
-        assert.strictEqual(build.username, config.username);
         // private keys are private
         assert.isUndefined(build.executor);
         assert.isUndefined(build.apiUri);
@@ -153,6 +152,7 @@ describe('Build Model', () => {
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
                         scmUri,
+                        scmContext,
                         sha,
                         jobName: 'main',
                         buildStatus: 'QUEUED',
@@ -207,6 +207,7 @@ describe('Build Model', () => {
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
                         scmUri,
+                        scmContext,
                         sha,
                         jobName: 'main',
                         buildStatus: 'FAILURE',
@@ -237,6 +238,7 @@ describe('Build Model', () => {
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
                         scmUri,
+                        scmContext,
                         sha,
                         jobName: 'main',
                         buildStatus: 'ABORTED',
@@ -262,6 +264,7 @@ describe('Build Model', () => {
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
                         scmUri,
+                        scmContext,
                         sha,
                         jobName: 'main',
                         buildStatus: 'RUNNING',
@@ -330,6 +333,7 @@ describe('Build Model', () => {
                 pipeline: Promise.resolve({
                     id: pipelineId,
                     scmUri,
+                    scmContext,
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
@@ -362,6 +366,7 @@ describe('Build Model', () => {
                 assert.calledWith(scmMock.updateCommitStatus, {
                     token: 'foo',
                     scmUri,
+                    scmContext,
                     sha,
                     jobName: 'main',
                     buildStatus: 'QUEUED',
@@ -378,6 +383,7 @@ describe('Build Model', () => {
                 pipeline: Promise.resolve({
                     id: pipelineId,
                     scmUri,
+                    scmContext,
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
@@ -404,6 +410,7 @@ describe('Build Model', () => {
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
                         scmUri,
+                        scmContext,
                         sha,
                         jobName: 'main',
                         buildStatus: 'QUEUED',
@@ -475,22 +482,6 @@ describe('Build Model', () => {
             // ...but the factory was not recreated, since the promise is stored
             // as the model's pipeline property, now
             assert.calledOnce(jobFactoryMock.get);
-        });
-    });
-
-    describe('user', () => {
-        it('has a user getter', () => {
-            userFactoryMock.get.resolves(null);
-            // when we fetch a user it resolves to a promise
-            assert.isFunction(build.user.then);
-            // and a factory is called to create that promise
-            assert.calledWith(userFactoryMock.get, { username: config.username });
-
-            // When we call build.user again it is still a promise
-            assert.isFunction(build.user.then);
-            // ...but the factory was not recreated, since the promise is stored
-            // as the model's pipeline property, now
-            assert.calledOnce(userFactoryMock.get);
         });
     });
 

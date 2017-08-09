@@ -18,6 +18,7 @@ describe('Pipeline Factory', () => {
     const dateNow = 1111111111;
     const nowTime = (new Date(dateNow)).toISOString();
     const scmUri = 'github.com:12345:master';
+    const scmContext = 'github:github.com';
     const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
     const admins = ['me'];
     const scmRepo = {
@@ -63,6 +64,7 @@ describe('Pipeline Factory', () => {
             scm,
             id: testId,
             scmUri,
+            scmContext,
             createTime: nowTime,
             admins
         };
@@ -96,6 +98,7 @@ describe('Pipeline Factory', () => {
                 admins,
                 createTime: nowTime,
                 scmUri,
+                scmContext,
                 scmRepo
             }
         };
@@ -122,15 +125,19 @@ describe('Pipeline Factory', () => {
 
             datastore.save.resolves(expected);
             scm.decorateUrl.resolves(scmRepo);
-            userFactoryMock.get.withArgs({ username: Object.keys(admins)[0] }).resolves({
+            userFactoryMock.get.withArgs({
+                username: Object.keys(admins)[0],
+                scmContext
+            }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
 
             return factory.create({
                 scmUri,
+                scmContext,
                 admins
             }).then((model) => {
-                assert.calledWith(scm.decorateUrl, { scmUri, token: 'foo' });
+                assert.calledWith(scm.decorateUrl, { scmUri, scmContext, token: 'foo' });
                 assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Pipeline);
             });
