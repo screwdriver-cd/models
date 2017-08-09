@@ -9,7 +9,7 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('generateToken', () => {
     const RANDOM_BYTES = 'some random bytes';
     // Result of passing 'some random bytes' through a sha256 hash, in base64
-    const HASH = 'mF0EvjvxWMrVz5ZGJcnbe0ZPooUlv_DAB9VrV6bmZmg';
+    const expectedHash = 'qGFuuDVptDRID0ZAOjv8ZVXfT4QfXQzVKc_wyCZKEVg';
     let firstValue;
 
     it('generates a value', () =>
@@ -27,11 +27,12 @@ describe('generateToken', () => {
             });
     });
 
-    it('hashes a value', () => {
-        assert.strictEqual(generateToken.hashValue(RANDOM_BYTES), HASH);
-    });
+    it('hashes a value', () => generateToken.hashValue(RANDOM_BYTES, '')
+        .then((hash) => {
+            assert.strictEqual(hash, expectedHash);
+        }));
 
     it('hashes a different value to a different hash', () => {
-        assert.notEqual(generateToken.hashValue('some different bytes'), HASH);
+        assert.notEqual(generateToken.hashValue('some different bytes', ''), expectedHash);
     });
 });
