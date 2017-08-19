@@ -76,7 +76,7 @@ describe('Token Factory', () => {
 
     describe('createClass', () => {
         it('should return a Token', () => {
-            const model = factory.createClass(tokenData);
+            const model = factory.createClass(Object.assign({}, tokenData));
 
             assert.instanceOf(model, Token);
         });
