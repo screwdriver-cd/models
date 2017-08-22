@@ -13,6 +13,7 @@ describe('Event Factory', () => {
     let datastore;
     let factory;
     let pipelineFactoryMock;
+    let pipelineMock;
     let scm;
     let Event;
 
@@ -125,12 +126,16 @@ describe('Event Factory', () => {
                 commit
             };
 
-            pipelineFactoryMock.get.withArgs(pipelineId).resolves({
+            pipelineMock = {
                 pipelineId,
                 scmUri: 'github.com:1234:branch',
                 scmContext,
-                token: Promise.resolve('foo')
-            });
+                token: Promise.resolve('foo'),
+                lastEventId: null,
+                update: sinon.stub().resolves(null)
+            };
+
+            pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
             scm.decorateAuthor.resolves(creator);
             scm.decorateCommit.resolves(commit);
             scm.getDisplayName.returns(displayName);
@@ -151,6 +156,7 @@ describe('Event Factory', () => {
                     sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
                     token: 'foo'
                 });
+                assert.strictEqual(pipelineMock.lastEventId, model.id);
                 Object.keys(expected).forEach((key) => {
                     if (key === 'workflow') {
                         assert.deepEqual(model[key], expected[key]);
