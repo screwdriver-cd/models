@@ -7,6 +7,7 @@ const sinon = require('sinon');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('Token Factory', () => {
+    const password = 'totallySecurePassword';
     const name = 'mobile_token';
     const description = 'a token for a mobile app';
     const userId = 6789;
@@ -45,7 +46,7 @@ describe('Token Factory', () => {
         };
 
         generateTokenMock.generateValue.resolves(randomBytes);
-        generateTokenMock.hashValue.returns(hash);
+        generateTokenMock.hashValue.resolves(hash);
 
         mockery.registerMock('./generateToken', generateTokenMock);
     });
@@ -61,7 +62,7 @@ describe('Token Factory', () => {
         TokenFactory = require('../../lib/tokenFactory');
         /* eslint-enable global-require */
 
-        factory = new TokenFactory({ datastore });
+        factory = new TokenFactory({ datastore, password });
     });
 
     afterEach(() => {
@@ -75,7 +76,7 @@ describe('Token Factory', () => {
 
     describe('createClass', () => {
         it('should return a Token', () => {
-            const model = factory.createClass(tokenData);
+            const model = factory.createClass(Object.assign({}, tokenData));
 
             assert.instanceOf(model, Token);
         });
@@ -93,7 +94,7 @@ describe('Token Factory', () => {
             }).then((model) => {
                 assert.isTrue(datastore.save.calledOnce);
                 assert.calledOnce(generateTokenMock.generateValue);
-                assert.calledWith(generateTokenMock.hashValue, randomBytes);
+                assert.calledWith(generateTokenMock.hashValue, randomBytes, password);
                 assert.calledWith(datastore.save, {
                     params: expected,
                     table: 'tokens'
