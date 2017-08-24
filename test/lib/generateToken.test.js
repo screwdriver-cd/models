@@ -8,8 +8,9 @@ sinon.assert.expose(assert, { prefix: '' });
 
 describe('generateToken', () => {
     const RANDOM_BYTES = 'some random bytes';
-    // Result of passing 'some random bytes' through a sha256 hash, in base64
-    const expectedHash = 'qGFuuDVptDRID0ZAOjv8ZVXfT4QfXQzVKc_wyCZKEVg';
+    // Result of passing 'some random bytes' through PBKDF2 with our params
+    // eslint-disable-next-line max-len
+    const expectedHash = 'ZrUMoCeSsG10oaOVCgt_MS2YDu2AUo2xElZq3abIy0dxikNQIAVeUncAzp84zxU1ogl_jmUhH8MsfHIMZRz-Ig';
     let firstValue;
 
     it('generates a value', () =>
