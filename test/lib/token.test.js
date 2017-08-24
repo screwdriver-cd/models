@@ -8,7 +8,6 @@ const schema = require('screwdriver-data-schema');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('Token Model', () => {
-    const password = 'totallySecurePassword';
     let datastore;
     let generateTokenMock;
     let BaseModel;
@@ -47,8 +46,7 @@ describe('Token Model', () => {
             id: 6789,
             name: 'Mobile client auth token',
             description: 'For the mobile app',
-            lastUsed: '2017-05-10T01:49:59.327Z',
-            password
+            lastUsed: '2017-05-10T01:49:59.327Z'
         };
         token = new TokenModel(createConfig);
     });
@@ -96,7 +94,7 @@ describe('Token Model', () => {
             return token.refresh()
                 .then((model) => {
                     assert.calledOnce(generateTokenMock.generateValue);
-                    assert.calledWith(generateTokenMock.hashValue, newValue, password);
+                    assert.calledWith(generateTokenMock.hashValue, newValue);
                     assert.strictEqual(model.value, newValue);
                     assert.strictEqual(model.hash, newHash);
                 });

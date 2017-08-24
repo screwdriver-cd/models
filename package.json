@@ -52,10 +52,6 @@
     "hoek": "^4.0.1",
     "iron": "^4.0.1",
     "screwdriver-config-parser": "^3.10.0",
-<<<<<<< HEAD
     "screwdriver-data-schema": "^18.0.0"
-=======
-    "screwdriver-data-schema": "^17.0.0"
->>>>>>> parent of ba8967e... fix(tokens): token objects need password for hashing
   }
 }
