@@ -166,6 +166,17 @@ describe('Event Factory', () => {
                 });
             })
         );
+
+        it('should only update lastEventId if type is pipeline', () => {
+            config.type = 'pr';
+
+            return factory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                // lastEventId should not have been updated
+                assert.calledOnce(pipelineMock.update);
+                assert.strictEqual(pipelineMock.lastEventId, null);
+            });
+        });
     });
 
     describe('getInstance', () => {
