@@ -639,6 +639,52 @@ describe('Pipeline Model', () => {
             });
         });
 
+        it('Only gets PR jobs', () => {
+            const config = {
+                type: 'pr'
+            };
+            const expected = {
+                params: {
+                    pipelineId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    archived: false
+                },
+                paginate
+            };
+            const jobList = [publishJob, blahJob, mainJob, pr10, pr3];
+            const expectedJobs = [pr3, pr10];
+
+            pipeline.workflow = ['main', 'publish', 'blah'];
+            jobFactoryMock.list.resolves(jobList);
+
+            return pipeline.getJobs(config).then((result) => {
+                assert.calledWith(jobFactoryMock.list, expected);
+                assert.deepEqual(result, expectedJobs);
+            });
+        });
+
+        it('Only gets Pipeline jobs', () => {
+            const config = {
+                type: 'pipeline'
+            };
+            const expected = {
+                params: {
+                    pipelineId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    archived: false
+                },
+                paginate
+            };
+            const jobList = [publishJob, blahJob, mainJob, pr10, pr3];
+            const expectedJobs = [mainJob, publishJob, blahJob];
+
+            pipeline.workflow = ['main', 'publish', 'blah'];
+            jobFactoryMock.list.resolves(jobList);
+
+            return pipeline.getJobs(config).then((result) => {
+                assert.calledWith(jobFactoryMock.list, expected);
+                assert.deepEqual(result, expectedJobs);
+            });
+        });
+
         it('Get archived jobs', () => {
             const config = {
                 params: {
