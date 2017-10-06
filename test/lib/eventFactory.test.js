@@ -13,6 +13,7 @@ describe('Event Factory', () => {
     let datastore;
     let factory;
     let pipelineFactoryMock;
+    let buildFactoryMock;
     let pipelineMock;
     let scm;
     let Event;
@@ -31,6 +32,9 @@ describe('Event Factory', () => {
         pipelineFactoryMock = {
             get: sinon.stub()
         };
+        buildFactoryMock = {
+            create: sinon.stub()
+        };
         scm = {
             decorateAuthor: sinon.stub(),
             decorateCommit: sinon.stub(),
@@ -39,6 +43,9 @@ describe('Event Factory', () => {
 
         mockery.registerMock('./pipelineFactory', {
             getInstance: sinon.stub().returns(pipelineFactoryMock)
+        });
+        mockery.registerMock('./buildFactory', {
+            getInstance: sinon.stub().returns(buildFactoryMock)
         });
 
         // eslint-disable-next-line global-require
@@ -105,6 +112,7 @@ describe('Event Factory', () => {
         };
         let config;
         let expected;
+        let jobsMock;
 
         beforeEach(() => {
             config = {
@@ -134,6 +142,36 @@ describe('Event Factory', () => {
                 lastEventId: null,
                 update: sinon.stub().resolves(null)
             };
+
+            jobsMock = [{
+                id: 1,
+                name: 'component',
+                permutations: {
+                    requires: ['~commit', '~pr']
+                },
+                state: 'ENABLED'
+            }, {
+                id: 2,
+                name: 'disabledjob',
+                permutations: {
+                    requires: ['component', '~pr']
+                },
+                state: 'DISABLED'
+            }, {
+                id: 3,
+                name: 'integration',
+                permutations: {
+                    requires: ['test', '~pr']
+                },
+                state: 'ENABLED'
+            }, {
+                id: 4,
+                name: 'deploy',
+                permutations: {
+                    requires: ['integration']
+                },
+                state: 'ENABLED'
+            }];
 
             pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
             scm.decorateAuthor.resolves(creator);
@@ -166,6 +204,84 @@ describe('Event Factory', () => {
                 });
             })
         );
+
+        it('should create pr builds if using new workflow', () => {
+            pipelineMock.jobs = Promise.resolve(jobsMock);
+            config.startFrom = '~pr';
+            config.prRef = 'branch';
+            buildFactoryMock.create.resolves(null);
+
+            return factory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.calledTwice(buildFactoryMock.create);
+                assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
+                    eventId: model.id,
+                    jobId: 1,
+                    prRef: 'branch'
+                }));
+                assert.calledWith(buildFactoryMock.create.secondCall, sinon.match({
+                    eventId: model.id,
+                    jobId: 3,
+                    prRef: 'branch'
+                }));
+            });
+        });
+
+        it('should create commit builds if using new workflow', () => {
+            pipelineMock.jobs = Promise.resolve(jobsMock);
+            config.startFrom = '~commit';
+            config.prRef = 'branch';
+            buildFactoryMock.create.resolves(null);
+
+            return factory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.calledWith(buildFactoryMock.create, sinon.match({
+                    eventId: model.id,
+                    jobId: 1
+                }));
+            });
+        });
+
+        it('should create build if startFrom is a jobName', () => {
+            pipelineMock.jobs = Promise.resolve(jobsMock);
+            config.startFrom = 'integration';
+            buildFactoryMock.create.resolves(null);
+
+            return factory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.calledOnce(buildFactoryMock.create);
+                assert.calledWith(buildFactoryMock.create, sinon.match({
+                    eventId: model.id,
+                    jobId: 3
+                }));
+            });
+        });
+
+        it('should throw error if startFrom job does not exist', () => {
+            pipelineMock.jobs = Promise.resolve(jobsMock);
+            config.startFrom = 'doesnnotexist';
+            buildFactoryMock.create.resolves(null);
+
+            return factory.create(config).then(() => {
+                throw new Error('Should not get here');
+            }, (err) => {
+                assert.isOk(err, 'Error should be returned');
+                assert.equal(err.message, 'No jobs to start');
+            });
+        });
+
+        it('should throw error if startFrom job is disabled', () => {
+            pipelineMock.jobs = Promise.resolve(jobsMock);
+            config.startFrom = 'disabledjob';
+            buildFactoryMock.create.resolves(null);
+
+            return factory.create(config).then(() => {
+                throw new Error('Should not get here');
+            }, (err) => {
+                assert.isOk(err, 'Error should be returned');
+                assert.equal(err.message, 'No jobs to start');
+            });
+        });
 
         it('should only update lastEventId if type is pipeline', () => {
             config.type = 'pr';
