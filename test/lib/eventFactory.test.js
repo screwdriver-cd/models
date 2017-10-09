@@ -3,6 +3,7 @@
 const assert = require('chai').assert;
 const sinon = require('sinon');
 const mockery = require('mockery');
+const hoek = require('hoek');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -117,6 +118,21 @@ describe('Event Factory', () => {
             message: 'some commit message that is here',
             url: 'https://link.to/commitDiff'
         };
+        const decorateJobMock = (job) => {
+            const decorated = hoek.clone(job);
+
+            decorated.pipelineId = 8765;
+            decorated.isPR = sinon.stub().returns(false);
+
+            return decorated;
+        };
+        const getJobMocks = (j) => {
+            if (Array.isArray(j)) {
+                return j.map(decorateJobMock);
+            }
+
+            return decorateJobMock(j);
+        };
         let config;
         let expected;
         let jobsMock;
@@ -157,11 +173,10 @@ describe('Event Factory', () => {
             datastore.save.resolves({ id: 'xzy1234' });
         });
 
-        describe('create with new workflow', () => {
+        describe('with new workflow', () => {
             beforeEach(() => {
-                jobsMock = [{
+                jobsMock = getJobMocks([{
                     id: 1,
-                    pipelineId: 8765,
                     name: 'component',
                     permutations: {
                         requires: ['~commit', '~pr']
@@ -169,7 +184,6 @@ describe('Event Factory', () => {
                     state: 'ENABLED'
                 }, {
                     id: 2,
-                    pipelineId: 8765,
                     name: 'disabledjob',
                     permutations: {
                         requires: ['component']
@@ -177,7 +191,6 @@ describe('Event Factory', () => {
                     state: 'DISABLED'
                 }, {
                     id: 3,
-                    pipelineId: 8765,
                     name: 'integration',
                     permutations: {
                         requires: ['test', '~pr']
@@ -185,19 +198,85 @@ describe('Event Factory', () => {
                     state: 'ENABLED'
                 }, {
                     id: 4,
-                    pipelineId: 8765,
                     name: 'deploy',
                     permutations: {
                         requires: ['integration']
                     },
                     state: 'ENABLED'
-                }];
+                }]);
 
                 pipelineMock.jobs = Promise.resolve(jobsMock);
                 buildFactoryMock.create.resolves(null);
             });
 
-            it('should create pr builds if using new workflow', () => {
+            it('should start existing pr jobs without creating duplicates', () => {
+                jobsMock = [{
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'component',
+                    permutations: {
+                        requires: ['~pr']
+                    },
+                    state: 'ENABLED'
+                }, {
+                    id: 5,
+                    pipelineId: 8765,
+                    name: 'PR-1-component',
+                    permutations: {
+                        requires: ['~pr']
+                    },
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(true),
+                    prNum: sinon.stub().returns('1')
+                },
+                {
+                    id: 7,
+                    pipelineId: 8765,
+                    name: 'PR-2-component',
+                    permutations: {
+                        requires: ['~pr']
+                    },
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(true),
+                    prNum: sinon.stub().returns('2')
+                },
+                {
+                    id: 3,
+                    name: 'integration',
+                    permutations: {
+                        requires: ['test', '~pr']
+                    },
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(false)
+                },
+                {
+                    id: 6,
+                    name: 'PR-1-integration',
+                    permutations: {
+                        requires: ['~pr']
+                    },
+                    state: 'DISABLED'
+                }];
+
+                pipelineMock.jobs = Promise.resolve(jobsMock);
+
+                config.startFrom = '~pr';
+                config.prRef = 'branch';
+                config.prNum = '1';
+
+                return factory.create(config).then((model) => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.calledOnce(buildFactoryMock.create);
+                    assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
+                        eventId: model.id,
+                        jobId: 5,
+                        prRef: 'branch'
+                    }));
+                });
+            });
+
+            it('should create pr builds if they do not already exist', () => {
                 const prComponent = {
                     id: 5,
                     name: 'PR-1-component'
@@ -238,7 +317,7 @@ describe('Event Factory', () => {
                 });
             });
 
-            it('should create commit builds if using new workflow', () => {
+            it('should create commit builds', () => {
                 config.startFrom = '~commit';
                 config.prRef = 'branch';
 
