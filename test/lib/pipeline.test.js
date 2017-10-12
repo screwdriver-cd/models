@@ -272,14 +272,12 @@ describe('Pipeline Model', () => {
                         { name: '~pr' },
                         { name: '~commit' },
                         { name: 'main' },
-                        { name: 'foo' },
-                        { name: 'bar' }
+                        { name: 'publish' }
                     ],
                     edges: [
                         { src: '~pr', dest: 'main' },
                         { src: '~commit', dest: 'main' },
-                        { src: 'main', dest: 'foo' },
-                        { src: 'foo', dest: 'bar' }
+                        { src: 'main', dest: 'publish' }
                     ]
                 });
             });
