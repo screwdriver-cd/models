@@ -260,6 +260,31 @@ describe('Pipeline Model', () => {
             };
         });
 
+        it('stores workflow graph to pipeline', () => {
+            jobs = [];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+
+            return pipeline.sync().then(() => {
+                assert.deepEqual(pipeline.workflowGraph, {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: 'main' },
+                        { name: 'foo' },
+                        { name: 'bar' }
+                    ],
+                    edges: [
+                        { src: '~pr', dest: 'main' },
+                        { src: '~commit', dest: 'main' },
+                        { src: 'main', dest: 'foo' },
+                        { src: 'foo', dest: 'bar' }
+                    ]
+                });
+            });
+        });
+
         it('stores workflow to pipeline', () => {
             jobs = [];
             jobFactoryMock.list.resolves(jobs);

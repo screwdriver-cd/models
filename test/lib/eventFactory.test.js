@@ -75,7 +75,7 @@ describe('Event Factory', () => {
     });
 
     describe('createClass', () => {
-        it('should return a Event', () => {
+        it('should return an Event', () => {
             const model = factory.createClass({
                 id: 'abc123'
             });
@@ -141,7 +141,24 @@ describe('Event Factory', () => {
             config = {
                 pipelineId,
                 sha,
-                workflow: ['main', 'publish'],
+                workflow: [],
+                workflowGraph: {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: 'main' },
+                        { name: 'disabledJob' },
+                        { name: 'integration' },
+                        { name: 'publish' }
+                    ],
+                    edges: [
+                        { src: '~pr', dest: 'main' },
+                        { src: '~commit', dest: 'main' },
+                        { src: 'main', dest: 'disabledJob' },
+                        { src: '~pr', dest: 'integration' },
+                        { src: 'integration', dest: 'publish' }
+                    ]
+                },
                 username: 'stjohn',
                 scmContext
             };
@@ -150,7 +167,24 @@ describe('Event Factory', () => {
                 pipelineId,
                 sha,
                 type: 'pipeline',
-                workflow: ['main', 'publish'],
+                workflow: [],
+                workflowGraph: {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: 'main' },
+                        { name: 'disabledJob' },
+                        { name: 'integration' },
+                        { name: 'publish' }
+                    ],
+                    edges: [
+                        { src: '~pr', dest: 'main' },
+                        { src: '~commit', dest: 'main' },
+                        { src: 'main', dest: 'disabledJob' },
+                        { src: '~pr', dest: 'integration' },
+                        { src: 'integration', dest: 'publish' }
+                    ]
+                },
                 causeMessage: 'Started by github:stjohn',
                 createTime: nowTime,
                 creator,
@@ -163,7 +197,24 @@ describe('Event Factory', () => {
                 scmContext,
                 token: Promise.resolve('foo'),
                 lastEventId: null,
-                update: sinon.stub().resolves(null)
+                update: sinon.stub().resolves(null),
+                workflowGraph: {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: 'main' },
+                        { name: 'disabledJob' },
+                        { name: 'integration' },
+                        { name: 'publish' }
+                    ],
+                    edges: [
+                        { src: '~pr', dest: 'main' },
+                        { src: '~commit', dest: 'main' },
+                        { src: 'main', dest: 'disabledJob' },
+                        { src: '~pr', dest: 'integration' },
+                        { src: 'integration', dest: 'publish' }
+                    ]
+                }
             };
 
             pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
@@ -177,7 +228,7 @@ describe('Event Factory', () => {
             beforeEach(() => {
                 jobsMock = getJobMocks([{
                     id: 1,
-                    name: 'component',
+                    name: 'main',
                     permutations: {
                         requires: ['~commit', '~pr']
                     },
@@ -186,19 +237,19 @@ describe('Event Factory', () => {
                     id: 2,
                     name: 'disabledjob',
                     permutations: {
-                        requires: ['component']
+                        requires: ['main']
                     },
                     state: 'DISABLED'
                 }, {
                     id: 3,
                     name: 'integration',
                     permutations: {
-                        requires: ['test', '~pr']
+                        requires: ['~pr']
                     },
                     state: 'ENABLED'
                 }, {
                     id: 4,
-                    name: 'deploy',
+                    name: 'publish',
                     permutations: {
                         requires: ['integration']
                     },
@@ -213,7 +264,7 @@ describe('Event Factory', () => {
                 jobsMock = [{
                     id: 1,
                     pipelineId: 8765,
-                    name: 'component',
+                    name: 'main',
                     permutations: {
                         requires: ['~pr']
                     },
@@ -221,7 +272,7 @@ describe('Event Factory', () => {
                 }, {
                     id: 5,
                     pipelineId: 8765,
-                    name: 'PR-1-component',
+                    name: 'PR-1:main',
                     permutations: {
                         requires: ['~pr']
                     },
@@ -232,7 +283,7 @@ describe('Event Factory', () => {
                 {
                     id: 7,
                     pipelineId: 8765,
-                    name: 'PR-2-component',
+                    name: 'PR-2:main',
                     permutations: {
                         requires: ['~pr']
                     },
@@ -244,14 +295,14 @@ describe('Event Factory', () => {
                     id: 3,
                     name: 'integration',
                     permutations: {
-                        requires: ['test', '~pr']
+                        requires: ['~pr']
                     },
                     state: 'ENABLED',
                     isPR: sinon.stub().returns(false)
                 },
                 {
                     id: 6,
-                    name: 'PR-1-integration',
+                    name: 'PR-1:integration',
                     permutations: {
                         requires: ['~pr']
                     },
@@ -279,11 +330,11 @@ describe('Event Factory', () => {
             it('should create pr builds if they do not already exist', () => {
                 const prComponent = {
                     id: 5,
-                    name: 'PR-1-component'
+                    name: 'PR-1:main'
                 };
                 const prIntegration = {
                     id: 6,
-                    name: 'PR-1-integration'
+                    name: 'PR-1:integration'
                 };
 
                 jobFactoryMock.create.onCall(0).resolves(prComponent);
@@ -297,11 +348,11 @@ describe('Event Factory', () => {
                     assert.calledTwice(jobFactoryMock.create);
                     assert.calledWith(jobFactoryMock.create.firstCall, sinon.match({
                         pipelineId: 8765,
-                        name: 'PR-1-component'
+                        name: 'PR-1:main'
                     }));
                     assert.calledWith(jobFactoryMock.create.secondCall, sinon.match({
                         pipelineId: 8765,
-                        name: 'PR-1-integration'
+                        name: 'PR-1:integration'
                     }));
                     assert.calledTwice(buildFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
@@ -340,7 +391,7 @@ describe('Event Factory', () => {
                     assert.calledOnce(buildFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create, sinon.match({
                         eventId: model.id,
-                        jobId: 3
+                        jobId: 4
                     }));
                 });
             });
@@ -389,6 +440,8 @@ describe('Event Factory', () => {
                 assert.strictEqual(pipelineMock.lastEventId, model.id);
                 Object.keys(expected).forEach((key) => {
                     if (key === 'workflow') {
+                        assert.deepEqual(model[key], expected[key]);
+                    } else if (key === 'workflowGraph') {
                         assert.deepEqual(model[key], expected[key]);
                     } else {
                         assert.strictEqual(model[key], expected[key]);
