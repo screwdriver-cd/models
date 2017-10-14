@@ -81,6 +81,19 @@
         "main",
         "publish"
     ],
+    "workflowGraph": {
+        "nodes": [
+            { "name": "~pr" },
+            { "name": "~commit" },
+            { "name": "main" },
+            { "name": "publish" }
+        ],
+        "edges": [
+            { "src": "~pr", "dest": "main"},
+            { "src": "~commit", "dest": "main"},
+            { "src": "main", "dest": "publish"}
+        ]
+    },
     "annotations": {
         "beta.screwdriver.cd/executor" : "screwdriver-executor-vm"
     }
