@@ -3,7 +3,7 @@
 const assert = require('chai').assert;
 const sinon = require('sinon');
 const mockery = require('mockery');
-const hoek = require('hoek');
+const PARSED_YAML = require('../data/parser');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -98,7 +98,7 @@ describe('Event Factory', () => {
             sandbox.restore();
         });
 
-        const pipelineId = '12345f642bbfd1886623964b4cff12db59869e5d';
+        const pipelineId = 8765;
         const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
         const displayName = 'github';
         const scmContext = 'github:github.com';
@@ -118,21 +118,6 @@ describe('Event Factory', () => {
             message: 'some commit message that is here',
             url: 'https://link.to/commitDiff'
         };
-        const decorateJobMock = (job) => {
-            const decorated = hoek.clone(job);
-
-            decorated.pipelineId = 8765;
-            decorated.isPR = sinon.stub().returns(false);
-
-            return decorated;
-        };
-        const getJobMocks = (j) => {
-            if (Array.isArray(j)) {
-                return j.map(decorateJobMock);
-            }
-
-            return decorateJobMock(j);
-        };
         let config;
         let expected;
         let jobsMock;
@@ -148,21 +133,18 @@ describe('Event Factory', () => {
                         { name: '~commit' },
                         { name: 'main' },
                         { name: 'disabledJob' },
-                        { name: 'integration' },
                         { name: 'publish' }
                     ],
                     edges: [
                         { src: '~pr', dest: 'main' },
                         { src: '~commit', dest: 'main' },
                         { src: 'main', dest: 'disabledJob' },
-                        { src: '~pr', dest: 'integration' },
-                        { src: 'integration', dest: 'publish' }
+                        { src: '~pr', dest: 'publish' }
                     ]
                 },
                 username: 'stjohn',
                 scmContext
             };
-
             expected = {
                 pipelineId,
                 sha,
@@ -174,15 +156,13 @@ describe('Event Factory', () => {
                         { name: '~commit' },
                         { name: 'main' },
                         { name: 'disabledJob' },
-                        { name: 'integration' },
                         { name: 'publish' }
                     ],
                     edges: [
                         { src: '~pr', dest: 'main' },
                         { src: '~commit', dest: 'main' },
                         { src: 'main', dest: 'disabledJob' },
-                        { src: '~pr', dest: 'integration' },
-                        { src: 'integration', dest: 'publish' }
+                        { src: '~pr', dest: 'publish' }
                     ]
                 },
                 causeMessage: 'Started by github:stjohn',
@@ -192,29 +172,30 @@ describe('Event Factory', () => {
             };
 
             pipelineMock = {
-                pipelineId,
+                id: pipelineId,
                 scmUri: 'github.com:1234:branch',
                 scmContext,
                 token: Promise.resolve('foo'),
                 lastEventId: null,
-                update: sinon.stub().resolves(null),
                 workflowGraph: {
                     nodes: [
                         { name: '~pr' },
                         { name: '~commit' },
                         { name: 'main' },
                         { name: 'disabledJob' },
-                        { name: 'integration' },
                         { name: 'publish' }
                     ],
                     edges: [
                         { src: '~pr', dest: 'main' },
                         { src: '~commit', dest: 'main' },
                         { src: 'main', dest: 'disabledJob' },
-                        { src: '~pr', dest: 'integration' },
-                        { src: 'integration', dest: 'publish' }
+                        { src: '~pr', dest: 'publish' }
                     ]
-                }
+                },
+                getConfiguration: sinon.stub().resolves(PARSED_YAML),
+                sync: sinon.stub().resolves(pipelineMock),
+                syncPR: sinon.stub().resolves(),
+                update: sinon.stub().resolves(null)
             };
 
             pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
@@ -226,8 +207,9 @@ describe('Event Factory', () => {
 
         describe('with new workflow', () => {
             beforeEach(() => {
-                jobsMock = getJobMocks([{
+                jobsMock = [{
                     id: 1,
+                    pipelineId: 8765,
                     name: 'main',
                     permutations: {
                         requires: ['~commit', '~pr']
@@ -235,26 +217,21 @@ describe('Event Factory', () => {
                     state: 'ENABLED'
                 }, {
                     id: 2,
+                    pipelineId: 8765,
                     name: 'disabledjob',
                     permutations: {
                         requires: ['main']
                     },
                     state: 'DISABLED'
                 }, {
-                    id: 3,
-                    name: 'integration',
+                    id: 4,
+                    pipelineId: 8765,
+                    name: 'publish',
                     permutations: {
                         requires: ['~pr']
                     },
                     state: 'ENABLED'
-                }, {
-                    id: 4,
-                    name: 'publish',
-                    permutations: {
-                        requires: ['integration']
-                    },
-                    state: 'ENABLED'
-                }]);
+                }];
 
                 pipelineMock.jobs = Promise.resolve(jobsMock);
                 buildFactoryMock.create.resolves(null);
@@ -276,9 +253,7 @@ describe('Event Factory', () => {
                     permutations: {
                         requires: ['~pr']
                     },
-                    state: 'ENABLED',
-                    isPR: sinon.stub().returns(true),
-                    prNum: sinon.stub().returns('1')
+                    state: 'ENABLED'
                 },
                 {
                     id: 7,
@@ -287,22 +262,19 @@ describe('Event Factory', () => {
                     permutations: {
                         requires: ['~pr']
                     },
-                    state: 'ENABLED',
-                    isPR: sinon.stub().returns(true),
-                    prNum: sinon.stub().returns('2')
+                    state: 'ENABLED'
                 },
                 {
                     id: 3,
-                    name: 'integration',
+                    name: 'publish',
                     permutations: {
                         requires: ['~pr']
                     },
-                    state: 'ENABLED',
-                    isPR: sinon.stub().returns(false)
+                    state: 'ENABLED'
                 },
                 {
                     id: 6,
-                    name: 'PR-1:integration',
+                    name: 'PR-1:publish',
                     permutations: {
                         requires: ['~pr']
                     },
@@ -313,7 +285,7 @@ describe('Event Factory', () => {
 
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
-                config.prNum = '1';
+                config.prNum = 1;
 
                 return factory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
@@ -324,6 +296,8 @@ describe('Event Factory', () => {
                         jobId: 5,
                         prRef: 'branch'
                     }));
+                    assert.calledOnce(pipelineMock.syncPR);
+                    assert.calledWith(pipelineMock.syncPR.firstCall, 1);
                 });
             });
 
@@ -332,13 +306,13 @@ describe('Event Factory', () => {
                     id: 5,
                     name: 'PR-1:main'
                 };
-                const prIntegration = {
+                const prPublish = {
                     id: 6,
-                    name: 'PR-1:integration'
+                    name: 'PR-1:publish'
                 };
 
                 jobFactoryMock.create.onCall(0).resolves(prComponent);
-                jobFactoryMock.create.onCall(1).resolves(prIntegration);
+                jobFactoryMock.create.onCall(1).resolves(prPublish);
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
                 config.prNum = '1';
@@ -352,7 +326,7 @@ describe('Event Factory', () => {
                     }));
                     assert.calledWith(jobFactoryMock.create.secondCall, sinon.match({
                         pipelineId: 8765,
-                        name: 'PR-1:integration'
+                        name: 'PR-1:publish'
                     }));
                     assert.calledTwice(buildFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
@@ -365,6 +339,9 @@ describe('Event Factory', () => {
                         jobId: 6,
                         prRef: 'branch'
                     }));
+                    assert.calledOnce(pipelineMock.syncPR);
+                    assert.calledWith(pipelineMock.syncPR, '1');
+                    assert.notCalled(pipelineMock.sync);
                 });
             });
 
@@ -379,19 +356,23 @@ describe('Event Factory', () => {
                         eventId: model.id,
                         jobId: 1
                     }));
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.notCalled(pipelineMock.syncPR);
                 });
             });
 
             it('should create build if startFrom is a jobName', () => {
-                config.startFrom = 'integration';
+                config.startFrom = 'main';
 
                 return factory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(pipelineMock.syncPR);
+                    assert.notCalled(pipelineMock.sync);
                     assert.calledOnce(buildFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create, sinon.match({
                         eventId: model.id,
-                        jobId: 4
+                        jobId: 1
                     }));
                 });
             });
