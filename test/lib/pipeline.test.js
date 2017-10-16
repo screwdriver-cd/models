@@ -271,6 +271,42 @@ describe('Pipeline Model', () => {
             });
         });
 
+        it('stores workflowGraph to pipeline', () => {
+            jobs = [{
+                update: sinon.stub().resolves(null),
+                isPR: sinon.stub(),
+                id: 1,
+                name: 'main',
+                permutations: ['node:3'],
+                state: 'ENABLED'
+            },
+            {
+                update: sinon.stub().resolves(null),
+                isPR: sinon.stub(),
+                id: 2,
+                name: 'publish',
+                permutations: ['node:3'],
+                state: 'ENABLED'
+            }];
+            jobFactoryMock.list.resolves(jobs);
+
+            return pipeline.sync().then(() => {
+                assert.deepEqual(pipeline.workflowGraph, {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: 'main', id: 1 },
+                        { name: 'publish', id: 2 }
+                    ],
+                    edges: [
+                        { src: '~pr', dest: 'main' },
+                        { src: '~commit', dest: 'main' },
+                        { src: 'main', dest: 'publish' }
+                    ]
+                });
+            });
+        });
+
         it('stores annotations to pipeline', () => {
             jobs = [];
             jobFactoryMock.list.resolves(jobs);
@@ -411,7 +447,7 @@ describe('Pipeline Model', () => {
         });
 
         it('update PR config', () => {
-            jobFactoryMock.get.resolves(prJob);
+            jobFactoryMock.list.resolves([prJob]);
 
             return pipeline.syncPR(1).then(() => {
                 assert.calledWith(scmMock.getFile, {
@@ -423,6 +459,39 @@ describe('Pipeline Model', () => {
                 });
                 assert.called(prJob.update);
                 assert.deepEqual(prJob.permutations, PARSED_YAML.jobs.main);
+            });
+        });
+
+        it('update PR config for multiple PR jobs', () => {
+            const firstPRJob = {
+                update: sinon.stub().resolves(null),
+                isPR: sinon.stub().returns(true),
+                name: 'PR-1:main',
+                state: 'ENABLED',
+                archived: false
+            };
+            const secondPRJob = {
+                update: sinon.stub().resolves(null),
+                isPR: sinon.stub().returns(true),
+                name: 'PR-1:publish',
+                state: 'ENABLED',
+                archived: false
+            };
+
+            jobFactoryMock.list.resolves([firstPRJob, secondPRJob]);
+
+            return pipeline.syncPR(1).then(() => {
+                assert.calledWith(scmMock.getFile, {
+                    path: 'screwdriver.yaml',
+                    ref: 'pulls/1/merge',
+                    scmUri,
+                    scmContext,
+                    token: 'foo'
+                });
+                assert.calledOnce(firstPRJob.update);
+                assert.calledOnce(secondPRJob.update);
+                assert.deepEqual(firstPRJob.permutations, PARSED_YAML.jobs.main);
+                assert.deepEqual(secondPRJob.permutations, PARSED_YAML.jobs.publish);
             });
         });
 
@@ -439,7 +508,7 @@ describe('Pipeline Model', () => {
         it('returns error if fails to get PR job', () => {
             const error = new Error('fails to get job');
 
-            jobFactoryMock.get.rejects(error);
+            jobFactoryMock.list.rejects(error);
 
             return pipeline.syncPR(1).catch((err) => {
                 assert.deepEqual(err, error);
@@ -493,7 +562,7 @@ describe('Pipeline Model', () => {
                 .then(() => {
                     assert.calledWith(jobFactoryMock.create, {
                         pipelineId: testId,
-                        name: 'PR-2',
+                        name: 'PR-2:main',
                         permutations: PARSED_YAML.jobs.main
                     });
                 });
