@@ -11,9 +11,7 @@ jobs:
             - test: npm test
 
     publish:
-        steps:
-            - install: npm install semantic-release
-            - publish: npm run semantic-release
+        template: screwdriver-cd/semantic-release 
         secrets:
             # Publishing to NPM
             - NPM_TOKEN
