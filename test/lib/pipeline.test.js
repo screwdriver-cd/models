@@ -777,6 +777,30 @@ describe('Pipeline Model', () => {
                 assert.deepEqual(result, [blahJob, publishJob]);
             });
         });
+
+        it('Get jobs without sorting for new workflows', () => {
+            const config = {
+                params: {
+                    archived: false
+                }
+            };
+            const expected = {
+                params: {
+                    pipelineId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    archived: false
+                },
+                paginate
+            };
+            const jobList = [blahJob, publishJob];
+
+            pipeline.workflow = [];
+            jobFactoryMock.list.resolves(jobList);
+
+            return pipeline.getJobs(config).then((result) => {
+                assert.calledWith(jobFactoryMock.list, expected);
+                assert.deepEqual(result, [blahJob, publishJob]);
+            });
+        });
     });
 
     describe('get events', () => {
