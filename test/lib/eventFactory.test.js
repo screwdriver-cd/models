@@ -101,6 +101,7 @@ describe('Event Factory', () => {
         const pipelineId = 8765;
         const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
         const displayName = 'github';
+        // const lastEventId = 'xzy1234';
         const scmContext = 'github:github.com';
         const creator = {
             avatar: 'https://avatars.githubusercontent.com/u/2042?v=3',
@@ -121,6 +122,7 @@ describe('Event Factory', () => {
         let config;
         let expected;
         let jobsMock;
+        let syncedPipelineMock;
 
         beforeEach(() => {
             config = {
@@ -155,7 +157,7 @@ describe('Event Factory', () => {
                 commit
             };
 
-            pipelineMock = {
+            syncedPipelineMock = {
                 id: pipelineId,
                 scmUri: 'github.com:1234:branch',
                 scmContext,
@@ -178,26 +180,13 @@ describe('Event Factory', () => {
                     ]
                 },
                 getConfiguration: sinon.stub().resolves(PARSED_YAML),
-                sync: sinon.stub().resolves({
-                    workflow: [],
-                    workflowGraph: {
-                        nodes: [
-                            { name: '~pr' },
-                            { name: '~commit' },
-                            { name: 'main' },
-                            { name: 'disabledJob' },
-                            { name: 'publish' }
-                        ],
-                        edges: [
-                            { src: '~pr', dest: 'main' },
-                            { src: '~commit', dest: 'main' },
-                            { src: 'main', dest: 'disabledJob' },
-                            { src: '~pr', dest: 'publish' }
-                        ]
-                    }
-                }),
-                syncPR: sinon.stub().resolves(),
-                update: sinon.stub().resolves(null)
+                syncPR: sinon.stub().resolves(null),
+                update: sinon.stub().resolves(null),
+                job: Promise.resolve([])
+            };
+
+            pipelineMock = {
+                sync: sinon.stub().resolves(syncedPipelineMock)
             };
 
             pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
@@ -235,7 +224,7 @@ describe('Event Factory', () => {
                     state: 'ENABLED'
                 }];
 
-                pipelineMock.jobs = Promise.resolve(jobsMock);
+                syncedPipelineMock.jobs = Promise.resolve(jobsMock);
                 buildFactoryMock.create.resolves(null);
             });
 
@@ -283,7 +272,7 @@ describe('Event Factory', () => {
                     state: 'DISABLED'
                 }];
 
-                pipelineMock.jobs = Promise.resolve(jobsMock);
+                syncedPipelineMock.jobs = Promise.resolve(jobsMock);
 
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
@@ -298,8 +287,8 @@ describe('Event Factory', () => {
                         jobId: 5,
                         prRef: 'branch'
                     }));
-                    assert.calledOnce(pipelineMock.syncPR);
-                    assert.calledWith(pipelineMock.syncPR.firstCall, 1);
+                    assert.calledOnce(syncedPipelineMock.syncPR);
+                    assert.calledWith(syncedPipelineMock.syncPR.firstCall, 1);
                 });
             });
 
@@ -318,6 +307,7 @@ describe('Event Factory', () => {
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
                 config.prNum = '1';
+                config.type = 'pr';
 
                 return factory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
@@ -341,9 +331,9 @@ describe('Event Factory', () => {
                         jobId: 6,
                         prRef: 'branch'
                     }));
-                    assert.calledOnce(pipelineMock.syncPR);
-                    assert.calledWith(pipelineMock.syncPR, '1');
-                    assert.notCalled(pipelineMock.sync);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.calledOnce(syncedPipelineMock.syncPR);
+                    assert.calledWith(syncedPipelineMock.syncPR, '1');
                 });
             });
 
@@ -358,7 +348,7 @@ describe('Event Factory', () => {
                         jobId: 1
                     }));
                     assert.calledOnce(pipelineMock.sync);
-                    assert.notCalled(pipelineMock.syncPR);
+                    assert.notCalled(syncedPipelineMock.syncPR);
                 });
             });
 
@@ -368,7 +358,7 @@ describe('Event Factory', () => {
                 return factory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
-                    assert.notCalled(pipelineMock.syncPR);
+                    assert.notCalled(syncedPipelineMock.syncPR);
                     assert.calledOnce(pipelineMock.sync);
                     assert.calledOnce(buildFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create, sinon.match({
@@ -419,7 +409,7 @@ describe('Event Factory', () => {
                     sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
                     token: 'foo'
                 });
-                assert.strictEqual(pipelineMock.lastEventId, model.id);
+                assert.strictEqual(syncedPipelineMock.lastEventId, model.id);
                 Object.keys(expected).forEach((key) => {
                     if (key === 'workflow') {
                         assert.deepEqual(model[key], expected[key]);
@@ -431,17 +421,6 @@ describe('Event Factory', () => {
                 });
             })
         );
-
-        it('should only update lastEventId if type is pipeline', () => {
-            config.type = 'pr';
-
-            return factory.create(config).then((model) => {
-                assert.instanceOf(model, Event);
-                // lastEventId should not have been updated
-                assert.calledOnce(pipelineMock.update);
-                assert.strictEqual(pipelineMock.lastEventId, null);
-            });
-        });
     });
 
     describe('getInstance', () => {
