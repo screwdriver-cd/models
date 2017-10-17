@@ -3,7 +3,7 @@
 const assert = require('chai').assert;
 const sinon = require('sinon');
 const mockery = require('mockery');
-const PARSED_YAML = require('../data/parser');
+const PARSED_YAML = require('../data/parserWithWorkflowGraph');
 
 sinon.assert.expose(assert, { prefix: '' });
 
