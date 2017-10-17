@@ -126,22 +126,6 @@ describe('Event Factory', () => {
             config = {
                 pipelineId,
                 sha,
-                workflow: [],
-                workflowGraph: {
-                    nodes: [
-                        { name: '~pr' },
-                        { name: '~commit' },
-                        { name: 'main' },
-                        { name: 'disabledJob' },
-                        { name: 'publish' }
-                    ],
-                    edges: [
-                        { src: '~pr', dest: 'main' },
-                        { src: '~commit', dest: 'main' },
-                        { src: 'main', dest: 'disabledJob' },
-                        { src: '~pr', dest: 'publish' }
-                    ]
-                },
                 username: 'stjohn',
                 scmContext
             };
@@ -177,6 +161,7 @@ describe('Event Factory', () => {
                 scmContext,
                 token: Promise.resolve('foo'),
                 lastEventId: null,
+                workflow: [],
                 workflowGraph: {
                     nodes: [
                         { name: '~pr' },
@@ -193,7 +178,24 @@ describe('Event Factory', () => {
                     ]
                 },
                 getConfiguration: sinon.stub().resolves(PARSED_YAML),
-                sync: sinon.stub().resolves(pipelineMock),
+                sync: sinon.stub().resolves({
+                    workflow: [],
+                    workflowGraph: {
+                        nodes: [
+                            { name: '~pr' },
+                            { name: '~commit' },
+                            { name: 'main' },
+                            { name: 'disabledJob' },
+                            { name: 'publish' }
+                        ],
+                        edges: [
+                            { src: '~pr', dest: 'main' },
+                            { src: '~commit', dest: 'main' },
+                            { src: 'main', dest: 'disabledJob' },
+                            { src: '~pr', dest: 'publish' }
+                        ]
+                    }
+                }),
                 syncPR: sinon.stub().resolves(),
                 update: sinon.stub().resolves(null)
             };
@@ -347,7 +349,6 @@ describe('Event Factory', () => {
 
             it('should create commit builds', () => {
                 config.startFrom = '~commit';
-                config.prRef = 'branch';
 
                 return factory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
@@ -368,7 +369,7 @@ describe('Event Factory', () => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.notCalled(pipelineMock.syncPR);
-                    assert.notCalled(pipelineMock.sync);
+                    assert.calledOnce(pipelineMock.sync);
                     assert.calledOnce(buildFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create, sinon.match({
                         eventId: model.id,
