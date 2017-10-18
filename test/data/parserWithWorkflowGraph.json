@@ -77,10 +77,7 @@
             }
         ]
     },
-    "workflow": [
-        "main",
-        "publish"
-    ],
+    "workflow": [],
     "workflowGraph": {
         "nodes": [
             { "name": "~pr" },
@@ -91,7 +88,8 @@
         "edges": [
             { "src": "~pr", "dest": "main" },
             { "src": "~commit", "dest": "main" },
-            { "src": "main", "dest": "publish" }
+            { "src": "main", "dest": "publish" },
+            { "src": "~pr", "dest": "publish" }
         ]
     },
     "annotations": {
