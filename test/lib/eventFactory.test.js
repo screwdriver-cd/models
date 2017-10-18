@@ -334,6 +334,7 @@ describe('Event Factory', () => {
                     assert.calledOnce(pipelineMock.sync);
                     assert.calledOnce(syncedPipelineMock.syncPR);
                     assert.calledWith(syncedPipelineMock.syncPR, '1');
+                    assert.strictEqual(syncedPipelineMock.lastEventId, null);
                 });
             });
 
