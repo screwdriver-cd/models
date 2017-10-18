@@ -459,6 +459,7 @@ describe('Pipeline Model', () => {
                 });
                 assert.called(prJob.update);
                 assert.deepEqual(prJob.permutations, PARSED_YAML.jobs.main);
+                assert.isFalse(prJob.archived);
             });
         });
 
@@ -492,6 +493,8 @@ describe('Pipeline Model', () => {
                 assert.calledOnce(secondPRJob.update);
                 assert.deepEqual(firstPRJob.permutations, PARSED_YAML.jobs.main);
                 assert.deepEqual(secondPRJob.permutations, PARSED_YAML.jobs.publish);
+                assert.isFalse(firstPRJob.archived);
+                assert.isFalse(secondPRJob.archived);
             });
         });
 
