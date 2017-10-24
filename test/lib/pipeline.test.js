@@ -209,6 +209,8 @@ describe('Pipeline Model', () => {
     describe('sync', () => {
         let publishMock;
         let mainMock;
+        let mainModelMock;
+        let publishModelMock;
 
         beforeEach(() => {
             datastore.update.resolves(null);
@@ -218,6 +220,22 @@ describe('Pipeline Model', () => {
             userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
+
+            mainModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 1,
+                name: 'main',
+                state: 'ENABLED'
+            };
+
+            publishModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 2,
+                name: 'publish',
+                state: 'ENABLED'
+            };
 
             publishMock = {
                 pipelineId: testId,
@@ -272,23 +290,10 @@ describe('Pipeline Model', () => {
         });
 
         it('stores workflowGraph to pipeline', () => {
-            jobs = [{
-                update: sinon.stub().resolves(null),
-                isPR: sinon.stub(),
-                id: 1,
-                name: 'main',
-                permutations: ['node:3'],
-                state: 'ENABLED'
-            },
-            {
-                update: sinon.stub().resolves(null),
-                isPR: sinon.stub(),
-                id: 2,
-                name: 'publish',
-                permutations: ['node:3'],
-                state: 'ENABLED'
-            }];
+            jobs = [];
             jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainModelMock);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishModelMock);
 
             return pipeline.sync().then(() => {
                 assert.deepEqual(pipeline.workflowGraph, {
@@ -342,15 +347,10 @@ describe('Pipeline Model', () => {
         });
 
         it('updates existing jobs that are in the config', () => {
-            jobs = [{
-                update: sinon.stub().resolves(null),
-                isPR: sinon.stub(),
-                name: 'main',
-                permutations: ['node:3'],
-                state: 'ENABLED'
-            }];
+            jobs = [mainModelMock, publishModelMock];
             jobFactoryMock.list.resolves(jobs);
-            jobs[0].isPR.returns(false);
+            mainModelMock.update.resolves(mainModelMock);
+            publishModelMock.update.resolves(publishModelMock);
 
             return pipeline.sync()
                 .then(() => {
@@ -378,39 +378,57 @@ describe('Pipeline Model', () => {
                         environment: { NODE_ENV: 'test', NODE_VERSION: '6' },
                         image: 'node:6'
                     }]);
+                    assert.calledOnce(jobs[1].update);
+                    assert.deepEqual(jobs[1].archived, false);
+                    assert.deepEqual(jobs[1].permutations, [{
+                        commands: [
+                            { command: 'npm run bump', name: 'bump' },
+                            { command: 'npm publish --tag $NODE_TAG', name: 'publish' },
+                            { command: 'git push origin --tags', name: 'tag' }
+                        ],
+                        environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
+                        image: 'node:4'
+                    }]);
                 });
         });
 
         it('disable jobs if they are not in the config', () => {
-            jobs = [{
-                update: sinon.stub().resolves(null),
-                isPR: sinon.stub(),
+            const disableJobMock = {
+                update: sinon.stub(),
+                isPR: sinon.stub().returns(false),
                 name: 'banana',
                 state: 'ENABLED'
-            }];
+            };
+
+            jobs = [mainModelMock, publishModelMock, disableJobMock];
             jobFactoryMock.list.resolves(jobs);
-            jobs[0].isPR.returns(false);
+            mainModelMock.update.resolves(mainModelMock);
+            publishModelMock.update.resolves(publishModelMock);
+            disableJobMock.update.resolves(disableJobMock);
 
             return pipeline.sync()
                 .then(() => {
-                    assert.calledOnce(jobs[0].update);
-                    assert.equal(jobs[0].archived, true);
+                    assert.calledOnce(disableJobMock.update);
+                    assert.equal(disableJobMock.archived, true);
                 });
         });
 
         it('does nothing if the job is a PR job', () => {
-            jobs = [{
-                update: sinon.stub().resolves(null),
-                isPR: sinon.stub(),
+            const prJobMock = {
+                update: sinon.stub(),
+                isPR: sinon.stub().returns(true),
                 name: 'PR-1',
                 state: 'ENABLED'
-            }];
+            };
+
+            jobs = [mainModelMock, publishModelMock, prJobMock];
+            mainModelMock.update.resolves(mainModelMock);
+            publishModelMock.update.resolves(publishModelMock);
             jobFactoryMock.list.resolves(jobs);
-            jobs[0].isPR.returns(true);
 
             return pipeline.sync()
                 .then(() => {
-                    assert.notCalled(jobs[0].update);
+                    assert.notCalled(prJobMock.update);
                 });
         });
 
