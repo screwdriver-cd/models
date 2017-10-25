@@ -34,7 +34,8 @@ describe('User Model', () => {
             save: sinon.stub()
         };
         scmMock = {
-            getPermissions: sinon.stub()
+            getPermissions: sinon.stub(),
+            getDisplayName: sinon.stub()
         };
         hashaMock = {
             sha1: sinon.stub()
@@ -191,6 +192,16 @@ describe('User Model', () => {
                 .catch((err) => {
                     assert.deepEqual(err, expectedError);
                 });
+        });
+    });
+
+    describe('getFullDisplayName', () => {
+        it('get full display name', () => {
+            scmMock.getDisplayName.withArgs({ scmContext }).returns('github.com');
+
+            const userDisplayName = user.getFullDisplayName();
+
+            assert.deepEqual(userDisplayName, 'github.com:me');
         });
     });
 
