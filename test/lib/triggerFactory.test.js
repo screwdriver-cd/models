@@ -7,13 +7,11 @@ const sinon = require('sinon');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('Trigger Factory', () => {
-    const pipelineId = 12345;
-    const jobName = 'component';
-    const trigger = '5678:main';
+    const src = '~sd@12345:component';
+    const dest = '~sd@5678:main';
     const metaData = {
-        pipelineId,
-        jobName,
-        trigger
+        src,
+        dest
     };
     let TriggerFactory;
     let datastore;
@@ -67,9 +65,8 @@ describe('Trigger Factory', () => {
         beforeEach(() => {
             expected = {
                 id: generatedId,
-                pipelineId,
-                jobName,
-                trigger
+                src,
+                dest
             };
         });
 
@@ -77,9 +74,8 @@ describe('Trigger Factory', () => {
             datastore.save.resolves(expected);
 
             return factory.create({
-                pipelineId,
-                jobName,
-                trigger
+                src,
+                dest
             }).then((model) => {
                 assert.instanceOf(model, Trigger);
                 Object.keys(expected).forEach((key) => {

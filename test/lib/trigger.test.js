@@ -35,9 +35,8 @@ describe('Trigger Model', () => {
         createConfig = {
             datastore,
             id: 1111,
-            pipelineId: 12345,
-            jobName: 'component',
-            trigger: '5678:main'
+            src: '~sd@12345:component',
+            dest: '~sd@5678:main'
         };
         trigger = new TriggerModel(createConfig);
     });

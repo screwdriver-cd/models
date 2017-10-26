@@ -8,6 +8,7 @@ const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
 const PARSED_YAML = require('../data/parser');
+const PARSED_YAML_WITH_REQUIRES = require('../data/parserWithRequires');
 
 describe('Pipeline Model', () => {
     let PipelineModel;
@@ -22,6 +23,7 @@ describe('Pipeline Model', () => {
     let secretFactoryMock;
     let eventFactoryMock;
     let templateFactoryMock;
+    let triggerFactoryMock;
 
     const dateNow = 1111111111;
     const scmUri = 'github.com:12345:master';
@@ -112,6 +114,10 @@ describe('Pipeline Model', () => {
         };
         templateFactoryMock = {
         };
+        triggerFactoryMock = {
+            list: sinon.stub(),
+            create: sinon.stub()
+        };
         scmMock = {
             addWebhook: sinon.stub(),
             getFile: sinon.stub(),
@@ -133,7 +139,8 @@ describe('Pipeline Model', () => {
             getInstance: sinon.stub().returns(secretFactoryMock) });
         mockery.registerMock('./templateFactory', {
             getInstance: sinon.stub().returns(templateFactoryMock) });
-
+        mockery.registerMock('./triggerFactory', {
+            getInstance: sinon.stub().returns(triggerFactoryMock) });
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('screwdriver-config-parser', parserMock);
 
@@ -220,6 +227,8 @@ describe('Pipeline Model', () => {
             userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
                 unsealToken: sinon.stub().resolves('foo')
             });
+            triggerFactoryMock.list.resolves([]);
+            triggerFactoryMock.create.resolves(null);
 
             mainModelMock = {
                 isPR: sinon.stub().returns(false),
@@ -276,6 +285,66 @@ describe('Pipeline Model', () => {
                     image: 'node:6'
                 }]
             };
+        });
+
+        it('create external trigger in datastore for new jobs', () => {
+            jobs = [];
+            parserMock.withArgs('superyamlcontent', templateFactoryMock)
+                .resolves(PARSED_YAML_WITH_REQUIRES);
+            mainMock.permutations.forEach((p) => {
+                p.requires = ['~pr', '~commit', '~sd@12345:test'];
+            });
+            publishMock.permutations[0].requires = ['main'];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainModelMock);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishModelMock);
+
+            return pipeline.sync().then(() => {
+                assert.calledOnce(triggerFactoryMock.create);   // only create for external trigger
+                assert.calledWith(triggerFactoryMock.create, {
+                    src: '~sd@12345:test',
+                    dest: `~sd@${testId}:main`
+                });
+            });
+        });
+
+        it('remove external trigger in datastore if it is not in requires anymore', () => {
+            const triggerMock = {
+                src: '~sd@8765:oldrequires',    // no longer requires
+                dest: `~sd@${testId}:main`,
+                remove: sinon.stub().resolves(null)
+            };
+
+            jobFactoryMock.list.resolves([mainModelMock, publishModelMock]);
+            mainModelMock.update.resolves(mainModelMock);
+            publishModelMock.update.resolves(publishModelMock);
+            triggerFactoryMock.list.onCall(0).resolves([triggerMock]);
+            triggerFactoryMock.list.onCall(1).resolves([]);
+
+            return pipeline.sync().then(() => {
+                assert.calledOnce(triggerMock.remove);
+            });
+        });
+
+        it('do not remove external trigger in datastore if still in requires', () => {
+            const triggerMock = {
+                src: '~sd@12345:test',
+                dest: `~sd@${testId}:main`,
+                remove: sinon.stub().resolves(null)
+            };
+
+            parserMock.withArgs('superyamlcontent', templateFactoryMock)
+                .resolves(PARSED_YAML_WITH_REQUIRES);
+            jobFactoryMock.list.resolves([mainModelMock, publishModelMock]);
+            mainModelMock.update.resolves(mainModelMock);
+            publishModelMock.update.resolves(publishModelMock);
+            triggerFactoryMock.list.onCall(0).resolves([triggerMock]);
+            triggerFactoryMock.list.onCall(1).resolves([]);
+
+            return pipeline.sync().then(() => {
+                assert.notCalled(triggerMock.remove);
+                assert.notCalled(triggerFactoryMock.create);
+            });
         });
 
         it('stores workflow to pipeline', () => {
