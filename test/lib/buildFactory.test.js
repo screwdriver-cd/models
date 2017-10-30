@@ -190,6 +190,7 @@ describe('Build Factory', () => {
             scmMock.getDisplayName.returns(displayName);
             bookendMock.getSetupCommands.resolves([steps[1]]);
             bookendMock.getTeardownCommands.resolves([]);
+            datastore.save.resolves({});
 
             sandbox = sinon.sandbox.create({
                 useFakeTimers: false
@@ -234,12 +235,8 @@ describe('Build Factory', () => {
         });
 
         it('ignores extraneous parameters', () => {
-            const expected = {};
             const garbage = 'garbageData';
             const user = { unsealToken: sinon.stub().resolves('foo') };
-
-            datastore.save.resolves(expected);
-
             const jobMock = {
                 permutations,
                 pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
@@ -254,12 +251,18 @@ describe('Build Factory', () => {
             });
         });
 
+        it('use username as displayName if displayLabel is not set', () => {
+            scmMock.getDisplayName.returns(null);
+            saveConfig.params.cause = 'Started by user i_made_the_request';
+            delete saveConfig.params.commit;
+
+            return factory.create({ username, jobId, eventId, sha }).then(() => {
+                assert.calledWith(datastore.save, saveConfig);
+            });
+        });
+
         it('creates a new build in the datastore, looking up sha', () => {
-            const expected = {};
             const user = { unsealToken: sinon.stub().resolves('foo') };
-
-            datastore.save.resolves(expected);
-
             const jobMock = {
                 permutations,
                 pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
@@ -300,11 +303,7 @@ describe('Build Factory', () => {
         });
 
         it('adds a teardown command if one exists', () => {
-            const expected = {};
             const user = { unsealToken: sinon.stub().resolves('foo') };
-
-            datastore.save.resolves(expected);
-
             const jobMock = {
                 permutations,
                 pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
@@ -330,10 +329,6 @@ describe('Build Factory', () => {
         });
 
         it('creates a new build in the datastore, without looking up sha', () => {
-            const expected = {};
-
-            datastore.save.resolves(expected);
-
             const jobMock = {
                 permutations,
                 pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
@@ -399,7 +394,6 @@ describe('Build Factory', () => {
                 bookend: bookendMock
             });
 
-            datastore.save.resolves({});
             jobFactoryMock.get.resolves(jobMock);
 
             return factory.create({ username, jobId, eventId, sha }).then((model) => {
