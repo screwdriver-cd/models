@@ -871,6 +871,61 @@ factory.get(id).then(model => {
 | :-------------   | :---- | :-------------|
 | id | Number | The unique ID for the Template Tag |
 
+### Trigger Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.TriggerFactory.getInstance({
+    datastore
+});
+const config = {
+    dest: '~sd@123:component',
+    src: '~sd@456:main'
+}
+
+factory.create(config)
+    .then(model => {    // do something
+});
+```
+
+### Trigger Factory
+#### Create
+```js
+factory.create(config).then(model => {
+    // do stuff with trigger model
+});
+```
+
+| Parameter        | Type  |  Required | Description |
+| :-------------   | :---- | :-------------|  :-------------|
+| config        | Object | Yes | Configuration Object |
+| config.src | String | Yes | The job that initiates the trigger (ex: ~sd@123:component) |
+| config.dest | String | Yes | The job that is triggered (ex: ~sd@456:main) |
+
+#### Get
+Get trigger based on id.
+```js
+factory.get(id).then(model => {
+    // do stuff with trigger model
+});
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| id | Number | The unique ID for the trigger |
+
+#### List
+List triggers that have dest as `~sd@456:main`
+```js
+// update template version value
+factory.list({
+    params: {
+        dest: '~sd@456:main'
+    }
+}).then(recs => 
+    // do things with the records 
+);
+```
 ### Token Factory
 #### Search
 ```js

@@ -422,6 +422,14 @@ describe('Event Factory', () => {
                 });
             })
         );
+
+        it('use username as displayName if displayLabel is not set', () => {
+            scm.getDisplayName.returns(null);
+
+            return factory.create(config).then((model) => {
+                assert.equal(model.causeMessage, 'Started by stjohn');
+            });
+        });
     });
 
     describe('getInstance', () => {
