@@ -142,9 +142,11 @@ describe('Event Factory', () => {
                         { name: '~commit' },
                         { name: 'main' },
                         { name: 'disabledJob' },
-                        { name: 'publish' }
+                        { name: 'publish' },
+                        { name: '~sd@123:main' }
                     ],
                     edges: [
+                        { src: '~sd@123:main', dest: 'main' },
                         { src: '~pr', dest: 'main' },
                         { src: '~commit', dest: 'main' },
                         { src: 'main', dest: 'disabledJob' },
@@ -170,9 +172,11 @@ describe('Event Factory', () => {
                         { name: '~commit' },
                         { name: 'main' },
                         { name: 'disabledJob' },
-                        { name: 'publish' }
+                        { name: 'publish' },
+                        { name: '~sd@123:main' }
                     ],
                     edges: [
+                        { src: '~sd@123:main', dest: 'main' },
                         { src: '~pr', dest: 'main' },
                         { src: '~commit', dest: 'main' },
                         { src: 'main', dest: 'disabledJob' },
@@ -203,7 +207,7 @@ describe('Event Factory', () => {
                     pipelineId: 8765,
                     name: 'main',
                     permutations: {
-                        requires: ['~commit', '~pr']
+                        requires: ['~commit', '~pr', '~sd@123:main']
                     },
                     state: 'ENABLED'
                 }, {
@@ -340,6 +344,21 @@ describe('Event Factory', () => {
 
             it('should create commit builds', () => {
                 config.startFrom = '~commit';
+
+                return factory.create(config).then((model) => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.calledWith(buildFactoryMock.create, sinon.match({
+                        eventId: model.id,
+                        jobId: 1
+                    }));
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                });
+            });
+
+            it('should create triggered builds', () => {
+                config.startFrom = '~sd@123:main';
 
                 return factory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
