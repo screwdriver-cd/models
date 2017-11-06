@@ -4,6 +4,7 @@ const assert = require('chai').assert;
 const sinon = require('sinon');
 const mockery = require('mockery');
 const PARSED_YAML = require('../data/parserWithWorkflowGraph');
+const PARSED_YAML_PR = require('../data/parserWithWorkflowGraphPR');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -301,17 +302,19 @@ describe('Event Factory', () => {
                     id: 5,
                     name: 'PR-1:main'
                 };
-                const prPublish = {
+                const prNewMain = {
                     id: 6,
-                    name: 'PR-1:publish'
+                    name: 'PR-1:new_main'
                 };
 
                 jobFactoryMock.create.onCall(0).resolves(prComponent);
-                jobFactoryMock.create.onCall(1).resolves(prPublish);
+                jobFactoryMock.create.onCall(1).resolves(prNewMain);
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
                 config.prNum = '1';
                 config.type = 'pr';
+                // Return config in PR with new job named new_main
+                syncedPipelineMock.getConfiguration.withArgs(config.prRef).resolves(PARSED_YAML_PR);
 
                 return factory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
@@ -322,7 +325,7 @@ describe('Event Factory', () => {
                     }));
                     assert.calledWith(jobFactoryMock.create.secondCall, sinon.match({
                         pipelineId: 8765,
-                        name: 'PR-1:publish'
+                        name: 'PR-1:new_main'
                     }));
                     assert.calledTwice(buildFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
