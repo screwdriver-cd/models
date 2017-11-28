@@ -216,6 +216,7 @@ describe('Build Factory', () => {
                 table: 'builds',
                 params: {
                     eventId,
+                    parentBuildId: 12345,
                     cause: 'Started by user github:i_made_the_request',
                     commit,
                     createTime: isoTime,
@@ -246,19 +247,19 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves(user);
             delete saveConfig.params.commit;
 
-            return factory.create({ garbage, username, jobId, eventId, sha }).then(() => {
-                assert.calledWith(datastore.save, saveConfig);
-            });
+            return factory.create({
+                garbage, username, jobId, eventId, sha, parentBuildId: 12345
+            }).then(() => assert.calledWith(datastore.save, saveConfig));
         });
 
         it('use username as displayName if displayLabel is not set', () => {
             scmMock.getDisplayName.returns(null);
             saveConfig.params.cause = 'Started by user i_made_the_request';
             delete saveConfig.params.commit;
+            delete saveConfig.params.parentBuildId;
 
-            return factory.create({ username, jobId, eventId, sha }).then(() => {
-                assert.calledWith(datastore.save, saveConfig);
-            });
+            return factory.create({ username, jobId, eventId, sha }).then(() =>
+                assert.calledWith(datastore.save, saveConfig));
         });
 
         it('creates a new build in the datastore, looking up sha', () => {
@@ -271,7 +272,9 @@ describe('Build Factory', () => {
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
 
-            return factory.create({ username, scmContext, jobId, eventId, prRef }).then((model) => {
+            return factory.create({
+                username, scmContext, jobId, eventId, prRef, parentBuildId: 12345
+            }).then((model) => {
                 assert.instanceOf(model, Build);
                 assert.calledOnce(jobFactory.getInstance);
                 assert.calledWith(jobFactoryMock.get, jobId);
@@ -336,6 +339,7 @@ describe('Build Factory', () => {
 
             jobFactoryMock.get.resolves(jobMock);
             delete saveConfig.params.commit;
+            delete saveConfig.params.parentBuildId;
 
             return factory.create({ username, jobId, eventId, sha }).then((model) => {
                 assert.calledWith(datastore.save, saveConfig);
