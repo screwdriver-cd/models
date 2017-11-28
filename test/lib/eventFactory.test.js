@@ -130,6 +130,7 @@ describe('Event Factory', () => {
                 pipelineId,
                 sha,
                 username: 'stjohn',
+                parentBuildId: 12345,
                 scmContext
             };
             expected = {
@@ -288,6 +289,7 @@ describe('Event Factory', () => {
                     assert.notCalled(jobFactoryMock.create);
                     assert.calledOnce(buildFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
+                        parentBuildId: 12345,
                         eventId: model.id,
                         jobId: 5,
                         prRef: 'branch'
@@ -329,11 +331,13 @@ describe('Event Factory', () => {
                     }));
                     assert.calledTwice(buildFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
+                        parentBuildId: 12345,
                         eventId: model.id,
                         jobId: 5,
                         prRef: 'branch'
                     }));
                     assert.calledWith(buildFactoryMock.create.secondCall, sinon.match({
+                        parentBuildId: 12345,
                         eventId: model.id,
                         jobId: 6,
                         prRef: 'branch'
@@ -352,6 +356,7 @@ describe('Event Factory', () => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
                         eventId: model.id,
                         jobId: 1
                     }));
@@ -367,6 +372,7 @@ describe('Event Factory', () => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
                         eventId: model.id,
                         jobId: 1
                     }));
@@ -385,6 +391,7 @@ describe('Event Factory', () => {
                     assert.calledOnce(pipelineMock.sync);
                     assert.calledOnce(buildFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
                         eventId: model.id,
                         jobId: 1
                     }));
