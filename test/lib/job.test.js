@@ -34,12 +34,19 @@ describe('Job Model', () => {
     };
 
     const build1 = getBuildMocks({
-        id: 'c1ee62a4df19a625c3ec90d03200434a98309715',
-        jobId: '1234'
+        id: 1,
+        jobId: '1234',
+        status: 'RUNNING'
     });
     const build2 = getBuildMocks({
-        id: '998f49fbdef86091da4c87b541416e4fff9ecce5',
-        jobId: '1234'
+        id: 2,
+        jobId: '1234',
+        status: 'QUEUED'
+    });
+    const build3 = getBuildMocks({
+        id: 3,
+        jobId: '1234',
+        status: 'SUCCESS'
     });
 
     before(() => {
@@ -266,15 +273,50 @@ describe('Job Model', () => {
 
     describe('getRunningBuilds', () => {
         it('gets all running builds', () => {
+            const expectedFirstCall = {
+                params: {
+                    jobId: '1234',
+                    status: 'RUNNING'
+                },
+                sort: 'descending',
+                paginate: {
+                    page: 1,
+                    count: 50
+                }
+            };
+            const expectedSecondCall = Object.assign({}, expectedFirstCall, {
+                params: { jobId: '1234', status: 'QUEUED' } });
+
+            buildFactoryMock.list.onCall(0).resolves([build1]);
+            buildFactoryMock.list.onCall(1).resolves([build2]);
+
+            return job.getRunningBuilds().then((builds) => {
+                assert.calledWith(buildFactoryMock.list.firstCall, expectedFirstCall);
+                assert.calledWith(buildFactoryMock.list.secondCall, expectedSecondCall);
+                assert.deepEqual(builds, [build1, build2]);
+            });
+        });
+    });
+
+    describe('getLastSuccessfulBuild', () => {
+        it('gets last successful build', () => {
+            buildFactoryMock.list.resolves([build3]);
+
             const expected = {
                 params: {
                     jobId: '1234',
-                    status: ['RUNNING', 'QUEUED']
+                    status: 'SUCCESS'
+                },
+                sort: 'descending',
+                paginate: {
+                    page: 1,
+                    count: 50
                 }
             };
 
-            return job.getRunningBuilds().then(() => {
+            return job.getLastSuccessfulBuild().then((successfulBuild) => {
                 assert.calledWith(buildFactoryMock.list, expected);
+                assert.equal(successfulBuild, build3);
             });
         });
     });
