@@ -2,6 +2,8 @@
 
 const BuildFactory = require('./lib/buildFactory');
 const CollectionFactory = require('./lib/collectionFactory');
+const CommandFactory = require('./lib/commandFactory');
+const CommandTagFactory = require('./lib/commandTagFactory');
 const EventFactory = require('./lib/eventFactory');
 const JobFactory = require('./lib/jobFactory');
 const PipelineFactory = require('./lib/pipelineFactory');
@@ -15,6 +17,8 @@ const UserFactory = require('./lib/userFactory');
 module.exports = {
     BuildFactory,
     CollectionFactory,
+    CommandFactory,
+    CommandTagFactory,
     EventFactory,
     JobFactory,
     PipelineFactory,
