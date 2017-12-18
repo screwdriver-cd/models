@@ -12,7 +12,6 @@ describe('Command Factory', () => {
     const version = '1.3';
     const maintainer = 'foo@bar.com';
     const description = 'this is a command';
-    const labels = ['test', 'beta'];
     const format = 'habitat';
     const habitat = {
         mode: 'remote',
@@ -25,7 +24,6 @@ describe('Command Factory', () => {
         version,
         maintainer,
         description,
-        labels,
         format,
         habitat
     };
@@ -93,7 +91,6 @@ describe('Command Factory', () => {
                 version,
                 maintainer,
                 description,
-                labels,
                 format,
                 habitat,
                 id: generatedId
@@ -112,7 +109,6 @@ describe('Command Factory', () => {
                 version,
                 maintainer,
                 description,
-                labels,
                 format,
                 habitat
             }).then((model) => {
@@ -135,7 +131,6 @@ describe('Command Factory', () => {
                 version: 1,
                 maintainer,
                 description,
-                labels,
                 format,
                 habitat
             }).then((model) => {
@@ -153,7 +148,6 @@ describe('Command Factory', () => {
                 version: `${version}.0`,
                 maintainer,
                 description,
-                labels,
                 format,
                 habitat,
                 id: generatedId
@@ -170,7 +164,6 @@ describe('Command Factory', () => {
                 version,
                 maintainer,
                 description,
-                labels,
                 format,
                 habitat
             }).then((model) => {

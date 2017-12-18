@@ -32,7 +32,6 @@ describe('Command Model', () => {
         createConfig = {
             datastore,
             id: 12345,
-            labels: ['test', 'beta'],
             namespace: 'testCommandNS',
             command: 'testCommand',
             version: '1.3',
