@@ -1123,9 +1123,8 @@ const config = {
     habitat: {
         mode: 'remote',
         package: 'core/git/2.14.1',
-        binary: 'git'
-    },
-    labels: ['beta', 'stable']
+        command: 'git'
+    }
 }
 
 factory.create(config)
@@ -1153,7 +1152,6 @@ factory.create(config).then(model => {
 | config.habitat | Object | Yes (any one of habitat, docker, binary) | Configuration Object for Habitat command |
 | config.docker | Object | Yes (any one of habitat, docker, binary) | Configuration Object for Docker command |
 | config.binary | Object | Yes (any one of habitat, docker, binary) | Configuration Object for Binary command |
-| config.labels | Array | No | Labels attached to the command |
 
 #### Get
 Get a command based on id.
@@ -1190,7 +1188,7 @@ const config = {
     namespace: 'testCommandNS',
     command: 'testCommand',
     tag: 'stable',
-    version: '1.3'
+    version: '1.3.5'
 }
 
 factory.create(config)
@@ -1202,7 +1200,7 @@ factory.create(config)
 Update a specific command tag
 ```js
 // update command version value
-model.version = '2.4';
+model.version = '2.4.8';
 
 model.update()
 ```
@@ -1221,7 +1219,7 @@ factory.create(config).then(model => {
 | config.namespace | String | Yes | The command namespace |
 | config.command | String | Yes | The command name |
 | config.tag | String | Yes | The command tag (e.g. stable, latest, etc) |
-| config.version | String | Yes | Version of the command |
+| config.version | String | Yes | Exact version of the command |
 
 #### Get
 Get a command tag based on id.

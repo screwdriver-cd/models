@@ -16,7 +16,7 @@ describe('Command Factory', () => {
     const habitat = {
         mode: 'remote',
         package: 'core/git/2.14.1',
-        binary: 'git'
+        command: 'git'
     };
     const metaData = {
         namespace,

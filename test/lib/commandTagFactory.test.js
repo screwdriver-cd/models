@@ -9,7 +9,7 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('CommandTag Factory', () => {
     const namespace = 'testCommandTagNS';
     const command = 'testCommandTag';
-    const version = '1.3';
+    const version = '1.3.5';
     const tag = 'latest';
     const metaData = {
         namespace,

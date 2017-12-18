@@ -41,10 +41,11 @@ describe('Command Model', () => {
             habitat: {
                 mode: 'remote',
                 package: 'core/git/2.14.1',
-                binary: 'git'
+                command: 'git'
             },
             docker: {
-                image: 'node:1.2.3'
+                image: 'chefdk:1.2.3',
+                command: 'knife'
             },
             binary: {
                 file: './foobar.sh'

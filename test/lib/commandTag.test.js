@@ -38,7 +38,7 @@ describe('CommandTag Model', () => {
             namespace: 'testCommandTagNS',
             command: 'testCommandTag',
             tag: 'latest',
-            version: '1.3'
+            version: '1.3.5'
         };
         commandTag = new CommandTagModel(createConfig);
     });
