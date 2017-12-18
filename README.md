@@ -1133,12 +1133,6 @@ factory.create(config)
     });
 ```
 
-#### Update
-Update a specific command
-```js
-model.update()
-```
-
 ### Command Factory
 #### Create
 ```js
