@@ -1106,6 +1106,133 @@ Remove a specific collection
 model.remove()
 ```
 
+### Command Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.CommandFactory.getInstance({
+    datastore
+});
+const config = {
+    namespace: 'testCommandNS',
+    command: 'testCommand',
+    version: '1.3',
+    description: 'This is a test command',
+    maintainer: 'foo@bar.com',
+    format: 'habitat',
+    habitat: {
+        mode: 'remote',
+        package: 'core/git/2.14.1',
+        command: 'git'
+    }
+}
+
+factory.create(config)
+    .then(model => {    // do something
+    });
+```
+
+### Command Factory
+#### Create
+```js
+factory.create(config).then(model => {
+    // do stuff with command model
+});
+```
+
+| Parameter        | Type  |  Required | Description |
+| :-------------   | :---- | :-------------|  :-------------|
+| config        | Object | Yes | Configuration Object |
+| config.namespace | String | Yes | The command namespace |
+| config.command | String | Yes | The command name |
+| config.version | String | Yes | Version of the command |
+| config.description | String | Yes | Description of the command |
+| config.maintainer | String | Yes | Maintainer's email |
+| config.format | String | Yes | Format of the command, habitat or docker or binary |
+| config.habitat | Object | Yes (any one of habitat, docker, binary) | Configuration Object for Habitat command |
+| config.docker | Object | Yes (any one of habitat, docker, binary) | Configuration Object for Docker command |
+| config.binary | Object | Yes (any one of habitat, docker, binary) | Configuration Object for Binary command |
+
+#### Get
+Get a command based on id.
+```js
+factory.get(id).then(model => {
+    // do stuff with command model
+});
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| id | Number | The unique ID for the Command |
+
+#### Get Command
+Get the latest command by name or get a specific command using namespace, command name and version or tag. The version can be in any valid version format: either major, major.minor, or major.minor.patch. If no version is specified, the function will resolve with the latest version published. If no match is found, the function will resolve null.
+```js
+factory.getCommand(fullCommandName).then(model => {
+    // do stuff with command model
+});
+```
+
+| Parameter        | Type   |  Required | Description |
+| :-------------   | :----- | :-------------|  :-------------|
+| fullCommandName | String | Yes | Namespace and name of the command and the version or tag (e.g. chefdk/knife@1.2.3 or chefdk/knife@latest). Can also be just namespace and name of the command (e.g. chefdk/knife) |
+
+### Command Tag Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.CommandTagFactory.getInstance({
+    datastore
+});
+const config = {
+    namespace: 'testCommandNS',
+    command: 'testCommand',
+    tag: 'stable',
+    version: '1.3.5'
+}
+
+factory.create(config)
+    .then(model => {    // do something
+    });
+```
+
+#### Update
+Update a specific command tag
+```js
+// update command version value
+model.version = '2.4.8';
+
+model.update()
+```
+
+### Command Tag Factory
+#### Create
+```js
+factory.create(config).then(model => {
+    // do stuff with command tag model
+});
+```
+
+| Parameter        | Type  |  Required | Description |
+| :-------------   | :---- | :-------------|  :-------------|
+| config        | Object | Yes | Configuration Object |
+| config.namespace | String | Yes | The command namespace |
+| config.command | String | Yes | The command name |
+| config.tag | String | Yes | The command tag (e.g. stable, latest, etc) |
+| config.version | String | Yes | Exact version of the command |
+
+#### Get
+Get a command tag based on id.
+```js
+factory.get(id).then(model => {
+    // do stuff with command model
+});
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| id | Number | The unique ID for the Command Tag |
+
 ## Testing
 
 ```bash
