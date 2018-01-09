@@ -8,7 +8,7 @@ sinon.assert.expose(assert, { prefix: '' });
 
 describe('Command Factory', () => {
     const namespace = 'testCommandNS';
-    const command = 'testCommand';
+    const name = 'testCommand';
     const version = '1.3';
     const maintainer = 'foo@bar.com';
     const description = 'this is a command';
@@ -20,7 +20,7 @@ describe('Command Factory', () => {
     };
     const metaData = {
         namespace,
-        command,
+        name,
         version,
         maintainer,
         description,
@@ -87,7 +87,7 @@ describe('Command Factory', () => {
         beforeEach(() => {
             expected = {
                 namespace,
-                command,
+                name,
                 version,
                 maintainer,
                 description,
@@ -105,7 +105,7 @@ describe('Command Factory', () => {
 
             return factory.create({
                 namespace,
-                command,
+                name,
                 version,
                 maintainer,
                 description,
@@ -127,7 +127,7 @@ describe('Command Factory', () => {
 
             return factory.create({
                 namespace,
-                command,
+                name,
                 version: 1,
                 maintainer,
                 description,
@@ -144,7 +144,7 @@ describe('Command Factory', () => {
         it('creates a Command and auto-bumps version when latest returns something', () => {
             const latest = {
                 namespace,
-                command,
+                name,
                 version: `${version}.0`,
                 maintainer,
                 description,
@@ -160,7 +160,7 @@ describe('Command Factory', () => {
 
             return factory.create({
                 namespace,
-                command,
+                name,
                 version,
                 maintainer,
                 description,
@@ -213,32 +213,32 @@ describe('Command Factory', () => {
                 {
                     id: '1',
                     namespace: 'testCommandNS',
-                    command: 'testCommand',
+                    name: 'testCommand',
                     version: '1.0.1'
                 },
                 {
                     id: '3',
                     namespace: 'testCommandNS',
-                    command: 'testCommand',
+                    name: 'testCommand',
                     version: '1.0.3'
                 },
                 {
                     id: '2',
                     namespace: 'testCommandNS',
-                    command: 'testCommand',
+                    name: 'testCommand',
                     version: '1.0.2'
                 },
                 {
                     id: '4',
                     namespace: 'testCommandNS',
-                    command: 'testCommand',
+                    name: 'testCommand',
                     version: '2.0.1'
                 }
             ];
         });
 
         it(
-          'should get the correct command for a given namespace/command@exactVersion 1.0.2',
+          'should get the correct command for a given namespace/name@exactVersion 1.0.2',
           () => {
               fullCommandName = `${commandNamespace}/${commandName}@1.0.2`;
               expected = Object.assign({}, returnValue[2]);
@@ -253,7 +253,7 @@ describe('Command Factory', () => {
           }
         );
 
-        it('should get the correct command for a given namespace/command@version 1.0', () => {
+        it('should get the correct command for a given namespace/name@version 1.0', () => {
             expected = Object.assign({}, returnValue[1]);
             datastore.scan.resolves(returnValue);
 
@@ -265,7 +265,7 @@ describe('Command Factory', () => {
             });
         });
 
-        it('should get the correct command for a given namespace/command@tag', () => {
+        it('should get the correct command for a given namespace/name@tag', () => {
             fullCommandName = `${commandNamespace}/${commandName}@latest`;
             expected = Object.assign({}, returnValue[2]);
             commandTagFactoryMock.get.resolves({ version: '1.0.2' });

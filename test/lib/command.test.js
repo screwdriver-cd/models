@@ -33,7 +33,7 @@ describe('Command Model', () => {
             datastore,
             id: 12345,
             namespace: 'testCommandNS',
-            command: 'testCommand',
+            name: 'testCommand',
             version: '1.3',
             maintainer: 'foo@bar.com',
             description: 'this is a command',

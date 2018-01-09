@@ -36,7 +36,7 @@ describe('CommandTag Model', () => {
             datastore,
             id: 12345,
             namespace: 'testCommandTagNS',
-            command: 'testCommandTag',
+            name: 'testCommandTag',
             tag: 'latest',
             version: '1.3.5'
         };
