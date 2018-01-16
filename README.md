@@ -1115,7 +1115,7 @@ const factory = Model.CommandFactory.getInstance({
 });
 const config = {
     namespace: 'testCommandNS',
-    command: 'testCommand',
+    name: 'testCommand',
     version: '1.3',
     description: 'This is a test command',
     maintainer: 'foo@bar.com',
@@ -1144,7 +1144,7 @@ factory.create(config).then(model => {
 | :-------------   | :---- | :-------------|  :-------------|
 | config        | Object | Yes | Configuration Object |
 | config.namespace | String | Yes | The command namespace |
-| config.command | String | Yes | The command name |
+| config.name | String | Yes | The command name |
 | config.version | String | Yes | Version of the command |
 | config.description | String | Yes | Description of the command |
 | config.maintainer | String | Yes | Maintainer's email |
@@ -1186,7 +1186,7 @@ const factory = Model.CommandTagFactory.getInstance({
 });
 const config = {
     namespace: 'testCommandNS',
-    command: 'testCommand',
+    name: 'testCommand',
     tag: 'stable',
     version: '1.3.5'
 }
@@ -1217,7 +1217,7 @@ factory.create(config).then(model => {
 | :-------------   | :---- | :-------------|  :-------------|
 | config        | Object | Yes | Configuration Object |
 | config.namespace | String | Yes | The command namespace |
-| config.command | String | Yes | The command name |
+| config.name | String | Yes | The command name |
 | config.tag | String | Yes | The command tag (e.g. stable, latest, etc) |
 | config.version | String | Yes | Exact version of the command |
 

@@ -52,7 +52,7 @@
     "hoek": "^4.0.1",
     "iron": "^4.0.1",
     "screwdriver-config-parser": "^3.10.0",
-    "screwdriver-data-schema": "^18.4.0",
+    "screwdriver-data-schema": "^18.10.1",
     "screwdriver-workflow-parser": "^1.1.1"
   }
 }

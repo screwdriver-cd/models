@@ -8,12 +8,12 @@ sinon.assert.expose(assert, { prefix: '' });
 
 describe('CommandTag Factory', () => {
     const namespace = 'testCommandTagNS';
-    const command = 'testCommandTag';
+    const name = 'testCommandTag';
     const version = '1.3.5';
     const tag = 'latest';
     const metaData = {
         namespace,
-        command,
+        name,
         tag,
         version
     };
@@ -70,18 +70,18 @@ describe('CommandTag Factory', () => {
             expected = {
                 id: generatedId,
                 namespace,
-                command,
+                name,
                 tag,
                 version
             };
         });
 
-        it('creates a CommandTag given namespace, command, tag, and version', () => {
+        it('creates a CommandTag given namespace, name, tag, and version', () => {
             datastore.save.resolves(expected);
 
             return factory.create({
                 namespace,
-                command,
+                name,
                 tag,
                 version
             }).then((model) => {
