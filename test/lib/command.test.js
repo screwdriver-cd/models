@@ -49,7 +49,8 @@ describe('Command Model', () => {
             },
             binary: {
                 file: './foobar.sh'
-            }
+            },
+            pipelineId: '8765'
         };
         command = new CommandModel(createConfig);
     });

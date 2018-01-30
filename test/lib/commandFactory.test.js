@@ -18,6 +18,7 @@ describe('Command Factory', () => {
         package: 'core/git/2.14.1',
         command: 'git'
     };
+    const pipelineId = '8765';
     const metaData = {
         namespace,
         name,
@@ -25,7 +26,8 @@ describe('Command Factory', () => {
         maintainer,
         description,
         format,
-        habitat
+        habitat,
+        pipelineId
     };
     let CommandFactory;
     let datastore;
@@ -93,7 +95,8 @@ describe('Command Factory', () => {
                 description,
                 format,
                 habitat,
-                id: generatedId
+                id: generatedId,
+                pipelineId
             };
         });
 
@@ -110,7 +113,8 @@ describe('Command Factory', () => {
                 maintainer,
                 description,
                 format,
-                habitat
+                habitat,
+                pipelineId
             }).then((model) => {
                 assert.instanceOf(model, Command);
                 Object.keys(expected).forEach((key) => {
@@ -132,7 +136,8 @@ describe('Command Factory', () => {
                 maintainer,
                 description,
                 format,
-                habitat
+                habitat,
+                pipelineId
             }).then((model) => {
                 assert.instanceOf(model, Command);
                 Object.keys(expected).forEach((key) => {
@@ -150,7 +155,8 @@ describe('Command Factory', () => {
                 description,
                 format,
                 habitat,
-                id: generatedId
+                id: generatedId,
+                pipelineId
             };
 
             expected.version = `${version}.1`;
@@ -165,7 +171,8 @@ describe('Command Factory', () => {
                 maintainer,
                 description,
                 format,
-                habitat
+                habitat,
+                pipelineId
             }).then((model) => {
                 assert.instanceOf(model, Command);
                 Object.keys(expected).forEach((key) => {
