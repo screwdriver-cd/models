@@ -86,7 +86,7 @@ describe('User Factory', () => {
                 id: generatedId
             };
 
-            ironMock.seal.resolves(sealedToken);
+            ironMock.seal.yieldsAsync(null, sealedToken);
             hashaMock.sha1.returns(generatedId);
             datastore.save.resolves(expected);
 

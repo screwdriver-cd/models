@@ -84,7 +84,7 @@ describe('Secret Factory', () => {
                 id: generatedId
             };
 
-            ironMock.seal.resolves(sealed);
+            ironMock.seal.yieldsAsync(null, sealed);
             datastore.save.resolves(expected);
 
             return factory.create({
@@ -126,7 +126,7 @@ describe('Secret Factory', () => {
                     name
                 }
             }).resolves(secretData);
-            ironMock.unseal.resolves(unsealed);
+            ironMock.unseal.yieldsAsync(null, unsealed);
         });
 
         it('calls datastore get with id and returns correct values', () =>
@@ -217,8 +217,8 @@ describe('Secret Factory', () => {
 
         it('calls datastore scan and returns correct values', () => {
             datastore.scan.resolves(datastoreReturnValue);
-            ironMock.unseal.withArgs('sealedsecret1value', password).resolves('batman');
-            ironMock.unseal.withArgs('sealedsecret2value', password).resolves('superman');
+            ironMock.unseal.withArgs('sealedsecret1value', password).yieldsAsync(null, 'batman');
+            ironMock.unseal.withArgs('sealedsecret2value', password).yieldsAsync(null, 'superman');
 
             return factory.list({ paginate })
                 .then((arr) => {
