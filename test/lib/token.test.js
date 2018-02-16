@@ -73,15 +73,15 @@ describe('Token Model', () => {
             token.lastUsed = newTimestamp;
 
             return token.update()
-            .then(() => {
-                assert.calledWith(datastore.update, {
-                    table: 'tokens',
-                    params: {
-                        id: 6789,
-                        lastUsed: newTimestamp
-                    }
+                .then(() => {
+                    assert.calledWith(datastore.update, {
+                        table: 'tokens',
+                        params: {
+                            id: 6789,
+                            lastUsed: newTimestamp
+                        }
+                    });
                 });
-            });
         });
     });
 

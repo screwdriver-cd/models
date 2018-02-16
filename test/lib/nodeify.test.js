@@ -34,16 +34,16 @@ describe('nodeify', () => {
     describe('promises', () => {
         it('promises when not given a callback', () =>
             nodeify(fakeFunction, 1, 2, 3, 4, 5)
-                 .then(() => {
-                     assert.calledWith(fakeFunction, 1, 2, 3, 4, 5);
-                 })
+                .then(() => {
+                    assert.calledWith(fakeFunction, 1, 2, 3, 4, 5);
+                })
         );
 
         it('promises to handle 0 arguments', () =>
             nodeify(fakeFunction)
-                 .then(() => {
-                     assert.calledWith(fakeFunction);
-                 })
+                .then(() => {
+                    assert.calledWith(fakeFunction);
+                })
         );
 
         it('rejects when the given function returns an error', () => {
@@ -52,12 +52,12 @@ describe('nodeify', () => {
             fakeFunction.yieldsAsync(expectedError);
 
             return nodeify(fakeFunction, 1, 2, 3, 4, 5)
-                 .then(() => {
-                     assert.fail('this should not fail the test');
-                 })
-                 .catch((err) => {
-                     assert.deepEqual(err, expectedError);
-                 });
+                .then(() => {
+                    assert.fail('this should not fail the test');
+                })
+                .catch((err) => {
+                    assert.deepEqual(err, expectedError);
+                });
         });
     });
 

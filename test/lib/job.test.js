@@ -339,9 +339,9 @@ describe('Job Model', () => {
 
             return job.remove().then(() => {
                 assert.callCount(buildFactoryMock.list, 5);
-                assert.callCount(build1.remove, 4);     // remove builds recursively
+                assert.callCount(build1.remove, 4); // remove builds recursively
                 assert.callCount(build2.remove, 4);
-                assert.calledOnce(datastore.remove);    // remove the job
+                assert.calledOnce(datastore.remove); // remove the job
             });
         });
 
