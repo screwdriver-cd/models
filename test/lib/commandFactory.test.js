@@ -244,21 +244,18 @@ describe('Command Factory', () => {
             ];
         });
 
-        it(
-          'should get the correct command for a given namespace/name@exactVersion 1.0.2',
-          () => {
-              fullCommandName = `${commandNamespace}/${commandName}@1.0.2`;
-              expected = Object.assign({}, returnValue[2]);
-              datastore.get.resolves(returnValue[2]);
+        it('should get the correct command for a given namespace/name@exactVersion 1.0.2', () => {
+            fullCommandName = `${commandNamespace}/${commandName}@1.0.2`;
+            expected = Object.assign({}, returnValue[2]);
+            datastore.get.resolves(returnValue[2]);
 
-              return factory.getCommand(fullCommandName).then((model) => {
-                  assert.instanceOf(model, Command);
-                  Object.keys(expected).forEach((key) => {
-                      assert.strictEqual(model[key], expected[key]);
-                  });
-              });
-          }
-        );
+            return factory.getCommand(fullCommandName).then((model) => {
+                assert.instanceOf(model, Command);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
 
         it('should get the correct command for a given namespace/name@version 1.0', () => {
             expected = Object.assign({}, returnValue[1]);

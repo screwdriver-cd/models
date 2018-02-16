@@ -348,32 +348,32 @@ describe('Build Model', () => {
 
         it('promises to start a build', () =>
             build.start()
-            .then(() => {
-                assert.calledWith(executorMock.start, {
-                    annotations,
-                    apiUri,
-                    buildId,
-                    container,
-                    token
-                });
+                .then(() => {
+                    assert.calledWith(executorMock.start, {
+                        annotations,
+                        apiUri,
+                        buildId,
+                        container,
+                        token
+                    });
 
-                assert.calledWith(tokenGen, buildId, {
-                    isPR: false,
-                    jobId,
-                    pipelineId
-                });
+                    assert.calledWith(tokenGen, buildId, {
+                        isPR: false,
+                        jobId,
+                        pipelineId
+                    });
 
-                assert.calledWith(scmMock.updateCommitStatus, {
-                    token: 'foo',
-                    scmUri,
-                    scmContext,
-                    sha,
-                    jobName: 'main',
-                    buildStatus: 'QUEUED',
-                    url,
-                    pipelineId
-                });
-            })
+                    assert.calledWith(scmMock.updateCommitStatus, {
+                        token: 'foo',
+                        scmUri,
+                        scmContext,
+                        sha,
+                        jobName: 'main',
+                        buildStatus: 'QUEUED',
+                        url,
+                        pipelineId
+                    });
+                })
         );
 
         it('promises to start a build with the executor specified in job annotations', () => {
@@ -426,12 +426,12 @@ describe('Build Model', () => {
             executorMock.start.rejects(expectedError);
 
             return build.start()
-            .then(() => {
-                assert.fail('This should not fail the test');
-            })
-            .catch((err) => {
-                assert.deepEqual(err, expectedError);
-            });
+                .then(() => {
+                    assert.fail('This should not fail the test');
+                })
+                .catch((err) => {
+                    assert.deepEqual(err, expectedError);
+                });
         });
     });
 

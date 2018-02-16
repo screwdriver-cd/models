@@ -61,7 +61,7 @@ describe('Pipeline Model', () => {
     });
     const blahJob = getJobMocks({
         id: '12855123cc7f1b808aac07feff24d7d5362cc215',
-        name: 'blah'    // This job is not in workflow
+        name: 'blah' // This job is not in workflow
     });
     const mainJob = getJobMocks({
         id: '2s780cf3059eadfed0c60c0dd0194146105ae46c',
@@ -300,7 +300,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.create.withArgs(publishMock).resolves(publishModelMock);
 
             return pipeline.sync().then(() => {
-                assert.calledOnce(triggerFactoryMock.create);   // only create for external trigger
+                assert.calledOnce(triggerFactoryMock.create); // only create for external trigger
                 assert.calledWith(triggerFactoryMock.create, {
                     src: '~sd@12345:test',
                     dest: `~sd@${testId}:main`
@@ -310,7 +310,7 @@ describe('Pipeline Model', () => {
 
         it('remove external trigger in datastore if it is not in requires anymore', () => {
             const triggerMock = {
-                src: '~sd@8765:oldrequires',    // no longer requires
+                src: '~sd@8765:oldrequires', // no longer requires
                 dest: `~sd@${testId}:main`,
                 remove: sinon.stub().resolves(null)
             };
