@@ -73,7 +73,7 @@ describe('Secret Model', () => {
 
     describe('update', () => {
         beforeEach(() => {
-            ironMock.seal.yieldsAsync(null, 'sealedspiderman');
+            ironMock.seal.resolves('sealedspiderman');
         });
 
         it('promises to update a secret and seal the value before datastore saves it', () => {
