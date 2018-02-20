@@ -95,7 +95,7 @@ describe('User Model', () => {
 
         beforeEach(() => {
             ironMock.seal.withArgs(unsealedToken, password, ironMock.defaults)
-                .yieldsAsync(null, 'werlx');
+                .resolves('werlx');
         });
 
         it('promises to execute seal token', () =>
@@ -110,7 +110,7 @@ describe('User Model', () => {
             const expectedError = new Error('whaleIsNotSeal');
 
             ironMock.seal.withArgs(unsealedToken, password, ironMock.defaults)
-                .yieldsAsync(expectedError);
+                .rejects(expectedError);
 
             return user.sealToken(unsealedToken)
                 .then(() => {
@@ -127,7 +127,7 @@ describe('User Model', () => {
 
         beforeEach(() => {
             ironMock.unseal.withArgs(sealed, password, ironMock.defaults)
-                .yieldsAsync(null, '1234');
+                .resolves('1234');
         });
 
         it('promises to execute unseal token', () =>
@@ -141,7 +141,7 @@ describe('User Model', () => {
             const expectedError = new Error('TooCoolToBeSeal');
 
             ironMock.unseal.withArgs(sealed, password, ironMock.defaults)
-                .yieldsAsync(expectedError);
+                .rejects(expectedError);
 
             return user.unsealToken()
                 .then(() => {
@@ -164,7 +164,7 @@ describe('User Model', () => {
         };
 
         beforeEach(() => {
-            ironMock.unseal.yieldsAsync(null, '12345');
+            ironMock.unseal.resolves('12345');
             scmMock.getPermissions.resolves(repo.permissions);
         });
 
