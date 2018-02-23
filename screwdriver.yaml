@@ -9,7 +9,7 @@ jobs:
             - test: npm test
 
     publish:
-        requires: [main]
+        requires: main
         template: screwdriver-cd/semantic-release 
         secrets:
             # Publishing to NPM
