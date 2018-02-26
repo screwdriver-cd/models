@@ -504,7 +504,7 @@ describe('Pipeline Model', () => {
         it('returns error if something explodes', () => {
             const error = new Error('blah');
 
-            jobFactoryMock.create.rejects(error);
+            jobFactoryMock.list.rejects(error);
 
             return pipeline.sync()
                 .catch((err) => {
@@ -589,6 +589,7 @@ describe('Pipeline Model', () => {
             const error = new Error('fails to get config');
 
             scmMock.getFile.rejects(error);
+            parserMock.rejects(error);
 
             return pipeline.syncPR(1).catch((err) => {
                 assert.deepEqual(err, error);
