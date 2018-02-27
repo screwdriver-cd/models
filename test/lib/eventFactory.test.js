@@ -459,6 +459,32 @@ describe('Event Factory', () => {
                 assert.equal(model.causeMessage, 'Started by stjohn');
             });
         });
+
+        it('should create using parentEvent workflowGraph', () => {
+            config.parentEventId = 222;
+            config.workflowGraph = {
+                nodes: [
+                    { name: '~commit' },
+                    { name: 'testJob' }
+                ],
+                edges: [
+                    { src: '~commit', dest: 'testJob' }
+                ]
+            };
+            expected.workflowGraph = config.workflowGraph;
+            expected.parentEventId = config.parentEventId;
+
+            return factory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                Object.keys(expected).forEach((key) => {
+                    if (key === 'workflowGraph') {
+                        assert.deepEqual(model[key], expected[key]);
+                    } else if (key === 'parentEventId') {
+                        assert.deepEqual(model[key], 222);
+                    }
+                });
+            });
+        });
     });
 
     describe('getInstance', () => {
