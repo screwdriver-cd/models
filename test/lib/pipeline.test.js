@@ -382,6 +382,32 @@ describe('Pipeline Model', () => {
             });
         });
 
+        it('gets job config from the given ref/sha if passed in', () => {
+            const ref = 'shafromoldevent';
+            // deep clone PARSED_YAML
+            const YAML_FROM_SHA = JSON.parse(JSON.stringify(PARSED_YAML));
+
+            YAML_FROM_SHA.jobs.publish[0].commands = [
+                {
+                    name: 'old-step',
+                    command: 'echo old step from a specific sha'
+                }
+            ];
+            scmMock.getFile.withArgs(sinon.match({ ref })).resolves('yamlcontentfromsha');
+            parserMock.withArgs('yamlcontentfromsha', templateFactoryMock).resolves(YAML_FROM_SHA);
+            publishMock.permutations[0].commands = YAML_FROM_SHA.jobs.publish[0].commands;
+            jobs = [];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainModelMock);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishModelMock);
+
+            return pipeline.sync(ref).then(() => {
+                assert.calledWith(scmMock.getFile, sinon.match({ ref }));
+                assert.calledTwice(jobFactoryMock.create);
+                assert.calledWith(jobFactoryMock.create, publishMock);
+            });
+        });
+
         it('stores annotations to pipeline', () => {
             jobs = [];
             jobFactoryMock.list.resolves(jobs);
