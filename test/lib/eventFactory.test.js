@@ -4,7 +4,6 @@ const assert = require('chai').assert;
 const sinon = require('sinon');
 const mockery = require('mockery');
 const PARSED_YAML = require('../data/parserWithWorkflowGraph');
-const PARSED_YAML_PR = require('../data/parserWithWorkflowGraphPR');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -137,7 +136,6 @@ describe('Event Factory', () => {
                 pipelineId,
                 sha,
                 type: 'pipeline',
-                workflow: [],
                 workflowGraph: {
                     nodes: [
                         { name: '~pr' },
@@ -299,56 +297,6 @@ describe('Event Factory', () => {
                 });
             });
 
-            it('should create pr builds if they do not already exist', () => {
-                const prComponent = {
-                    id: 5,
-                    name: 'PR-1:main'
-                };
-                const prNewMain = {
-                    id: 6,
-                    name: 'PR-1:new_main'
-                };
-
-                jobFactoryMock.create.onCall(0).resolves(prComponent);
-                jobFactoryMock.create.onCall(1).resolves(prNewMain);
-                config.startFrom = '~pr';
-                config.prRef = 'branch';
-                config.prNum = '1';
-                config.type = 'pr';
-                // Return config in PR with new job named new_main
-                syncedPipelineMock.getConfiguration.withArgs(config.prRef).resolves(PARSED_YAML_PR);
-
-                return factory.create(config).then((model) => {
-                    assert.instanceOf(model, Event);
-                    assert.calledTwice(jobFactoryMock.create);
-                    assert.calledWith(jobFactoryMock.create.firstCall, sinon.match({
-                        pipelineId: 8765,
-                        name: 'PR-1:main'
-                    }));
-                    assert.calledWith(jobFactoryMock.create.secondCall, sinon.match({
-                        pipelineId: 8765,
-                        name: 'PR-1:new_main'
-                    }));
-                    assert.calledTwice(buildFactoryMock.create);
-                    assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 5,
-                        prRef: 'branch'
-                    }));
-                    assert.calledWith(buildFactoryMock.create.secondCall, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 6,
-                        prRef: 'branch'
-                    }));
-                    assert.calledOnce(pipelineMock.sync);
-                    assert.calledOnce(syncedPipelineMock.syncPR);
-                    assert.calledWith(syncedPipelineMock.syncPR, '1');
-                    assert.strictEqual(syncedPipelineMock.lastEventId, null);
-                });
-            });
-
             it('should create commit builds', () => {
                 config.startFrom = '~commit';
 
@@ -441,9 +389,7 @@ describe('Event Factory', () => {
                 });
                 assert.strictEqual(syncedPipelineMock.lastEventId, model.id);
                 Object.keys(expected).forEach((key) => {
-                    if (key === 'workflow') {
-                        assert.deepEqual(model[key], expected[key]);
-                    } else if (key === 'workflowGraph') {
+                    if (key === 'workflowGraph') {
                         assert.deepEqual(model[key], expected[key]);
                     } else {
                         assert.strictEqual(model[key], expected[key]);

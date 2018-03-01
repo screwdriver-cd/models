@@ -19,7 +19,7 @@ describe('Pipeline Factory', () => {
     const nowTime = (new Date(dateNow)).toISOString();
     const scmUri = 'github.com:12345:master';
     const scmContext = 'github:github.com';
-    const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
+    const testId = 123;
     const admins = ['me'];
     const scmRepo = {
         name: 'foo/bar',

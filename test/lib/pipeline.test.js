@@ -9,6 +9,7 @@ const schema = require('screwdriver-data-schema');
 sinon.assert.expose(assert, { prefix: '' });
 const PARSED_YAML = require('../data/parser');
 const PARSED_YAML_WITH_REQUIRES = require('../data/parserWithRequires');
+const PARSED_YAML_PR = require('../data/parserWithWorkflowGraphPR');
 
 describe('Pipeline Model', () => {
     let PipelineModel;
@@ -28,7 +29,7 @@ describe('Pipeline Model', () => {
     const dateNow = 1111111111;
     const scmUri = 'github.com:12345:master';
     const scmContext = 'github:github.com';
-    const testId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
+    const testId = 123;
     const admins = { batman: true };
     const paginate = {
         page: 1,
@@ -527,7 +528,7 @@ describe('Pipeline Model', () => {
             prJob = {
                 update: sinon.stub().resolves(null),
                 isPR: sinon.stub().returns(true),
-                name: 'PR-1',
+                name: 'PR-1:main',
                 state: 'ENABLED',
                 archived: false
             };
@@ -550,7 +551,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('update PR config for multiple PR jobs', () => {
+        it('update PR config for multiple PR jobs and create missing PR jobs', () => {
             const firstPRJob = {
                 update: sinon.stub().resolves(null),
                 isPR: sinon.stub().returns(true),
@@ -567,6 +568,7 @@ describe('Pipeline Model', () => {
             };
 
             jobFactoryMock.list.resolves([firstPRJob, secondPRJob]);
+            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML_PR);
 
             return pipeline.syncPR(1).then(() => {
                 assert.calledWith(scmMock.getFile, {
@@ -578,8 +580,12 @@ describe('Pipeline Model', () => {
                 });
                 assert.calledOnce(firstPRJob.update);
                 assert.calledOnce(secondPRJob.update);
-                assert.deepEqual(firstPRJob.permutations, PARSED_YAML.jobs.main);
-                assert.deepEqual(secondPRJob.permutations, PARSED_YAML.jobs.publish);
+                assert.calledWith(jobFactoryMock.create, sinon.match({
+                    pipelineId: 123,
+                    name: 'PR-1:new_pr_job'
+                }));
+                assert.deepEqual(firstPRJob.permutations, PARSED_YAML_PR.jobs.main);
+                assert.deepEqual(secondPRJob.permutations, PARSED_YAML_PR.jobs.publish);
                 assert.isFalse(firstPRJob.archived);
                 assert.isFalse(secondPRJob.archived);
             });
@@ -761,7 +767,7 @@ describe('Pipeline Model', () => {
         it('Get jobs in workflow in order', () => {
             const expected = {
                 params: {
-                    pipelineId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    pipelineId: 123,
                     archived: false
                 },
                 paginate
@@ -782,7 +788,7 @@ describe('Pipeline Model', () => {
         it('Get PR jobs and sort them by name', () => {
             const expected = {
                 params: {
-                    pipelineId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    pipelineId: 123,
                     archived: false
                 },
                 paginate
@@ -805,7 +811,7 @@ describe('Pipeline Model', () => {
             };
             const expected = {
                 params: {
-                    pipelineId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    pipelineId: 123,
                     archived: false
                 },
                 paginate
@@ -828,7 +834,7 @@ describe('Pipeline Model', () => {
             };
             const expected = {
                 params: {
-                    pipelineId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    pipelineId: 123,
                     archived: false
                 },
                 paginate
@@ -853,7 +859,7 @@ describe('Pipeline Model', () => {
             };
             const expected = {
                 params: {
-                    pipelineId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    pipelineId: 123,
                     archived: true
                 },
                 paginate
@@ -877,7 +883,7 @@ describe('Pipeline Model', () => {
             };
             const expected = {
                 params: {
-                    pipelineId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    pipelineId: 123,
                     archived: false
                 },
                 paginate
@@ -904,7 +910,7 @@ describe('Pipeline Model', () => {
         it('Get list of events', () => {
             const expected = {
                 params: {
-                    pipelineId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    pipelineId: 123,
                     type: 'pipeline'
                 },
                 sort: 'descending',
@@ -922,7 +928,7 @@ describe('Pipeline Model', () => {
         it('Merge the passed in config with the default config', () => {
             const expected = {
                 params: {
-                    pipelineId: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    pipelineId: 123,
                     type: 'pr'
                 },
                 sort: 'descending',
@@ -1024,7 +1030,7 @@ describe('Pipeline Model', () => {
             const expected = {
                 params: {
                     admins: { d2lam: true },
-                    id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    id: 123,
                     scmContext,
                     scmRepo: {
                         branch: 'master',
@@ -1062,7 +1068,7 @@ describe('Pipeline Model', () => {
             const expected = {
                 params: {
                     admins: { d2lam: true },
-                    id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                    id: 123,
                     scmContext
                 },
                 table: 'pipelines'
