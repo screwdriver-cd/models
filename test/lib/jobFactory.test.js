@@ -63,7 +63,7 @@ describe('Job Factory', () => {
     });
 
     describe('create', () => {
-        const jobId = 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c';
+        const jobId = 123;
         const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
         const name = 'main';
         const saveConfig = {

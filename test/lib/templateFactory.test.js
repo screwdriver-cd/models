@@ -13,7 +13,7 @@ describe('Template Factory', () => {
     const description = 'this is a template';
     const labels = ['test', 'beta'];
     const templateConfig = { image: 'node:6' };
-    const pipelineId = '123';
+    const pipelineId = 123;
     const metaData = {
         name,
         version,

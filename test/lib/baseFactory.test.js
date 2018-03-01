@@ -229,7 +229,7 @@ describe('Base Factory', () => {
                 name: 'component'
             },
             {
-                id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+                id: 123,
                 name: 'deploy'
             }
         ];

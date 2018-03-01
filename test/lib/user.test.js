@@ -61,7 +61,7 @@ describe('User Model', () => {
 
         createConfig = {
             datastore,
-            id: 'd398fb192747c9a0124e9e5b4e6e8e841cf8c71c',
+            id: 123,
             username: 'me',
             scmContext,
             token,
