@@ -123,6 +123,7 @@ describe('Event Factory', () => {
         let expected;
         let jobsMock;
         let syncedPipelineMock;
+        let afterSyncedPRPipelineMock;
 
         beforeEach(() => {
             config = {
@@ -184,10 +185,12 @@ describe('Event Factory', () => {
                     ]
                 },
                 getConfiguration: sinon.stub().resolves(PARSED_YAML),
-                syncPR: sinon.stub().resolves(null),
                 update: sinon.stub().resolves(null),
                 job: Promise.resolve([])
             };
+
+            afterSyncedPRPipelineMock = Object.assign({}, syncedPipelineMock);
+            syncedPipelineMock.syncPR = sinon.stub().resolves(afterSyncedPRPipelineMock);
 
             pipelineMock = {
                 sync: sinon.stub().resolves(syncedPipelineMock)
@@ -276,7 +279,7 @@ describe('Event Factory', () => {
                     state: 'DISABLED'
                 }];
 
-                syncedPipelineMock.jobs = Promise.resolve(jobsMock);
+                afterSyncedPRPipelineMock.jobs = Promise.resolve(jobsMock);
 
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
