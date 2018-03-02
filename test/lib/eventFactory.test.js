@@ -409,7 +409,7 @@ describe('Event Factory', () => {
             });
         });
 
-        it('should create using parentEvent workflowGraph', () => {
+        it('should create using parentEvent workflowGraph and job configs', () => {
             config.parentEventId = 222;
             config.workflowGraph = {
                 nodes: [
@@ -422,8 +422,10 @@ describe('Event Factory', () => {
             };
             expected.workflowGraph = config.workflowGraph;
             expected.parentEventId = config.parentEventId;
+            syncedPipelineMock.workflowGraph = config.workflowGraph;
 
             return factory.create(config).then((model) => {
+                assert.calledWith(pipelineMock.sync, config.sha);
                 assert.instanceOf(model, Event);
                 Object.keys(expected).forEach((key) => {
                     if (key === 'workflowGraph') {
