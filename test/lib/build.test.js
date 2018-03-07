@@ -162,13 +162,15 @@ describe('Build Model', () => {
                 })
         );
 
-        it('reject on error', () => {
+        it('it discards rejections and resolves null', () => {
             scmMock.updateCommitStatus.rejects(new Error('nevergonnagiveyouup'));
 
             return build.updateCommitStatus(pipelineMock, apiUri)
+                .then((res) => {
+                    assert.equal(res, null);
+                })
                 .catch((err) => {
-                    assert.instanceOf(err, Error);
-                    assert.equal(err.message, 'nevergonnagiveyouup');
+                    assert.equal(err, undefined);
                 });
         });
     });
