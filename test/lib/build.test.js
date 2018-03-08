@@ -162,8 +162,26 @@ describe('Build Model', () => {
                 })
         );
 
-        it('discards rejections and resolves null', () => {
+        it('reject on error', () => {
             scmMock.updateCommitStatus.rejects(new Error('nevergonnagiveyouup'));
+
+            return build.updateCommitStatus(pipelineMock, apiUri)
+                .catch((err) => {
+                    assert.instanceOf(err, Error);
+                    assert.equal(err.message, 'nevergonnagiveyouup');
+                });
+        });
+
+        it('discards sha limit errors and resolves null', () => {
+            scmMock.updateCommitStatus.rejects({
+                message: 'Validation Failed',
+                errors: [{
+                    resource: 'Status',
+                    code: 'custom',
+                    message: 'This SHA and context has reached the maximum number of statuses.'
+                }],
+                documentation_url: 'https://developer.github.com/v3/repos/statuses/#create-a-status'
+            });
 
             return build.updateCommitStatus(pipelineMock, apiUri)
                 .then((res) => {
