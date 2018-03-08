@@ -162,7 +162,7 @@ describe('Build Model', () => {
                 })
         );
 
-        it('it discards rejections and resolves null', () => {
+        it('discards rejections and resolves null', () => {
             scmMock.updateCommitStatus.rejects(new Error('nevergonnagiveyouup'));
 
             return build.updateCommitStatus(pipelineMock, apiUri)
