@@ -305,6 +305,23 @@ describe('Build Factory', () => {
             });
         });
 
+        it('creates a new build without starting', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const jobMock = {
+                permutations,
+                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
+            };
+
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+
+            return factory.create({
+                username, jobId, eventId, parentBuildId: 12345, start: false
+            }).then(() => {
+                assert.notCalled(startStub);
+            });
+        });
+
         it('adds a teardown command if one exists', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
             const jobMock = {
