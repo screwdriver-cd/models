@@ -171,6 +171,23 @@ describe('Build Model', () => {
                     assert.equal(err.message, 'nevergonnagiveyouup');
                 });
         });
+
+        it('discards sha limit errors and resolves null', () => {
+            scmMock.updateCommitStatus.rejects({
+                statusCode: 500,
+                error: 'Internal Server Error',
+                // eslint-disable-next-line max-len
+                message: '{"message":"Validation Failed","errors":[{"resource":"Status","code":"custom","message":"This SHA and context has reached the maximum number of statuses."}],"documentation_url":"https://developer.github.com/enterprise/2.10/v3/repos/statuses/#create-a-status"}'
+            });
+
+            return build.updateCommitStatus(pipelineMock, apiUri)
+                .then((res) => {
+                    assert.equal(res, null);
+                })
+                .catch((err) => {
+                    assert.equal(err, undefined);
+                });
+        });
     });
 
     describe('update', () => {
