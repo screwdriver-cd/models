@@ -42,7 +42,7 @@
     "jenkins-mocha": "^6.0.0",
     "joi": "^13.0.0",
     "mockery": "^2.0.0",
-    "sinon": "^4.4.2"
+    "sinon": "^4.4.6"
   },
   "dependencies": {
     "async": "^2.0.1",
@@ -52,7 +52,7 @@
     "hoek": "^5.0.3",
     "iron": "^5.0.1",
     "screwdriver-config-parser": "^3.10.0",
-    "screwdriver-data-schema": "^18.10.1",
+    "screwdriver-data-schema": "^18.12.3",
     "screwdriver-workflow-parser": "^1.1.1"
   }
 }

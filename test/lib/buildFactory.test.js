@@ -18,7 +18,6 @@ class Build {
         this.tokenGen = config.tokenGen;
         this.uiUri = config.uiUri;
         this.steps = config.steps;
-
         this.start = startStub.resolves(this);
     }
 }
@@ -180,7 +179,16 @@ describe('Build Factory', () => {
             image: 'node:6'
         }];
 
-        let commit;
+        const commit = {
+            url: 'foo',
+            message: 'bar',
+            author: {
+                name: 'Batman',
+                username: 'batman',
+                url: 'stuff',
+                avatar: 'moreStuff'
+            }
+        };
 
         let saveConfig;
 
@@ -200,17 +208,6 @@ describe('Build Factory', () => {
             jobFactoryMock.get.resolves({
                 permutations
             });
-
-            commit = {
-                url: 'foo',
-                message: 'bar',
-                author: {
-                    name: 'Batman',
-                    username: 'batman',
-                    url: 'stuff',
-                    avatar: 'moreStuff'
-                }
-            };
 
             saveConfig = {
                 table: 'builds',
@@ -301,6 +298,25 @@ describe('Build Factory', () => {
                     build: sinon.match.object
                 });
                 assert.calledOnce(startStub);
+                assert.calledWith(datastore.save, saveConfig);
+            });
+        });
+
+        it('creates a new build without starting', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const jobMock = {
+                permutations,
+                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
+            };
+
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+            saveConfig.params.status = 'CREATED';
+
+            return factory.create({
+                username, jobId, eventId, parentBuildId: 12345, start: false
+            }).then(() => {
+                assert.notCalled(startStub);
                 assert.calledWith(datastore.save, saveConfig);
             });
         });
