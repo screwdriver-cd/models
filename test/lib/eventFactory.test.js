@@ -185,7 +185,7 @@ describe('Event Factory', () => {
                     ]
                 },
                 getConfiguration: sinon.stub().resolves(PARSED_YAML),
-                update: sinon.stub().resolves(null),
+                update: sinon.stub().resolves(syncedPipelineMock),
                 job: Promise.resolve([])
             };
 
@@ -281,6 +281,7 @@ describe('Event Factory', () => {
                 }];
 
                 afterSyncedPRPipelineMock.jobs = Promise.resolve(jobsMock);
+                afterSyncedPRPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
 
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
@@ -402,19 +403,63 @@ describe('Event Factory', () => {
             })
         );
 
-        it.only('should not start build if changed file is not in sourcePaths', () => {
+        it('should not start build if changed file is not in sourcePaths', () => {
+            jobsMock = [{
+                id: 1,
+                pipelineId: 8765,
+                name: 'main',
+                permutations: {
+                    requires: ['~pr']
+                },
+                state: 'ENABLED',
+                sourcePaths: ['src/test']
+            }];
             syncedPipelineMock.update = sinon.stub().resolves({
-                jobs: sinon.stub().resolves([])
+                jobs: Promise.resolve(jobsMock)
             });
 
             config.startFrom = 'main';
-            config.sourcePaths = 'src/test';
             config.changedFiles = ['README.md'];
 
-            eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
-                assert.calledOnce(buildFactoryMock.create);
-            }).catch(err => console.log(err));
+                assert.notCalled(buildFactoryMock.create);
+            });
+        });
+
+        it('should start builds if changed file is in sourcePaths', () => {
+            jobsMock = [{
+                id: 1,
+                pipelineId: 8765,
+                name: 'PR-1:main',
+                permutations: {
+                    requires: ['~pr']
+                },
+                state: 'ENABLED',
+                sourcePaths: ['src/test']
+            }, {
+                id: 2,
+                pipelineId: 8765,
+                name: 'PR-1:test',
+                permutations: {
+                    requires: ['~pr']
+                },
+                state: 'ENABLED',
+                sourcePaths: ['src/test']
+            }];
+            afterSyncedPRPipelineMock.update = sinon.stub().resolves({
+                jobs: Promise.resolve(jobsMock)
+            });
+
+            config.startFrom = '~pr';
+            config.prRef = 'branch';
+            config.prNum = 1;
+            config.changedFiles = ['src/test/README.md', 'NOTINSOURCEPATH.md'];
+
+            return eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.calledTwice(buildFactoryMock.create);
+            });
         });
 
         it('use username as displayName if displayLabel is not set', () => {
