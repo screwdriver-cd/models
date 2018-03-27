@@ -12,7 +12,7 @@ describe('Event Factory', () => {
     const nowTime = (new Date(dateNow)).toISOString();
     let EventFactory;
     let datastore;
-    let factory;
+    let eventFactory;
     let pipelineFactoryMock;
     let buildFactoryMock;
     let jobFactoryMock;
@@ -61,7 +61,7 @@ describe('Event Factory', () => {
         // eslint-disable-next-line global-require
         EventFactory = require('../../lib/eventFactory');
 
-        factory = new EventFactory({ datastore, scm });
+        eventFactory = new EventFactory({ datastore, scm });
     });
 
     afterEach(() => {
@@ -76,7 +76,7 @@ describe('Event Factory', () => {
 
     describe('createClass', () => {
         it('should return an Event', () => {
-            const model = factory.createClass({
+            const model = eventFactory.createClass({
                 id: 'abc123'
             });
 
@@ -193,7 +193,8 @@ describe('Event Factory', () => {
             syncedPipelineMock.syncPR = sinon.stub().resolves(afterSyncedPRPipelineMock);
 
             pipelineMock = {
-                sync: sinon.stub().resolves(syncedPipelineMock)
+                sync: sinon.stub().resolves(syncedPipelineMock),
+                update: sinon.stub().resolves(syncedPipelineMock)
             };
 
             pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
@@ -285,7 +286,7 @@ describe('Event Factory', () => {
                 config.prRef = 'branch';
                 config.prNum = 1;
 
-                return factory.create(config).then((model) => {
+                return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.calledOnce(buildFactoryMock.create);
@@ -303,7 +304,7 @@ describe('Event Factory', () => {
             it('should create commit builds', () => {
                 config.startFrom = '~commit';
 
-                return factory.create(config).then((model) => {
+                return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create, sinon.match({
@@ -319,7 +320,7 @@ describe('Event Factory', () => {
             it('should create triggered builds', () => {
                 config.startFrom = '~sd@123:main';
 
-                return factory.create(config).then((model) => {
+                return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create, sinon.match({
@@ -335,7 +336,7 @@ describe('Event Factory', () => {
             it('should create build if startFrom is a jobName', () => {
                 config.startFrom = 'main';
 
-                return factory.create(config).then((model) => {
+                return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.notCalled(syncedPipelineMock.syncPR);
@@ -352,7 +353,7 @@ describe('Event Factory', () => {
             it('should throw error if startFrom job does not exist', () => {
                 config.startFrom = 'doesnnotexist';
 
-                return factory.create(config).then(() => {
+                return eventFactory.create(config).then(() => {
                     throw new Error('Should not get here');
                 }, (err) => {
                     assert.isOk(err, 'Error should be returned');
@@ -365,7 +366,7 @@ describe('Event Factory', () => {
             it('should throw error if startFrom job is disabled', () => {
                 config.startFrom = 'disabledjob';
 
-                return factory.create(config).then(() => {
+                return eventFactory.create(config).then(() => {
                     throw new Error('Should not get here');
                 }, (err) => {
                     assert.isOk(err, 'Error should be returned');
@@ -377,7 +378,7 @@ describe('Event Factory', () => {
         });
 
         it('should create an Event', () =>
-            factory.create(config).then((model) => {
+            eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
                 assert.calledWith(scm.decorateAuthor, {
                     username: 'stjohn',
@@ -401,10 +402,25 @@ describe('Event Factory', () => {
             })
         );
 
+        it.only('should not start build if changed file is not in sourcePaths', () => {
+            syncedPipelineMock.update = sinon.stub().resolves({
+                jobs: sinon.stub().resolves([])
+            });
+
+            config.startFrom = 'main';
+            config.sourcePaths = 'src/test';
+            config.changedFiles = ['README.md'];
+
+            eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.calledOnce(buildFactoryMock.create);
+            }).catch(err => console.log(err));
+        });
+
         it('use username as displayName if displayLabel is not set', () => {
             scm.getDisplayName.returns(null);
 
-            return factory.create(config).then((model) => {
+            return eventFactory.create(config).then((model) => {
                 assert.equal(model.causeMessage, 'Started by stjohn');
             });
         });
@@ -424,7 +440,7 @@ describe('Event Factory', () => {
             expected.parentEventId = config.parentEventId;
             syncedPipelineMock.workflowGraph = config.workflowGraph;
 
-            return factory.create(config).then((model) => {
+            return eventFactory.create(config).then((model) => {
                 assert.calledWith(pipelineMock.sync, config.sha);
                 assert.instanceOf(model, Event);
                 Object.keys(expected).forEach((key) => {
