@@ -157,7 +157,8 @@ describe('Event Factory', () => {
                 causeMessage: 'Started by github:stjohn',
                 createTime: nowTime,
                 creator,
-                commit
+                commit,
+                meta: {}
             };
 
             syncedPipelineMock = {
@@ -394,7 +395,7 @@ describe('Event Factory', () => {
                 });
                 assert.strictEqual(syncedPipelineMock.lastEventId, model.id);
                 Object.keys(expected).forEach((key) => {
-                    if (key === 'workflowGraph') {
+                    if (key === 'workflowGraph' || key === 'meta') {
                         assert.deepEqual(model[key], expected[key]);
                     } else {
                         assert.strictEqual(model[key], expected[key]);
