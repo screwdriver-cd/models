@@ -437,7 +437,7 @@ describe('Event Factory', () => {
                     requires: ['~pr']
                 },
                 state: 'ENABLED',
-                sourcePaths: ['src/test']
+                sourcePaths: ['src/test/']
             }, {
                 id: 2,
                 pipelineId: 8765,
@@ -460,6 +460,32 @@ describe('Event Factory', () => {
             return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
                 assert.calledTwice(buildFactoryMock.create);
+            });
+        });
+
+        it('should not start builds if changed file is not in sourcePaths dir', () => {
+            jobsMock = [{
+                id: 1,
+                pipelineId: 8765,
+                name: 'PR-1:main',
+                permutations: {
+                    requires: ['~pr']
+                },
+                state: 'ENABLED',
+                sourcePaths: ['src/test']
+            }];
+            afterSyncedPRPipelineMock.update = sinon.stub().resolves({
+                jobs: Promise.resolve(jobsMock)
+            });
+
+            config.startFrom = '~pr';
+            config.prRef = 'branch';
+            config.prNum = 1;
+            config.changedFiles = ['src/testfolder.md', 'NOTINSOURCEPATH.md'];
+
+            return eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.notCalled(buildFactoryMock.create);
             });
         });
 
