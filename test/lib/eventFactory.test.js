@@ -413,7 +413,7 @@ describe('Event Factory', () => {
                     requires: ['~pr']
                 },
                 state: 'ENABLED',
-                sourcePaths: ['src/test']
+                sourcePaths: ['src/test/']
             }];
             syncedPipelineMock.update = sinon.stub().resolves({
                 jobs: Promise.resolve(jobsMock)
@@ -446,7 +446,7 @@ describe('Event Factory', () => {
                     requires: ['~pr']
                 },
                 state: 'ENABLED',
-                sourcePaths: ['src/test']
+                sourcePaths: ['src/test/']
             }];
             afterSyncedPRPipelineMock.update = sinon.stub().resolves({
                 jobs: Promise.resolve(jobsMock)
@@ -463,7 +463,7 @@ describe('Event Factory', () => {
             });
         });
 
-        it('should not start builds if changed file is not in sourcePaths dir', () => {
+        it('should start build when sourcePath is a file, and is the same as changedFile', () => {
             jobsMock = [{
                 id: 1,
                 pipelineId: 8765,
@@ -481,11 +481,11 @@ describe('Event Factory', () => {
             config.startFrom = '~pr';
             config.prRef = 'branch';
             config.prNum = 1;
-            config.changedFiles = ['src/testfolder.md', 'NOTINSOURCEPATH.md'];
+            config.changedFiles = ['src/test', 'NOTINSOURCEPATH.md'];
 
             return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
-                assert.notCalled(buildFactoryMock.create);
+                assert.calledOnce(buildFactoryMock.create);
             });
         });
 
