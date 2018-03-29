@@ -420,7 +420,7 @@ describe('Event Factory', () => {
             });
 
             config.startFrom = 'main';
-            config.changedFiles = ['README.md'];
+            config.changedFiles = ['README.md', 'root/src/test/file'];
 
             return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
