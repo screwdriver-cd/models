@@ -211,25 +211,25 @@ describe('Event Factory', () => {
                     id: 1,
                     pipelineId: 8765,
                     name: 'main',
-                    permutations: {
+                    permutations: [{
                         requires: ['~commit', '~pr', '~sd@123:main']
-                    },
+                    }],
                     state: 'ENABLED'
                 }, {
                     id: 2,
                     pipelineId: 8765,
                     name: 'disabledjob',
-                    permutations: {
+                    permutations: [{
                         requires: ['main']
-                    },
+                    }],
                     state: 'DISABLED'
                 }, {
                     id: 4,
                     pipelineId: 8765,
                     name: 'publish',
-                    permutations: {
+                    permutations: [{
                         requires: ['~pr']
-                    },
+                    }],
                     state: 'ENABLED'
                 }];
 
@@ -242,42 +242,42 @@ describe('Event Factory', () => {
                     id: 1,
                     pipelineId: 8765,
                     name: 'main',
-                    permutations: {
+                    permutations: [{
                         requires: ['~pr']
-                    },
+                    }],
                     state: 'ENABLED'
                 }, {
                     id: 5,
                     pipelineId: 8765,
                     name: 'PR-1:main',
-                    permutations: {
+                    permutations: [{
                         requires: ['~pr']
-                    },
+                    }],
                     state: 'ENABLED'
                 },
                 {
                     id: 7,
                     pipelineId: 8765,
                     name: 'PR-2:main',
-                    permutations: {
+                    permutations: [{
                         requires: ['~pr']
-                    },
+                    }],
                     state: 'ENABLED'
                 },
                 {
                     id: 3,
                     name: 'publish',
-                    permutations: {
+                    permutations: [{
                         requires: ['~pr']
-                    },
+                    }],
                     state: 'ENABLED'
                 },
                 {
                     id: 6,
                     name: 'PR-1:publish',
-                    permutations: {
+                    permutations: [{
                         requires: ['~pr']
-                    },
+                    }],
                     state: 'DISABLED'
                 }];
 
@@ -409,11 +409,11 @@ describe('Event Factory', () => {
                 id: 1,
                 pipelineId: 8765,
                 name: 'main',
-                permutations: {
-                    requires: ['~pr']
-                },
-                state: 'ENABLED',
-                sourcePaths: ['src/test/']
+                permutations: [{
+                    requires: ['~pr'],
+                    sourcePaths: ['src/test/']
+                }],
+                state: 'ENABLED'
             }];
             syncedPipelineMock.update = sinon.stub().resolves({
                 jobs: Promise.resolve(jobsMock)
@@ -436,20 +436,20 @@ describe('Event Factory', () => {
                 id: 1,
                 pipelineId: 8765,
                 name: 'PR-1:main',
-                permutations: {
-                    requires: ['~pr']
-                },
-                state: 'ENABLED',
-                sourcePaths: ['src/test/']
+                permutations: [{
+                    requires: ['~pr'],
+                    sourcePaths: ['src/test/']
+                }],
+                state: 'ENABLED'
             }, {
                 id: 2,
                 pipelineId: 8765,
                 name: 'PR-1:test',
-                permutations: {
-                    requires: ['~pr']
-                },
-                state: 'ENABLED',
-                sourcePaths: ['src/test/']
+                permutations: [{
+                    requires: ['~pr'],
+                    sourcePaths: ['src/test/']
+                }],
+                state: 'ENABLED'
             }];
             afterSyncedPRPipelineMock.update = sinon.stub().resolves({
                 jobs: Promise.resolve(jobsMock)
@@ -471,11 +471,11 @@ describe('Event Factory', () => {
                 id: 1,
                 pipelineId: 8765,
                 name: 'PR-1:main',
-                permutations: {
-                    requires: ['~pr']
-                },
-                state: 'ENABLED',
-                sourcePaths: ['src/test']
+                permutations: [{
+                    requires: ['~pr'],
+                    sourcePaths: ['src/test']
+                }],
+                state: 'ENABLED'
             }];
             afterSyncedPRPipelineMock.update = sinon.stub().resolves({
                 jobs: Promise.resolve(jobsMock)
