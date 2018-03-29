@@ -12,7 +12,7 @@ describe('Event Factory', () => {
     const nowTime = (new Date(dateNow)).toISOString();
     let EventFactory;
     let datastore;
-    let factory;
+    let eventFactory;
     let pipelineFactoryMock;
     let buildFactoryMock;
     let jobFactoryMock;
@@ -61,7 +61,7 @@ describe('Event Factory', () => {
         // eslint-disable-next-line global-require
         EventFactory = require('../../lib/eventFactory');
 
-        factory = new EventFactory({ datastore, scm });
+        eventFactory = new EventFactory({ datastore, scm });
     });
 
     afterEach(() => {
@@ -76,7 +76,7 @@ describe('Event Factory', () => {
 
     describe('createClass', () => {
         it('should return an Event', () => {
-            const model = factory.createClass({
+            const model = eventFactory.createClass({
                 id: 'abc123'
             });
 
@@ -186,7 +186,7 @@ describe('Event Factory', () => {
                     ]
                 },
                 getConfiguration: sinon.stub().resolves(PARSED_YAML),
-                update: sinon.stub().resolves(null),
+                update: sinon.stub().resolves(syncedPipelineMock),
                 job: Promise.resolve([])
             };
 
@@ -194,7 +194,8 @@ describe('Event Factory', () => {
             syncedPipelineMock.syncPR = sinon.stub().resolves(afterSyncedPRPipelineMock);
 
             pipelineMock = {
-                sync: sinon.stub().resolves(syncedPipelineMock)
+                sync: sinon.stub().resolves(syncedPipelineMock),
+                update: sinon.stub().resolves(syncedPipelineMock)
             };
 
             pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
@@ -233,7 +234,7 @@ describe('Event Factory', () => {
                 }];
 
                 syncedPipelineMock.jobs = Promise.resolve(jobsMock);
-                buildFactoryMock.create.resolves(null);
+                buildFactoryMock.create.resolves('a build object');
             });
 
             it('should start existing pr jobs without creating duplicates', () => {
@@ -281,12 +282,13 @@ describe('Event Factory', () => {
                 }];
 
                 afterSyncedPRPipelineMock.jobs = Promise.resolve(jobsMock);
+                afterSyncedPRPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
 
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
                 config.prNum = 1;
 
-                return factory.create(config).then((model) => {
+                return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.calledOnce(buildFactoryMock.create);
@@ -304,7 +306,7 @@ describe('Event Factory', () => {
             it('should create commit builds', () => {
                 config.startFrom = '~commit';
 
-                return factory.create(config).then((model) => {
+                return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create, sinon.match({
@@ -320,7 +322,7 @@ describe('Event Factory', () => {
             it('should create triggered builds', () => {
                 config.startFrom = '~sd@123:main';
 
-                return factory.create(config).then((model) => {
+                return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create, sinon.match({
@@ -336,7 +338,7 @@ describe('Event Factory', () => {
             it('should create build if startFrom is a jobName', () => {
                 config.startFrom = 'main';
 
-                return factory.create(config).then((model) => {
+                return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.notCalled(syncedPipelineMock.syncPR);
@@ -353,7 +355,7 @@ describe('Event Factory', () => {
             it('should throw error if startFrom job does not exist', () => {
                 config.startFrom = 'doesnnotexist';
 
-                return factory.create(config).then(() => {
+                return eventFactory.create(config).then(() => {
                     throw new Error('Should not get here');
                 }, (err) => {
                     assert.isOk(err, 'Error should be returned');
@@ -366,7 +368,7 @@ describe('Event Factory', () => {
             it('should throw error if startFrom job is disabled', () => {
                 config.startFrom = 'disabledjob';
 
-                return factory.create(config).then(() => {
+                return eventFactory.create(config).then(() => {
                     throw new Error('Should not get here');
                 }, (err) => {
                     assert.isOk(err, 'Error should be returned');
@@ -378,7 +380,7 @@ describe('Event Factory', () => {
         });
 
         it('should create an Event', () =>
-            factory.create(config).then((model) => {
+            eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
                 assert.calledWith(scm.decorateAuthor, {
                     username: 'stjohn',
@@ -402,10 +404,98 @@ describe('Event Factory', () => {
             })
         );
 
+        it('should not start build if changed file is not in sourcePaths', () => {
+            jobsMock = [{
+                id: 1,
+                pipelineId: 8765,
+                name: 'main',
+                permutations: {
+                    requires: ['~pr']
+                },
+                state: 'ENABLED',
+                sourcePaths: ['src/test/']
+            }];
+            syncedPipelineMock.update = sinon.stub().resolves({
+                jobs: Promise.resolve(jobsMock)
+            });
+
+            config.startFrom = 'main';
+            config.changedFiles = ['README.md', 'root/src/test/file'];
+
+            return eventFactory.create(config).then(() => {
+                throw new Error('Should not get here');
+            }, (err) => {
+                assert.isOk(err, 'Error should be returned');
+                assert.equal(err.message, 'No jobs to start');
+                assert.notCalled(buildFactoryMock.create);
+            });
+        });
+
+        it('should start builds if changed file is in sourcePaths', () => {
+            jobsMock = [{
+                id: 1,
+                pipelineId: 8765,
+                name: 'PR-1:main',
+                permutations: {
+                    requires: ['~pr']
+                },
+                state: 'ENABLED',
+                sourcePaths: ['src/test/']
+            }, {
+                id: 2,
+                pipelineId: 8765,
+                name: 'PR-1:test',
+                permutations: {
+                    requires: ['~pr']
+                },
+                state: 'ENABLED',
+                sourcePaths: ['src/test/']
+            }];
+            afterSyncedPRPipelineMock.update = sinon.stub().resolves({
+                jobs: Promise.resolve(jobsMock)
+            });
+
+            config.startFrom = '~pr';
+            config.prRef = 'branch';
+            config.prNum = 1;
+            config.changedFiles = ['src/test/README.md', 'NOTINSOURCEPATH.md'];
+
+            return eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.calledTwice(buildFactoryMock.create);
+            });
+        });
+
+        it('should start build when sourcePath is a file, and is the same as changedFile', () => {
+            jobsMock = [{
+                id: 1,
+                pipelineId: 8765,
+                name: 'PR-1:main',
+                permutations: {
+                    requires: ['~pr']
+                },
+                state: 'ENABLED',
+                sourcePaths: ['src/test']
+            }];
+            afterSyncedPRPipelineMock.update = sinon.stub().resolves({
+                jobs: Promise.resolve(jobsMock)
+            });
+
+            config.startFrom = '~pr';
+            config.prRef = 'branch';
+            config.prNum = 1;
+            config.changedFiles = ['src/test', 'NOTINSOURCEPATH.md'];
+
+            return eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.calledOnce(buildFactoryMock.create);
+            });
+        });
+
         it('use username as displayName if displayLabel is not set', () => {
             scm.getDisplayName.returns(null);
 
-            return factory.create(config).then((model) => {
+            return eventFactory.create(config).then((model) => {
                 assert.equal(model.causeMessage, 'Started by stjohn');
             });
         });
@@ -425,7 +515,7 @@ describe('Event Factory', () => {
             expected.parentEventId = config.parentEventId;
             syncedPipelineMock.workflowGraph = config.workflowGraph;
 
-            return factory.create(config).then((model) => {
+            return eventFactory.create(config).then((model) => {
                 assert.calledWith(pipelineMock.sync, config.sha);
                 assert.instanceOf(model, Event);
                 Object.keys(expected).forEach((key) => {
