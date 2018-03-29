@@ -234,7 +234,7 @@ describe('Event Factory', () => {
                 }];
 
                 syncedPipelineMock.jobs = Promise.resolve(jobsMock);
-                buildFactoryMock.create.resolves(null);
+                buildFactoryMock.create.resolves('a build object');
             });
 
             it('should start existing pr jobs without creating duplicates', () => {
@@ -422,8 +422,11 @@ describe('Event Factory', () => {
             config.startFrom = 'main';
             config.changedFiles = ['README.md', 'root/src/test/file'];
 
-            return eventFactory.create(config).then((model) => {
-                assert.instanceOf(model, Event);
+            return eventFactory.create(config).then(() => {
+                throw new Error('Should not get here');
+            }, (err) => {
+                assert.isOk(err, 'Error should be returned');
+                assert.equal(err.message, 'No jobs to start');
                 assert.notCalled(buildFactoryMock.create);
             });
         });
