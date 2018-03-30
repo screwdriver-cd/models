@@ -404,6 +404,32 @@ describe('Event Factory', () => {
             })
         );
 
+        it('throw error if sourcepaths is not supported', () => {
+            jobsMock = [{
+                id: 1,
+                pipelineId: 8765,
+                name: 'main',
+                permutations: [{
+                    requires: ['~pr'],
+                    sourcePaths: ['src/test/']
+                }],
+                state: 'ENABLED'
+            }];
+            syncedPipelineMock.update = sinon.stub().resolves({
+                jobs: Promise.resolve(jobsMock)
+            });
+
+            config.startFrom = 'main';
+
+            return eventFactory.create(config).then(() => {
+                throw new Error('Should not get here');
+            }, (err) => {
+                assert.isOk(err, 'Error should be returned');
+                assert.equal(err.message, 'Your SCM does not support Source Paths');
+                assert.notCalled(buildFactoryMock.create);
+            });
+        });
+
         it('should not start build if changed file is not in sourcePaths', () => {
             jobsMock = [{
                 id: 1,
