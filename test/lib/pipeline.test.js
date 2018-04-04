@@ -592,6 +592,51 @@ describe('Pipeline Model', () => {
                 state: 'ENABLED',
                 archived: false
             };
+            const clonedYAML = JSON.parse(JSON.stringify(PARSED_YAML_PR));
+
+            clonedYAML.workflowGraph.edges.push({
+                src: '~pr', dest: 'publish'
+            });
+
+            jobFactoryMock.list.resolves([firstPRJob, secondPRJob]);
+            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(clonedYAML);
+
+            return pipeline.syncPR(1).then(() => {
+                assert.calledWith(scmMock.getFile, {
+                    path: 'screwdriver.yaml',
+                    ref: 'pulls/1/merge',
+                    scmUri,
+                    scmContext,
+                    token: 'foo'
+                });
+                assert.calledOnce(firstPRJob.update);
+                assert.calledOnce(secondPRJob.update);
+                assert.calledWith(jobFactoryMock.create, sinon.match({
+                    pipelineId: 123,
+                    name: 'PR-1:new_pr_job'
+                }));
+                assert.deepEqual(firstPRJob.permutations, clonedYAML.jobs.main);
+                assert.deepEqual(secondPRJob.permutations, clonedYAML.jobs.publish);
+                assert.isFalse(firstPRJob.archived);
+                assert.isFalse(secondPRJob.archived);
+            });
+        });
+
+        it('archives outdated PR job', () => {
+            const firstPRJob = {
+                update: sinon.stub().resolves(null),
+                isPR: sinon.stub().returns(true),
+                name: 'PR-1:main',
+                state: 'ENABLED',
+                archived: false
+            };
+            const secondPRJob = {
+                update: sinon.stub().resolves(null),
+                isPR: sinon.stub().returns(true),
+                name: 'PR-1:publish',
+                state: 'ENABLED',
+                archived: false
+            };
 
             jobFactoryMock.list.resolves([firstPRJob, secondPRJob]);
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML_PR);
@@ -611,9 +656,8 @@ describe('Pipeline Model', () => {
                     name: 'PR-1:new_pr_job'
                 }));
                 assert.deepEqual(firstPRJob.permutations, PARSED_YAML_PR.jobs.main);
-                assert.deepEqual(secondPRJob.permutations, PARSED_YAML_PR.jobs.publish);
                 assert.isFalse(firstPRJob.archived);
-                assert.isFalse(secondPRJob.archived);
+                assert.isTrue(secondPRJob.archived);
             });
         });
 
