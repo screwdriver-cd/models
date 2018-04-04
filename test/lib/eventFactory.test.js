@@ -287,6 +287,7 @@ describe('Event Factory', () => {
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
                 config.prNum = 1;
+                config.webhooks = true;
 
                 return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
@@ -305,6 +306,7 @@ describe('Event Factory', () => {
 
             it('should create commit builds', () => {
                 config.startFrom = '~commit';
+                config.webhooks = true;
 
                 return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
@@ -420,6 +422,7 @@ describe('Event Factory', () => {
             });
 
             config.startFrom = 'main';
+            config.webhooks = true;
 
             return eventFactory.create(config).then(() => {
                 throw new Error('Should not get here');
@@ -446,6 +449,7 @@ describe('Event Factory', () => {
             });
 
             config.startFrom = 'main';
+            config.webhooks = true;
             config.changedFiles = ['README.md', 'root/src/test/file'];
 
             return eventFactory.create(config).then(() => {
@@ -454,6 +458,32 @@ describe('Event Factory', () => {
                 assert.isOk(err, 'Error should be returned');
                 assert.equal(err.message, 'No jobs to start');
                 assert.notCalled(buildFactoryMock.create);
+            });
+        });
+
+        // eslint-disable-next-line max-len
+        it('should start build if changed file is not in sourcePaths and build not triggered by webhooks', () => {
+            jobsMock = [{
+                id: 1,
+                pipelineId: 8765,
+                name: 'main',
+                permutations: [{
+                    requires: ['~pr'],
+                    sourcePaths: ['src/test/']
+                }],
+                state: 'ENABLED'
+            }];
+            syncedPipelineMock.update = sinon.stub().resolves({
+                jobs: Promise.resolve(jobsMock)
+            });
+
+            config.startFrom = 'main';
+            config.webhooks = false;
+            config.changedFiles = ['README.md', 'root/src/test/file'];
+
+            return eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.calledOnce(buildFactoryMock.create);
             });
         });
 
@@ -508,6 +538,7 @@ describe('Event Factory', () => {
             });
 
             config.startFrom = '~pr';
+            config.webhooks = true;
             config.prRef = 'branch';
             config.prNum = 1;
             config.changedFiles = ['src/test', 'NOTINSOURCEPATH.md'];
