@@ -237,7 +237,7 @@ describe('Event Factory', () => {
                 buildFactoryMock.create.resolves('a build object');
             });
 
-            it('should start existing pr jobs without creating duplicates', () => {
+            it('should start existing unarchived pr jobs without creating duplicates', () => {
                 jobsMock = [{
                     id: 1,
                     pipelineId: 8765,
@@ -254,6 +254,15 @@ describe('Event Factory', () => {
                         requires: ['~pr']
                     }],
                     state: 'ENABLED'
+                }, {
+                    id: 6,
+                    pipelineId: 8765,
+                    name: 'PR-1:outdated',
+                    permutations: [{
+                        requires: ['~pr']
+                    }],
+                    state: 'ENABLED',
+                    archived: true
                 },
                 {
                     id: 7,
