@@ -348,17 +348,6 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('stores workflow to pipeline', () => {
-            jobs = [];
-            jobFactoryMock.list.resolves(jobs);
-            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
-            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
-
-            return pipeline.sync().then(() => {
-                assert.deepEqual(pipeline.workflow, ['main', 'publish']);
-            });
-        });
-
         it('stores workflowGraph to pipeline', () => {
             jobs = [];
             jobFactoryMock.list.resolves(jobs);
@@ -834,7 +823,7 @@ describe('Pipeline Model', () => {
     });
 
     describe('get jobs', () => {
-        it('Get jobs in workflow in order', () => {
+        it('Get jobs', () => {
             const expected = {
                 params: {
                     pipelineId: 123,
@@ -846,7 +835,6 @@ describe('Pipeline Model', () => {
             const jobList = [publishJob, blahJob, mainJob];
             const expectedJobs = [mainJob, publishJob];
 
-            pipeline.workflow = ['main', 'publish'];
             jobFactoryMock.list.resolves(jobList);
 
             return pipeline.getJobs().then((result) => {
@@ -866,7 +854,6 @@ describe('Pipeline Model', () => {
             const jobList = [publishJob, blahJob, mainJob, pr10, pr3];
             const expectedJobs = [mainJob, pr3, pr10];
 
-            pipeline.workflow = ['main'];
             jobFactoryMock.list.resolves(jobList);
 
             return pipeline.getJobs().then((result) => {
@@ -889,7 +876,6 @@ describe('Pipeline Model', () => {
             const jobList = [publishJob, blahJob, mainJob, pr10, pr3];
             const expectedJobs = [pr3, pr10];
 
-            pipeline.workflow = ['main', 'publish', 'blah'];
             jobFactoryMock.list.resolves(jobList);
 
             return pipeline.getJobs(config).then((result) => {
@@ -912,7 +898,6 @@ describe('Pipeline Model', () => {
             const jobList = [publishJob, blahJob, mainJob, pr10, pr3];
             const expectedJobs = [mainJob, publishJob, blahJob];
 
-            pipeline.workflow = ['main', 'publish', 'blah'];
             jobFactoryMock.list.resolves(jobList);
 
             return pipeline.getJobs(config).then((result) => {
@@ -960,7 +945,6 @@ describe('Pipeline Model', () => {
             };
             const jobList = [blahJob, publishJob];
 
-            pipeline.workflow = [];
             jobFactoryMock.list.resolves(jobList);
 
             return pipeline.getJobs(config).then((result) => {
@@ -1170,8 +1154,7 @@ describe('Pipeline Model', () => {
             remove: sinon.stub().resolves(null),
             sha: '1a6559a40e72c8bbe7def302e85d63f68ef177e4',
             type: 'pipeline',
-            username: 'd2lam',
-            workflow: ['main']
+            username: 'd2lam'
         };
         const secret = {
             name: 'TEST',
@@ -1224,7 +1207,6 @@ describe('Pipeline Model', () => {
             let i;
 
             nonArchived.params.archived = false;
-            pipeline.workflow = ['main', 'publish'];
 
             for (i = 0; i < 4; i += 1) {
                 jobFactoryMock.list.withArgs(nonArchived).onCall(i).resolves([publishJob, mainJob]);

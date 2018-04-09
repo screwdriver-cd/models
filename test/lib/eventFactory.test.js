@@ -167,7 +167,6 @@ describe('Event Factory', () => {
                 scmContext,
                 token: Promise.resolve('foo'),
                 lastEventId: null,
-                workflow: [],
                 workflowGraph: {
                     nodes: [
                         { name: '~pr' },
