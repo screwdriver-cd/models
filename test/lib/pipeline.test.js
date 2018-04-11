@@ -37,6 +37,11 @@ describe('Pipeline Model', () => {
     };
     let jobs;
     let pipelineConfig;
+    let publishJob;
+    let mainJob;
+    let blahJob;
+    let pr10;
+    let pr3;
 
     const decorateJobMock = (job) => {
         const decorated = hoek.clone(job);
@@ -56,37 +61,6 @@ describe('Pipeline Model', () => {
         return decorateJobMock(j);
     };
 
-    const publishJob = getJobMocks({
-        id: 99999,
-        name: 'publish',
-        archived: false
-    });
-    const blahJob = getJobMocks({
-        id: '12855123cc7f1b808aac07feff24d7d5362cc215',
-        name: 'blah',
-        archived: true
-    });
-    const mainJob = getJobMocks({
-        id: 99998,
-        name: 'main',
-        archived: false
-    });
-    const pr10 = getJobMocks({
-        id: 99997,
-        name: 'PR-10',
-        archived: false
-    });
-    const pr3 = getJobMocks({
-        id: 99996,
-        name: 'PR-3',
-        archived: false
-    });
-
-    pr10.isPR.returns(true);
-    pr3.isPR.returns(true);
-    pr10.prNum = 10;
-    pr3.prNum = 3;
-
     before(() => {
         mockery.enable({
             useCleanCache: true,
@@ -95,6 +69,41 @@ describe('Pipeline Model', () => {
     });
 
     beforeEach(() => {
+        publishJob = getJobMocks({
+            id: 99999,
+            me: 'publish',
+            archived: false
+        });
+
+        blahJob = getJobMocks({
+            id: 99995,
+            name: 'blah',
+            archived: true
+        });
+
+        mainJob = getJobMocks({
+            id: 99998,
+            name: 'main',
+            archived: false
+        });
+
+        pr10 = getJobMocks({
+            id: 99997,
+            name: 'PR-10',
+            archived: false
+        });
+
+        pr3 = getJobMocks({
+            id: 99996,
+            name: 'PR-3',
+            archived: false
+        });
+
+        pr10.isPR.returns(true);
+        pr3.isPR.returns(true);
+        pr10.prNum = 10;
+        pr3.prNum = 3;
+
         datastore = {
             get: sinon.stub(),
             save: sinon.stub(),
@@ -1187,7 +1196,7 @@ describe('Pipeline Model', () => {
                 assert.callCount(jobFactoryMock.list, 8);
 
                 // Delete all the jobs
-                // assert.callCount(publishJob.remove, 4);
+                assert.callCount(publishJob.remove, 4);
                 assert.callCount(mainJob.remove, 4);
                 assert.callCount(blahJob.remove, 2);
 
