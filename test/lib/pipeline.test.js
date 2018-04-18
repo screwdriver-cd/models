@@ -37,6 +37,11 @@ describe('Pipeline Model', () => {
     };
     let jobs;
     let pipelineConfig;
+    let publishJob;
+    let mainJob;
+    let blahJob;
+    let pr10;
+    let pr3;
 
     const decorateJobMock = (job) => {
         const decorated = hoek.clone(job);
@@ -56,32 +61,6 @@ describe('Pipeline Model', () => {
         return decorateJobMock(j);
     };
 
-    const publishJob = getJobMocks({
-        id: 'ae4b71b93b39fb564b5b5c50d71f1a988f400aa3',
-        name: 'publish'
-    });
-    const blahJob = getJobMocks({
-        id: '12855123cc7f1b808aac07feff24d7d5362cc215',
-        name: 'blah' // This job is not in workflow
-    });
-    const mainJob = getJobMocks({
-        id: '2s780cf3059eadfed0c60c0dd0194146105ae46c',
-        name: 'main'
-    });
-    const pr10 = getJobMocks({
-        id: '5eee38381388b6f30efdd5c5c6f067dbf32c0bb3',
-        name: 'PR-10'
-    });
-    const pr3 = getJobMocks({
-        id: 'fbbef3051eae334be97dea11d895cbbb6735987f',
-        name: 'PR-3'
-    });
-
-    pr10.isPR.returns(true);
-    pr3.isPR.returns(true);
-    pr10.prNum = 10;
-    pr3.prNum = 3;
-
     before(() => {
         mockery.enable({
             useCleanCache: true,
@@ -90,6 +69,41 @@ describe('Pipeline Model', () => {
     });
 
     beforeEach(() => {
+        publishJob = getJobMocks({
+            id: 99999,
+            me: 'publish',
+            archived: false
+        });
+
+        blahJob = getJobMocks({
+            id: 99995,
+            name: 'blah',
+            archived: true
+        });
+
+        mainJob = getJobMocks({
+            id: 99998,
+            name: 'main',
+            archived: false
+        });
+
+        pr10 = getJobMocks({
+            id: 99997,
+            name: 'PR-10',
+            archived: false
+        });
+
+        pr3 = getJobMocks({
+            id: 99996,
+            name: 'PR-3',
+            archived: false
+        });
+
+        pr10.isPR.returns(true);
+        pr3.isPR.returns(true);
+        pr10.prNum = 10;
+        pr3.prNum = 3;
+
         datastore = {
             get: sinon.stub(),
             save: sinon.stub(),
@@ -345,17 +359,6 @@ describe('Pipeline Model', () => {
             return pipeline.sync().then(() => {
                 assert.notCalled(triggerMock.remove);
                 assert.notCalled(triggerFactoryMock.create);
-            });
-        });
-
-        it('stores workflow to pipeline', () => {
-            jobs = [];
-            jobFactoryMock.list.resolves(jobs);
-            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
-            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
-
-            return pipeline.sync().then(() => {
-                assert.deepEqual(pipeline.workflow, ['main', 'publish']);
             });
         });
 
@@ -834,7 +837,7 @@ describe('Pipeline Model', () => {
     });
 
     describe('get jobs', () => {
-        it('Get jobs in workflow in order', () => {
+        it('Get all jobs', () => {
             const expected = {
                 params: {
                     pipelineId: 123,
@@ -843,30 +846,9 @@ describe('Pipeline Model', () => {
                 paginate
             };
 
-            const jobList = [publishJob, blahJob, mainJob];
-            const expectedJobs = [mainJob, publishJob];
+            const jobList = [publishJob, mainJob, pr10, pr3];
+            const expectedJobs = [publishJob, mainJob, pr3, pr10];
 
-            pipeline.workflow = ['main', 'publish'];
-            jobFactoryMock.list.resolves(jobList);
-
-            return pipeline.getJobs().then((result) => {
-                assert.calledWith(jobFactoryMock.list, expected);
-                assert.deepEqual(result, expectedJobs);
-            });
-        });
-
-        it('Get PR jobs and sort them by name', () => {
-            const expected = {
-                params: {
-                    pipelineId: 123,
-                    archived: false
-                },
-                paginate
-            };
-            const jobList = [publishJob, blahJob, mainJob, pr10, pr3];
-            const expectedJobs = [mainJob, pr3, pr10];
-
-            pipeline.workflow = ['main'];
             jobFactoryMock.list.resolves(jobList);
 
             return pipeline.getJobs().then((result) => {
@@ -886,10 +868,9 @@ describe('Pipeline Model', () => {
                 },
                 paginate
             };
-            const jobList = [publishJob, blahJob, mainJob, pr10, pr3];
+            const jobList = [publishJob, mainJob, pr10, pr3];
             const expectedJobs = [pr3, pr10];
 
-            pipeline.workflow = ['main', 'publish', 'blah'];
             jobFactoryMock.list.resolves(jobList);
 
             return pipeline.getJobs(config).then((result) => {
@@ -909,10 +890,9 @@ describe('Pipeline Model', () => {
                 },
                 paginate
             };
-            const jobList = [publishJob, blahJob, mainJob, pr10, pr3];
-            const expectedJobs = [mainJob, publishJob, blahJob];
+            const jobList = [publishJob, mainJob, pr10, pr3];
+            const expectedJobs = [publishJob, mainJob];
 
-            pipeline.workflow = ['main', 'publish', 'blah'];
             jobFactoryMock.list.resolves(jobList);
 
             return pipeline.getJobs(config).then((result) => {
@@ -935,37 +915,15 @@ describe('Pipeline Model', () => {
                 paginate
             };
 
-            const jobList = [blahJob, publishJob];
+            publishJob.archived = true;
+
+            const jobList = [publishJob, mainJob];
 
             jobFactoryMock.list.resolves(jobList);
 
             return pipeline.getJobs(config).then((result) => {
                 assert.calledWith(jobFactoryMock.list, expected);
-                assert.deepEqual(result, [blahJob, publishJob]);
-            });
-        });
-
-        it('Get jobs without sorting for new workflows', () => {
-            const config = {
-                params: {
-                    archived: false
-                }
-            };
-            const expected = {
-                params: {
-                    pipelineId: 123,
-                    archived: false
-                },
-                paginate
-            };
-            const jobList = [blahJob, publishJob];
-
-            pipeline.workflow = [];
-            jobFactoryMock.list.resolves(jobList);
-
-            return pipeline.getJobs(config).then((result) => {
-                assert.calledWith(jobFactoryMock.list, expected);
-                assert.deepEqual(result, [blahJob, publishJob]);
+                assert.deepEqual(result, [publishJob]);
             });
         });
     });
@@ -1170,8 +1128,7 @@ describe('Pipeline Model', () => {
             remove: sinon.stub().resolves(null),
             sha: '1a6559a40e72c8bbe7def302e85d63f68ef177e4',
             type: 'pipeline',
-            username: 'd2lam',
-            workflow: ['main']
+            username: 'd2lam'
         };
         const secret = {
             name: 'TEST',
@@ -1224,7 +1181,6 @@ describe('Pipeline Model', () => {
             let i;
 
             nonArchived.params.archived = false;
-            pipeline.workflow = ['main', 'publish'];
 
             for (i = 0; i < 4; i += 1) {
                 jobFactoryMock.list.withArgs(nonArchived).onCall(i).resolves([publishJob, mainJob]);
