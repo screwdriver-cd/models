@@ -13,6 +13,8 @@ describe('Job Factory', () => {
     let JobFactory;
     let datastore;
     let factory;
+    let executor;
+    let pipelineFactoryMock;
 
     before(() => {
         mockery.enable({
@@ -27,16 +29,26 @@ describe('Job Factory', () => {
             scan: sinon.stub(),
             get: sinon.stub()
         };
+        pipelineFactoryMock = {
+            get: sinon.stub().resolves({ id: 9999 })
+        };
+        executor = {
+            startPeriodic: sinon.stub().resolves()
+        };
 
         // Fixing mockery issue with duplicate file names
         // by re-registering data-schema with its own implementation
         mockery.registerMock('screwdriver-data-schema', schema);
         mockery.registerMock('./job', Job);
 
+        mockery.registerMock('./pipelineFactory', {
+            getInstance: sinon.stub().returns(pipelineFactoryMock)
+        });
+
         // eslint-disable-next-line global-require
         JobFactory = require('../../lib/jobFactory');
 
-        factory = new JobFactory({ datastore });
+        factory = new JobFactory({ datastore, executor });
     });
 
     afterEach(() => {
@@ -53,7 +65,7 @@ describe('Job Factory', () => {
         it('should return a Job', () => {
             const model = factory.createClass({
                 name: 'main',
-                pipelineId: '1234',
+                pipelineId: 1234,
                 state: 'ENABLED',
                 id: 'abcd'
             });
@@ -64,7 +76,7 @@ describe('Job Factory', () => {
 
     describe('create', () => {
         const jobId = 123;
-        const pipelineId = 'cf23df2207d99a74fbe169e3eba035e633b65d94';
+        const pipelineId = 9999;
         const name = 'main';
         const saveConfig = {
             table: 'jobs',
@@ -75,6 +87,13 @@ describe('Job Factory', () => {
                 archived: false
             }
         };
+        const permutations = [{
+            commands: [
+                { command: 'npm install', name: 'init' },
+                { command: 'npm test', name: 'test' }
+            ],
+            image: 'node:4'
+        }];
 
         it('creates a new job in the datastore', () => {
             const expected = {
@@ -82,17 +101,57 @@ describe('Job Factory', () => {
                 pipelineId,
                 state: 'ENABLED',
                 archived: false,
-                id: jobId
+                id: jobId,
+                permutations
             };
 
             datastore.save.resolves(expected);
+            saveConfig.params.permutations = permutations;
 
             return factory.create({
                 pipelineId,
-                name
+                name,
+                permutations
             }).then((model) => {
                 assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Job);
+            });
+        });
+
+        it('calls executor to create a periodic job', () => {
+            const tokenGenFunc = () => 'bar';
+            const periodicPermutations = [Object.assign(
+                { annotations: { 'beta.screwdriver.cd/buildPeriodically': 'H * * * *' } }
+                , permutations[0])
+            ];
+
+            factory.tokenGen = tokenGenFunc;
+
+            const expected = {
+                name,
+                pipelineId,
+                state: 'ENABLED',
+                archived: false,
+                id: jobId,
+                permutations: periodicPermutations
+            };
+
+            datastore.save.resolves(expected);
+            saveConfig.params.permutations = periodicPermutations;
+
+            return factory.create({
+                pipelineId,
+                name,
+                permutations: periodicPermutations
+            }).then((model) => {
+                assert.calledWith(datastore.save, saveConfig);
+                assert.instanceOf(model, Job);
+                assert.calledWith(pipelineFactoryMock.get, pipelineId);
+                assert.calledWith(executor.startPeriodic, {
+                    pipeline: { id: 9999 },
+                    job: model,
+                    tokenGen: tokenGenFunc
+                });
             });
         });
     });
