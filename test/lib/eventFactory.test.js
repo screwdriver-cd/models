@@ -492,6 +492,10 @@ describe('Event Factory', () => {
             return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
                 assert.calledOnce(buildFactoryMock.create);
+                assert.deepEqual(
+                    buildFactoryMock.create.args[0][0].environment,
+                    {}
+                );
             });
         });
 
@@ -519,6 +523,7 @@ describe('Event Factory', () => {
                 jobs: Promise.resolve(jobsMock)
             });
 
+            config.webhooks = true;
             config.startFrom = '~pr';
             config.prRef = 'branch';
             config.prNum = 1;
@@ -527,6 +532,14 @@ describe('Event Factory', () => {
             return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
                 assert.calledTwice(buildFactoryMock.create);
+                assert.deepEqual(
+                    buildFactoryMock.create.args[0][0].environment,
+                    { SD_SOURCE_PATH: 'src/test/' }
+                );
+                assert.deepEqual(
+                    buildFactoryMock.create.args[1][0].environment,
+                    { SD_SOURCE_PATH: 'src/test/' }
+                );
             });
         });
 
