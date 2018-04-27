@@ -12,7 +12,7 @@ describe('Event Factory', () => {
     const nowTime = (new Date(dateNow)).toISOString();
     let EventFactory;
     let datastore;
-    let factory;
+    let eventFactory;
     let pipelineFactoryMock;
     let buildFactoryMock;
     let jobFactoryMock;
@@ -61,7 +61,7 @@ describe('Event Factory', () => {
         // eslint-disable-next-line global-require
         EventFactory = require('../../lib/eventFactory');
 
-        factory = new EventFactory({ datastore, scm });
+        eventFactory = new EventFactory({ datastore, scm });
     });
 
     afterEach(() => {
@@ -76,7 +76,7 @@ describe('Event Factory', () => {
 
     describe('createClass', () => {
         it('should return an Event', () => {
-            const model = factory.createClass({
+            const model = eventFactory.createClass({
                 id: 'abc123'
             });
 
@@ -157,7 +157,8 @@ describe('Event Factory', () => {
                 causeMessage: 'Started by github:stjohn',
                 createTime: nowTime,
                 creator,
-                commit
+                commit,
+                meta: {}
             };
 
             syncedPipelineMock = {
@@ -166,7 +167,6 @@ describe('Event Factory', () => {
                 scmContext,
                 token: Promise.resolve('foo'),
                 lastEventId: null,
-                workflow: [],
                 workflowGraph: {
                     nodes: [
                         { name: '~pr' },
@@ -185,7 +185,7 @@ describe('Event Factory', () => {
                     ]
                 },
                 getConfiguration: sinon.stub().resolves(PARSED_YAML),
-                update: sinon.stub().resolves(null),
+                update: sinon.stub().resolves(syncedPipelineMock),
                 job: Promise.resolve([])
             };
 
@@ -193,7 +193,8 @@ describe('Event Factory', () => {
             syncedPipelineMock.syncPR = sinon.stub().resolves(afterSyncedPRPipelineMock);
 
             pipelineMock = {
-                sync: sinon.stub().resolves(syncedPipelineMock)
+                sync: sinon.stub().resolves(syncedPipelineMock),
+                update: sinon.stub().resolves(syncedPipelineMock)
             };
 
             pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
@@ -209,83 +210,94 @@ describe('Event Factory', () => {
                     id: 1,
                     pipelineId: 8765,
                     name: 'main',
-                    permutations: {
+                    permutations: [{
                         requires: ['~commit', '~pr', '~sd@123:main']
-                    },
+                    }],
                     state: 'ENABLED'
                 }, {
                     id: 2,
                     pipelineId: 8765,
                     name: 'disabledjob',
-                    permutations: {
+                    permutations: [{
                         requires: ['main']
-                    },
+                    }],
                     state: 'DISABLED'
                 }, {
                     id: 4,
                     pipelineId: 8765,
                     name: 'publish',
-                    permutations: {
+                    permutations: [{
                         requires: ['~pr']
-                    },
+                    }],
                     state: 'ENABLED'
                 }];
 
                 syncedPipelineMock.jobs = Promise.resolve(jobsMock);
-                buildFactoryMock.create.resolves(null);
+                buildFactoryMock.create.resolves('a build object');
             });
 
-            it('should start existing pr jobs without creating duplicates', () => {
+            it('should start existing unarchived pr jobs without creating duplicates', () => {
                 jobsMock = [{
                     id: 1,
                     pipelineId: 8765,
                     name: 'main',
-                    permutations: {
+                    permutations: [{
                         requires: ['~pr']
-                    },
+                    }],
                     state: 'ENABLED'
                 }, {
                     id: 5,
                     pipelineId: 8765,
                     name: 'PR-1:main',
-                    permutations: {
+                    permutations: [{
                         requires: ['~pr']
-                    },
+                    }],
                     state: 'ENABLED'
+                }, {
+                    id: 6,
+                    pipelineId: 8765,
+                    name: 'PR-1:outdated',
+                    permutations: [{
+                        requires: ['~pr']
+                    }],
+                    state: 'ENABLED',
+                    archived: true
                 },
                 {
                     id: 7,
                     pipelineId: 8765,
                     name: 'PR-2:main',
-                    permutations: {
+                    permutations: [{
                         requires: ['~pr']
-                    },
+                    }],
                     state: 'ENABLED'
                 },
                 {
                     id: 3,
                     name: 'publish',
-                    permutations: {
+                    permutations: [{
                         requires: ['~pr']
-                    },
+                    }],
                     state: 'ENABLED'
                 },
                 {
                     id: 6,
                     name: 'PR-1:publish',
-                    permutations: {
+                    permutations: [{
                         requires: ['~pr']
-                    },
+                    }],
                     state: 'DISABLED'
                 }];
 
                 afterSyncedPRPipelineMock.jobs = Promise.resolve(jobsMock);
+                afterSyncedPRPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
 
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
                 config.prNum = 1;
+                config.webhooks = true;
 
-                return factory.create(config).then((model) => {
+                return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.calledOnce(buildFactoryMock.create);
@@ -302,8 +314,9 @@ describe('Event Factory', () => {
 
             it('should create commit builds', () => {
                 config.startFrom = '~commit';
+                config.webhooks = true;
 
-                return factory.create(config).then((model) => {
+                return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create, sinon.match({
@@ -319,7 +332,7 @@ describe('Event Factory', () => {
             it('should create triggered builds', () => {
                 config.startFrom = '~sd@123:main';
 
-                return factory.create(config).then((model) => {
+                return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.calledWith(buildFactoryMock.create, sinon.match({
@@ -335,7 +348,7 @@ describe('Event Factory', () => {
             it('should create build if startFrom is a jobName', () => {
                 config.startFrom = 'main';
 
-                return factory.create(config).then((model) => {
+                return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.notCalled(syncedPipelineMock.syncPR);
@@ -352,7 +365,7 @@ describe('Event Factory', () => {
             it('should throw error if startFrom job does not exist', () => {
                 config.startFrom = 'doesnnotexist';
 
-                return factory.create(config).then(() => {
+                return eventFactory.create(config).then(() => {
                     throw new Error('Should not get here');
                 }, (err) => {
                     assert.isOk(err, 'Error should be returned');
@@ -365,7 +378,7 @@ describe('Event Factory', () => {
             it('should throw error if startFrom job is disabled', () => {
                 config.startFrom = 'disabledjob';
 
-                return factory.create(config).then(() => {
+                return eventFactory.create(config).then(() => {
                     throw new Error('Should not get here');
                 }, (err) => {
                     assert.isOk(err, 'Error should be returned');
@@ -377,7 +390,7 @@ describe('Event Factory', () => {
         });
 
         it('should create an Event', () =>
-            factory.create(config).then((model) => {
+            eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
                 assert.calledWith(scm.decorateAuthor, {
                     username: 'stjohn',
@@ -392,7 +405,7 @@ describe('Event Factory', () => {
                 });
                 assert.strictEqual(syncedPipelineMock.lastEventId, model.id);
                 Object.keys(expected).forEach((key) => {
-                    if (key === 'workflowGraph') {
+                    if (key === 'workflowGraph' || key === 'meta') {
                         assert.deepEqual(model[key], expected[key]);
                     } else {
                         assert.strictEqual(model[key], expected[key]);
@@ -401,10 +414,166 @@ describe('Event Factory', () => {
             })
         );
 
+        it('throw error if sourcepaths is not supported', () => {
+            jobsMock = [{
+                id: 1,
+                pipelineId: 8765,
+                name: 'main',
+                permutations: [{
+                    requires: ['~pr'],
+                    sourcePaths: ['src/test/']
+                }],
+                state: 'ENABLED'
+            }];
+            syncedPipelineMock.update = sinon.stub().resolves({
+                jobs: Promise.resolve(jobsMock)
+            });
+
+            config.startFrom = 'main';
+            config.webhooks = true;
+
+            return eventFactory.create(config).then(() => {
+                throw new Error('Should not get here');
+            }, (err) => {
+                assert.isOk(err, 'Error should be returned');
+                assert.equal(err.message, 'Your SCM does not support Source Paths');
+                assert.notCalled(buildFactoryMock.create);
+            });
+        });
+
+        it('should not start build if changed file is not in sourcePaths', () => {
+            jobsMock = [{
+                id: 1,
+                pipelineId: 8765,
+                name: 'main',
+                permutations: [{
+                    requires: ['~pr'],
+                    sourcePaths: ['src/test/']
+                }],
+                state: 'ENABLED'
+            }];
+            syncedPipelineMock.update = sinon.stub().resolves({
+                jobs: Promise.resolve(jobsMock)
+            });
+
+            config.startFrom = 'main';
+            config.webhooks = true;
+            config.changedFiles = ['README.md', 'root/src/test/file'];
+
+            return eventFactory.create(config).then(() => {
+                throw new Error('Should not get here');
+            }, (err) => {
+                assert.isOk(err, 'Error should be returned');
+                assert.equal(err.message, 'No jobs to start');
+                assert.notCalled(buildFactoryMock.create);
+            });
+        });
+
+        // eslint-disable-next-line max-len
+        it('should start build if changed file is not in sourcePaths and build not triggered by webhooks', () => {
+            jobsMock = [{
+                id: 1,
+                pipelineId: 8765,
+                name: 'main',
+                permutations: [{
+                    requires: ['~pr'],
+                    sourcePaths: ['src/test/']
+                }],
+                state: 'ENABLED'
+            }];
+            syncedPipelineMock.update = sinon.stub().resolves({
+                jobs: Promise.resolve(jobsMock)
+            });
+
+            config.startFrom = 'main';
+            config.webhooks = false;
+            config.changedFiles = ['README.md', 'root/src/test/file'];
+
+            return eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.calledOnce(buildFactoryMock.create);
+                assert.deepEqual(
+                    buildFactoryMock.create.args[0][0].environment,
+                    {}
+                );
+            });
+        });
+
+        it('should start builds if changed file is in sourcePaths', () => {
+            jobsMock = [{
+                id: 1,
+                pipelineId: 8765,
+                name: 'PR-1:main',
+                permutations: [{
+                    requires: ['~pr'],
+                    sourcePaths: ['src/test/']
+                }],
+                state: 'ENABLED'
+            }, {
+                id: 2,
+                pipelineId: 8765,
+                name: 'PR-1:test',
+                permutations: [{
+                    requires: ['~pr'],
+                    sourcePaths: ['src/test/']
+                }],
+                state: 'ENABLED'
+            }];
+            afterSyncedPRPipelineMock.update = sinon.stub().resolves({
+                jobs: Promise.resolve(jobsMock)
+            });
+
+            config.webhooks = true;
+            config.startFrom = '~pr';
+            config.prRef = 'branch';
+            config.prNum = 1;
+            config.changedFiles = ['src/test/README.md', 'NOTINSOURCEPATH.md'];
+
+            return eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.calledTwice(buildFactoryMock.create);
+                assert.deepEqual(
+                    buildFactoryMock.create.args[0][0].environment,
+                    { SD_SOURCE_PATH: 'src/test/' }
+                );
+                assert.deepEqual(
+                    buildFactoryMock.create.args[1][0].environment,
+                    { SD_SOURCE_PATH: 'src/test/' }
+                );
+            });
+        });
+
+        it('should start build when sourcePath is a file, and is the same as changedFile', () => {
+            jobsMock = [{
+                id: 1,
+                pipelineId: 8765,
+                name: 'PR-1:main',
+                permutations: [{
+                    requires: ['~pr'],
+                    sourcePaths: ['src/test']
+                }],
+                state: 'ENABLED'
+            }];
+            afterSyncedPRPipelineMock.update = sinon.stub().resolves({
+                jobs: Promise.resolve(jobsMock)
+            });
+
+            config.startFrom = '~pr';
+            config.webhooks = true;
+            config.prRef = 'branch';
+            config.prNum = 1;
+            config.changedFiles = ['src/test', 'NOTINSOURCEPATH.md'];
+
+            return eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.calledOnce(buildFactoryMock.create);
+            });
+        });
+
         it('use username as displayName if displayLabel is not set', () => {
             scm.getDisplayName.returns(null);
 
-            return factory.create(config).then((model) => {
+            return eventFactory.create(config).then((model) => {
                 assert.equal(model.causeMessage, 'Started by stjohn');
             });
         });
@@ -424,7 +593,7 @@ describe('Event Factory', () => {
             expected.parentEventId = config.parentEventId;
             syncedPipelineMock.workflowGraph = config.workflowGraph;
 
-            return factory.create(config).then((model) => {
+            return eventFactory.create(config).then((model) => {
                 assert.calledWith(pipelineMock.sync, config.sha);
                 assert.instanceOf(model, Event);
                 Object.keys(expected).forEach((key) => {

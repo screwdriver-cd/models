@@ -638,7 +638,6 @@ factory.create(config).then(model => {
 | config.type | String | No | Event type: pipeline or pr |
 | config.pipelineId | Number | Yes | Unique identifier of pipeline |
 | config.sha | String | Yes | Commit sha that the event was based on |
-| config.workflow | Array | No | Workflow of the pipeline |
 | config.workflowGraph | Object | No | Workflow graph of the pipeline, with edges and nodes |
 | config.username | String | Yes | Username of the user that creates this event |
 | config.causeMessage | String | No | Message that describes why the event was created |
@@ -922,8 +921,8 @@ factory.list({
     params: {
         dest: '~sd@456:main'
     }
-}).then(recs => 
-    // do things with the records 
+}).then(recs =>
+    // do things with the records
 );
 ```
 ### Token Factory
