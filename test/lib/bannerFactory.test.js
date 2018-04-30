@@ -6,7 +6,7 @@ const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe('Banners Factory', () => {
+describe('Banner Factory', () => {
     const bannerId = 123;
     const message = 'Test banner';
     const type = 'info';
@@ -23,10 +23,10 @@ describe('Banners Factory', () => {
         isActive
     };
 
-    let BannersFactory;
+    let BannerFactory;
     let datastore;
     let factory;
-    let Banners;
+    let Banner;
 
     before(() => {
         mockery.enable({
@@ -42,11 +42,11 @@ describe('Banners Factory', () => {
         };
 
         /* eslint-disable global-require */
-        Banners = require('../../lib/banners');
-        BannersFactory = require('../../lib/bannersFactory');
+        Banner = require('../../lib/banner');
+        BannerFactory = require('../../lib/bannerFactory');
         /* eslint-disable global-require */
 
-        factory = new BannersFactory({ datastore });
+        factory = new BannerFactory({ datastore });
     });
 
     afterEach(() => {
@@ -62,7 +62,7 @@ describe('Banners Factory', () => {
         it('should return a Collection', () => {
             const model = factory.createClass(bannerData);
 
-            assert.instanceOf(model, Banners);
+            assert.instanceOf(model, Banner);
         });
     });
 
@@ -80,7 +80,7 @@ describe('Banners Factory', () => {
                     params: expected,
                     table: 'banners'
                 });
-                assert.instanceOf(model, Banners);
+                assert.instanceOf(model, Banner);
                 Object.keys(bannerData).forEach((key) => {
                     assert.strictEqual(model[key], bannerData[key]);
                 });
@@ -109,23 +109,23 @@ describe('Banners Factory', () => {
             config = { datastore };
 
             /* eslint-disable global-require */
-            BannersFactory = require('../../lib/bannersFactory');
+            BannerFactory = require('../../lib/bannerFactory');
             /* eslint-enable global-require */
         });
 
         it('should get an instance', () => {
-            const f1 = BannersFactory.getInstance(config);
-            const f2 = BannersFactory.getInstance(config);
+            const f1 = BannerFactory.getInstance(config);
+            const f2 = BannerFactory.getInstance(config);
 
-            assert.instanceOf(f1, BannersFactory);
-            assert.instanceOf(f2, BannersFactory);
+            assert.instanceOf(f1, BannerFactory);
+            assert.instanceOf(f2, BannerFactory);
 
             assert.equal(f1, f2);
         });
 
         it('should throw an error when config not supplied', () => {
-            assert.throw(BannersFactory.getInstance,
-                Error, 'No datastore provided to BannersFactory');
+            assert.throw(BannerFactory.getInstance,
+                Error, 'No datastore provided to BannerFactory');
         });
     });
 });
