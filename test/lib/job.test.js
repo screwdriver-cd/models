@@ -337,15 +337,14 @@ describe('Job Model', () => {
     describe('update', () => {
         it('Update a job', () => {
             job.state = 'DISABLED';
-            const newJob = Object.assign({}, job);
 
-            datastore.update.resolves(newJob);
+            datastore.update.resolves(null);
 
             return job.update()
                 .then(() => {
                     assert.calledWith(executorMock.startPeriodic, {
                         pipeline: pipelineMock,
-                        job: newJob,
+                        job,
                         tokenGen,
                         isUpdate: true
                     });
@@ -374,6 +373,20 @@ describe('Job Model', () => {
                 assert.callCount(buildFactoryMock.list, 5);
                 assert.callCount(build1.remove, 4); // remove builds recursively
                 assert.callCount(build2.remove, 4);
+                assert.calledOnce(datastore.remove); // remove the job
+                assert.notCalled(executorMock.stopPeriodic);
+            });
+        });
+
+        it('remove periodic job', () => {
+            buildFactoryMock.list.resolves([]);
+            job.permutations = [{
+                annotations: {
+                    'beta.screwdriver.cd/buildPeriodically': 'H * * * *'
+                }
+            }];
+
+            return job.remove().then(() => {
                 assert.calledOnce(datastore.remove); // remove the job
                 assert.calledOnce(executorMock.stopPeriodic);
             });
