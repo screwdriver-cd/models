@@ -6,7 +6,7 @@ const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe.only('Banner Factory', () => {
+describe('Banner Factory', () => {
     const bannerId = 123;
     const message = 'Test banner';
     const type = 'info';
@@ -101,7 +101,7 @@ describe.only('Banner Factory', () => {
                 assert.calledWith(datastore.save, {
                     params: {
                         message,
-                        type, // The bannerFactory should default this
+                        type: 'info', // The bannerFactory should default this
                         isActive
                     },
                     table: 'banners'
@@ -116,7 +116,7 @@ describe.only('Banner Factory', () => {
         it('should create a Banner without isActive status defined', () => {
             const dataWithDefaultStatus = Object.assign({}, bannerData);
 
-            dataWithDefaultStatus.isActive = true;
+            dataWithDefaultStatus.isActive = false;
             datastore.save.resolves(dataWithDefaultStatus);
 
             return factory.create({
@@ -128,11 +128,12 @@ describe.only('Banner Factory', () => {
                     params: {
                         message,
                         type,
-                        isActive // The bannerFactory should default this
+                        isActive: false // The bannerFactory should default this
                     },
                     table: 'banners'
                 });
                 assert.instanceOf(model, Banner);
+                // assert.deepEqual(model, dataWithDefaultStatus);
                 Object.keys(bannerData).forEach((key) => {
                     assert.strictEqual(model[key], dataWithDefaultStatus[key]);
                 });
@@ -142,7 +143,7 @@ describe.only('Banner Factory', () => {
         it('should create a Banner without type and isActive status defined', () => {
             const dataWithDefaults = Object.assign({}, bannerData);
 
-            dataWithDefaults.isActive = true;
+            dataWithDefaults.isActive = false;
             dataWithDefaults.type = 'info';
             datastore.save.resolves(dataWithDefaults);
 
@@ -153,8 +154,8 @@ describe.only('Banner Factory', () => {
                 assert.calledWith(datastore.save, {
                     params: {
                         message,
-                        type, // The bannerFactory should default this
-                        isActive // The bannerFactory should default this
+                        type: 'info', // The bannerFactory should default this
+                        isActive: false // The bannerFactory should default this
                     },
                     table: 'banners'
                 });
