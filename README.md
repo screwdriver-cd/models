@@ -1267,7 +1267,7 @@ factory.create(config).then(model => {
 | :------------------| :-------| :--------| :-------| :---------------------------------------------------------|
 | config             | Object  | Yes      |         | Configuration Object                                      |
 | config.message     | String  | Yes      |         | Text of banner to be displayed                            |
-| config.isActive    | Boolean | No       | false   | Flag for whether banner should display (default: false)   |
+| config.isActive    | Boolean | No       | false   | Flag for whether banner should display                    |
 | config.type        | String  | No       | info    | Type/Severity of banner message. Options: `info`,`warn`   |
 
 #### Get
