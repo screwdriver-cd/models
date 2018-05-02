@@ -1274,13 +1274,13 @@ factory.create(config).then(model => {
 Get a banner based on unique id of banner. 
 ```js
 factory.get(id).then(model => {
-    // do stuff with collection model
+    // do stuff with banner model
 });
 ```
 
 | Parameter | Type   | Description                      |
 | :---------| :------| :--------------------------------|
-| id        | Number | The unique id for the collection |
+| id        | Number | The unique id for the banner     |
 
 ### Banner Model
 ```js
