@@ -382,7 +382,7 @@ describe('Job Model', () => {
             buildFactoryMock.list.resolves([]);
             job.permutations = [{
                 annotations: {
-                    'beta.screwdriver.cd/buildPeriodically': 'H * * * *'
+                    'screwdriver.cd/buildPeriodically': 'H * * * *'
                 }
             }];
 

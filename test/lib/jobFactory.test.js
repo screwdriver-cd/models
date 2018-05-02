@@ -120,9 +120,10 @@ describe('Job Factory', () => {
 
         it('calls executor to create a periodic job', () => {
             const tokenGenFunc = () => 'bar';
-            const periodicPermutations = [Object.assign(
-                { annotations: { 'beta.screwdriver.cd/buildPeriodically': 'H * * * *' } }
-                , permutations[0])
+            const periodicPermutations = [
+                Object.assign(
+                    { annotations: { 'screwdriver.cd/buildPeriodically': 'H * * * *' } }
+                    , permutations[0])
             ];
 
             factory.tokenGen = tokenGenFunc;
