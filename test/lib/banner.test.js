@@ -7,10 +7,10 @@ const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe('Banners Model', () => {
+describe('Banner Model', () => {
     let datastore;
     let BaseModel;
-    let BannersModel;
+    let BannerModel;
     let createConfig;
     let banner;
 
@@ -26,7 +26,7 @@ describe('Banners Model', () => {
 
         /* eslint-disable global-require */
         BaseModel = require('../../lib/base');
-        BannersModel = require('../../lib/banners');
+        BannerModel = require('../../lib/banner');
         /* eslint-enable global-require */
     });
 
@@ -38,7 +38,7 @@ describe('Banners Model', () => {
             id: 51,
             message: 'Screwdriver banner message'
         };
-        banner = new BannersModel(createConfig);
+        banner = new BannerModel(createConfig);
     });
 
     after(() => {
@@ -47,7 +47,7 @@ describe('Banners Model', () => {
     });
 
     it('is constructed properly', () => {
-        assert.instanceOf(banner, BannersModel);
+        assert.instanceOf(banner, BannerModel);
         assert.instanceOf(banner, BaseModel);
         schema.models.collection.allKeys.forEach((key) => {
             assert.strictEqual(banner[key], createConfig[key]);
