@@ -9,6 +9,7 @@ const hoek = require('hoek');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('Job Model', () => {
+    const token = 'tokengenerated';
     let pipelineFactoryMock;
     let buildFactoryMock;
     let JobModel;
@@ -16,6 +17,8 @@ describe('Job Model', () => {
     let job;
     let BaseModel;
     let config;
+    let executorMock;
+    let tokenGen;
 
     const decorateBuildMock = (build) => {
         const decorated = hoek.clone(build);
@@ -48,6 +51,25 @@ describe('Job Model', () => {
         jobId: '1234',
         status: 'SUCCESS'
     });
+    const pipelineMock = {
+        secrets: Promise.resolve([
+            {
+                name: 'NORMAL',
+                value: '1',
+                allowInPR: true
+            },
+            {
+                name: 'NOPR',
+                value: '2',
+                allowInPR: false
+            },
+            {
+                name: 'NOTINJOB',
+                value: '3',
+                allowInPR: true
+            }
+        ])
+    };
 
     before(() => {
         mockery.enable({
@@ -62,30 +84,19 @@ describe('Job Model', () => {
             remove: sinon.stub().resolves(null)
         };
         pipelineFactoryMock = {
-            get: sinon.stub().resolves({
-                secrets: Promise.resolve([
-                    {
-                        name: 'NORMAL',
-                        value: '1',
-                        allowInPR: true
-                    },
-                    {
-                        name: 'NOPR',
-                        value: '2',
-                        allowInPR: false
-                    },
-                    {
-                        name: 'NOTINJOB',
-                        value: '3',
-                        allowInPR: true
-                    }
-                ])
-            })
+            get: sinon.stub().resolves(pipelineMock)
         };
 
         buildFactoryMock = {
             list: sinon.stub().resolves(null)
         };
+
+        executorMock = {
+            startPeriodic: sinon.stub().resolves(null),
+            stopPeriodic: sinon.stub().resolves(null)
+        };
+
+        tokenGen = sinon.stub().returns(token);
 
         mockery.registerMock('./pipelineFactory', {
             getInstance: sinon.stub().returns(pipelineFactoryMock)
@@ -102,6 +113,8 @@ describe('Job Model', () => {
 
         config = {
             datastore,
+            executor: executorMock,
+            tokenGen,
             id: '1234',
             name: 'main',
             pipelineId: 'abcd',
@@ -321,6 +334,25 @@ describe('Job Model', () => {
         });
     });
 
+    describe('update', () => {
+        it('Update a job', () => {
+            job.state = 'DISABLED';
+
+            datastore.update.resolves(null);
+
+            return job.update()
+                .then(() => {
+                    assert.calledWith(executorMock.startPeriodic, {
+                        pipeline: pipelineMock,
+                        job,
+                        tokenGen,
+                        isUpdate: true
+                    });
+                    assert.calledOnce(datastore.update);
+                });
+        });
+    });
+
     describe('remove', () => {
         afterEach(() => {
             buildFactoryMock.list.reset();
@@ -342,6 +374,21 @@ describe('Job Model', () => {
                 assert.callCount(build1.remove, 4); // remove builds recursively
                 assert.callCount(build2.remove, 4);
                 assert.calledOnce(datastore.remove); // remove the job
+                assert.notCalled(executorMock.stopPeriodic);
+            });
+        });
+
+        it('remove periodic job', () => {
+            buildFactoryMock.list.resolves([]);
+            job.permutations = [{
+                annotations: {
+                    'screwdriver.cd/buildPeriodically': 'H * * * *'
+                }
+            }];
+
+            return job.remove().then(() => {
+                assert.calledOnce(datastore.remove); // remove the job
+                assert.calledOnce(executorMock.stopPeriodic);
             });
         });
 
