@@ -1232,6 +1232,87 @@ factory.get(id).then(model => {
 | :-------------   | :---- | :-------------|
 | id | Number | The unique ID for the Command Tag |
 
+### Banner Factory
+#### Search
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.BannerFactory.getInstance({
+    datastore
+});
+const config = {
+    params: {
+        isActive: true
+    }
+};
+
+factory.list(config).then(banners => {
+    // Do stuff with list of banners
+});
+```
+
+| Parameter     | Type   | Description         |
+| :-------------| :------| :-------------------|
+| config        | Object | Config object       |
+| config.params | Object | Fields to search on |
+
+#### Create
+```js
+factory.create(config).then(model => {
+    // do stuff with banner model
+});
+```
+
+| Parameter          | Type    | Required | Description                                                          |
+| :------------------| :-------| :--------| :--------------------------------------------------------------------|
+| config             | Object  | Yes      | Configuration Object                                                 |
+| config.message     | String  | Yes      | Text of banner to be displayed                                       |
+| config.isActive    | Boolean | No       | Flag for whether banner should display (default: false)              |
+| config.type        | String  | No       | Type/Severity of banner message. Options: info,warn  (default: info) |
+
+#### Get
+Get a banner based on unique id of banner. 
+```js
+factory.get(id).then(model => {
+    // do stuff with collection model
+});
+```
+
+| Parameter | Type   | Description                      |
+| :---------| :------| :--------------------------------|
+| id        | Number | The unique id for the collection |
+
+### Banner Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.BannerFactory.getInstance({
+    datastore
+});
+const config = {
+    message: 'There will be a brief outage between 9:00am and 9:15am tomorrow morning',
+    isActive: true,
+    type: 'info'
+};
+
+factory.create(config)
+    .then(model => {
+        // do something with model
+    });
+```
+
+#### Update
+Update a specific collection
+```js
+model.update()
+```
+
+#### Remove
+Remove a specific collection
+```js
+model.remove()
+```
+
 ## Testing
 
 ```bash
