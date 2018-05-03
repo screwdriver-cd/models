@@ -1269,6 +1269,7 @@ factory.create(config).then(model => {
 | config.message     | String  | Yes      |         | Text of banner to be displayed                            |
 | config.isActive    | Boolean | No       | false   | Flag for whether banner should display                    |
 | config.type        | String  | No       | info    | Type/Severity of banner message. Options: `info`,`warn`   |
+| config.createdBy   | String  | Yes      |         | Username of the user creating the banner                  |
 
 #### Get
 Get a banner based on unique id of banner. 
