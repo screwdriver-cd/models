@@ -17,11 +17,6 @@ describe('Banner Factory', () => {
         type,
         isActive
     };
-    const expected = {
-        message,
-        type,
-        isActive
-    };
 
     let BannerFactory;
     let datastore;
@@ -76,11 +71,8 @@ describe('Banner Factory', () => {
                 isActive
             }).then((model) => {
                 assert.isTrue(datastore.save.calledOnce);
-                assert.calledWith(datastore.save, {
-                    params: expected,
-                    table: 'banners'
-                });
                 assert.instanceOf(model, Banner);
+
                 Object.keys(bannerData).forEach((key) => {
                     assert.strictEqual(model[key], bannerData[key]);
                 });
@@ -98,15 +90,8 @@ describe('Banner Factory', () => {
                 isActive
             }).then((model) => {
                 assert.isTrue(datastore.save.calledOnce);
-                assert.calledWith(datastore.save, {
-                    params: {
-                        message,
-                        type: 'info', // The bannerFactory should default this
-                        isActive
-                    },
-                    table: 'banners'
-                });
                 assert.instanceOf(model, Banner);
+
                 Object.keys(bannerData).forEach((key) => {
                     assert.strictEqual(model[key], dataWithDefaultType[key]);
                 });
@@ -124,16 +109,8 @@ describe('Banner Factory', () => {
                 type
             }).then((model) => {
                 assert.isTrue(datastore.save.calledOnce);
-                assert.calledWith(datastore.save, {
-                    params: {
-                        message,
-                        type,
-                        isActive: false // The bannerFactory should default this
-                    },
-                    table: 'banners'
-                });
                 assert.instanceOf(model, Banner);
-                // assert.deepEqual(model, dataWithDefaultStatus);
+
                 Object.keys(bannerData).forEach((key) => {
                     assert.strictEqual(model[key], dataWithDefaultStatus[key]);
                 });
@@ -151,15 +128,8 @@ describe('Banner Factory', () => {
                 message
             }).then((model) => {
                 assert.isTrue(datastore.save.calledOnce);
-                assert.calledWith(datastore.save, {
-                    params: {
-                        message,
-                        type: 'info', // The bannerFactory should default this
-                        isActive: false // The bannerFactory should default this
-                    },
-                    table: 'banners'
-                });
                 assert.instanceOf(model, Banner);
+
                 Object.keys(bannerData).forEach((key) => {
                     assert.strictEqual(model[key], dataWithDefaults[key]);
                 });
