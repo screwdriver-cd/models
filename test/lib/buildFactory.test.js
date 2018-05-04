@@ -420,6 +420,32 @@ describe('Build Factory', () => {
                 assert.strictEqual(model.container, 'registry.com:1234/library/node:4');
             });
         });
+
+        it('combines environment from input config', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const jobMock = {
+                permutations,
+                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
+            };
+
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+            saveConfig.params.status = 'CREATED';
+
+            return factory.create({
+                username,
+                jobId,
+                eventId,
+                parentBuildId: 12345,
+                start: false,
+                environment: { EXTRA: true }
+            }).then(() => {
+                assert.notCalled(startStub);
+                saveConfig.params.environment.EXTRA = true;
+                assert.calledWith(datastore.save, saveConfig);
+                delete saveConfig.params.environment.EXTRA;
+            });
+        });
     });
 
     describe('getInstance', () => {
