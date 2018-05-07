@@ -5,7 +5,13 @@ const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
 
-class Job {}
+class Job {
+    constructor(config) {
+        this.apiUri = config.apiUri;
+        this.executor = config.executor;
+        this.tokenGen = config.tokenGen;
+    }
+}
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -15,6 +21,8 @@ describe('Job Factory', () => {
     let factory;
     let executor;
     let pipelineFactoryMock;
+    let apiUri;
+    const tokenGen = sinon.stub();
 
     before(() => {
         mockery.enable({
@@ -35,6 +43,7 @@ describe('Job Factory', () => {
         executor = {
             startPeriodic: sinon.stub().resolves()
         };
+        apiUri = 'https://notify.com/some/endpoint';
 
         // Fixing mockery issue with duplicate file names
         // by re-registering data-schema with its own implementation
@@ -49,6 +58,8 @@ describe('Job Factory', () => {
         JobFactory = require('../../lib/jobFactory');
 
         factory = new JobFactory({ datastore, executor });
+        factory.apiUri = apiUri;
+        factory.tokenGen = tokenGen;
     });
 
     afterEach(() => {
@@ -71,6 +82,9 @@ describe('Job Factory', () => {
             });
 
             assert.instanceOf(model, Job);
+            assert.deepEqual(model.executor, executor);
+            assert.strictEqual(model.apiUri, apiUri);
+            assert.deepEqual(model.tokenGen, tokenGen);
         });
     });
 
@@ -151,7 +165,8 @@ describe('Job Factory', () => {
                 assert.calledWith(executor.startPeriodic, {
                     pipeline: { id: 9999 },
                     job: model,
-                    tokenGen: tokenGenFunc
+                    tokenGen: tokenGenFunc,
+                    apiUri
                 });
             });
         });

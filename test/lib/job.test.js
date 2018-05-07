@@ -10,6 +10,7 @@ sinon.assert.expose(assert, { prefix: '' });
 
 describe('Job Model', () => {
     const token = 'tokengenerated';
+    const apiUri = 'https://notify.com/some/endpoint';
     let pipelineFactoryMock;
     let buildFactoryMock;
     let JobModel;
@@ -126,6 +127,7 @@ describe('Job Model', () => {
                     ]
                 }
             ],
+            apiUri,
             state: 'ENABLED'
         };
 
@@ -145,6 +147,8 @@ describe('Job Model', () => {
     it('is constructed properly', () => {
         assert.instanceOf(job, BaseModel);
         assert.isFunction(job.update);
+        assert.isUndefined(job.apiUri);
+        assert.isUndefined(job.tokenGen);
 
         schema.models.job.allKeys.forEach((key) => {
             assert.strictEqual(job[key], config[key]);
@@ -346,6 +350,7 @@ describe('Job Model', () => {
                         pipeline: pipelineMock,
                         job,
                         tokenGen,
+                        apiUri,
                         isUpdate: true
                     });
                     assert.calledOnce(datastore.update);
