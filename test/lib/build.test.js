@@ -376,6 +376,39 @@ describe('Build Model', () => {
                 })
         );
 
+        it('pass in blockedBy to executor start', () => {
+            const blockedBy = 'test';
+
+            jobFactoryMock.get.resolves({
+                id: jobId,
+                name: 'main',
+                pipeline: Promise.resolve({
+                    id: pipelineId,
+                    scmUri,
+                    scmContext,
+                    admin: Promise.resolve(adminUser),
+                    token: Promise.resolve('foo')
+                }),
+                permutations: [{
+                    annotations,
+                    blockedBy
+                }],
+                isPR: () => false
+            });
+
+            return build.start()
+                .then(() => {
+                    assert.calledWith(executorMock.start, {
+                        blockedBy,
+                        annotations,
+                        apiUri,
+                        buildId,
+                        container,
+                        token
+                    });
+                });
+        });
+
         it('promises to start a build with the executor specified in job annotations', () => {
             jobFactoryMock.get.resolves({
                 id: jobId,
