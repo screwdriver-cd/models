@@ -377,7 +377,7 @@ describe('Build Model', () => {
         );
 
         it('pass in blockedBy to executor start', () => {
-            const blockedBy = 'test';
+            const blockedBy = [111, 222];
 
             jobFactoryMock.get.resolves({
                 id: jobId,
