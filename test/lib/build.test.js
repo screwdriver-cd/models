@@ -31,6 +31,7 @@ describe('Build Model', () => {
     let BaseModel;
     let userFactoryMock;
     let jobFactoryMock;
+    let pipelineFactoryMock;
     let scmMock;
     let tokenGen;
     let pipelineMock;
@@ -63,6 +64,10 @@ describe('Build Model', () => {
         jobFactoryMock = {
             get: sinon.stub()
         };
+        pipelineFactoryMock = {
+            get: sinon.stub().resolves(null)
+        };
+
         pipelineMock = {
             id: pipelineId,
             scmUri,
@@ -86,7 +91,11 @@ describe('Build Model', () => {
         const jF = {
             getInstance: sinon.stub().returns(jobFactoryMock)
         };
+        const pF = {
+            getInstance: sinon.stub().returns(pipelineFactoryMock)
+        };
 
+        mockery.registerMock('./pipelineFactory', pF);
         mockery.registerMock('./userFactory', uF);
         mockery.registerMock('./jobFactory', jF);
         mockery.registerMock('screwdriver-hashr', hashaMock);
@@ -324,9 +333,7 @@ describe('Build Model', () => {
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
             sandbox.useFakeTimers(now);
-
             executorMock.start.resolves(null);
-
             jobFactoryMock.get.resolves({
                 id: jobId,
                 name: 'main',
@@ -377,7 +384,7 @@ describe('Build Model', () => {
                 })
         );
 
-        it('get internal blockedby job Ids and pass toexecutor start', () => {
+        it('get internal blockedby job Ids and pass to executor start', () => {
             const blocking1 = {
                 name: 'blocking1',
                 id: 111
@@ -414,6 +421,77 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.calledWith(executorMock.start, {
                         blockedBy: [jobId, blocking1.id, blocking2.id],
+                        annotations,
+                        apiUri,
+                        buildId,
+                        container,
+                        token
+                    });
+                });
+        });
+
+        it('get external blockedby job Ids and pass to executor start', () => {
+            const externalPid1 = 101;
+            const externalPid2 = 202;
+            const externalJob1 = {
+                name: 'externalJob1',
+                id: 111
+            };
+            const externalJob2 = {
+                name: 'externalJob2',
+                id: 222
+            };
+            const pipeline1 = {
+                id: externalPid1,
+                jobs: Promise.resolve([
+                    { id: 999, name: 'somejob' },
+                    externalJob1
+                ])
+            };
+            const pipeline2 = {
+                id: externalPid2,
+                jobs: Promise.resolve([
+                    { id: 888, name: 'somerandomjob' },
+                    externalJob2
+                ])
+            };
+            const internalJob = {
+                name: 'internalJob',
+                id: 333
+            };
+
+            pipelineFactoryMock.get.withArgs(externalPid1).resolves(pipeline1);
+            pipelineFactoryMock.get.withArgs(externalPid2).resolves(pipeline2);
+
+            jobFactoryMock.get.resolves({
+                id: jobId,
+                name: 'main',
+                pipeline: Promise.resolve({
+                    id: pipelineId,
+                    scmUri,
+                    scmContext,
+                    admin: Promise.resolve(adminUser),
+                    token: Promise.resolve('foo'),
+                    jobs: Promise.resolve([
+                        { id: jobId, name: 'main' },
+                        { id: 123, name: 'somejob' },
+                        { id: internalJob.id, name: internalJob.name }])
+                }),
+                permutations: [{
+                    annotations,
+                    blockedBy: [
+                        `~sd@${externalPid1}:externalJob1`,
+                        internalJob.name,
+                        `~sd@${externalPid2}:externalJob2`
+                    ]
+                }],
+                isPR: () => false
+            });
+
+            return build.start()
+                .then(() => {
+                    assert.calledWith(executorMock.start, {
+                        blockedBy: [jobId, internalJob.id, externalJob1.id, externalJob2.id],
                         annotations,
                         apiUri,
                         buildId,
