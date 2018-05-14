@@ -351,6 +351,7 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.calledWith(executorMock.start, {
                         annotations,
+                        blockedBy: [jobId],
                         apiUri,
                         buildId,
                         container,
@@ -376,8 +377,15 @@ describe('Build Model', () => {
                 })
         );
 
-        it('pass in blockedBy to executor start', () => {
-            const blockedBy = [111, 222];
+        it('get internal blockedby job Ids and pass toexecutor start', () => {
+            const blocking1 = {
+                name: 'blocking1',
+                id: 111
+            };
+            const blocking2 = {
+                name: 'blocking2',
+                id: 222
+            };
 
             jobFactoryMock.get.resolves({
                 id: jobId,
@@ -387,11 +395,17 @@ describe('Build Model', () => {
                     scmUri,
                     scmContext,
                     admin: Promise.resolve(adminUser),
-                    token: Promise.resolve('foo')
+                    token: Promise.resolve('foo'),
+                    jobs: Promise.resolve([
+                        { id: jobId, name: 'main' },
+                        { id: blocking1.id, name: blocking1.name },
+                        { id: 123, name: 'somejob' },
+                        { id: blocking2.id, name: blocking2.name },
+                        { id: 456, name: 'someotherjob' }])
                 }),
                 permutations: [{
                     annotations,
-                    blockedBy
+                    blockedBy: [blocking1.name, blocking2.name]
                 }],
                 isPR: () => false
             });
@@ -399,7 +413,7 @@ describe('Build Model', () => {
             return build.start()
                 .then(() => {
                     assert.calledWith(executorMock.start, {
-                        blockedBy,
+                        blockedBy: [jobId, blocking1.id, blocking2.id],
                         annotations,
                         apiUri,
                         buildId,
@@ -428,6 +442,7 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.calledWith(executorMock.start, {
                         annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' },
+                        blockedBy: [jobId],
                         apiUri,
                         buildId,
                         container,
