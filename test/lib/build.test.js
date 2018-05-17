@@ -22,7 +22,7 @@ describe('Build Model', () => {
     const scmContext = 'github:github.com';
     const token = 'equivalentToOneQuarter';
     const url = `${uiUri}/pipelines/${pipelineId}/builds/${buildId}`;
-    const expiresSec = 90 * 60;
+    const jwtExpiresSec = 90 * 60;
     let BuildModel;
     let datastore;
     let executorMock;
@@ -362,7 +362,7 @@ describe('Build Model', () => {
                         isPR: false,
                         jobId,
                         pipelineId
-                    }, scmContext, expiresSec);
+                    }, scmContext, jwtExpiresSec);
 
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
@@ -406,7 +406,7 @@ describe('Build Model', () => {
                         isPR: false,
                         jobId,
                         pipelineId
-                    }, scmContext, expiresSec);
+                    }, scmContext, jwtExpiresSec);
 
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
