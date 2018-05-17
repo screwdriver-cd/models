@@ -798,7 +798,7 @@ describe('Pipeline Model', () => {
         it('has an admin robin', () => {
             const admin = pipeline.getFirstAdmin();
 
-            admin.then((realAdmin) => {
+            return admin.then((realAdmin) => {
                 assert.equal(realAdmin.username, 'robin');
             });
         });
