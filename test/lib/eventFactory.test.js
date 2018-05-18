@@ -131,7 +131,10 @@ describe('Event Factory', () => {
                 sha,
                 username: 'stjohn',
                 parentBuildId: 12345,
-                scmContext
+                scmContext,
+                prInfo: {
+                    url: 'https://github.com/screwdriver-cd/screwdriver/pull/1063'
+                }
             };
             expected = {
                 pipelineId,
@@ -404,6 +407,7 @@ describe('Event Factory', () => {
                     token: 'foo'
                 });
                 assert.strictEqual(syncedPipelineMock.lastEventId, model.id);
+                assert.strictEqual(config.prInfo.url, model.pr.url);
                 Object.keys(expected).forEach((key) => {
                     if (key === 'workflowGraph' || key === 'meta') {
                         assert.deepEqual(model[key], expected[key]);
