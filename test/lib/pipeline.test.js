@@ -802,16 +802,25 @@ describe('Pipeline Model', () => {
                 assert.equal(realAdmin.username, 'robin');
             });
         });
+
+        it('has no admin', () => {
+            getUserPermissionMocks({ username: 'batman', push: false });
+            getUserPermissionMocks({ username: 'robin', push: false });
+
+            return pipeline.getFirstAdmin().then(() => {
+                assert.fail('should not get here');
+            }).catch((e) => {
+                assert.isOk(e);
+                assert.equal(e.message, 'Pipeline has no admin');
+            });
+        });
     });
 
     describe('get token', () => {
         beforeEach(() => {
-            userFactoryMock.get.resolves({
-                unsealToken: sinon.stub().resolves('foo'),
-                getPermissions: sinon.stub().resolves({
-                    push: true
-                })
-            });
+            getUserPermissionMocks({ username: 'batman', push: true });
+            getUserPermissionMocks({ username: 'robin', push: true });
+            pipeline.admins = { batman: true, robin: true };
         });
 
         it('has an token getter', () =>
@@ -1028,6 +1037,7 @@ describe('Pipeline Model', () => {
             parserMock.withArgs('', templateFactoryMock).resolves('DEFAULT_YAML');
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
+            pipeline.admins = { batman: true, robin: true };
         });
 
         it('gets pipeline config', () =>
