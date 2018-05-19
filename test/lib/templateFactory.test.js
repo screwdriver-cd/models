@@ -8,6 +8,7 @@ sinon.assert.expose(assert, { prefix: '' });
 
 describe('Template Factory', () => {
     const name = 'testTemplate';
+    const namespace = 'namespace';
     const version = '1.3';
     const maintainer = 'foo@bar.com';
     const description = 'this is a template';
@@ -91,6 +92,29 @@ describe('Template Factory', () => {
                 pipelineId,
                 id: generatedId
             };
+        });
+
+        it('creates a Template with the namespace when it exists', () => {
+            expected.version = `${version}.0`;
+            expected.namespace = namespace;
+            datastore.save.resolves(expected);
+            datastore.scan.resolves([]);
+
+            return factory.create({
+                name,
+                namespace,
+                version,
+                maintainer,
+                description,
+                labels,
+                config: templateConfig,
+                pipelineId
+            }).then((model) => {
+                assert.instanceOf(model, Template);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
         });
 
         it('creates a Template given major/minor version and no latest templates', () => {
@@ -195,7 +219,7 @@ describe('Template Factory', () => {
     });
 
     describe('getTemplate', () => {
-        const templateName = 'testTemplateName';
+        const templateName = 'namespace/testTemplateName';
         const templateVersion = '1.0';
         let fullTemplateName;
         let expected;
@@ -231,6 +255,7 @@ describe('Template Factory', () => {
         it('should get the correct template for a given name@exactVersion 1.0.2', () => {
             fullTemplateName = `${templateName}@1.0.2`;
             expected = Object.assign({}, returnValue[2]);
+            datastore.scan.onCall(0).resolves([]);
             datastore.get.resolves(returnValue[2]);
 
             return factory.getTemplate(fullTemplateName).then((model) => {
@@ -241,9 +266,45 @@ describe('Template Factory', () => {
             });
         });
 
+        it('should get the correct template for a given namespace/name@exactVersion 1.0.2', () => {
+            fullTemplateName = `${templateName}@1.0.2`;
+            expected = Object.assign({ namespace: 'namespace' }, returnValue[2]);
+            returnValue[2].namespace = 'namespace';
+            datastore.scan.onCall(0).resolves([returnValue[2]]);
+            datastore.get.resolves(returnValue[2]);
+
+            return factory.getTemplate(fullTemplateName).then((model) => {
+                assert.calledWith(datastore.get, { params: {
+                    namespace: 'namespace',
+                    name: 'testTemplateName',
+                    version: '1.0.2'
+                },
+                table: 'templates' });
+                assert.instanceOf(model, Template);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
+
         it('should get the correct template for a given name@version 1.0', () => {
             expected = Object.assign({}, returnValue[1]);
-            datastore.scan.resolves(returnValue);
+            datastore.scan.onCall(0).resolves([]);
+            datastore.scan.onCall(1).resolves(returnValue);
+
+            return factory.getTemplate(fullTemplateName).then((model) => {
+                assert.instanceOf(model, Template);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
+
+        it('should get the correct template for a given namespace/name@version 1.0', () => {
+            expected = Object.assign({ namespace: 'namespace' }, returnValue[1]);
+            returnValue[1].namespace = 'namespace';
+            datastore.scan.onCall(0).resolves([returnValue[1]]);
+            datastore.scan.onCall(1).resolves(returnValue);
 
             return factory.getTemplate(fullTemplateName).then((model) => {
                 assert.instanceOf(model, Template);
@@ -258,6 +319,7 @@ describe('Template Factory', () => {
             expected = Object.assign({}, returnValue[2]);
             templateTagFactoryMock.get.resolves({ version: '1.0.2' });
             datastore.get.resolves(returnValue[2]);
+            datastore.scan.onCall(0).resolves([]);
 
             return factory.getTemplate(fullTemplateName).then((model) => {
                 assert.instanceOf(model, Template);
@@ -267,19 +329,43 @@ describe('Template Factory', () => {
             });
         });
 
+        it('should get the correct template for a given namespace/name@tag', () => {
+            fullTemplateName = `${templateName}@latest`;
+            expected = Object.assign({ namespace: 'namespace' }, returnValue[2]);
+            returnValue[2].namespace = 'namespace';
+            templateTagFactoryMock.get.resolves({ version: '1.0.2' });
+            datastore.get.resolves(returnValue[2]);
+            datastore.scan.onCall(0).resolves([returnValue[1]]);
+
+            return factory.getTemplate(fullTemplateName).then((model) => {
+                assert.instanceOf(model, Template);
+                assert.calledWith(datastore.get, { params: {
+                    namespace: 'namespace',
+                    name: 'testTemplateName',
+                    version: '1.0.2'
+                },
+                table: 'templates' });
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
+
         it('should return null if no template tag returned by get', () => {
             fullTemplateName = `${templateName}@latest`;
             templateTagFactoryMock.get.resolves(null);
+            datastore.scan.onCall(0).resolves([]);
 
             return factory.getTemplate(fullTemplateName).then((model) => {
                 assert.isNull(model);
             });
         });
 
-        it('should get the correct template for a given name with no version or tag', () => {
+        it('should get correct template for a given name with no version or tag', () => {
             fullTemplateName = templateName;
             expected = Object.assign({}, returnValue[0]);
-            datastore.scan.resolves(returnValue);
+            datastore.scan.onCall(0).resolves([]);
+            datastore.scan.onCall(1).resolves(returnValue);
 
             return factory.getTemplate(fullTemplateName).then((model) => {
                 assert.instanceOf(model, Template);

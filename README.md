@@ -785,6 +785,7 @@ factory.create(config).then(model => {
 | :-------------   | :---- | :-------------|  :-------------|
 | config        | Object | Yes | Configuration Object |
 | config.name | String | Yes | The template name |
+| config.namespace | String | No | The template namespace |
 | config.version | String | Yes | Version of the template |
 | config.description | String | Yes | Description of the template |
 | config.maintainer | Array | Yes | Maintainer's email |
@@ -855,6 +856,7 @@ factory.create(config).then(model => {
 | :-------------   | :---- | :-------------|  :-------------|
 | config        | Object | Yes | Configuration Object |
 | config.name | String | Yes | The template name |
+| config.namespace | String | No | The template namespace |
 | config.tag | String | Yes | The template tag (e.g. stable, latest, etc) |
 | config.version | String | Yes | Version of the template |
 
@@ -1272,7 +1274,7 @@ factory.create(config).then(model => {
 | config.createdBy   | String  | Yes      |         | Username of the user creating the banner                  |
 
 #### Get
-Get a banner based on unique id of banner. 
+Get a banner based on unique id of banner.
 ```js
 factory.get(id).then(model => {
     // do stuff with banner model
