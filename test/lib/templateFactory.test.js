@@ -218,6 +218,134 @@ describe('Template Factory', () => {
         });
     });
 
+    describe('get', () => {
+        let config;
+        let expected;
+        let returnValue;
+
+        beforeEach(() => {
+            config = {
+                name,
+                namespace,
+                version: '1.0.2'
+            };
+
+            returnValue = [
+                {
+                    id: '1',
+                    name,
+                    namespace,
+                    version: '1.0.1'
+                },
+                {
+                    id: '3',
+                    name,
+                    namespace,
+                    version: '1.0.3'
+                },
+                {
+                    id: '2',
+                    name,
+                    namespace,
+                    version: '1.0.2'
+                },
+                {
+                    id: '4',
+                    name: `${namespace}/${name}`,
+                    version: '1.0.2'
+                }
+            ];
+        });
+
+        it('should get a template when namespace is passed in', () => {
+            datastore.get.resolves(returnValue[2]);
+            expected = Object.assign({}, returnValue[2]);
+
+            return factory.get(config).then((model) => {
+                assert.instanceOf(model, Template);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
+
+        it('should get a template when no namespace is passed in', () => {
+            datastore.get.resolves(returnValue[3]);
+            expected = Object.assign({}, returnValue[3]);
+            delete config.namespace;
+
+            return factory.get(config).then((model) => {
+                assert.instanceOf(model, Template);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
+    });
+
+    describe('list', () => {
+        let config;
+        let expected;
+        let returnValue;
+
+        beforeEach(() => {
+            config = {
+                params: {
+                    name,
+                    namespace,
+                    version: '1.0.2'
+                }
+            };
+
+            returnValue = [
+                {
+                    id: '1',
+                    name,
+                    namespace,
+                    version: '1.0.1'
+                },
+                {
+                    id: '3',
+                    name,
+                    namespace,
+                    version: '1.0.3'
+                },
+                {
+                    id: '2',
+                    name,
+                    namespace,
+                    version: '1.0.2'
+                },
+                {
+                    id: '4',
+                    name: `${namespace}/${name}`,
+                    version: '1.0.2'
+                }
+            ];
+        });
+
+        it('should list templates when namespace is passed in', () => {
+            expected = [returnValue[0], returnValue[1], returnValue[2]];
+
+            datastore.scan.resolves(expected);
+
+            return factory.list(config).then((model) => {
+                assert.instanceOf(model[0], Template);
+            });
+        });
+
+        it('should list templates when no namespace is passed in', () => {
+            expected = [returnValue[3]];
+            datastore.scan.resolves(expected);
+
+            delete config.namespace;
+
+            return factory.list(config).then((model) => {
+                assert.instanceOf(model[0], Template);
+            });
+        });
+    });
+
     describe('getTemplate', () => {
         const templateName = 'namespace/testTemplateName';
         const templateVersion = '1.0';
