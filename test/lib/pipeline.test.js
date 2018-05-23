@@ -210,6 +210,7 @@ describe('Pipeline Model', () => {
         beforeEach(() => {
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
+            pipeline.admins = { batman: true, robin: true };
         });
 
         it('updates the webhook', () => {
@@ -250,6 +251,7 @@ describe('Pipeline Model', () => {
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
+            pipeline.admins = { batman: true, robin: true };
             triggerFactoryMock.list.resolves([]);
             triggerFactoryMock.create.resolves(null);
 
@@ -561,6 +563,7 @@ describe('Pipeline Model', () => {
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
+            pipeline.admins = { batman: true, robin: true };
             prJob = {
                 update: sinon.stub().resolves(null),
                 isPR: sinon.stub().returns(true),
@@ -702,6 +705,7 @@ describe('Pipeline Model', () => {
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
+            pipeline.admins = { batman: true, robin: true };
             prJob = {
                 update: sinon.stub().resolves(null),
                 isPR: sinon.stub().returns(true),
@@ -793,6 +797,7 @@ describe('Pipeline Model', () => {
         beforeEach(() => {
             getUserPermissionMocks({ username: 'batman', push: false });
             getUserPermissionMocks({ username: 'robin', push: true });
+            pipeline.admins = { batman: true, robin: true };
         });
 
         it('has an admin robin', () => {
