@@ -208,7 +208,7 @@ factory.get({ pipelineId, name }).then(model => {
 | :-------------   | :---- | :-------------|
 | id | Number | The unique ID for the job |
 | config.pipelineId | Number | Id of the pipeline the job is associated with |
-| config.name | String Name of the job |
+| config.name | String | Name of the job |
 
 ### Job Model
 ```js
@@ -754,6 +754,7 @@ const factory = Model.TemplateFactory.getInstance({
 });
 const config = {
     name: 'testTemplate',
+    namespace: 'templateNamespace',   // optional
     version: '1.3',
     description: 'I am a test template',    
     maintainer: 'foo@bar.com',
@@ -785,6 +786,7 @@ factory.create(config).then(model => {
 | :-------------   | :---- | :-------------|  :-------------|
 | config        | Object | Yes | Configuration Object |
 | config.name | String | Yes | The template name |
+| config.namespace | String | No | The template namespace |
 | config.version | String | Yes | Version of the template |
 | config.description | String | Yes | Description of the template |
 | config.maintainer | Array | Yes | Maintainer's email |
@@ -793,9 +795,13 @@ factory.create(config).then(model => {
 | config.labels | Array | No | Labels attached to the template |
 
 #### Get
-Get a template based on id.
+Get a template based on id or other params.
 ```js
 factory.get(id).then(model => {
+    // do stuff with template model
+});
+
+factory.get({ namespace, name }).then(model => {
     // do stuff with template model
 });
 ```
@@ -803,6 +809,9 @@ factory.get(id).then(model => {
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
 | id | Number | The unique ID for the Template |
+| config.namespace | String | Template namespace |
+| config.name | String | Template name (can include namespace) |
+| config.version | String | Template version |
 
 #### Get Template
 Get the latest template by name or get a specific template using name and version or name and tag. The version can be in any valid version format: either major, major.minor, or major.minor.patch. If no version is specified, the function will resolve with the latest version published. If no match is found, the function will resolve null.
@@ -816,6 +825,35 @@ factory.getTemplate(fullTemplateName).then(model => {
 | :-------------   | :----- | :-------------|  :-------------|
 | fullTemplateName | String | Yes | Name of the template and the version or tag (e.g. chef/publish@1.2.3 or chef/publish@latest). Can also be just name of the template (e.g. chef/publish) |
 
+#### Search Template
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.TemplateFactory.getInstance({
+    datastore
+});
+const config = {
+    params: {
+        name: 'chef/publish'
+    },
+    paginate {
+        page: 1,
+        count: 3
+    }
+}
+
+factory.list(config).then(templates => {
+    // Do stuff with list of templates
+});
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Config Object |
+| config.paginate.page | Number | The page for pagination |
+| config.paginate.count | Number | The count for pagination |
+| config.params | Object | fields to search on |
+
 ### Template Tag Model
 ```js
 'use strict';
@@ -825,6 +863,7 @@ const factory = Model.TemplateTagFactory.getInstance({
 });
 const config = {
     name: 'testTemplate',
+    namespace: 'templateNamespace', // optional
     tag: 'stable',
     version: '1.3'
 }
@@ -840,7 +879,7 @@ Update a specific template tag
 // update template version value
 model.version = '2.4';
 
-model.update()
+model.update();
 ```
 
 ### Template Tag Factory
@@ -855,6 +894,7 @@ factory.create(config).then(model => {
 | :-------------   | :---- | :-------------|  :-------------|
 | config        | Object | Yes | Configuration Object |
 | config.name | String | Yes | The template name |
+| config.namespace | String | No | The template namespace |
 | config.tag | String | Yes | The template tag (e.g. stable, latest, etc) |
 | config.version | String | Yes | Version of the template |
 
@@ -864,11 +904,46 @@ Get a template tag based on id.
 factory.get(id).then(model => {
     // do stuff with template model
 });
+
+factory.get({ namespace, name }).then(model => {
+    // do stuff with template model
+});
 ```
 
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
-| id | Number | The unique ID for the Template Tag |
+| id | Number | The unique ID for the Template tag |
+| config.namespace | String | Template namespace |
+| config.name | String | Template name (can include namespace) |
+
+#### Search Template Tags
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.TemplateTagFactory.getInstance({
+    datastore
+});
+const config = {
+    params: {
+        name: 'chef/publish'
+    },
+    paginate {
+        page: 1,
+        count: 3
+    }
+}
+
+factory.list(config).then(templateTags => {
+    // Do stuff with list of templateTags
+});
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| config        | Object | Config Object |
+| config.paginate.page | Number | The page for pagination |
+| config.paginate.count | Number | The count for pagination |
+| config.params | Object | fields to search on |
 
 ### Trigger Model
 ```js
@@ -1272,7 +1347,7 @@ factory.create(config).then(model => {
 | config.createdBy   | String  | Yes      |         | Username of the user creating the banner                  |
 
 #### Get
-Get a banner based on unique id of banner. 
+Get a banner based on unique id of banner.
 ```js
 factory.get(id).then(model => {
     // do stuff with banner model

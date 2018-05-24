@@ -40,19 +40,19 @@
     "eslint": "^4.19.1",
     "eslint-config-screwdriver": "^3.0.0",
     "jenkins-mocha": "^6.0.0",
-    "joi": "^13.0.0",
+    "joi": "^13.3.0",
     "mockery": "^2.0.0",
-    "sinon": "^4.4.6"
+    "sinon": "^4.5.0"
   },
   "dependencies": {
     "async": "^2.0.1",
-    "base64url": "^2.0.0",
-    "compare-versions": "^3.0.0",
+    "base64url": "^3.0.0",
+    "compare-versions": "^3.2.1",
     "docker-parse-image": "^3.0.1",
     "hoek": "^5.0.3",
     "iron": "^5.0.1",
-    "screwdriver-config-parser": "^4.0.0",
-    "screwdriver-data-schema": "^18.13.7",
+    "screwdriver-config-parser": "^4.1.0",
+    "screwdriver-data-schema": "^18.20.1",
     "screwdriver-workflow-parser": "^1.4.1"
   }
 }
