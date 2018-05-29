@@ -94,7 +94,9 @@ describe('Template Factory', () => {
             };
         });
 
-        it('creates a Template with the namespace when it exists', () => {
+        // namespace: namespace
+        // name: testTemplate
+        it('creates a Template with the namespace when it is passed in explicitly', () => {
             expected.version = `${version}.0`;
             expected.namespace = namespace;
             datastore.save.resolves(expected);
@@ -103,6 +105,52 @@ describe('Template Factory', () => {
             return factory.create({
                 name,
                 namespace,
+                version,
+                maintainer,
+                description,
+                labels,
+                config: templateConfig,
+                pipelineId
+            }).then((model) => {
+                assert.instanceOf(model, Template);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
+
+        // name: namespace/testTemplate
+        it('creates a Template with the namespace when it is passed in implicitly', () => {
+            expected.version = `${version}.0`;
+            expected.namespace = namespace;
+            datastore.save.resolves(expected);
+            datastore.scan.resolves([]);
+
+            return factory.create({
+                name: 'namespace/testTemplate',
+                version,
+                maintainer,
+                description,
+                labels,
+                config: templateConfig,
+                pipelineId
+            }).then((model) => {
+                assert.instanceOf(model, Template);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
+
+        // name: testTemplate
+        it('creates a Template with default namespace when no namespace passed in', () => {
+            expected.version = `${version}.0`;
+            expected.namespace = 'default';
+            datastore.save.resolves(expected);
+            datastore.scan.resolves([]);
+
+            return factory.create({
+                name,
                 version,
                 maintainer,
                 description,
