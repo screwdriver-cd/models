@@ -790,6 +790,28 @@ describe('Pipeline Model', () => {
         );
     });
 
+    describe('get branch', () => {
+        it('has an branch getter', () => {
+            pipeline.branch.then((branch) => {
+                assert.equal(branch, 'master');
+            });
+        });
+
+        it('return blank if scmUri is blank', () => {
+            pipeline.scmUri = '';
+            pipeline.branch.then((branch) => {
+                assert.equal(branch, '');
+            });
+        });
+
+        it('return blank if scmUri is invalid', () => {
+            pipeline.scmUri = 'github.com:1234';
+            pipeline.branch.then((branch) => {
+                assert.equal(branch, '');
+            });
+        });
+    });
+
     describe('get jobs', () => {
         it('has a jobs getter', () => {
             const listConfig = {
