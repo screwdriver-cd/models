@@ -25,6 +25,7 @@ describe('Pipeline Model', () => {
     let eventFactoryMock;
     let templateFactoryMock;
     let triggerFactoryMock;
+    let pipelineFactoryMock;
 
     const dateNow = 1111111111;
     const scmUri = 'github.com:12345:master';
@@ -113,13 +114,13 @@ describe('Pipeline Model', () => {
         hashaMock = {
             sha1: sinon.stub()
         };
+        eventFactoryMock = {
+            list: sinon.stub()
+        };
         jobFactoryMock = {
             create: sinon.stub(),
             list: sinon.stub(),
             get: sinon.stub()
-        };
-        eventFactoryMock = {
-            list: sinon.stub()
         };
         userFactoryMock = {
             get: sinon.stub(),
@@ -132,6 +133,10 @@ describe('Pipeline Model', () => {
         };
         triggerFactoryMock = {
             list: sinon.stub(),
+            create: sinon.stub()
+        };
+        pipelineFactoryMock = {
+            get: sinon.stub(),
             create: sinon.stub()
         };
         scmMock = {
@@ -156,6 +161,8 @@ describe('Pipeline Model', () => {
             getInstance: sinon.stub().returns(templateFactoryMock) });
         mockery.registerMock('./triggerFactory', {
             getInstance: sinon.stub().returns(triggerFactoryMock) });
+        mockery.registerMock('./pipelineFactory', {
+            getInstance: sinon.stub().returns(pipelineFactoryMock) });
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('screwdriver-config-parser', parserMock);
 
@@ -1060,7 +1067,7 @@ describe('Pipeline Model', () => {
         );
 
         it('gets pipeline config from an alternate ref', () =>
-            pipeline.getConfiguration('bar')
+            pipeline.getConfiguration({ ref: 'bar' })
                 .then((config) => {
                     assert.equal(config, PARSED_YAML);
                     assert.calledWith(scmMock.getFile, {
@@ -1074,10 +1081,27 @@ describe('Pipeline Model', () => {
                 })
         );
 
+        it('gets pipeline config from an external pipeline', () => {
+            pipeline.configPipelineId = 1;
+
+            return pipeline.getConfiguration({ ref: 'bar' })
+                .then((config) => {
+                    assert.equal(config, PARSED_YAML);
+                    assert.calledWith(scmMock.getFile, {
+                        scmUri,
+                        scmContext,
+                        path: 'screwdriver.yaml',
+                        token: 'foo',
+                        ref: 'bar'
+                    });
+                    assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock);
+                })
+        });
+
         it('converts fetch errors to empty file', () => {
             scmMock.getFile.rejects(new Error('cannotgetit'));
 
-            return pipeline.getConfiguration('foobar')
+            return pipeline.getConfiguration({ ref: 'foobar' })
                 .then((config) => {
                     assert.equal(config, 'DEFAULT_YAML');
                     assert.calledWith(scmMock.getFile, {
