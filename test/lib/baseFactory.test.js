@@ -41,7 +41,7 @@ describe('Base Factory', () => {
             models: {
                 base: {
                     tableName: 'base',
-                    keys: ['foo'],
+                    keys: ['foo', 'bar'],
                     allKeys: ['id', 'foo', 'bar']
                 }
             }
@@ -149,6 +149,13 @@ describe('Base Factory', () => {
                     foo: 'foo'
                 }
             }).resolves(baseData);
+            datastore.get.withArgs({
+                table: 'base',
+                params: {
+                    foo: 'foo',
+                    bar: 'bar'
+                }
+            }).resolves(baseData);
         });
 
         it('calls datastore get with id and returns correct values', () =>
@@ -186,6 +193,17 @@ describe('Base Factory', () => {
                 .then((model) => {
                     assert.instanceOf(model, Base);
                     assert.isTrue(datastore.get.calledOnce);
+                    assert.deepEqual(model.datastore, datastore);
+                    assert.deepEqual(model.scm, scm);
+                })
+        );
+
+        it('calls datastore get with config object with valid values', () =>
+            factory.get({ foo: 'foo' })
+                .then((model) => {
+                    assert.instanceOf(model, Base);
+                    assert.isTrue(datastore.get.calledOnce);
+                    assert.calledWith(datastore.get, { params: { foo: 'foo' }, table: 'base' });
                     assert.deepEqual(model.datastore, datastore);
                     assert.deepEqual(model.scm, scm);
                 })
