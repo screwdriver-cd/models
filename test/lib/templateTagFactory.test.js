@@ -65,6 +65,7 @@ describe('TemplateTag Factory', () => {
     describe('create', () => {
         const generatedId = 1234135;
         let expected;
+        let returnValue;
 
         beforeEach(() => {
             expected = {
@@ -73,12 +74,37 @@ describe('TemplateTag Factory', () => {
                 tag,
                 version
             };
+            returnValue = [{
+                id: generatedId,
+                name,
+                tag,
+                version
+            }];
         });
 
-        // namespace should be default
+        // namespace should be default since a template exists with that name and namespace
         // name: testTemplateTag
-        it('creates a Template Tag given name, tag, and version', () => {
+        it('creates a Template Tag given name, tag, and version and defaults namespace', () => {
             expected.namespace = 'default';
+            datastore.scan.resolves(returnValue);
+            datastore.save.resolves(expected);
+
+            return factory.create({
+                name,
+                tag,
+                version
+            }).then((model) => {
+                assert.instanceOf(model, TemplateTag);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
+
+        // namespace should not be default since a template does not exist with that name and namespace
+        // name: testTemplateTag
+        it('creates a Template Tag given name, tag, and version and no namespace', () => {
+            datastore.scan.resolves([]);
             datastore.save.resolves(expected);
 
             return factory.create({
@@ -254,7 +280,9 @@ describe('TemplateTag Factory', () => {
             };
         });
 
-        it('lists a Template Tag given a name when namespace does not exist', () => {
+        // name: testTemplateTag
+        // Template with default namespace and name exists
+        it('lists a Template Tag given a name when namespace is default', () => {
             datastore.scan.resolves(expected);
 
             return factory.list(config).then((model) => {
@@ -262,6 +290,18 @@ describe('TemplateTag Factory', () => {
             });
         });
 
+        // name: testTemplateTag
+        // Template with default namespace and name does not exist
+        it('lists a Template Tag given a name when namespace does not exist', () => {
+            datastore.scan.onCall(0).resolves([]);
+            datastore.scan.onCall(1).resolves(expected);
+
+            return factory.list(config).then((model) => {
+                assert.instanceOf(model[0], TemplateTag);
+            });
+        });
+
+        // name: namespace/testTemplateTag
         it('lists a Template Tag given a name when namespace exists', () => {
             datastore.scan.resolves(expected);
             config.params.name = fullTemplateName;
