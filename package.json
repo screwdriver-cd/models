@@ -45,7 +45,7 @@
     "sinon": "^4.5.0"
   },
   "dependencies": {
-    "async": "^2.6.1",
+    "async": "^2.0.1",
     "base64url": "^3.0.0",
     "compare-versions": "^3.2.1",
     "docker-parse-image": "^3.0.1",

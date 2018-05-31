@@ -40,7 +40,7 @@ describe('Pipeline Model', () => {
     const scmUri = 'github.com:12345:master';
     const scmContext = 'github:github.com';
     const testId = 123;
-    const admins = { batman: true };
+    const admins = { batman: true, robin: true };
     const paginate = {
         page: 1,
         count: 50
@@ -123,16 +123,17 @@ describe('Pipeline Model', () => {
         hashaMock = {
             sha1: sinon.stub()
         };
-        eventFactoryMock = {
-            list: sinon.stub()
-        };
         jobFactoryMock = {
             create: sinon.stub(),
             list: sinon.stub(),
             get: sinon.stub()
         };
+        eventFactoryMock = {
+            list: sinon.stub()
+        };
         userFactoryMock = {
-            get: sinon.stub()
+            get: sinon.stub(),
+            getPermissions: sinon.stub()
         };
         secretFactoryMock = {
             list: sinon.stub()
@@ -161,7 +162,6 @@ describe('Pipeline Model', () => {
         };
         parserMock = sinon.stub();
 
-        // jobModelFactory = sinon.stub().returns(jobModelMock);
         mockery.registerMock('./jobFactory', {
             getInstance: sinon.stub().returns(jobFactoryMock) });
         mockery.registerMock('./eventFactory', {
@@ -175,10 +175,10 @@ describe('Pipeline Model', () => {
             getInstance: sinon.stub().returns(templateFactoryMock) });
         mockery.registerMock('./triggerFactory', {
             getInstance: sinon.stub().returns(triggerFactoryMock) });
-        mockery.registerMock('./pipelineFactory', {
-            getInstance: sinon.stub().returns(pipelineFactoryMock) });
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('screwdriver-config-parser', parserMock);
+        mockery.registerMock('./pipelineFactory', {
+            getInstance: sinon.stub().returns(pipelineFactoryMock) });
 
         // eslint-disable-next-line global-require
         PipelineModel = require('../../lib/pipeline');
@@ -217,11 +217,21 @@ describe('Pipeline Model', () => {
         });
     });
 
+    const getUserPermissionMocks = (a) => {
+        userFactoryMock.get.withArgs({ username: a.username, scmContext }).resolves({
+            unsealToken: sinon.stub().resolves('foo'),
+            getPermissions: sinon.stub().resolves({
+                push: a.push
+            }),
+            username: a.username
+        });
+    };
+
     describe('addWebhook', () => {
         beforeEach(() => {
-            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
-                unsealToken: sinon.stub().resolves('foo')
-            });
+            getUserPermissionMocks({ username: 'batman', push: true });
+            getUserPermissionMocks({ username: 'robin', push: true });
+            pipeline.admins = { batman: true, robin: true };
         });
 
         it('updates the webhook', () => {
@@ -260,9 +270,9 @@ describe('Pipeline Model', () => {
             scmMock.getFile.resolves('superyamlcontent');
             scmMock.addWebhook.resolves();
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
-            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
-                unsealToken: sinon.stub().resolves('foo')
-            });
+            getUserPermissionMocks({ username: 'batman', push: true });
+            getUserPermissionMocks({ username: 'robin', push: true });
+            pipeline.admins = { batman: true, robin: true };
             triggerFactoryMock.list.resolves([]);
             triggerFactoryMock.create.resolves(null);
 
@@ -572,9 +582,9 @@ describe('Pipeline Model', () => {
             scmMock.getFile.resolves('superyamlcontent');
             scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge' });
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
-            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
-                unsealToken: sinon.stub().resolves('foo')
-            });
+            getUserPermissionMocks({ username: 'batman', push: true });
+            getUserPermissionMocks({ username: 'robin', push: true });
+            pipeline.admins = { batman: true, robin: true };
             prJob = {
                 update: sinon.stub().resolves(null),
                 isPR: sinon.stub().returns(true),
@@ -714,9 +724,9 @@ describe('Pipeline Model', () => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
-            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
-                unsealToken: sinon.stub().resolves('foo')
-            });
+            getUserPermissionMocks({ username: 'batman', push: true });
+            getUserPermissionMocks({ username: 'robin', push: true });
+            pipeline.admins = { batman: true, robin: true };
             prJob = {
                 update: sinon.stub().resolves(null),
                 isPR: sinon.stub().returns(true),
@@ -782,26 +792,61 @@ describe('Pipeline Model', () => {
     });
 
     describe('get admin', () => {
+        beforeEach(() => {
+            userFactoryMock.get.resolves({
+                getPermissions: sinon.stub().resolves({
+                    push: true
+                })
+            });
+        });
+
         it('has an admin getter', () => {
-            userFactoryMock.get.resolves(null);
             // when we fetch a user it resolves to a promise
             assert.isFunction(pipeline.admin.then);
             // and a factory is called to create that promise
-            assert.calledWith(userFactoryMock.get, { username: 'batman', scmContext });
+            assert.called(userFactoryMock.get);
 
             // When we call pipeline.admin again it is still a promise
             assert.isFunction(pipeline.admin.then);
             // ...but the factory was not recreated, since the promise is stored
             // as the model's pipeline property, now
-            assert.calledOnce(userFactoryMock.get);
+            assert.called(userFactoryMock.get);
+        });
+    });
+
+    describe('getFirstAdmin', () => {
+        beforeEach(() => {
+            getUserPermissionMocks({ username: 'batman', push: false });
+            getUserPermissionMocks({ username: 'robin', push: true });
+            pipeline.admins = { batman: true, robin: true };
+        });
+
+        it('has an admin robin', () => {
+            const admin = pipeline.getFirstAdmin();
+
+            return admin.then((realAdmin) => {
+                assert.equal(realAdmin.username, 'robin');
+            });
+        });
+
+        it('has no admin', () => {
+            getUserPermissionMocks({ username: 'batman', push: false });
+            getUserPermissionMocks({ username: 'robin', push: false });
+
+            return pipeline.getFirstAdmin().then(() => {
+                assert.fail('should not get here');
+            }).catch((e) => {
+                assert.isOk(e);
+                assert.equal(e.message, 'Pipeline has no admin');
+            });
         });
     });
 
     describe('get token', () => {
         beforeEach(() => {
-            userFactoryMock.get.resolves({
-                unsealToken: sinon.stub().resolves('foo')
-            });
+            getUserPermissionMocks({ username: 'batman', push: true });
+            getUserPermissionMocks({ username: 'robin', push: true });
+            pipeline.admins = { batman: true, robin: true };
         });
 
         it('has an token getter', () =>
@@ -1016,9 +1061,9 @@ describe('Pipeline Model', () => {
             scmMock.getFile.resolves('superyamlcontent');
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
             parserMock.withArgs('', templateFactoryMock).resolves('DEFAULT_YAML');
-            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
-                unsealToken: sinon.stub().resolves('foo')
-            });
+            getUserPermissionMocks({ username: 'batman', push: true });
+            getUserPermissionMocks({ username: 'robin', push: true });
+            pipeline.admins = { batman: true, robin: true };
         });
 
         it('gets pipeline config', () =>
@@ -1132,7 +1177,10 @@ describe('Pipeline Model', () => {
                 username: 'd2lam',
                 scmContext
             }).resolves({
-                unsealToken: sinon.stub().resolves('foo')
+                unsealToken: sinon.stub().resolves('foo'),
+                getPermissions: sinon.stub().resolves({
+                    push: true
+                })
             });
             datastore.update.resolves({});
 
@@ -1161,7 +1209,10 @@ describe('Pipeline Model', () => {
 
             scmMock.decorateUrl.resolves(scmRepo);
             userFactoryMock.get.withArgs({ username: 'd2lam' }).resolves({
-                unsealToken: sinon.stub().resolves('foo')
+                unsealToken: sinon.stub().resolves('foo'),
+                getPermissions: sinon.stub().resolves({
+                    push: true
+                })
             });
             datastore.update.resolves({});
 
