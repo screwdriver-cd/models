@@ -75,7 +75,10 @@ describe('TemplateTag Factory', () => {
             };
         });
 
+        // namespace should be default
+        // name: testTemplateTag
         it('creates a Template Tag given name, tag, and version', () => {
+            expected.namespace = 'default';
             datastore.save.resolves(expected);
 
             return factory.create({
@@ -90,6 +93,7 @@ describe('TemplateTag Factory', () => {
             });
         });
 
+        // name: namespace/testTemplateTag
         // eslint-disable-next-line max-len
         it('creates a Template Tag given name with namespace, tag, and version and namespace does not exist', () => {
             datastore.save.resolves(expected);
