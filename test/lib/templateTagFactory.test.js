@@ -163,16 +163,20 @@ describe('TemplateTag Factory', () => {
                 version
             }];
             config = {
-                name
+                name,
+                tag
             };
         });
 
-        it('gets a Template Tag given a name when namespace does not exist', () => {
+        it('gets a Template Tag given tag and name without implicit namespace', () => {
             datastore.scan.resolves(returnValue);
             datastore.get.resolves(returnValue);
             expected = Object.assign({}, expected);
 
             return factory.get(config).then((model) => {
+                assert.calledWith(datastore.get, sinon.match({
+                    params: { name, namespace: 'default', tag }
+                }));
                 assert.instanceOf(model, TemplateTag);
                 Object.keys(expected).forEach((key) => {
                     assert.strictEqual(model[key], expected[key]);
@@ -180,13 +184,33 @@ describe('TemplateTag Factory', () => {
             });
         });
 
-        it('gets a Template Tag given a name when namespace exists', () => {
+        it('gets a Template Tag given name and tag with non-existent implicit namespace', () => {
+            datastore.scan.resolves([]);
+            datastore.get.resolves(returnValue);
+            expected = Object.assign({}, expected);
+            config.name = fullTemplateName;
+
+            return factory.get(config).then((model) => {
+                assert.calledWith(datastore.get, sinon.match({
+                    params: { name: fullTemplateName, namespace: null, tag }
+                }));
+                assert.instanceOf(model, TemplateTag);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
+
+        it('gets a Template Tag given tag and name with existent implicit namespace', () => {
             datastore.scan.resolves(returnValue);
             datastore.get.resolves(returnValue);
             expected = Object.assign({}, expected);
             config.name = fullTemplateName;
 
             return factory.get(config).then((model) => {
+                assert.calledWith(datastore.get, sinon.match({
+                    params: { name, namespace, tag }
+                }));
                 assert.instanceOf(model, TemplateTag);
                 Object.keys(expected).forEach((key) => {
                     assert.strictEqual(model[key], expected[key]);
@@ -201,6 +225,9 @@ describe('TemplateTag Factory', () => {
             config.namespace = namespace;
 
             return factory.get(config).then((model) => {
+                assert.calledWith(datastore.get, sinon.match({
+                    params: { name, namespace, tag }
+                }));
                 assert.instanceOf(model, TemplateTag);
                 Object.keys(expected).forEach((key) => {
                     assert.strictEqual(model[key], expected[key]);

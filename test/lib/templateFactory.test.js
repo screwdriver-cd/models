@@ -310,6 +310,9 @@ describe('Template Factory', () => {
             expected = Object.assign({}, returnValue[2]);
 
             return factory.get(config).then((model) => {
+                assert.calledWith(datastore.get, sinon.match({
+                    params: { name: 'testTemplate', namespace, version: '1.0.2' }
+                }));
                 assert.instanceOf(model, Template);
                 Object.keys(expected).forEach((key) => {
                     assert.strictEqual(model[key], expected[key]);
@@ -317,12 +320,33 @@ describe('Template Factory', () => {
             });
         });
 
-        it('should get a template when no namespace is passed in', () => {
+        it('should get template from default namespace when no namespace is passed in', () => {
             datastore.get.resolves(returnValue[3]);
             expected = Object.assign({}, returnValue[3]);
             delete config.namespace;
 
             return factory.get(config).then((model) => {
+                assert.calledWith(datastore.get, sinon.match({
+                    params: { name: 'testTemplate', namespace: 'default', version: '1.0.2' }
+                }));
+                assert.instanceOf(model, Template);
+                Object.keys(expected).forEach((key) => {
+                    assert.strictEqual(model[key], expected[key]);
+                });
+            });
+        });
+
+        it('should get a template with implicit namespace in name', () => {
+            datastore.get.resolves(returnValue[3]);
+            datastore.scan.resolves([]);
+            expected = Object.assign({}, returnValue[3]);
+            delete config.namespace;
+            config.name = 'namespace/testTemplate';
+
+            return factory.get(config).then((model) => {
+                assert.calledWith(datastore.get, sinon.match({
+                    params: { name: 'namespace/testTemplate', namespace: null, version: '1.0.2' }
+                }));
                 assert.instanceOf(model, Template);
                 Object.keys(expected).forEach((key) => {
                     assert.strictEqual(model[key], expected[key]);
