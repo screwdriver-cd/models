@@ -147,14 +147,20 @@ describe('Event Factory', () => {
                         { name: 'main' },
                         { name: 'disabledJob' },
                         { name: 'publish' },
-                        { name: '~sd@123:main' }
+                        { name: '~sd@123:main' },
+                        { name: '~commit:branch' },
+                        { name: '~commit:/^.*$/' }
                     ],
                     edges: [
                         { src: '~sd@123:main', dest: 'main' },
                         { src: '~pr', dest: 'main' },
                         { src: '~commit', dest: 'main' },
                         { src: 'main', dest: 'disabledJob' },
-                        { src: '~pr', dest: 'publish' }
+                        { src: '~pr', dest: 'publish' },
+                        { src: '~commit', dest: 'only-commit' },
+                        { src: '~commit:branch', dest: 'main' },
+                        { src: '~commit:branch', dest: 'only-branch' },
+                        { src: '~commit:/^.*$/', dest: 'wild' }
                     ]
                 },
                 causeMessage: 'Started by github:stjohn',
@@ -177,19 +183,26 @@ describe('Event Factory', () => {
                         { name: 'main' },
                         { name: 'disabledJob' },
                         { name: 'publish' },
-                        { name: '~sd@123:main' }
+                        { name: '~sd@123:main' },
+                        { name: '~commit:branch' },
+                        { name: '~commit:/^.*$/' }
                     ],
                     edges: [
                         { src: '~sd@123:main', dest: 'main' },
                         { src: '~pr', dest: 'main' },
                         { src: '~commit', dest: 'main' },
                         { src: 'main', dest: 'disabledJob' },
-                        { src: '~pr', dest: 'publish' }
+                        { src: '~pr', dest: 'publish' },
+                        { src: '~commit', dest: 'only-commit' },
+                        { src: '~commit:branch', dest: 'main' },
+                        { src: '~commit:branch', dest: 'only-branch' },
+                        { src: '~commit:/^.*$/', dest: 'wild' }
                     ]
                 },
                 getConfiguration: sinon.stub().resolves(PARSED_YAML),
                 update: sinon.stub().resolves(syncedPipelineMock),
-                job: Promise.resolve([])
+                job: Promise.resolve([]),
+                branch: Promise.resolve('branch')
             };
 
             afterSyncedPRPipelineMock = Object.assign({}, syncedPipelineMock);
@@ -197,7 +210,8 @@ describe('Event Factory', () => {
 
             pipelineMock = {
                 sync: sinon.stub().resolves(syncedPipelineMock),
-                update: sinon.stub().resolves(syncedPipelineMock)
+                update: sinon.stub().resolves(syncedPipelineMock),
+                branch: sinon.stub().resolves('branch')
             };
 
             pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
@@ -214,7 +228,7 @@ describe('Event Factory', () => {
                     pipelineId: 8765,
                     name: 'main',
                     permutations: [{
-                        requires: ['~commit', '~pr', '~sd@123:main']
+                        requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch']
                     }],
                     state: 'ENABLED'
                 }, {
@@ -231,6 +245,30 @@ describe('Event Factory', () => {
                     name: 'publish',
                     permutations: [{
                         requires: ['~pr']
+                    }],
+                    state: 'ENABLED'
+                }, {
+                    id: 5,
+                    pipelineId: 8765,
+                    name: 'only-branch',
+                    permutations: [{
+                        requires: ['~commit:branch']
+                    }],
+                    state: 'ENABLED'
+                }, {
+                    id: 6,
+                    pipelineId: 8765,
+                    name: 'only-commit',
+                    permutations: [{
+                        requires: ['~commit']
+                    }],
+                    state: 'ENABLED'
+                }, {
+                    id: 7,
+                    pipelineId: 8765,
+                    name: 'wild',
+                    permutations: [{
+                        requires: ['~commit:/^.*$/']
                     }],
                     state: 'ENABLED'
                 }];
@@ -348,6 +386,60 @@ describe('Event Factory', () => {
                 });
             });
 
+            it('should create ~commit and ~commit:branch triggered builds', () => {
+                config.startFrom = '~commit';
+
+                return eventFactory.create(config).then((model) => {
+                    assert.instanceOf(model, Event);
+                    assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 1
+                    }));
+                    assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 5
+                    }));
+                    assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 6
+                    }));
+                    assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 7
+                    }));
+                });
+            });
+
+            it('should create ~commit:branch triggered builds', () => {
+                config.startFrom = '~commit:branch';
+
+                return eventFactory.create(config).then((model) => {
+                    assert.instanceOf(model, Event);
+                    assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 1
+                    }));
+                    assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 5
+                    }));
+                    assert.neverCalledWith(buildFactoryMock.create, sinon.match({
+                        jobId: 6
+                    }));
+                    assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 7
+                    }));
+                });
+            });
+
             it('should create build if startFrom is a jobName', () => {
                 config.startFrom = 'main';
 
@@ -430,7 +522,8 @@ describe('Event Factory', () => {
                 state: 'ENABLED'
             }];
             syncedPipelineMock.update = sinon.stub().resolves({
-                jobs: Promise.resolve(jobsMock)
+                jobs: Promise.resolve(jobsMock),
+                branch: Promise.resolve('branch')
             });
 
             config.startFrom = 'main';
@@ -457,7 +550,8 @@ describe('Event Factory', () => {
                 state: 'ENABLED'
             }];
             syncedPipelineMock.update = sinon.stub().resolves({
-                jobs: Promise.resolve(jobsMock)
+                jobs: Promise.resolve(jobsMock),
+                branch: Promise.resolve('branch')
             });
 
             config.startFrom = 'main';
@@ -486,7 +580,8 @@ describe('Event Factory', () => {
                 state: 'ENABLED'
             }];
             syncedPipelineMock.update = sinon.stub().resolves({
-                jobs: Promise.resolve(jobsMock)
+                jobs: Promise.resolve(jobsMock),
+                branch: Promise.resolve('branch')
             });
 
             config.startFrom = 'main';
@@ -524,7 +619,8 @@ describe('Event Factory', () => {
                 state: 'ENABLED'
             }];
             afterSyncedPRPipelineMock.update = sinon.stub().resolves({
-                jobs: Promise.resolve(jobsMock)
+                jobs: Promise.resolve(jobsMock),
+                branch: Promise.resolve('branch')
             });
 
             config.webhooks = true;
@@ -559,7 +655,8 @@ describe('Event Factory', () => {
                 state: 'ENABLED'
             }];
             afterSyncedPRPipelineMock.update = sinon.stub().resolves({
-                jobs: Promise.resolve(jobsMock)
+                jobs: Promise.resolve(jobsMock),
+                branch: Promise.resolve('branch')
             });
 
             config.startFrom = '~pr';
