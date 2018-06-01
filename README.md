@@ -825,6 +825,14 @@ factory.getTemplate(fullTemplateName).then(model => {
 | :-------------   | :----- | :-------------|  :-------------|
 | fullTemplateName | String | Yes | Name of the template and the version or tag (e.g. chef/publish@1.2.3 or chef/publish@latest). Can also be just name of the template (e.g. chef/publish) |
 
+#### Get Namespaces
+Get an array of all template namespaces. If no namespaces, the function will resolve with an empty array.
+```js
+factory.getNamespaces().then(model => {
+    // do stuff with template namespaces
+});
+```
+
 #### Search Template
 ```js
 'use strict';
