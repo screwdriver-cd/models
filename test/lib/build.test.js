@@ -22,7 +22,7 @@ describe('Build Model', () => {
     const scmContext = 'github:github.com';
     const token = 'equivalentToOneQuarter';
     const url = `${uiUri}/pipelines/${pipelineId}/builds/${buildId}`;
-    const TEMPORAL_JWT_TIMEOUT = 12 * 60 * 60;
+    const TEMPORAL_JWT_TIMEOUT = 12 * 60;
     let BuildModel;
     let datastore;
     let executorMock;
