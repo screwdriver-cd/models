@@ -490,7 +490,7 @@ describe('Build Model', () => {
                     annotations,
                     blockedBy: [
                         `~sd@${externalPid1}:externalJob1`,
-                        internalJob.name,
+                        `~${internalJob.name}`,
                         `~sd@${externalPid2}:externalJob2`
                     ]
                 }],
