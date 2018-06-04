@@ -666,6 +666,27 @@ describe('Pipeline Model', () => {
                     assert.notCalled(pipelineFactoryMock.update);
                 });
         });
+
+        it('Remove child pipeline and reset scmUrls if it is removed from new yaml', () => {
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true });
+            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
+                checkoutUrl: 'bar.git'
+            })).resolves('bar');
+            childPipelineMock.configPipelineId = 456;
+            pipelineFactoryMock.get.resolves(childPipelineMock);
+            pipeline.scmUrls = [
+                'bar.git'
+            ];
+
+            return pipeline.sync()
+                .then((p) => {
+                    assert.equal(p.id, testId);
+                    assert.equal(p.scmUrls, null);
+                    assert.calledOnce(childPipelineMock.remove);
+                });
+        });
     });
 
     describe('syncPR', () => {

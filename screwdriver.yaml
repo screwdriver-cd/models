@@ -3,6 +3,8 @@ shared:
 
 jobs:
     main:
+        environment:
+            SD_SONAR_OPTS: "-Dsonar.sources=lib -Dsonar.javascript.lcov.reportPath=artifacts/coverage/lcov.info"
         requires: [~pr, ~commit]
         steps:
             - install: npm install
@@ -10,7 +12,7 @@ jobs:
 
     publish:
         requires: main
-        template: screwdriver-cd/semantic-release 
+        template: screwdriver-cd/semantic-release
         secrets:
             # Publishing to NPM
             - NPM_TOKEN
