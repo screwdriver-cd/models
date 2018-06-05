@@ -10,6 +10,13 @@ sinon.assert.expose(assert, { prefix: '' });
 const PARSED_YAML = require('../data/parser');
 const PARSED_YAML_WITH_REQUIRES = require('../data/parserWithRequires');
 const PARSED_YAML_PR = require('../data/parserWithWorkflowGraphPR');
+const SCM_URLS = [
+    'foo.git'
+];
+const EXTERNAL_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML, {
+    annotations: { 'beta.screwdriver.cd/executor': 'screwdriver-executor-k8s' },
+    scmUrls: SCM_URLS
+});
 
 describe('Pipeline Model', () => {
     let PipelineModel;
@@ -25,6 +32,9 @@ describe('Pipeline Model', () => {
     let eventFactoryMock;
     let templateFactoryMock;
     let triggerFactoryMock;
+    let pipelineFactoryMock;
+    let configPipelineMock;
+    let childPipelineMock;
 
     const dateNow = 1111111111;
     const scmUri = 'github.com:12345:master';
@@ -49,6 +59,7 @@ describe('Pipeline Model', () => {
         decorated.isPR = sinon.stub().returns(false);
         decorated.prNum = null;
         decorated.remove = sinon.stub().resolves(null);
+        decorated.update = sinon.stub().resolves(job);
 
         return decorated;
     };
@@ -71,7 +82,7 @@ describe('Pipeline Model', () => {
     beforeEach(() => {
         publishJob = getJobMocks({
             id: 99999,
-            me: 'publish',
+            name: 'publish',
             archived: false
         });
 
@@ -134,6 +145,29 @@ describe('Pipeline Model', () => {
             list: sinon.stub(),
             create: sinon.stub()
         };
+        configPipelineMock = {
+            id: 1,
+            scmUrls: SCM_URLS,
+            getConfiguration: sinon.stub().resolves(EXTERNAL_PARSED_YAML),
+            update: sinon.stub().resolves(null),
+            remove: sinon.stub().resolves(null)
+        };
+        childPipelineMock = {
+            id: 2,
+            scmUrls: SCM_URLS,
+            configPipelineId: testId,
+            update: sinon.stub().resolves(null),
+            remove: sinon.stub().resolves(null)
+        };
+        pipelineFactoryMock = {
+            get: sinon.stub().resolves(configPipelineMock),
+            update: sinon.stub().resolves(null),
+            create: sinon.stub(),
+            list: sinon.stub().resolves([]),
+            scm: {
+                parseUrl: sinon.stub()
+            }
+        };
         scmMock = {
             addWebhook: sinon.stub(),
             getFile: sinon.stub(),
@@ -158,6 +192,8 @@ describe('Pipeline Model', () => {
             getInstance: sinon.stub().returns(triggerFactoryMock) });
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('screwdriver-config-parser', parserMock);
+        mockery.registerMock('./pipelineFactory', {
+            getInstance: sinon.stub().returns(pipelineFactoryMock) });
 
         // eslint-disable-next-line global-require
         PipelineModel = require('../../lib/pipeline');
@@ -200,7 +236,8 @@ describe('Pipeline Model', () => {
         userFactoryMock.get.withArgs({ username: a.username, scmContext }).resolves({
             unsealToken: sinon.stub().resolves('foo'),
             getPermissions: sinon.stub().resolves({
-                push: a.push
+                push: a.push,
+                admin: a.admin
             }),
             username: a.username
         });
@@ -249,6 +286,8 @@ describe('Pipeline Model', () => {
             scmMock.getFile.resolves('superyamlcontent');
             scmMock.addWebhook.resolves();
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
+            parserMock.withArgs('yamlcontentwithscmurls', templateFactoryMock)
+                .resolves(EXTERNAL_PARSED_YAML);
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
             pipeline.admins = { batman: true, robin: true };
@@ -549,6 +588,103 @@ describe('Pipeline Model', () => {
             return pipeline.sync()
                 .catch((err) => {
                     assert.deepEqual(err, error);
+                });
+        });
+
+        it('Sync child pipeline if detects changes in scmUrls', () => {
+            const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
+
+            parsedYaml.scmUrls = [
+                'foo.git',
+                'bar.git'
+            ];
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true });
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            parserMock.withArgs('yamlcontentwithscmurls', templateFactoryMock)
+                .resolves(parsedYaml);
+            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
+                checkoutUrl: 'foo.git'
+            })).resolves('foo');
+            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
+                checkoutUrl: 'bar.git'
+            })).resolves('bar');
+            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
+                checkoutUrl: 'baz.git'
+            })).resolves('baz');
+            pipelineFactoryMock.get.resolves(childPipelineMock);
+            pipelineFactoryMock.get.withArgs({ scmUri: 'bar' }).resolves(null);
+            pipeline.scmUrls = [
+                'baz.git'
+            ];
+
+            return pipeline.sync()
+                .then((p) => {
+                    assert.equal(p.id, testId);
+                    assert.deepEqual(p.scmUrls, [
+                        'foo.git',
+                        'bar.git'
+                    ]);
+                    assert.calledWith(parserMock, 'yamlcontentwithscmurls', templateFactoryMock);
+                    assert.calledOnce(pipelineFactoryMock.create);
+                    assert.calledOnce(childPipelineMock.update);
+                    assert.calledOnce(childPipelineMock.remove);
+                });
+        });
+
+        it('Do not sync child pipelines if no admin permissions', () => {
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
+                checkoutUrl: 'foo.git'
+            })).resolves('foo');
+            pipelineFactoryMock.get.resolves(null);
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+
+            return pipeline.sync()
+                .then((p) => {
+                    assert.equal(p.id, testId);
+                    assert.notCalled(pipelineFactoryMock.create);
+                });
+        });
+
+        it('Do not update child pipelines if not belong to this parent', () => {
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true });
+            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
+                checkoutUrl: 'bar.git'
+            })).resolves('bar');
+            childPipelineMock.configPipelineId = 456;
+            pipelineFactoryMock.get.resolves(childPipelineMock);
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+
+            return pipeline.sync()
+                .then((p) => {
+                    assert.equal(p.id, testId);
+                    assert.notCalled(pipelineFactoryMock.update);
+                });
+        });
+
+        it('Remove child pipeline and reset scmUrls if it is removed from new yaml', () => {
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true });
+            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
+                checkoutUrl: 'bar.git'
+            })).resolves('bar');
+            childPipelineMock.configPipelineId = 456;
+            pipelineFactoryMock.get.resolves(childPipelineMock);
+            pipeline.scmUrls = [
+                'bar.git'
+            ];
+
+            return pipeline.sync()
+                .then((p) => {
+                    assert.equal(p.id, testId);
+                    assert.equal(p.scmUrls, null);
+                    assert.calledOnce(childPipelineMock.remove);
                 });
         });
     });
@@ -1060,7 +1196,7 @@ describe('Pipeline Model', () => {
         );
 
         it('gets pipeline config from an alternate ref', () =>
-            pipeline.getConfiguration('bar')
+            pipeline.getConfiguration({ ref: 'bar' })
                 .then((config) => {
                     assert.equal(config, PARSED_YAML);
                     assert.calledWith(scmMock.getFile, {
@@ -1074,10 +1210,47 @@ describe('Pipeline Model', () => {
                 })
         );
 
+        it('gets config from external config pipeline', () => {
+            pipeline.configPipelineId = 1;
+
+            return pipeline.getConfiguration()
+                .then((config) => {
+                    assert.calledWith(configPipelineMock.getConfiguration, { ref: undefined });
+                    assert.equal(config, EXTERNAL_PARSED_YAML);
+                });
+        });
+
+        it('gets config from external config pipeline with an alternate ref', () => {
+            pipeline.configPipelineId = 1;
+
+            return pipeline.getConfiguration({
+                ref: 'bar'
+            })
+                .then((config) => {
+                    assert.calledWith(configPipelineMock.getConfiguration, {
+                        ref: 'bar'
+                    });
+                    assert.equal(config, EXTERNAL_PARSED_YAML);
+                });
+        });
+
+        it('Do not pass PR ref when get config from external pipeline', () => {
+            pipeline.configPipelineId = 1;
+
+            return pipeline.getConfiguration({
+                ref: 'pull/1/ref',
+                isPR: true
+            })
+                .then((config) => {
+                    assert.calledWith(configPipelineMock.getConfiguration, {});
+                    assert.equal(config, EXTERNAL_PARSED_YAML);
+                });
+        });
+
         it('converts fetch errors to empty file', () => {
             scmMock.getFile.rejects(new Error('cannotgetit'));
 
-            return pipeline.getConfiguration('foobar')
+            return pipeline.getConfiguration({ ref: 'foobar' })
                 .then((config) => {
                     assert.equal(config, 'DEFAULT_YAML');
                     assert.calledWith(scmMock.getFile, {
@@ -1300,6 +1473,18 @@ describe('Pipeline Model', () => {
 
                 // Delete all the events
                 assert.callCount(testEvent.remove, 6);
+
+                // Delete the pipeline
+                assert.calledOnce(datastore.remove);
+            });
+        });
+
+        it('remove child pipelines', () => {
+            pipelineFactoryMock.list.resolves([childPipelineMock, childPipelineMock]);
+
+            return pipeline.remove().then(() => {
+                // Delete all the child pipelines
+                assert.callCount(childPipelineMock.remove, 2);
 
                 // Delete the pipeline
                 assert.calledOnce(datastore.remove);

@@ -32,7 +32,10 @@ describe('Event Factory', () => {
             save: sinon.stub()
         };
         pipelineFactoryMock = {
-            get: sinon.stub()
+            get: sinon.stub(),
+            scm: {
+                getCommitSha: sinon.stub().resolves('configpipelinesha')
+            }
         };
         buildFactoryMock = {
             create: sinon.stub()
@@ -509,6 +512,30 @@ describe('Event Factory', () => {
                 });
             })
         );
+
+        it('should call pipeline sync with configPipelineSha if passed in', () => {
+            config.parentEventId = 222;
+            config.configPipelineSha = 'configpipelinesha';
+
+            return eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.calledWith(pipelineMock.sync, config.configPipelineSha);
+            });
+        });
+
+        it('should create event with config pipeline sha if it is child pipeline', () => {
+            pipelineMock.configPipelineId = 1;
+            pipelineFactoryMock.get.withArgs(1).resolves({
+                id: 1,
+                token: Promise.resolve('token')
+            });
+
+            return eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.deepEqual(model.configPipelineSha, 'configpipelinesha');
+                assert.calledWith(pipelineMock.sync, 'configpipelinesha');
+            });
+        });
 
         it('throw error if sourcepaths is not supported', () => {
             jobsMock = [{
