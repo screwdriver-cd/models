@@ -22,6 +22,7 @@ describe('Build Model', () => {
     const scmContext = 'github:github.com';
     const token = 'equivalentToOneQuarter';
     const url = `${uiUri}/pipelines/${pipelineId}/builds/${buildId}`;
+    const TEMPORAL_JWT_TIMEOUT = 12 * 60;
     let BuildModel;
     let datastore;
     let executorMock;
@@ -376,7 +377,7 @@ describe('Build Model', () => {
                         isPR: false,
                         jobId,
                         pipelineId
-                    });
+                    }, scmContext, TEMPORAL_JWT_TIMEOUT);
 
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
@@ -541,7 +542,7 @@ describe('Build Model', () => {
                         isPR: false,
                         jobId,
                         pipelineId
-                    });
+                    }, scmContext, TEMPORAL_JWT_TIMEOUT);
 
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
