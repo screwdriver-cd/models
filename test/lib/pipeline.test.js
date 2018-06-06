@@ -1046,46 +1046,57 @@ describe('Pipeline Model', () => {
 
             const childPipeline = new PipelineModel(pipelineConfig);
 
+            const childPipelineSecrets = [
+                {
+                    name: 'TEST',
+                    value: 'child test value',
+                    allowInPR: true,
+                    pipelineId: childPipeline.id
+                }
+            ];
             const configPipelineSecrets = [
                 {
                     name: 'TEST',
-                    value: 'testvalue',
+                    value: 'config test value',
                     allowInPR: true,
                     pipelineId: pipeline.id
                 },
                 {
                     name: 'ANOTHER',
-                    value: 'anothervalue',
-                    allowInPR: true,
-                    pipelineId: pipeline.id
-                }
-            ];
-            const childPipelineSecrets = [
-                {
-                    name: 'TEST',
-                    value: 'SHOULD OVERRIDE',
+                    value: 'another value',
                     allowInPR: true,
                     pipelineId: pipeline.id
                 }
             ];
 
-            const listConfig = {
+            const childPipelineListConfig = {
                 params: {
                     pipelineId: childPipeline.id
                 },
                 paginate
             };
+            const configPipelineListConfig = {
+                params: {
+                    pipelineId: pipeline.id
+                },
+                paginate
+            };
 
-            secretFactoryMock.list.resolves([
-                [childPipelineSecrets],
-                [configPipelineSecrets]
-            ]);
-            // when we fetch secrets it resolves to a promise
-            assert.isFunction(childPipeline.secrets.then);
-            // and a factory is called to create that promise
-            assert.calledWith(secretFactoryMock.list, listConfig);
-            // Both the configPipeline and childPipeline secrets are fetched
-            assert.calledTwice(secretFactoryMock.list);
+            secretFactoryMock.list.onCall(0).resolves(childPipelineSecrets);
+            secretFactoryMock.list.onCall(1).resolves(configPipelineSecrets);
+
+            return childPipeline.secrets.then((secrets) => {
+                // Both the configPipeline and childPipeline secrets are fetched
+                assert.calledTwice(secretFactoryMock.list);
+                assert.calledWith(secretFactoryMock.list, childPipelineListConfig);
+                assert.calledWith(secretFactoryMock.list, configPipelineListConfig);
+                // There should only be 2 secrets since both pipelines have a secret named 'TEST'
+                assert.strictEqual(secrets.length, 2);
+                // The 'TEST' secret should match that of the child pipeline
+                assert.deepEqual(secrets[0], childPipelineSecrets[0]);
+                // The secrets array should contain the config pipeline's 'ANOTHER' secret
+                assert.deepEqual(secrets[1], configPipelineSecrets[1]);
+            });
         });
     });
 
