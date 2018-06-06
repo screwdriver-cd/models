@@ -1037,6 +1037,56 @@ describe('Pipeline Model', () => {
             // as the model's pipeline property, now
             assert.calledOnce(secretFactoryMock.list);
         });
+
+        it('gets config pipeline\'s secrets', () => {
+            const childPipelineId = 1234;
+
+            pipelineConfig.id = childPipelineId;
+            pipelineConfig.configPipelineId = pipeline.id;
+
+            const childPipeline = new PipelineModel(pipelineConfig);
+
+            const configPipelineSecrets = [
+                {
+                    name: 'TEST',
+                    value: 'testvalue',
+                    allowInPR: true,
+                    pipelineId: pipeline.id
+                },
+                {
+                    name: 'ANOTHER',
+                    value: 'anothervalue',
+                    allowInPR: true,
+                    pipelineId: pipeline.id
+                }
+            ];
+            const childPipelineSecrets = [
+                {
+                    name: 'TEST',
+                    value: 'SHOULD OVERRIDE',
+                    allowInPR: true,
+                    pipelineId: pipeline.id
+                }
+            ];
+
+            const listConfig = {
+                params: {
+                    pipelineId: childPipeline.id
+                },
+                paginate
+            };
+
+            secretFactoryMock.list.resolves([
+                [childPipelineSecrets],
+                [configPipelineSecrets]
+            ]);
+            // when we fetch secrets it resolves to a promise
+            assert.isFunction(childPipeline.secrets.then);
+            // and a factory is called to create that promise
+            assert.calledWith(secretFactoryMock.list, listConfig);
+            // Both the configPipeline and childPipeline secrets are fetched
+            assert.calledTwice(secretFactoryMock.list);
+        });
     });
 
     describe('get jobs', () => {
