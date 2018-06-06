@@ -608,4 +608,67 @@ describe('Template Factory', () => {
             });
         });
     });
+
+    describe('getNamespaces', () => {
+        let allTemplates;
+
+        beforeEach(() => {
+            allTemplates = [
+                {
+                    id: '1',
+                    namespace: 'namespaceOne',
+                    name: 'testTemplateName',
+                    version: '1.0.1'
+                },
+                {
+                    id: '3',
+                    namespace: 'namespaceTwo',
+                    name: 'testTemplateName',
+                    version: '1.0.3'
+                },
+                {
+                    id: '2',
+                    namespace: 'namespaceThree',
+                    name: 'testTemplateName',
+                    version: '1.0.2'
+                },
+                {
+                    id: '4',
+                    namespace: 'namespaceFour',
+                    name: 'testTemplateName',
+                    version: '2.0.1'
+                },
+                {
+                    id: '5',
+                    namespace: 'namespaceDuplicate',
+                    name: 'testTemplateName',
+                    version: '2.0.1'
+                },
+                {
+                    id: '6',
+                    namespace: 'namespaceDuplicate',
+                    name: 'testTemplateName',
+                    version: '2.0.2'
+                }
+            ];
+        });
+
+        it('should return empty array if no namespaces found', () => {
+            datastore.scan.onCall(0).resolves([]);
+
+            return factory.getNamespaces().then((namespaces) => {
+                assert.isArray(namespaces);
+                assert.lengthOf(namespaces, 0);
+            });
+        });
+
+        it('should return all unique namespaces', () => {
+            datastore.scan.onCall(0).resolves(allTemplates);
+
+            return factory.getNamespaces().then((namespaces) => {
+                assert.isArray(namespaces);
+                assert.lengthOf(namespaces, 5);
+            });
+        });
+    });
 });
