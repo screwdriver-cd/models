@@ -40,7 +40,7 @@
     "eslint": "^4.19.1",
     "eslint-config-screwdriver": "^3.0.0",
     "jenkins-mocha": "^6.0.0",
-    "joi": "^13.3.0",
+    "joi": "^13.4.0",
     "mockery": "^2.0.0",
     "sinon": "^4.5.0"
   },
@@ -52,8 +52,8 @@
     "hoek": "^5.0.3",
     "iron": "^5.0.1",
     "lodash": "^4.17.10",
-    "screwdriver-config-parser": "^4.1.0",
-    "screwdriver-data-schema": "^18.21.2",
+    "screwdriver-config-parser": "^4.2.1",
+    "screwdriver-data-schema": "^18.24.2",
     "screwdriver-workflow-parser": "^1.4.1"
   }
 }
