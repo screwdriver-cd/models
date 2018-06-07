@@ -1037,6 +1037,67 @@ describe('Pipeline Model', () => {
             // as the model's pipeline property, now
             assert.calledOnce(secretFactoryMock.list);
         });
+
+        it('gets config pipeline\'s secrets', () => {
+            const childPipelineId = 1234;
+
+            pipelineConfig.id = childPipelineId;
+            pipelineConfig.configPipelineId = pipeline.id;
+
+            const childPipeline = new PipelineModel(pipelineConfig);
+
+            const childPipelineSecrets = [
+                {
+                    name: 'TEST',
+                    value: 'child test value',
+                    allowInPR: true,
+                    pipelineId: childPipeline.id
+                }
+            ];
+            const configPipelineSecrets = [
+                {
+                    name: 'TEST',
+                    value: 'config test value',
+                    allowInPR: true,
+                    pipelineId: pipeline.id
+                },
+                {
+                    name: 'ANOTHER',
+                    value: 'another value',
+                    allowInPR: true,
+                    pipelineId: pipeline.id
+                }
+            ];
+
+            const childPipelineListConfig = {
+                params: {
+                    pipelineId: childPipeline.id
+                },
+                paginate
+            };
+            const configPipelineListConfig = {
+                params: {
+                    pipelineId: pipeline.id
+                },
+                paginate
+            };
+
+            secretFactoryMock.list.onCall(0).resolves(childPipelineSecrets);
+            secretFactoryMock.list.onCall(1).resolves(configPipelineSecrets);
+
+            return childPipeline.secrets.then((secrets) => {
+                // Both the configPipeline and childPipeline secrets are fetched
+                assert.calledTwice(secretFactoryMock.list);
+                assert.calledWith(secretFactoryMock.list, childPipelineListConfig);
+                assert.calledWith(secretFactoryMock.list, configPipelineListConfig);
+                // There should only be 2 secrets since both pipelines have a secret named 'TEST'
+                assert.strictEqual(secrets.length, 2);
+                // The 'TEST' secret should match that of the child pipeline
+                assert.deepEqual(secrets[0], childPipelineSecrets[0]);
+                // The secrets array should contain the config pipeline's 'ANOTHER' secret
+                assert.deepEqual(secrets[1], configPipelineSecrets[1]);
+            });
+        });
     });
 
     describe('get jobs', () => {
