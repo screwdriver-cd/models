@@ -15,7 +15,9 @@ const SCM_URLS = [
 ];
 const EXTERNAL_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML, {
     annotations: { 'beta.screwdriver.cd/executor': 'screwdriver-executor-k8s' },
-    scmUrls: SCM_URLS
+    childPipelines: {
+        scmUrls: SCM_URLS
+    }
 });
 
 describe('Pipeline Model', () => {
@@ -147,14 +149,18 @@ describe('Pipeline Model', () => {
         };
         configPipelineMock = {
             id: 1,
-            scmUrls: SCM_URLS,
+            childPipelines: {
+                scmUrls: SCM_URLS
+            },
             getConfiguration: sinon.stub().resolves(EXTERNAL_PARSED_YAML),
             update: sinon.stub().resolves(null),
             remove: sinon.stub().resolves(null)
         };
         childPipelineMock = {
             id: 2,
-            scmUrls: SCM_URLS,
+            childPipelines: {
+                scmUrls: SCM_URLS
+            },
             configPipelineId: testId,
             update: sinon.stub().resolves(null),
             remove: sinon.stub().resolves(null)
@@ -594,10 +600,12 @@ describe('Pipeline Model', () => {
         it('Sync child pipeline if detects changes in scmUrls', () => {
             const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
 
-            parsedYaml.scmUrls = [
-                'foo.git',
-                'bar.git'
-            ];
+            parsedYaml.childPipelines = {
+                scmUrls: [
+                    'foo.git',
+                    'bar.git'
+                ]
+            };
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
@@ -615,14 +623,16 @@ describe('Pipeline Model', () => {
             })).resolves('baz');
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipelineFactoryMock.get.withArgs({ scmUri: 'bar' }).resolves(null);
-            pipeline.scmUrls = [
-                'baz.git'
-            ];
+            pipeline.childPipelines = {
+                scmUrls: [
+                    'baz.git'
+                ]
+            };
 
             return pipeline.sync()
                 .then((p) => {
                     assert.equal(p.id, testId);
-                    assert.deepEqual(p.scmUrls, [
+                    assert.deepEqual(p.childPipelines.scmUrls, [
                         'foo.git',
                         'bar.git'
                     ]);
@@ -676,14 +686,16 @@ describe('Pipeline Model', () => {
             })).resolves('bar');
             childPipelineMock.configPipelineId = 456;
             pipelineFactoryMock.get.resolves(childPipelineMock);
-            pipeline.scmUrls = [
-                'bar.git'
-            ];
+            pipeline.childPipelines = {
+                scmUrls: [
+                    'bar.git'
+                ]
+            };
 
             return pipeline.sync()
                 .then((p) => {
                     assert.equal(p.id, testId);
-                    assert.equal(p.scmUrls, null);
+                    assert.equal(p.childPipelines, null);
                     assert.calledOnce(childPipelineMock.remove);
                 });
         });
