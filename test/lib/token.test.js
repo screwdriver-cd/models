@@ -45,7 +45,6 @@ describe('Token Model', () => {
             userId: 12345,
             hash: '1a2b3c',
             id: 6789,
-            pipelineId: 123,
             name: 'Mobile client auth token',
             description: 'For the mobile app',
             lastUsed: '2017-05-10T01:49:59.327Z',
@@ -108,7 +107,6 @@ describe('Token Model', () => {
         const expected = {
             userId: 12345,
             id: 6789,
-            pipelineId: 123,
             name: 'Mobile client auth token',
             description: 'For the mobile app',
             lastUsed: '2017-05-10T01:49:59.327Z'
