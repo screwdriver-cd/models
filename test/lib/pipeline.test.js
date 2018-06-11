@@ -15,7 +15,9 @@ const SCM_URLS = [
 ];
 const EXTERNAL_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML, {
     annotations: { 'beta.screwdriver.cd/executor': 'screwdriver-executor-k8s' },
-    scmUrls: SCM_URLS
+    childPipelines: {
+        scmUrls: SCM_URLS
+    }
 });
 
 describe('Pipeline Model', () => {
@@ -147,14 +149,18 @@ describe('Pipeline Model', () => {
         };
         configPipelineMock = {
             id: 1,
-            scmUrls: SCM_URLS,
+            childPipelines: {
+                scmUrls: SCM_URLS
+            },
             getConfiguration: sinon.stub().resolves(EXTERNAL_PARSED_YAML),
             update: sinon.stub().resolves(null),
             remove: sinon.stub().resolves(null)
         };
         childPipelineMock = {
             id: 2,
-            scmUrls: SCM_URLS,
+            childPipelines: {
+                scmUrls: SCM_URLS
+            },
             configPipelineId: testId,
             update: sinon.stub().resolves(null),
             remove: sinon.stub().resolves(null)
@@ -594,10 +600,12 @@ describe('Pipeline Model', () => {
         it('Sync child pipeline if detects changes in scmUrls', () => {
             const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
 
-            parsedYaml.scmUrls = [
-                'foo.git',
-                'bar.git'
-            ];
+            parsedYaml.childPipelines = {
+                scmUrls: [
+                    'foo.git',
+                    'bar.git'
+                ]
+            };
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
@@ -615,14 +623,16 @@ describe('Pipeline Model', () => {
             })).resolves('baz');
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipelineFactoryMock.get.withArgs({ scmUri: 'bar' }).resolves(null);
-            pipeline.scmUrls = [
-                'baz.git'
-            ];
+            pipeline.childPipelines = {
+                scmUrls: [
+                    'baz.git'
+                ]
+            };
 
             return pipeline.sync()
                 .then((p) => {
                     assert.equal(p.id, testId);
-                    assert.deepEqual(p.scmUrls, [
+                    assert.deepEqual(p.childPipelines.scmUrls, [
                         'foo.git',
                         'bar.git'
                     ]);
@@ -676,14 +686,16 @@ describe('Pipeline Model', () => {
             })).resolves('bar');
             childPipelineMock.configPipelineId = 456;
             pipelineFactoryMock.get.resolves(childPipelineMock);
-            pipeline.scmUrls = [
-                'bar.git'
-            ];
+            pipeline.childPipelines = {
+                scmUrls: [
+                    'bar.git'
+                ]
+            };
 
             return pipeline.sync()
                 .then((p) => {
                     assert.equal(p.id, testId);
-                    assert.equal(p.scmUrls, null);
+                    assert.equal(p.childPipelines, null);
                     assert.calledOnce(childPipelineMock.remove);
                 });
         });
@@ -1036,6 +1048,67 @@ describe('Pipeline Model', () => {
             // ...but the factory was not recreated, since the promise is stored
             // as the model's pipeline property, now
             assert.calledOnce(secretFactoryMock.list);
+        });
+
+        it('gets config pipeline\'s secrets', () => {
+            const childPipelineId = 1234;
+
+            pipelineConfig.id = childPipelineId;
+            pipelineConfig.configPipelineId = pipeline.id;
+
+            const childPipeline = new PipelineModel(pipelineConfig);
+
+            const childPipelineSecrets = [
+                {
+                    name: 'TEST',
+                    value: 'child test value',
+                    allowInPR: true,
+                    pipelineId: childPipeline.id
+                }
+            ];
+            const configPipelineSecrets = [
+                {
+                    name: 'TEST',
+                    value: 'config test value',
+                    allowInPR: true,
+                    pipelineId: pipeline.id
+                },
+                {
+                    name: 'ANOTHER',
+                    value: 'another value',
+                    allowInPR: true,
+                    pipelineId: pipeline.id
+                }
+            ];
+
+            const childPipelineListConfig = {
+                params: {
+                    pipelineId: childPipeline.id
+                },
+                paginate
+            };
+            const configPipelineListConfig = {
+                params: {
+                    pipelineId: pipeline.id
+                },
+                paginate
+            };
+
+            secretFactoryMock.list.onCall(0).resolves(childPipelineSecrets);
+            secretFactoryMock.list.onCall(1).resolves(configPipelineSecrets);
+
+            return childPipeline.secrets.then((secrets) => {
+                // Both the configPipeline and childPipeline secrets are fetched
+                assert.calledTwice(secretFactoryMock.list);
+                assert.calledWith(secretFactoryMock.list, childPipelineListConfig);
+                assert.calledWith(secretFactoryMock.list, configPipelineListConfig);
+                // There should only be 2 secrets since both pipelines have a secret named 'TEST'
+                assert.strictEqual(secrets.length, 2);
+                // The 'TEST' secret should match that of the child pipeline
+                assert.deepEqual(secrets[0], childPipelineSecrets[0]);
+                // The secrets array should contain the config pipeline's 'ANOTHER' secret
+                assert.deepEqual(secrets[1], configPipelineSecrets[1]);
+            });
         });
     });
 
