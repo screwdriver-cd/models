@@ -254,6 +254,7 @@ describe('Pipeline Model', () => {
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
             pipeline.admins = { batman: true, robin: true };
+            pipeline.update = sinon.stub().resolves('foo');
         });
 
         it('updates the webhook', () => {
@@ -946,6 +947,7 @@ describe('Pipeline Model', () => {
             getUserPermissionMocks({ username: 'batman', push: false });
             getUserPermissionMocks({ username: 'robin', push: true });
             pipeline.admins = { batman: true, robin: true };
+            pipeline.update = sinon.stub().resolves('foo');
         });
 
         it('has an admin robin', () => {
@@ -974,6 +976,7 @@ describe('Pipeline Model', () => {
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
             pipeline.admins = { batman: true, robin: true };
+            pipeline.update = sinon.stub().resolves('foo');
         });
 
         it('has an token getter', () =>
@@ -1274,6 +1277,7 @@ describe('Pipeline Model', () => {
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
             pipeline.admins = { batman: true, robin: true };
+            pipeline.update = sinon.stub().resolves('foo');
         });
 
         it('gets pipeline config', () =>
