@@ -149,6 +149,15 @@ model.getEvents(config)
 | config.type | Number | No | `pipeline` | Type of event: `pipeline` or `pr` |
 | config.sort | Number | No | `descending`| Sorting by createTime |
 
+#### Tokens
+Get the pipeline's access tokens
+```js
+model.tokens
+    .then((tokens) => {
+        // do stuff with tokens
+    });
+```
+
 ### Job Factory
 #### Search
 ```js
