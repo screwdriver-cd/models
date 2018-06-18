@@ -35,6 +35,7 @@ describe('Pipeline Model', () => {
     let templateFactoryMock;
     let triggerFactoryMock;
     let pipelineFactoryMock;
+    let tokenFactoryMock;
     let configPipelineMock;
     let childPipelineMock;
 
@@ -174,6 +175,9 @@ describe('Pipeline Model', () => {
                 parseUrl: sinon.stub()
             }
         };
+        tokenFactoryMock = {
+            list: sinon.stub()
+        };
         scmMock = {
             addWebhook: sinon.stub(),
             getFile: sinon.stub(),
@@ -200,6 +204,8 @@ describe('Pipeline Model', () => {
         mockery.registerMock('screwdriver-config-parser', parserMock);
         mockery.registerMock('./pipelineFactory', {
             getInstance: sinon.stub().returns(pipelineFactoryMock) });
+        mockery.registerMock('./tokenFactory', {
+            getInstance: sinon.stub().returns(tokenFactoryMock) });
 
         // eslint-disable-next-line global-require
         PipelineModel = require('../../lib/pipeline');
@@ -1460,6 +1466,11 @@ describe('Pipeline Model', () => {
             pipelineId: testId,
             remove: sinon.stub().resolves(null)
         };
+        const token = {
+            name: 'TEST_TOKEN',
+            pipelineId: testId,
+            remove: sinon.stub().resolves(null)
+        };
 
         beforeEach(() => {
             archived = {
@@ -1482,20 +1493,32 @@ describe('Pipeline Model', () => {
             eventFactoryMock.list.resolves([]);
             jobFactoryMock.list.resolves([]);
             secretFactoryMock.list.resolves([secret]);
+            tokenFactoryMock.list.resolves([token]);
         });
 
         afterEach(() => {
             eventFactoryMock.list.reset();
             jobFactoryMock.list.reset();
+            secretFactoryMock.list.reset();
+            tokenFactoryMock.list.reset();
             publishJob.remove.reset();
             mainJob.remove.reset();
             blahJob.remove.reset();
+            secret.remove.reset();
+            token.remove.reset();
         });
 
         it('remove secrets', () =>
             pipeline.remove().then(() => {
                 assert.calledOnce(secretFactoryMock.list);
                 assert.calledOnce(secret.remove);
+            })
+        );
+
+        it('remove tokens', () =>
+            pipeline.remove().then(() => {
+                assert.calledOnce(tokenFactoryMock.list);
+                assert.calledOnce(token.remove);
             })
         );
 
@@ -1622,6 +1645,41 @@ describe('Pipeline Model', () => {
                 assert.isOk(err);
                 assert.equal(err.message, 'error removing secret');
             });
+        });
+
+        it('fail if token.remove returns error', () => {
+            secret.remove.reset();
+            token.remove.rejects(new Error('error removing token'));
+
+            return pipeline.remove().then(() => {
+                assert.fail('should not get here');
+            }).catch((err) => {
+                assert.isOk(err);
+                assert.equal(err.message, 'error removing token');
+            });
+        });
+    });
+
+    describe('get tokens', () => {
+        it('has a tokens getter', () => {
+            const listConfig = {
+                params: {
+                    pipelineId: testId
+                },
+                paginate
+            };
+
+            tokenFactoryMock.list.resolves(null);
+            // when we fetch tokens it resolves to a promise
+            assert.isFunction(pipeline.tokens.then);
+            // and a factory is called to create that promise
+            assert.calledWith(tokenFactoryMock.list, listConfig);
+
+            // When we call user.tokens again it is still a promise
+            assert.isFunction(pipeline.tokens.then);
+            // ...but the factory was not recreated, since the promise is stored
+            // as the model's tokens property, now
+            assert.calledOnce(tokenFactoryMock.list);
         });
     });
 });

@@ -3,6 +3,7 @@
 const assert = require('chai').assert;
 const sinon = require('sinon');
 const mockery = require('mockery');
+const hoek = require('hoek');
 const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -58,11 +59,25 @@ describe('Token Model', () => {
         mockery.disable();
     });
 
-    it('is constructed properly', () => {
+    it('is constructed properly for user token', () => {
         assert.instanceOf(token, TokenModel);
         assert.instanceOf(token, BaseModel);
         schema.models.token.allKeys.forEach((key) => {
             assert.strictEqual(token[key], createConfig[key]);
+        });
+    });
+
+    it('is constructed properly for pipeline token', () => {
+        const pipelineConfig = hoek.clone(createConfig);
+
+        delete pipelineConfig.userId;
+        pipelineConfig.pipelineId = 123;
+        token = new TokenModel(pipelineConfig);
+
+        assert.instanceOf(token, TokenModel);
+        assert.instanceOf(token, BaseModel);
+        schema.models.token.allKeys.forEach((key) => {
+            assert.strictEqual(token[key], pipelineConfig[key]);
         });
     });
 
@@ -106,6 +121,7 @@ describe('Token Model', () => {
     describe('toJson', () => {
         const expected = {
             userId: 12345,
+            pipelineId: undefined,
             id: 6789,
             name: 'Mobile client auth token',
             description: 'For the mobile app',
