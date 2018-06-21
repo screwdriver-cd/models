@@ -10,6 +10,7 @@ sinon.assert.expose(assert, { prefix: '' });
 const PARSED_YAML = require('../data/parser');
 const PARSED_YAML_WITH_REQUIRES = require('../data/parserWithRequires');
 const PARSED_YAML_PR = require('../data/parserWithWorkflowGraphPR');
+const PARSED_YAML_WITH_ERRORS = require('../data/parserWithErrors');
 const SCM_URLS = [
     'foo.git'
 ];
@@ -288,7 +289,7 @@ describe('Pipeline Model', () => {
         });
     });
 
-    describe('sync', () => {
+    describe.only('sync', () => {
         let publishMock;
         let mainMock;
         let mainModelMock;
@@ -704,6 +705,27 @@ describe('Pipeline Model', () => {
                     assert.equal(p.id, testId);
                     assert.equal(p.childPipelines, null);
                     assert.calledOnce(childPipelineMock.remove);
+                });
+        });
+        it.only('does not sync child pipelines if the YAML has errors', () => {
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            parserMock.withArgs('yamlcontentwithscmurls', templateFactoryMock)
+                .resolves(PARSED_YAML_WITH_ERRORS);
+            jobs = [mainJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true });
+            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
+                checkoutUrl: 'foo.git'
+            })).resolves('foo');
+            childPipelineMock.configPipelineId = 456;
+            pipelineFactoryMock.get.resolves(childPipelineMock);
+            pipeline.childPipelines = EXTERNAL_PARSED_YAML.childPipelines;
+
+            return pipeline.sync()
+                .then((p) => {
+                    assert.equal(p.id, testId);
+                    assert.deepEqual(p.childPipelines, EXTERNAL_PARSED_YAML.childPipelines);
+                    assert.notCalled(childPipelineMock.remove);
                 });
         });
     });
