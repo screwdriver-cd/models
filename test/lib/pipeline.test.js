@@ -289,7 +289,7 @@ describe('Pipeline Model', () => {
         });
     });
 
-    describe.only('sync', () => {
+    describe('sync', () => {
         let publishMock;
         let mainMock;
         let mainModelMock;
@@ -707,7 +707,7 @@ describe('Pipeline Model', () => {
                     assert.calledOnce(childPipelineMock.remove);
                 });
         });
-        it.only('does not sync child pipelines if the YAML has errors', () => {
+        it('does not sync child pipelines if the YAML has errors', () => {
             scmMock.getFile.resolves('yamlcontentwithscmurls');
             parserMock.withArgs('yamlcontentwithscmurls', templateFactoryMock)
                 .resolves(PARSED_YAML_WITH_ERRORS);
@@ -1474,6 +1474,7 @@ describe('Pipeline Model', () => {
     describe('remove', () => {
         let archived;
         let prType;
+
         const testEvent = {
             pipelineId: testId,
             remove: sinon.stub().resolves(null),
@@ -1678,6 +1679,29 @@ describe('Pipeline Model', () => {
             }).catch((err) => {
                 assert.isOk(err);
                 assert.equal(err.message, 'error removing token');
+            });
+        });
+
+        it('does not remove parent pipeline\'s secrets', () => {
+            const childPipeline = new PipelineModel(pipelineConfig);
+
+            childPipeline.id = 2;
+            childPipeline.configPipelineId = testId;
+
+            const childSecret = {
+                name: 'TEST_CHILD',
+                value: 'testvalue',
+                allowInPR: true,
+                pipelineId: childPipeline.id,
+                remove: sinon.stub().resolves(null)
+            };
+
+            secretFactoryMock.list.onCall(0).resolves([childSecret]);
+            secretFactoryMock.list.onCall(1).resolves([secret]);
+
+            childPipeline.remove().then(() => {
+                assert.notCalled(secret.remove);
+                assert.calledOnce(childSecret.remove);
             });
         });
     });
