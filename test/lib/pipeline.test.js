@@ -10,6 +10,7 @@ sinon.assert.expose(assert, { prefix: '' });
 const PARSED_YAML = require('../data/parser');
 const PARSED_YAML_WITH_REQUIRES = require('../data/parserWithRequires');
 const PARSED_YAML_PR = require('../data/parserWithWorkflowGraphPR');
+const PARSED_YAML_WITH_ERRORS = require('../data/parserWithErrors');
 const SCM_URLS = [
     'foo.git'
 ];
@@ -704,6 +705,27 @@ describe('Pipeline Model', () => {
                     assert.equal(p.id, testId);
                     assert.equal(p.childPipelines, null);
                     assert.calledOnce(childPipelineMock.remove);
+                });
+        });
+        it('does not sync child pipelines if the YAML has errors', () => {
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            parserMock.withArgs('yamlcontentwithscmurls', templateFactoryMock)
+                .resolves(PARSED_YAML_WITH_ERRORS);
+            jobs = [mainJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true });
+            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
+                checkoutUrl: 'foo.git'
+            })).resolves('foo');
+            childPipelineMock.configPipelineId = 456;
+            pipelineFactoryMock.get.resolves(childPipelineMock);
+            pipeline.childPipelines = EXTERNAL_PARSED_YAML.childPipelines;
+
+            return pipeline.sync()
+                .then((p) => {
+                    assert.equal(p.id, testId);
+                    assert.deepEqual(p.childPipelines, EXTERNAL_PARSED_YAML.childPipelines);
+                    assert.notCalled(childPipelineMock.remove);
                 });
         });
     });
@@ -1452,6 +1474,7 @@ describe('Pipeline Model', () => {
     describe('remove', () => {
         let archived;
         let prType;
+
         const testEvent = {
             pipelineId: testId,
             remove: sinon.stub().resolves(null),
@@ -1656,6 +1679,29 @@ describe('Pipeline Model', () => {
             }).catch((err) => {
                 assert.isOk(err);
                 assert.equal(err.message, 'error removing token');
+            });
+        });
+
+        it('does not remove parent pipeline\'s secrets', () => {
+            const childPipeline = new PipelineModel(pipelineConfig);
+
+            childPipeline.id = 2;
+            childPipeline.configPipelineId = testId;
+
+            const childSecret = {
+                name: 'TEST_CHILD',
+                value: 'testvalue',
+                allowInPR: true,
+                pipelineId: childPipeline.id,
+                remove: sinon.stub().resolves(null)
+            };
+
+            secretFactoryMock.list.onCall(0).resolves([childSecret]);
+            secretFactoryMock.list.onCall(1).resolves([secret]);
+
+            childPipeline.remove().then(() => {
+                assert.notCalled(secret.remove);
+                assert.calledOnce(childSecret.remove);
             });
         });
     });

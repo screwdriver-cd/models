@@ -1,0 +1,28 @@
+{
+    "jobs": {
+        "main": [
+            {
+                "image": "node:6",
+                "commands": [
+                    {
+                        "name": "config-parse-error",
+                        "command": "echo \"Spooky error\"; exit 1"
+                     }
+                 ]
+            }
+         ]
+     },
+    "workflowGraph": {
+        "nodes": [
+             { "name": "~pr" },
+             { "name": "~commit" },
+             { "name": "main" }
+         ],
+        "edges": [
+             { "src": "~pr", "dest": "main" },
+             { "src": "~commit", "dest": "main" }
+         ]
+     },
+    "annotations": {},
+    "errors": ["Spooky error"]
+ }
