@@ -190,6 +190,11 @@ describe('Build Factory', () => {
             }
         };
 
+        const meta = {
+            foo: 'bar',
+            one: 1
+        };
+
         let saveConfig;
 
         beforeEach(() => {
@@ -223,7 +228,8 @@ describe('Build Factory', () => {
                     environment,
                     steps,
                     jobId,
-                    sha
+                    sha,
+                    meta
                 }
             };
         });
@@ -245,7 +251,7 @@ describe('Build Factory', () => {
             delete saveConfig.params.commit;
 
             return factory.create({
-                garbage, username, jobId, eventId, sha, parentBuildId: 12345
+                garbage, username, jobId, eventId, sha, parentBuildId: 12345, meta
             }).then(() => assert.calledWith(datastore.save, saveConfig));
         });
 
@@ -255,8 +261,9 @@ describe('Build Factory', () => {
             delete saveConfig.params.commit;
             delete saveConfig.params.parentBuildId;
 
-            return factory.create({ username, jobId, eventId, sha }).then(() =>
-                assert.calledWith(datastore.save, saveConfig));
+            return factory.create({
+                username, jobId, eventId, sha, meta
+            }).then(() => assert.calledWith(datastore.save, saveConfig));
         });
 
         it('creates a new build in the datastore, looking up sha', () => {
@@ -270,7 +277,7 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves(user);
 
             return factory.create({
-                username, scmContext, jobId, eventId, prRef, parentBuildId: 12345
+                username, scmContext, jobId, eventId, prRef, parentBuildId: 12345, meta
             }).then((model) => {
                 assert.instanceOf(model, Build);
                 assert.calledOnce(jobFactory.getInstance);
@@ -314,7 +321,7 @@ describe('Build Factory', () => {
             saveConfig.params.status = 'CREATED';
 
             return factory.create({
-                username, jobId, eventId, parentBuildId: 12345, start: false
+                username, jobId, eventId, parentBuildId: 12345, start: false, meta
             }).then(() => {
                 assert.notCalled(startStub);
                 assert.calledWith(datastore.save, saveConfig);
@@ -357,7 +364,7 @@ describe('Build Factory', () => {
             delete saveConfig.params.commit;
             delete saveConfig.params.parentBuildId;
 
-            return factory.create({ username, jobId, eventId, sha }).then((model) => {
+            return factory.create({ username, jobId, eventId, sha, meta }).then((model) => {
                 assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Build);
                 assert.calledOnce(jobFactory.getInstance);
@@ -438,7 +445,8 @@ describe('Build Factory', () => {
                 eventId,
                 parentBuildId: 12345,
                 start: false,
-                environment: { EXTRA: true }
+                environment: { EXTRA: true },
+                meta
             }).then(() => {
                 assert.notCalled(startStub);
                 saveConfig.params.environment.EXTRA = true;
