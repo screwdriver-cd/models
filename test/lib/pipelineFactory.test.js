@@ -15,6 +15,7 @@ describe('Pipeline Factory', () => {
     let scm;
     let factory;
     let userFactoryMock;
+    let tokenFactoryMock;
     const dateNow = 1111111111;
     const nowTime = (new Date(dateNow)).toISOString();
     const scmUri = 'github.com:12345:master';
@@ -47,6 +48,9 @@ describe('Pipeline Factory', () => {
         userFactoryMock = {
             get: sinon.stub()
         };
+        tokenFactoryMock = {
+            get: sinon.stub()
+        };
 
         // Fixing mockery issue with duplicate file names
         // by re-registering data-schema with its own implementation
@@ -54,6 +58,9 @@ describe('Pipeline Factory', () => {
         mockery.registerMock('./pipeline', Pipeline);
         mockery.registerMock('./userFactory', {
             getInstance: sinon.stub().returns(userFactoryMock)
+        });
+        mockery.registerMock('./tokenFactory', {
+            getInstance: sinon.stub().returns(tokenFactoryMock)
         });
 
         // eslint-disable-next-line global-require
@@ -141,6 +148,60 @@ describe('Pipeline Factory', () => {
                 assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Pipeline);
             });
+        });
+    });
+
+    describe('get a pipeline by access token', () => {
+        const accessToken = 'an access token goes here';
+        const now = 1111;
+        const tokenMock = {
+            pipelineId: testId,
+            lastUsed: null,
+            update: sinon.stub()
+        };
+        let sandbox;
+
+        beforeEach(() => {
+            sandbox = sinon.sandbox.create();
+            sandbox.useFakeTimers(now);
+            tokenFactoryMock.get.resolves(tokenMock);
+            tokenMock.update.resolves(tokenMock);
+        });
+
+        afterEach(() => {
+            sandbox.restore();
+        });
+
+        it('should return a pipeline and update the last used field of the token', () => {
+            const expected = {
+                id: 123,
+                username: 'frodo'
+            };
+
+            datastore.get.resolves(expected);
+
+            return factory.get({ accessToken })
+                .then((pipeline) => {
+                    assert.isOk(pipeline);
+                    assert.calledWith(tokenFactoryMock.get, { value: accessToken });
+                    assert.calledOnce(tokenMock.update);
+                    assert.equal(tokenMock.lastUsed, (new Date(now)).toISOString());
+                    assert.equal(tokenMock.pipelineId, testId);
+                });
+        });
+
+        it('should return null if the pipeline doesn\'t exist', () => {
+            datastore.get.resolves(null);
+
+            return factory.get({ accessToken })
+                .then(pipeline => assert.isNull(pipeline));
+        });
+
+        it('should return null if the token doesn\'t exist', () => {
+            tokenFactoryMock.get.resolves(null);
+
+            return factory.get({ accessToken })
+                .then(pipeline => assert.isNull(pipeline));
         });
     });
 
