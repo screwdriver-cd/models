@@ -1399,7 +1399,7 @@ describe('Pipeline Model', () => {
             url: 'https://github.com/foo/bar/tree/master'
         };
 
-        it('updates a pipeline with a different scm repository and branch', () => {
+        it('updates a pipelines scm repository and branch', () => {
             const expected = {
                 params: {
                     admins: { d2lam: true },
@@ -1440,31 +1440,38 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('updates a pipeline without updating scmUri when it has not changes', () => {
+        it('updates a pipelines scm repository and branch when the scmUri does not change', () => {
             const expected = {
                 params: {
                     admins: { d2lam: true },
                     id: 123,
-                    scmContext
+                    scmContext,
+                    scmRepo: {
+                        branch: 'master',
+                        name: 'foo/bar',
+                        url: 'https://github.com/foo/bar/tree/master'
+                    }
                 },
                 table: 'pipelines'
             };
 
             scmMock.decorateUrl.resolves(scmRepo);
-            userFactoryMock.get.withArgs({ username: 'd2lam' }).resolves({
+            userFactoryMock.get.withArgs({
+                username: 'd2lam',
+                scmContext
+            }).resolves({
                 unsealToken: sinon.stub().resolves('foo'),
                 getPermissions: sinon.stub().resolves({
                     push: true
                 })
             });
             datastore.update.resolves({});
-
             pipeline.admins = {
                 d2lam: true
             };
 
             return pipeline.update().then((p) => {
-                assert.notCalled(scmMock.decorateUrl);
+                assert.calledWith(scmMock.decorateUrl, { scmUri, scmContext, token: 'foo' });
                 assert.calledWith(datastore.update, expected);
                 assert.ok(p);
             });
