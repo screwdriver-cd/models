@@ -18,6 +18,7 @@ describe('Build Model', () => {
     const container = 'node:4';
     const adminUser = { username: 'batman', unsealToken: sinon.stub().resolves('foo') };
     const pipelineId = 1234;
+    const configPipelineId = 1233;
     const scmUri = 'github.com:12345:master';
     const scmContext = 'github:github.com';
     const token = 'equivalentToOneQuarter';
@@ -390,6 +391,7 @@ describe('Build Model', () => {
                 name: 'main',
                 pipeline: Promise.resolve({
                     id: pipelineId,
+                    configPipelineId,
                     scmUri,
                     scmContext,
                     admin: Promise.resolve(adminUser),
@@ -420,7 +422,8 @@ describe('Build Model', () => {
                     assert.calledWith(tokenGen, buildId, {
                         isPR: false,
                         jobId,
-                        pipelineId
+                        pipelineId,
+                        configPipelineId
                     }, scmContext, TEMPORAL_JWT_TIMEOUT);
 
                     assert.calledWith(scmMock.updateCommitStatus, {
@@ -561,6 +564,7 @@ describe('Build Model', () => {
                 name: 'main',
                 pipeline: Promise.resolve({
                     id: pipelineId,
+                    configPipelineId,
                     scmUri,
                     scmContext,
                     admin: Promise.resolve(adminUser),
@@ -585,7 +589,8 @@ describe('Build Model', () => {
                     assert.calledWith(tokenGen, buildId, {
                         isPR: false,
                         jobId,
-                        pipelineId
+                        pipelineId,
+                        configPipelineId
                     }, scmContext, TEMPORAL_JWT_TIMEOUT);
 
                     assert.calledWith(scmMock.updateCommitStatus, {
