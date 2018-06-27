@@ -138,6 +138,7 @@ describe('Build Factory', () => {
         const jobId = 12345;
         const eventId = 123456;
         const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
+        const configPipelineSha = '63aa3d3058bc0886a8bf42567858e61a7310133c';
         const scmUri = 'github.com:12345:master';
         const scmRepo = {
             name: 'screwdriver-cd/models'
@@ -479,13 +480,22 @@ describe('Build Factory', () => {
                 jobId,
                 eventId,
                 sha,
+                configPipelineSha,
                 meta
             }).then(() => {
                 assert.calledWith(bookendMock.getSetupCommands, {
                     pipeline: pipelineMock,
                     job: jobMock,
                     build: sinon.match.object,
-                    configPipeline: { spooky: 'ghost' }
+                    configPipeline: { spooky: 'ghost' },
+                    configPipelineSha
+                });
+                assert.calledWith(bookendMock.getTeardownCommands, {
+                    pipeline: pipelineMock,
+                    job: jobMock,
+                    build: sinon.match.object,
+                    configPipeline: { spooky: 'ghost' },
+                    configPipelineSha
                 });
             });
         });
