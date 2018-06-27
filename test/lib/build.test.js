@@ -288,6 +288,50 @@ describe('Build Model', () => {
                     assert.notCalled(executorMock.stop);
                 });
         });
+
+        it('promises to update, but not executor when status is unstable & not done', () => {
+            build.status = 'UNSTABLE';
+
+            return build.update()
+                .then(() => {
+                    assert.calledWith(scmMock.updateCommitStatus, {
+                        token: 'foo',
+                        scmUri,
+                        scmContext,
+                        sha,
+                        jobName: 'main',
+                        buildStatus: 'UNSTABLE',
+                        url,
+                        pipelineId
+                    });
+                    assert.notCalled(executorMock.stop);
+                });
+        });
+
+        it('promises to update, and stop executor when status is unstable & done', () => {
+            build.status = 'UNSTABLE';
+            build.endTime = '2018-06-27T18:22:20.153Z';
+
+            return build.update()
+                .then(() => {
+                    assert.calledWith(scmMock.updateCommitStatus, {
+                        token: 'foo',
+                        scmUri,
+                        scmContext,
+                        sha,
+                        jobName: 'main',
+                        buildStatus: 'UNSTABLE',
+                        url,
+                        pipelineId
+                    });
+                    assert.calledWith(executorMock.stop, {
+                        buildId,
+                        jobId,
+                        annotations,
+                        blockedBy: [jobId]
+                    });
+                });
+        });
     });
 
     describe('stop', () => {
