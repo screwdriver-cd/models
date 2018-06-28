@@ -291,6 +291,10 @@ describe('Build Model', () => {
         });
 
         it('promises to update, but not executor when status is unstable & not done', () => {
+            config.status = 'RUNNING';
+            build = new BuildModel(config);
+
+            // RUNNING -> UNSTABLE
             build.status = 'UNSTABLE';
 
             return build.update()
@@ -310,21 +314,16 @@ describe('Build Model', () => {
         });
 
         it('promises to update, and stop executor when status is unstable & done', () => {
-            build.status = 'UNSTABLE';
+            // UNSTABLE -> SUCCESS, status will not change, field is not dirty
+            config.status = 'UNSTABLE';
+            build = new BuildModel(config);
+
+            build.steps = [step0, step1, step2];
             build.endTime = '2018-06-27T18:22:20.153Z';
 
             return build.update()
                 .then(() => {
-                    assert.calledWith(scmMock.updateCommitStatus, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'main',
-                        buildStatus: 'UNSTABLE',
-                        url,
-                        pipelineId
-                    });
+                    assert.notCalled(scmMock.updateCommitStatus);
                     assert.calledWith(executorMock.stop, {
                         buildId,
                         jobId,
@@ -369,12 +368,27 @@ describe('Build Model', () => {
     });
 
     describe('isDone', () => {
+        beforeEach(() => {
+            build = new BuildModel(config);
+        });
         it('returns true if the build is done', () => {
             build.status = 'ABORTED';
             assert.isTrue(build.isDone());
         });
 
         it('returns false if the build is not done', () => {
+            build.status = 'RUNNING';
+            assert.isFalse(build.isDone());
+        });
+
+        it('returns true if the build is UNSTABLE and has endTime', () => {
+            build.status = 'UNSTABLE';
+            build.endTime = '2018-06-27T18:22:20.153Z';
+            assert.isTrue(build.isDone());
+        });
+
+        it('returns true if the build is UNSTABLE and no endTime', () => {
+            build.status = 'UNSTABLE';
             assert.isFalse(build.isDone());
         });
     });
