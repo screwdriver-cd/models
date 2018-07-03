@@ -554,6 +554,7 @@ describe('Event Factory', () => {
             return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
                 assert.calledWith(pipelineMock.sync, config.configPipelineSha);
+                assert.equal(model.configPipelineSha, config.configPipelineSha);
             });
         });
 
