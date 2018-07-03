@@ -204,7 +204,7 @@ describe('Event Factory', () => {
                 },
                 getConfiguration: sinon.stub().resolves(PARSED_YAML),
                 update: sinon.stub().resolves(syncedPipelineMock),
-                job: Promise.resolve([]),
+                jobs: Promise.resolve([]),
                 branch: Promise.resolve('branch')
             };
 
@@ -485,6 +485,24 @@ describe('Event Factory', () => {
                     assert.notCalled(buildFactoryMock.create);
                 });
             });
+
+            it('should create builds with config pipeline sha if it is a child pipeline', () => {
+                pipelineMock.configPipelineId = 1;
+                pipelineFactoryMock.get.withArgs(1).resolves({
+                    id: 1,
+                    token: Promise.resolve('token')
+                });
+                config.startFrom = 'main';
+
+                return eventFactory.create(config).then((model) => {
+                    assert.instanceOf(model, Event);
+                    assert.deepEqual(model.configPipelineSha, 'configpipelinesha');
+                    assert.calledWith(pipelineMock.sync, 'configpipelinesha');
+                    assert.calledWith(buildFactoryMock.create, sinon.match({
+                        configPipelineSha: 'configpipelinesha'
+                    }));
+                });
+            });
         });
 
         it('should create an Event', () =>
@@ -553,7 +571,9 @@ describe('Event Factory', () => {
 
             return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
+                assert.deepEqual(model.configPipelineSha, config.configPipelineSha);
                 assert.calledWith(pipelineMock.sync, config.configPipelineSha);
+                assert.equal(model.configPipelineSha, config.configPipelineSha);
             });
         });
 

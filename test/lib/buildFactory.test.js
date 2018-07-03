@@ -138,6 +138,7 @@ describe('Build Factory', () => {
         const jobId = 12345;
         const eventId = 123456;
         const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
+        const configPipelineSha = '63aa3d3058bc0886a8bf42567858e61a7310133c';
         const scmUri = 'github.com:12345:master';
         const scmRepo = {
             name: 'screwdriver-cd/models'
@@ -256,6 +257,12 @@ describe('Build Factory', () => {
         });
 
         it('use username as displayName if displayLabel is not set', () => {
+            const jobMock = {
+                permutations,
+                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
+            };
+
+            jobFactoryMock.get.resolves(jobMock);
             scmMock.getDisplayName.returns(null);
             saveConfig.params.cause = 'Started by user i_made_the_request';
             delete saveConfig.params.commit;
@@ -452,6 +459,44 @@ describe('Build Factory', () => {
                 saveConfig.params.environment.EXTRA = true;
                 assert.calledWith(datastore.save, saveConfig);
                 delete saveConfig.params.environment.EXTRA;
+            });
+        });
+
+        it('passes in config pipeline to the bookend config', () => {
+            const pipelineMock = {
+                configPipelineId: 2,
+                configPipeline: Promise.resolve({ spooky: 'ghost' })
+            };
+            const jobMock = {
+                permutations,
+                pipeline: Promise.resolve(pipelineMock)
+            };
+
+            userFactoryMock.get.resolves({});
+            jobFactoryMock.get.resolves(jobMock);
+
+            return factory.create({
+                username,
+                jobId,
+                eventId,
+                sha,
+                configPipelineSha,
+                meta
+            }).then(() => {
+                assert.calledWith(bookendMock.getSetupCommands, {
+                    pipeline: pipelineMock,
+                    job: jobMock,
+                    build: sinon.match.object,
+                    configPipeline: { spooky: 'ghost' },
+                    configPipelineSha
+                });
+                assert.calledWith(bookendMock.getTeardownCommands, {
+                    pipeline: pipelineMock,
+                    job: jobMock,
+                    build: sinon.match.object,
+                    configPipeline: { spooky: 'ghost' },
+                    configPipelineSha
+                });
             });
         });
     });

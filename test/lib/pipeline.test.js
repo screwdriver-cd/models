@@ -1143,6 +1143,21 @@ describe('Pipeline Model', () => {
         });
     });
 
+    describe('get config pipeline', () => {
+        it('has a config pipeline getter', () => {
+            const childPipeline = new PipelineModel(pipelineConfig);
+
+            childPipeline.id = 2;
+            childPipeline.configPipelineId = testId;
+
+            pipelineFactoryMock.get.withArgs(testId).resolves(pipeline);
+
+            childPipeline.configPipeline.then((configPipeline) => {
+                assert.deepEqual(configPipeline, pipeline);
+            });
+        });
+    });
+
     describe('get jobs', () => {
         it('Get all jobs', () => {
             const expected = {
