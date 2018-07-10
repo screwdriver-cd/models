@@ -1230,6 +1230,7 @@ factory.create(config).then(model => {
 | config.name | String | Yes | The command name |
 | config.version | String | Yes | Version of the command |
 | config.description | String | Yes | Description of the command |
+| config.arguments | String | No | Arguments for command usage (e.g.: '-d <domain> -h <host>') |
 | config.maintainer | String | Yes | Maintainer's email |
 | config.format | String | Yes | Format of the command, habitat or docker or binary |
 | config.habitat | Object | Yes (any one of habitat, docker, binary) | Configuration Object for Habitat command |
