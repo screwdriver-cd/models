@@ -124,7 +124,8 @@ describe('TemplateTag Factory', () => {
         it('creates a Template Tag given name with namespace, tag, and version and namespace does not exist', () => {
             datastore.save.resolves(expected);
             datastore.scan.resolves([]);
-            expected.name = fullTemplateName;
+            expected.name = name;
+            expected.namespace = namespace;
 
             return factory.create({
                 name: fullTemplateName,

@@ -99,6 +99,7 @@ describe('Template Factory', () => {
         it('creates a Template with the namespace when it is passed in explicitly', () => {
             expected.version = `${version}.0`;
             expected.namespace = namespace;
+            expected.name = name;
             datastore.save.resolves(expected);
             datastore.scan.resolves([]);
 
@@ -113,8 +114,9 @@ describe('Template Factory', () => {
                 pipelineId
             }).then((model) => {
                 assert.instanceOf(model, Template);
+
                 Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+                    assert.deepEqual(model[key], expected[key]);
                 });
             });
         });
@@ -137,7 +139,7 @@ describe('Template Factory', () => {
             }).then((model) => {
                 assert.instanceOf(model, Template);
                 Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+                    assert.deepEqual(model[key], expected[key]);
                 });
             });
         });
@@ -160,7 +162,7 @@ describe('Template Factory', () => {
             }).then((model) => {
                 assert.instanceOf(model, Template);
                 Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+                    assert.deepEqual(model[key], expected[key]);
                 });
             });
         });
@@ -182,7 +184,7 @@ describe('Template Factory', () => {
             }).then((model) => {
                 assert.instanceOf(model, Template);
                 Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+                    assert.deepEqual(model[key], expected[key]);
                 });
             });
         });
@@ -204,7 +206,7 @@ describe('Template Factory', () => {
             }).then((model) => {
                 assert.instanceOf(model, Template);
                 Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+                    assert.deepEqual(model[key], expected[key]);
                 });
             });
         });
@@ -237,7 +239,7 @@ describe('Template Factory', () => {
             }).then((model) => {
                 assert.instanceOf(model, Template);
                 Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+                    assert.deepEqual(model[key], expected[key]);
                 });
             });
         });
