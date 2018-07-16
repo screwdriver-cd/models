@@ -12,6 +12,7 @@ describe('Command Factory', () => {
     const version = '1.3';
     const maintainer = 'foo@bar.com';
     const description = 'this is a command';
+    const usage = 'sd-cmd exec foo/bar@1 -d <domain> -h <host>';
     const format = 'habitat';
     const habitat = {
         mode: 'remote',
@@ -25,6 +26,7 @@ describe('Command Factory', () => {
         version,
         maintainer,
         description,
+        usage,
         format,
         habitat,
         pipelineId
