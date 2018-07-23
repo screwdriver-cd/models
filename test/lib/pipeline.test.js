@@ -144,6 +144,7 @@ describe('Pipeline Model', () => {
             list: sinon.stub()
         };
         templateFactoryMock = {
+            list: sinon.stub()
         };
         triggerFactoryMock = {
             list: sinon.stub(),
@@ -1516,6 +1517,11 @@ describe('Pipeline Model', () => {
             pipelineId: testId,
             remove: sinon.stub().resolves(null)
         };
+        const template = {
+            name: 'TEST_TEMPLATE',
+            pipelineId: testId,
+            remove: sinon.stub().resolves(null)
+        };
 
         beforeEach(() => {
             archived = {
@@ -1539,6 +1545,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.list.resolves([]);
             secretFactoryMock.list.resolves([secret]);
             tokenFactoryMock.list.resolves([token]);
+            templateFactoryMock.list.resolves([template]);
         });
 
         afterEach(() => {
@@ -1546,11 +1553,13 @@ describe('Pipeline Model', () => {
             jobFactoryMock.list.reset();
             secretFactoryMock.list.reset();
             tokenFactoryMock.list.reset();
+            templateFactoryMock.list.reset();
             publishJob.remove.reset();
             mainJob.remove.reset();
             blahJob.remove.reset();
             secret.remove.reset();
             token.remove.reset();
+            template.remove.reset();
         });
 
         it('remove secrets', () =>
@@ -1564,6 +1573,13 @@ describe('Pipeline Model', () => {
             pipeline.remove().then(() => {
                 assert.calledOnce(tokenFactoryMock.list);
                 assert.calledOnce(token.remove);
+            })
+        );
+
+        it('remove templates', () =>
+            pipeline.remove().then(() => {
+                assert.calledOnce(templateFactoryMock.list);
+                assert.calledOnce(template.remove);
             })
         );
 
@@ -1748,6 +1764,38 @@ describe('Pipeline Model', () => {
             // ...but the factory was not recreated, since the promise is stored
             // as the model's tokens property, now
             assert.calledOnce(tokenFactoryMock.list);
+        });
+    });
+
+    describe('get templates', () => {
+        it('has a template getter', () => {
+            const listConfig = {
+                params: {
+                    pipelineId: testId
+                },
+                paginate
+            };
+
+            const template = {
+                name: 'TEST_TEMPLATE',
+                pipelineId: testId
+            };
+
+            templateFactoryMock.list.resolves([template]);
+            // when we fetch templates it resolves to a promise
+            assert.isFunction(pipeline.templates.then);
+            // and a factory is called to create that promise
+            assert.calledWith(templateFactoryMock.list, listConfig);
+
+            // When we call user.tokens again it is still a promise
+            assert.isFunction(pipeline.templates.then);
+            // ...but the factory was not recreated, since the promise is stored
+            // as the model's tokens property, now
+            assert.calledOnce(templateFactoryMock.list);
+
+            pipeline.templates.then((templates) => {
+                assert.deepEqual(templates[0], template);
+            });
         });
     });
 });
