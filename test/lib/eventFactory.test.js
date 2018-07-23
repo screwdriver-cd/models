@@ -152,7 +152,9 @@ describe('Event Factory', () => {
                         { name: 'publish' },
                         { name: '~sd@123:main' },
                         { name: '~commit:branch' },
-                        { name: '~commit:/^.*$/' }
+                        { name: '~commit:/^.*$/' },
+                        { name: '~pr:branch' },
+                        { name: '~pr:/^.*$/' }
                     ],
                     edges: [
                         { src: '~sd@123:main', dest: 'main' },
@@ -162,8 +164,11 @@ describe('Event Factory', () => {
                         { src: '~pr', dest: 'publish' },
                         { src: '~commit', dest: 'only-commit' },
                         { src: '~commit:branch', dest: 'main' },
-                        { src: '~commit:branch', dest: 'only-branch' },
-                        { src: '~commit:/^.*$/', dest: 'wild' }
+                        { src: '~commit:branch', dest: 'commit-branch' },
+                        { src: '~commit:/^.*$/', dest: 'commit-wild' },
+                        { src: '~pr:branch', dest: 'main' },
+                        { src: '~pr:branch', dest: 'pr-branch' },
+                        { src: '~pr:/^.*$/', dest: 'pr-wild' }
                     ]
                 },
                 causeMessage: 'Started by github:stjohn',
@@ -188,7 +193,9 @@ describe('Event Factory', () => {
                         { name: 'publish' },
                         { name: '~sd@123:main' },
                         { name: '~commit:branch' },
-                        { name: '~commit:/^.*$/' }
+                        { name: '~commit:/^.*$/' },
+                        { name: '~pr:branch' },
+                        { name: '~pr:/^.*$/' }
                     ],
                     edges: [
                         { src: '~sd@123:main', dest: 'main' },
@@ -198,8 +205,11 @@ describe('Event Factory', () => {
                         { src: '~pr', dest: 'publish' },
                         { src: '~commit', dest: 'only-commit' },
                         { src: '~commit:branch', dest: 'main' },
-                        { src: '~commit:branch', dest: 'only-branch' },
-                        { src: '~commit:/^.*$/', dest: 'wild' }
+                        { src: '~commit:branch', dest: 'commit-branch' },
+                        { src: '~commit:/^.*$/', dest: 'commit-wild' },
+                        { src: '~pr:branch', dest: 'main' },
+                        { src: '~pr:branch', dest: 'pr-branch' },
+                        { src: '~pr:/^.*$/', dest: 'pr-wild' }
                     ]
                 },
                 getConfiguration: sinon.stub().resolves(PARSED_YAML),
@@ -231,7 +241,7 @@ describe('Event Factory', () => {
                     pipelineId: 8765,
                     name: 'main',
                     permutations: [{
-                        requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch']
+                        requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch', '~pr:branch']
                     }],
                     state: 'ENABLED'
                 }, {
@@ -253,7 +263,7 @@ describe('Event Factory', () => {
                 }, {
                     id: 5,
                     pipelineId: 8765,
-                    name: 'only-branch',
+                    name: 'commit-branch',
                     permutations: [{
                         requires: ['~commit:branch']
                     }],
@@ -269,9 +279,33 @@ describe('Event Factory', () => {
                 }, {
                     id: 7,
                     pipelineId: 8765,
-                    name: 'wild',
+                    name: 'commit-wild',
                     permutations: [{
                         requires: ['~commit:/^.*$/']
+                    }],
+                    state: 'ENABLED'
+                }, {
+                    id: 8,
+                    pipelineId: 8765,
+                    name: 'pr-branch',
+                    permutations: [{
+                        requires: ['~pr:branch']
+                    }],
+                    state: 'ENABLED'
+                }, {
+                    id: 9,
+                    pipelineId: 8765,
+                    name: 'pr-wild',
+                    permutations: [{
+                        requires: ['~pr:/^.*$/']
+                    }],
+                    state: 'ENABLED'
+                }, {
+                    id: 10,
+                    pipelineId: 8765,
+                    name: 'PR-1:main',
+                    permutations: [{
+                        requires: ['~pr']
                     }],
                     state: 'ENABLED'
                 }];
@@ -439,6 +473,42 @@ describe('Event Factory', () => {
                         parentBuildId: 12345,
                         eventId: model.id,
                         jobId: 7
+                    }));
+                });
+            });
+
+            it('should create ~pr:branch triggered builds', () => {
+                config.startFrom = '~pr:branch';
+                config.prRef = 'branch';
+                config.prNum = 1;
+                config.webhooks = true;
+
+                afterSyncedPRPipelineMock.getConfiguration = sinon.stub().resolves({
+                    jobs: jobsMock,
+                    workflowGraph: syncedPipelineMock.workflowGraph
+                });
+
+                return eventFactory.create(config).then((model) => {
+                    assert.instanceOf(model, Event);
+                    assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 1
+                    }));
+                    assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 8
+                    }));
+                    assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 9
+                    }));
+                    assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 10
                     }));
                 });
             });
