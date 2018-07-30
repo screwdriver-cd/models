@@ -54,6 +54,7 @@
     "lodash": "^4.17.10",
     "screwdriver-config-parser": "^4.5.0",
     "screwdriver-data-schema": "^18.30.0",
-    "screwdriver-workflow-parser": "^1.6.0"
+    "screwdriver-workflow-parser": "^1.6.0",
+    "winston": "^2.4.3"
   }
 }
