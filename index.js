@@ -9,6 +9,7 @@ const EventFactory = require('./lib/eventFactory');
 const JobFactory = require('./lib/jobFactory');
 const PipelineFactory = require('./lib/pipelineFactory');
 const SecretFactory = require('./lib/secretFactory');
+const StepFactory = require('./lib/stepFactory');
 const TemplateFactory = require('./lib/templateFactory');
 const TemplateTagFactory = require('./lib/templateTagFactory');
 const TokenFactory = require('./lib/tokenFactory');
@@ -25,6 +26,7 @@ module.exports = {
     JobFactory,
     PipelineFactory,
     SecretFactory,
+    StepFactory,
     TemplateFactory,
     TemplateTagFactory,
     TokenFactory,

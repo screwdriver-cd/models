@@ -34,6 +34,7 @@ describe('Build Model', () => {
     let userFactoryMock;
     let jobFactoryMock;
     let pipelineFactoryMock;
+    let stepFactoryMock;
     let scmMock;
     let tokenGen;
     let pipelineMock;
@@ -69,6 +70,9 @@ describe('Build Model', () => {
         pipelineFactoryMock = {
             get: sinon.stub().resolves(null)
         };
+        stepFactoryMock = {
+            list: sinon.stub().resolves([])
+        };
 
         pipelineMock = {
             id: pipelineId,
@@ -96,10 +100,14 @@ describe('Build Model', () => {
         const pF = {
             getInstance: sinon.stub().returns(pipelineFactoryMock)
         };
+        const sF = {
+            getInstance: sinon.stub().returns(stepFactoryMock)
+        };
 
         mockery.registerMock('./pipelineFactory', pF);
         mockery.registerMock('./userFactory', uF);
         mockery.registerMock('./jobFactory', jF);
+        mockery.registerMock('./stepFactory', sF);
         mockery.registerMock('screwdriver-hashr', hashaMock);
 
         // eslint-disable-next-line global-require
@@ -140,6 +148,7 @@ describe('Build Model', () => {
         assert.instanceOf(build, BaseModel);
         assert.isFunction(build.start);
         assert.isFunction(build.stop);
+        assert.isFunction(build.getStepsModel);
 
         schema.models.build.allKeys.forEach((key) => {
             assert.strictEqual(build[key], config[key]);
@@ -185,11 +194,15 @@ describe('Build Model', () => {
     });
 
     describe('update', () => {
-        const step0 = { name: 'task0', startTime: 'now', endTime: 'then', code: 0 };
-        const step1 = { name: 'task1', startTime: 'now' };
-        const step2 = { name: 'task2' };
+        let step0;
+        let step1;
+        let step2;
 
         beforeEach(() => {
+            step0 = { name: 'task0', startTime: 'now', endTime: 'then', code: 0 };
+            step1 = { name: 'task1', startTime: 'now' };
+            step2 = { name: 'task2' };
+
             build.steps = [step0, step1, step2];
 
             executorMock.stop.resolves(null);
@@ -249,6 +262,51 @@ describe('Build Model', () => {
                     assert.equal(build.steps[1].code, 130);
                     // Unstarted step is not modified
                     assert.deepEqual(build.steps[2], step2);
+
+                    assert.calledWith(scmMock.updateCommitStatus, {
+                        token: 'foo',
+                        scmUri,
+                        scmContext,
+                        sha,
+                        jobName: 'main',
+                        buildStatus: 'ABORTED',
+                        url,
+                        pipelineId
+                    });
+                });
+        });
+
+        it('aborts running steps, and sets an endTime with step models', () => {
+            const step0Mock = Object.assign({ update: sinon.stub().resolves({}) }, step0);
+            const step1Mock = Object.assign({ update: sinon.stub().resolves({}) }, step1);
+            const step2Mock = Object.assign({ update: sinon.stub().resolves({}) }, step2);
+            const stepsMock = [step0Mock, step1Mock, step2Mock];
+
+            build.status = 'ABORTED';
+            stepFactoryMock.list.resolves(stepsMock);
+
+            return build.update()
+                .then(() => {
+                    assert.calledOnce(step0Mock.update);
+                    assert.calledOnce(step1Mock.update);
+                    assert.calledOnce(step2Mock.update);
+                    assert.calledWith(executorMock.stop, {
+                        buildId,
+                        jobId,
+                        annotations,
+                        blockedBy: [jobId]
+                    });
+
+                    // Completed step is not modified
+                    delete step0Mock.update;
+                    delete step1Mock.update;
+                    delete step2Mock.update;
+                    assert.deepEqual(step0Mock, step0);
+                    // In progress step is aborted
+                    assert.ok(step1Mock.endTime);
+                    assert.equal(step1Mock.code, 130);
+                    // Unstarted step is not modified
+                    assert.deepEqual(step2Mock, step2);
 
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
@@ -732,6 +790,24 @@ describe('Build Model', () => {
                     assert.instanceOf(err, Error);
                     assert.strictEqual(err.message, 'Job does not exist');
                 });
+        });
+    });
+
+    describe('getStepsModel', () => {
+        it('use the default config when not passed in', () => {
+            const expected = {
+                params: {
+                    buildId
+                },
+                paginate: {
+                    page: 1,
+                    count: 50
+                }
+            };
+
+            return build.getStepsModel().then(() => {
+                assert.calledWith(stepFactoryMock.list, expected);
+            });
         });
     });
 });

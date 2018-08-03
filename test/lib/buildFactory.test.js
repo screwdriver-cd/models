@@ -2,9 +2,11 @@
 
 const assert = require('chai').assert;
 const mockery = require('mockery');
+const hoek = require('hoek');
 const schema = require('screwdriver-data-schema');
 const sinon = require('sinon');
 let startStub;
+let getStepsModelStub;
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -19,6 +21,7 @@ class Build {
         this.uiUri = config.uiUri;
         this.steps = config.steps;
         this.start = startStub.resolves(this);
+        this.getStepsModel = getStepsModelStub;
     }
 }
 
@@ -29,12 +32,20 @@ describe('Build Factory', () => {
     let executor;
     let jobFactoryMock;
     let userFactoryMock;
+    let stepFactoryMock;
     let scmMock;
     let factory;
     let jobFactory;
+    let stepFactory;
     const apiUri = 'https://notify.com/some/endpoint';
     const tokenGen = sinon.stub();
     const uiUri = 'http://display.com/some/endpoint';
+    const steps = [
+        { name: 'sd-setup-launcher' },
+        { name: 'sd-setup-scm', command: 'git clone' },
+        { command: 'npm install', name: 'init' },
+        { command: 'npm test', name: 'test' }
+    ];
 
     before(() => {
         mockery.enable({
@@ -50,6 +61,7 @@ describe('Build Factory', () => {
         };
         executor = {};
         datastore = {
+            get: sinon.stub(),
             save: sinon.stub(),
             scan: sinon.stub()
         };
@@ -58,6 +70,9 @@ describe('Build Factory', () => {
         };
         userFactoryMock = {
             get: sinon.stub()
+        };
+        stepFactoryMock = {
+            create: sinon.stub().resolves({})
         };
         scmMock = {
             getCommitSha: sinon.stub(),
@@ -68,7 +83,11 @@ describe('Build Factory', () => {
         jobFactory = {
             getInstance: sinon.stub().returns(jobFactoryMock)
         };
+        stepFactory = {
+            getInstance: sinon.stub().returns(stepFactoryMock)
+        };
         startStub = sinon.stub();
+        getStepsModelStub = sinon.stub();
 
         // Fixing mockery issue with duplicate file names
         // by re-registering data-schema with its own implementation
@@ -77,6 +96,7 @@ describe('Build Factory', () => {
         mockery.registerMock('screwdriver-build-bookend', bookendMock);
 
         mockery.registerMock('./jobFactory', jobFactory);
+        mockery.registerMock('./stepFactory', stepFactory);
         mockery.registerMock('./userFactory', {
             getInstance: sinon.stub().returns(userFactoryMock)
         });
@@ -150,12 +170,6 @@ describe('Build Factory', () => {
         const dateNow = Date.now();
         const isoTime = (new Date(dateNow)).toISOString();
         const container = 'node:4';
-        const steps = [
-            { name: 'sd-setup-launcher' },
-            { name: 'sd-setup-scm', command: 'git clone' },
-            { command: 'npm install', name: 'init' },
-            { command: 'npm test', name: 'test' }
-        ];
         const environment = { NODE_ENV: 'test', NODE_VERSION: '4' };
         const permutations = [{
             commands: [
@@ -253,7 +267,10 @@ describe('Build Factory', () => {
 
             return factory.create({
                 garbage, username, jobId, eventId, sha, parentBuildId: 12345, meta
-            }).then(() => assert.calledWith(datastore.save, saveConfig));
+            }).then(() => {
+                assert.callCount(stepFactoryMock.create, steps.length);
+                assert.calledWith(datastore.save, saveConfig);
+            });
         });
 
         it('use username as displayName if displayLabel is not set', () => {
@@ -498,6 +515,37 @@ describe('Build Factory', () => {
                     configPipelineSha
                 });
             });
+        });
+    });
+
+    describe('get', () => {
+        const buildId = 123;
+        const buildData = {
+            steps
+        };
+        const stepsData = steps.map(step => Object.assign({ code: 0 }, step));
+        const stepsMock = stepsData.map((step) => {
+            const mock = hoek.clone(step);
+
+            mock.toJson = sinon.stub().returns(step);
+
+            return mock;
+        });
+
+        it('should get a build by ID without step models', () => {
+            getStepsModelStub.resolves([]);
+            datastore.get.resolves(buildData);
+
+            return factory.get(buildId)
+                .then(build => assert.deepEqual(build.steps, steps));
+        });
+
+        it('should get a build by ID with merged step data', () => {
+            getStepsModelStub.resolves(stepsMock);
+            datastore.get.resolves(buildData);
+
+            return factory.get(buildId)
+                .then(build => assert.deepEqual(build.steps, stepsData));
         });
     });
 
