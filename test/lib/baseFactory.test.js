@@ -252,15 +252,25 @@ describe('Base Factory', () => {
                 })
         );
 
-        it('sets default paginate values', () =>
+        it('does not set default paginate values if none are passed in', () =>
             factory.list({})
+                .then(() => {
+                    assert.calledWith(datastore.scan, {
+                        table: 'base',
+                        params: {}
+                    });
+                })
+        );
+
+        it('sets default paginate values if some are passed in', () =>
+            factory.list({ paginate: { count: 20 } })
                 .then(() => {
                     assert.calledWith(datastore.scan, {
                         table: 'base',
                         params: {},
                         paginate: {
                             page: 1,
-                            count: 50
+                            count: 20
                         }
                     });
                 })

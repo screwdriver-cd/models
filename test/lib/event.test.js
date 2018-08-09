@@ -68,10 +68,6 @@ describe('Event Model', () => {
             const expected = {
                 params: {
                     eventId: '1234'
-                },
-                paginate: {
-                    page: 1,
-                    count: 50
                 }
             };
 
