@@ -549,6 +549,36 @@ describe('Build Factory', () => {
         });
     });
 
+    describe('list', () => {
+        const buildData = {
+            steps
+        };
+        const stepsData = steps.map(step => Object.assign({ code: 0 }, step));
+        const stepsMock = stepsData.map((step) => {
+            const mock = hoek.clone(step);
+
+            mock.toJson = sinon.stub().returns(step);
+
+            return mock;
+        });
+
+        it('should list builds without step models', () => {
+            getStepsModelStub.resolves([]);
+            datastore.scan.resolves([buildData, buildData]);
+
+            return factory.list({})
+                .then(builds => builds.map(build => assert.deepEqual(build.steps, steps)));
+        });
+
+        it('should list builds with merged step data', () => {
+            getStepsModelStub.resolves(stepsMock);
+            datastore.scan.resolves([buildData, buildData]);
+
+            return factory.list({})
+                .then(builds => builds.map(build => assert.deepEqual(build.steps, stepsData)));
+        });
+    });
+
     describe('getInstance', () => {
         let config;
 
