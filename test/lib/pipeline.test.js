@@ -45,10 +45,6 @@ describe('Pipeline Model', () => {
     const scmContext = 'github:github.com';
     const testId = 123;
     const admins = { batman: true, robin: true };
-    const paginate = {
-        page: 1,
-        count: 50
-    };
     let jobs;
     let pipelineConfig;
     let publishJob;
@@ -1255,8 +1251,7 @@ describe('Pipeline Model', () => {
                     pipelineId: 123,
                     type: 'pipeline'
                 },
-                sort: 'descending',
-                paginate
+                sort: 'descending'
             };
 
             eventFactoryMock.list.resolves(events);
@@ -1273,11 +1268,7 @@ describe('Pipeline Model', () => {
                     pipelineId: 123,
                     type: 'pr'
                 },
-                sort: 'descending',
-                paginate: {
-                    page: 1,
-                    count: 50
-                }
+                sort: 'descending'
             };
 
             eventFactoryMock.list.resolves(events);
@@ -1522,7 +1513,6 @@ describe('Pipeline Model', () => {
                     pipelineId: testId,
                     type: 'pr'
                 },
-                paginate,
                 sort: 'descending'
             };
 

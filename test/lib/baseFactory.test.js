@@ -257,7 +257,8 @@ describe('Base Factory', () => {
                 .then(() => {
                     assert.calledWith(datastore.scan, {
                         table: 'base',
-                        params: {}
+                        params: {},
+                        sort: 'descending'
                     });
                 })
         );
@@ -268,6 +269,7 @@ describe('Base Factory', () => {
                     assert.calledWith(datastore.scan, {
                         table: 'base',
                         params: {},
+                        sort: 'descending',
                         paginate: {
                             page: 1,
                             count: 20
