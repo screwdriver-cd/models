@@ -45,10 +45,6 @@ describe('Pipeline Model', () => {
     const scmContext = 'github:github.com';
     const testId = 123;
     const admins = { batman: true, robin: true };
-    const paginate = {
-        page: 1,
-        count: 50
-    };
     let jobs;
     let pipelineConfig;
     let publishJob;
@@ -1041,8 +1037,7 @@ describe('Pipeline Model', () => {
             const listConfig = {
                 params: {
                     pipelineId: pipeline.id
-                },
-                paginate
+                }
             };
 
             jobFactoryMock.list.resolves(null);
@@ -1064,8 +1059,7 @@ describe('Pipeline Model', () => {
             const listConfig = {
                 params: {
                     pipelineId: pipeline.id
-                },
-                paginate
+                }
             };
 
             secretFactoryMock.list.resolves(null);
@@ -1115,14 +1109,12 @@ describe('Pipeline Model', () => {
             const childPipelineListConfig = {
                 params: {
                     pipelineId: childPipeline.id
-                },
-                paginate
+                }
             };
             const configPipelineListConfig = {
                 params: {
                     pipelineId: pipeline.id
-                },
-                paginate
+                }
             };
 
             secretFactoryMock.list.onCall(0).resolves(childPipelineSecrets);
@@ -1159,13 +1151,12 @@ describe('Pipeline Model', () => {
     });
 
     describe('get jobs', () => {
-        it('Get all jobs', () => {
+        it('gets all jobs', () => {
             const expected = {
                 params: {
                     pipelineId: 123,
                     archived: false
-                },
-                paginate
+                }
             };
 
             const jobList = [publishJob, mainJob, pr10, pr3];
@@ -1179,7 +1170,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('Only gets PR jobs', () => {
+        it('only gets PR jobs', () => {
             const config = {
                 type: 'pr'
             };
@@ -1187,8 +1178,7 @@ describe('Pipeline Model', () => {
                 params: {
                     pipelineId: 123,
                     archived: false
-                },
-                paginate
+                }
             };
             const jobList = [publishJob, mainJob, pr10, pr3];
             const expectedJobs = [pr3, pr10];
@@ -1201,7 +1191,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('Only gets Pipeline jobs', () => {
+        it('only gets Pipeline jobs', () => {
             const config = {
                 type: 'pipeline'
             };
@@ -1209,8 +1199,7 @@ describe('Pipeline Model', () => {
                 params: {
                     pipelineId: 123,
                     archived: false
-                },
-                paginate
+                }
             };
             const jobList = [publishJob, mainJob, pr10, pr3];
             const expectedJobs = [publishJob, mainJob];
@@ -1223,7 +1212,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('Get archived jobs', () => {
+        it('gets archived jobs', () => {
             const config = {
                 params: {
                     archived: true
@@ -1233,8 +1222,7 @@ describe('Pipeline Model', () => {
                 params: {
                     pipelineId: 123,
                     archived: true
-                },
-                paginate
+                }
             };
 
             publishJob.archived = true;
@@ -1257,14 +1245,13 @@ describe('Pipeline Model', () => {
             id: '12855123cc7f1b808aac07feff24d7d5362cc215'
         }];
 
-        it('Get list of events', () => {
+        it('gets a list of events', () => {
             const expected = {
                 params: {
                     pipelineId: 123,
                     type: 'pipeline'
                 },
-                sort: 'descending',
-                paginate
+                sort: 'descending'
             };
 
             eventFactoryMock.list.resolves(events);
@@ -1275,17 +1262,13 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('Merge the passed in config with the default config', () => {
+        it('merges the passed in config with the default config', () => {
             const expected = {
                 params: {
                     pipelineId: 123,
                     type: 'pr'
                 },
-                sort: 'descending',
-                paginate: {
-                    page: 1,
-                    count: 50
-                }
+                sort: 'descending'
             };
 
             eventFactoryMock.list.resolves(events);
@@ -1299,7 +1282,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('Rejects with errors', () => {
+        it('rejects with errors', () => {
             eventFactoryMock.list.rejects(new Error('cannotgetit'));
 
             return pipeline.getEvents()
@@ -1522,8 +1505,7 @@ describe('Pipeline Model', () => {
                 params: {
                     pipelineId: testId,
                     archived: true
-                },
-                paginate
+                }
             };
 
             prType = {
@@ -1531,7 +1513,6 @@ describe('Pipeline Model', () => {
                     pipelineId: testId,
                     type: 'pr'
                 },
-                paginate,
                 sort: 'descending'
             };
 
@@ -1733,8 +1714,7 @@ describe('Pipeline Model', () => {
             const listConfig = {
                 params: {
                     pipelineId: testId
-                },
-                paginate
+                }
             };
 
             tokenFactoryMock.list.resolves(null);

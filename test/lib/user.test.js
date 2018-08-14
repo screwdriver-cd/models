@@ -206,17 +206,11 @@ describe('User Model', () => {
     });
 
     describe('get tokens', () => {
-        const paginate = {
-            page: 1,
-            count: 50
-        };
-
         it('has a tokens getter', () => {
             const listConfig = {
                 params: {
                     userId: createConfig.id
-                },
-                paginate
+                }
             };
 
             tokenFactoryMock.list.resolves(null);

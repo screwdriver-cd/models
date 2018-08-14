@@ -798,10 +798,6 @@ describe('Build Model', () => {
             const expected = {
                 params: {
                     buildId
-                },
-                paginate: {
-                    page: 1,
-                    count: 50
                 }
             };
 

@@ -253,11 +253,7 @@ describe('Job Model', () => {
                 params: {
                     jobId: '1234'
                 },
-                sort: 'descending',
-                paginate: {
-                    page: 1,
-                    count: 50
-                }
+                sort: 'descending'
             };
 
             return job.getBuilds().then(() => {
@@ -280,6 +276,7 @@ describe('Job Model', () => {
             return job.getBuilds({
                 sort: 'Ascending',
                 paginate: {
+                    page: 1,
                     count: 100
                 }
             }).then(() => {
@@ -295,11 +292,7 @@ describe('Job Model', () => {
                     jobId: '1234',
                     status: 'RUNNING'
                 },
-                sort: 'descending',
-                paginate: {
-                    page: 1,
-                    count: 50
-                }
+                sort: 'descending'
             };
             const expectedSecondCall = Object.assign({}, expectedFirstCall, {
                 params: { jobId: '1234', status: 'QUEUED' } });
@@ -324,11 +317,7 @@ describe('Job Model', () => {
                     jobId: '1234',
                     status: 'SUCCESS'
                 },
-                sort: 'descending',
-                paginate: {
-                    page: 1,
-                    count: 50
-                }
+                sort: 'descending'
             };
 
             return job.getLastSuccessfulBuild().then((successfulBuild) => {

@@ -252,8 +252,32 @@ describe('Base Factory', () => {
                 })
         );
 
-        it('sets default paginate values', () =>
+        it('does not set default values if none are passed in', () =>
             factory.list({})
+                .then(() => {
+                    assert.calledWith(datastore.scan, {
+                        table: 'base',
+                        params: {}
+                    });
+                })
+        );
+
+        it('sets default paginate values if some are passed in', () =>
+            factory.list({ paginate: { count: 20 } })
+                .then(() => {
+                    assert.calledWith(datastore.scan, {
+                        table: 'base',
+                        params: {},
+                        paginate: {
+                            page: 1,
+                            count: 20
+                        }
+                    });
+                })
+        );
+
+        it('sets default paginate values if undefined is passed in', () =>
+            factory.list({ paginate: { page: undefined, count: undefined } })
                 .then(() => {
                     assert.calledWith(datastore.scan, {
                         table: 'base',
