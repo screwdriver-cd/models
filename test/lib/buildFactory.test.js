@@ -547,6 +547,13 @@ describe('Build Factory', () => {
             return factory.get(buildId)
                 .then(build => assert.deepEqual(build.steps, stepsData));
         });
+
+        it('should not throw when build does not exist', () => {
+            datastore.get.resolves(null);
+
+            return factory.get(buildId)
+                .then(build => assert.deepEqual(build, null));
+        });
     });
 
     describe('list', () => {
