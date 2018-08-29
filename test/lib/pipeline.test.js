@@ -180,7 +180,8 @@ describe('Pipeline Model', () => {
             getFile: sinon.stub(),
             decorateUrl: sinon.stub(),
             getOpenedPRs: sinon.stub(),
-            getPrInfo: sinon.stub()
+            getPrInfo: sinon.stub(),
+            lookupScmUri: sinon.stub()
         };
         parserMock = sinon.stub();
 
@@ -295,6 +296,7 @@ describe('Pipeline Model', () => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
             scmMock.addWebhook.resolves();
+            scmMock.lookupScmUri.resolves({ branch: 'branch', host: 'host' });
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
             parserMock.withArgs('yamlcontentwithscmurls', templateFactoryMock)
                 .resolves(EXTERNAL_PARSED_YAML);
@@ -496,7 +498,11 @@ describe('Pipeline Model', () => {
                         scmUri,
                         scmContext,
                         path: 'screwdriver.yaml',
-                        token: 'foo'
+                        token: 'foo',
+                        scmInfo: {
+                            branch: 'branch',
+                            host: 'host'
+                        }
                     });
                     assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock);
                     assert.calledWith(jobFactoryMock.create, publishMock);
@@ -733,6 +739,7 @@ describe('Pipeline Model', () => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
             scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge' });
+            scmMock.lookupScmUri.resolves({ branch: 'branch', host: 'host' });
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
@@ -755,7 +762,11 @@ describe('Pipeline Model', () => {
                     ref: 'pulls/1/merge',
                     scmUri,
                     scmContext,
-                    token: 'foo'
+                    token: 'foo',
+                    scmInfo: {
+                        branch: 'branch',
+                        host: 'host'
+                    }
                 });
                 assert.called(prJob.update);
                 assert.deepEqual(prJob.permutations, PARSED_YAML.jobs.main);
@@ -793,7 +804,11 @@ describe('Pipeline Model', () => {
                     ref: 'pulls/1/merge',
                     scmUri,
                     scmContext,
-                    token: 'foo'
+                    token: 'foo',
+                    scmInfo: {
+                        branch: 'branch',
+                        host: 'host'
+                    }
                 });
                 assert.calledOnce(firstPRJob.update);
                 assert.calledOnce(secondPRJob.update);
@@ -833,7 +848,11 @@ describe('Pipeline Model', () => {
                     ref: 'pulls/1/merge',
                     scmUri,
                     scmContext,
-                    token: 'foo'
+                    token: 'foo',
+                    scmInfo: {
+                        branch: 'branch',
+                        host: 'host'
+                    }
                 });
                 assert.calledOnce(firstPRJob.update);
                 assert.calledOnce(secondPRJob.update);
@@ -875,6 +894,7 @@ describe('Pipeline Model', () => {
         beforeEach(() => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
+            scmMock.lookupScmUri.resolves({ branch: 'branch', host: 'host' });
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
@@ -940,6 +960,36 @@ describe('Pipeline Model', () => {
                     assert.notCalled(prJob.update);
                     assert.notCalled(jobFactoryMock.create);
                 });
+        });
+    });
+
+    describe('get scmInfo', () => {
+        beforeEach(() => {
+            scmMock.lookupScmUri.resolves({
+                branch: 'test-branch',
+                host: 'test-host',
+                repo: 'test-repo',
+                owner: 'test-owner'
+            });
+        });
+
+        it('has a scmInfo getter', () => {
+            assert.isFunction(pipeline.scmInfo.then);
+            assert.isFunction(pipeline.scmInfo.then);
+            // We want to cache scmInfo to reduce API call
+            assert.calledOnce(scmMock.lookupScmUri);
+        });
+
+        it('rejects when lookupScmUri rejects', () => {
+            const testError = new Error('someGithubCommError');
+
+            scmMock.lookupScmUri.rejects(testError);
+
+            return pipeline.scmInfo.then(() => {
+                assert.fail('This should not fail the test');
+            }).catch((err) => {
+                assert.deepEqual(err, testError);
+            });
         });
     });
 
@@ -1298,6 +1348,7 @@ describe('Pipeline Model', () => {
     describe('getConfiguration', () => {
         beforeEach(() => {
             scmMock.getFile.resolves('superyamlcontent');
+            scmMock.lookupScmUri.resolves({ branch: 'branch', host: 'host' });
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
             parserMock.withArgs('', templateFactoryMock).resolves('DEFAULT_YAML');
             getUserPermissionMocks({ username: 'batman', push: true });
@@ -1314,7 +1365,11 @@ describe('Pipeline Model', () => {
                         scmUri,
                         scmContext,
                         path: 'screwdriver.yaml',
-                        token: 'foo'
+                        token: 'foo',
+                        scmInfo: {
+                            branch: 'branch',
+                            host: 'host'
+                        }
                     });
                     assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock);
                 })
@@ -1329,7 +1384,11 @@ describe('Pipeline Model', () => {
                         scmContext,
                         path: 'screwdriver.yaml',
                         token: 'foo',
-                        ref: 'bar'
+                        ref: 'bar',
+                        scmInfo: {
+                            branch: 'branch',
+                            host: 'host'
+                        }
                     });
                     assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock);
                 })
@@ -1383,7 +1442,11 @@ describe('Pipeline Model', () => {
                         scmContext,
                         path: 'screwdriver.yaml',
                         token: 'foo',
-                        ref: 'foobar'
+                        ref: 'foobar',
+                        scmInfo: {
+                            branch: 'branch',
+                            host: 'host'
+                        }
                     });
                     assert.calledWith(parserMock, '', templateFactoryMock);
                 });
@@ -1414,6 +1477,7 @@ describe('Pipeline Model', () => {
             };
 
             scmMock.decorateUrl.resolves(scmRepo);
+            scmMock.lookupScmUri.resolves({ branch: 'branch', host: 'host' });
             userFactoryMock.get.withArgs({
                 username: 'd2lam',
                 scmContext
@@ -1432,7 +1496,15 @@ describe('Pipeline Model', () => {
             };
 
             return pipeline.update().then((p) => {
-                assert.calledWith(scmMock.decorateUrl, { scmUri, scmContext, token: 'foo' });
+                assert.calledWith(scmMock.decorateUrl, {
+                    scmUri,
+                    scmContext,
+                    token: 'foo',
+                    scmInfo: {
+                        branch: 'branch',
+                        host: 'host'
+                    }
+                });
                 assert.calledWith(datastore.update, expected);
                 assert.ok(p);
             });
@@ -1454,6 +1526,7 @@ describe('Pipeline Model', () => {
             };
 
             scmMock.decorateUrl.resolves(scmRepo);
+            scmMock.lookupScmUri.resolves({ branch: 'branch', host: 'host' });
             userFactoryMock.get.withArgs({
                 username: 'd2lam',
                 scmContext
@@ -1469,7 +1542,15 @@ describe('Pipeline Model', () => {
             };
 
             return pipeline.update().then((p) => {
-                assert.calledWith(scmMock.decorateUrl, { scmUri, scmContext, token: 'foo' });
+                assert.calledWith(scmMock.decorateUrl, {
+                    scmUri,
+                    scmContext,
+                    token: 'foo',
+                    scmInfo: {
+                        branch: 'branch',
+                        host: 'host'
+                    }
+                });
                 assert.calledWith(datastore.update, expected);
                 assert.ok(p);
             });
