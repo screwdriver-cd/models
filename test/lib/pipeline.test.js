@@ -979,6 +979,18 @@ describe('Pipeline Model', () => {
             // We want to cache scmInfo to reduce API call
             assert.calledOnce(scmMock.lookupScmUri);
         });
+
+        it('rejects when lookupScmUri rejects', () => {
+            const testError = new Error('someGithubCommError');
+
+            scmMock.lookupScmUri.rejects(testError);
+
+            return pipeline.scmInfo.then(() => {
+                assert.fail('This should not fail the test');
+            }).catch((err) => {
+                assert.deepEqual(err, testError);
+            });
+        });
     });
 
     describe('get admin', () => {
