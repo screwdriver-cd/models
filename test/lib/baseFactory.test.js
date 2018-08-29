@@ -290,6 +290,17 @@ describe('Base Factory', () => {
                 })
         );
 
+        it('sets sortBy value if it is passed in', () =>
+            factory.list({ sortBy: 'scmRepo.name' })
+                .then(() => {
+                    assert.calledWith(datastore.scan, {
+                        table: 'base',
+                        params: {},
+                        sortBy: 'scmRepo.name'
+                    });
+                })
+        );
+
         it('calls datastore scan with sorting option returns correct values', () =>
             factory.list({ paginate, sort: 'ascending' })
                 .then(() => {
