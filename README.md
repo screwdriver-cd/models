@@ -26,7 +26,9 @@ const config = {
     paginate {
         page: 2,
         count: 3
-    }
+    },
+    sort: 'ascending',
+    sortBy: 'scmRepo.name'
 }
 
 factory.list(config).then(pipelines => {
@@ -40,6 +42,8 @@ factory.list(config).then(pipelines => {
 | config.paginate.page | Number | The page for pagination |
 | config.paginate.count | Number | The count for pagination |
 | config.params | Object | fields to search on |
+| config.sort | String | Order to sort by (`ascending` or `descending`) |
+| config.sortBy | String | Key to sort by (default `id`) |
 
 #### Create
 ```js
@@ -134,7 +138,8 @@ model.getJobs(config)
 | :-------------   | :---- | :--- | :--- | :-------------|
 | config        | Object | No | | Configuration Object |
 | config.params | Object | No | | Fields to search on |
-| config.params.sort | Boolean | No | false| Sorting by createTime |
+| config.paginate.page | Number | No | | The page for pagination |
+| config.paginate.count | Number | No | | The count for pagination |
 
 
 #### Get Events
@@ -147,7 +152,7 @@ model.getEvents(config)
 | :-------------   | :---- | :--- | :--- | :-------------|
 | config        | Object | No | | Config Object |
 | config.type | Number | No | `pipeline` | Type of event: `pipeline` or `pr` |
-| config.sort | Number | No | `descending`| Sorting by createTime |
+| config.sort | String | No | `descending`| Order to sort by (`ascending` or `descending`) |
 
 #### Tokens
 Get the pipeline's access tokens
