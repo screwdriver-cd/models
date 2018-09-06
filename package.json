@@ -47,14 +47,14 @@
   "dependencies": {
     "async": "^2.6.1",
     "base64url": "^3.0.0",
-    "compare-versions": "^3.3.0",
+    "compare-versions": "^3.4.0",
     "docker-parse-image": "^3.0.1",
     "hoek": "^5.0.4",
     "iron": "^5.0.1",
     "lodash": "^4.17.10",
-    "screwdriver-config-parser": "^4.5.0",
-    "screwdriver-data-schema": "^18.30.4",
+    "screwdriver-config-parser": "^4.5.3",
+    "screwdriver-data-schema": "^18.32.0",
     "screwdriver-workflow-parser": "^1.6.0",
-    "winston": "^2.4.3"
+    "winston": "^2.4.4"
   }
 }
