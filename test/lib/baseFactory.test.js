@@ -305,7 +305,7 @@ describe('Base Factory', () => {
             factory.list({
                 search: {
                     field: 'scmRepo',
-                    term: '%name%screwdriver-cd/screwdriver%'
+                    keyword: '%name%screwdriver-cd/screwdriver%'
                 }
             })
                 .then(() => {
@@ -314,7 +314,7 @@ describe('Base Factory', () => {
                         params: {},
                         search: {
                             field: 'scmRepo',
-                            term: '%name%screwdriver-cd/screwdriver%'
+                            keyword: '%name%screwdriver-cd/screwdriver%'
                         }
                     });
                 })
