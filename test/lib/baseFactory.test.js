@@ -301,6 +301,25 @@ describe('Base Factory', () => {
                 })
         );
 
+        it('sets search values if they are passed in', () =>
+            factory.list({
+                search: {
+                    field: 'scmRepo',
+                    keyword: '%name%screwdriver-cd/screwdriver%'
+                }
+            })
+                .then(() => {
+                    assert.calledWith(datastore.scan, {
+                        table: 'base',
+                        params: {},
+                        search: {
+                            field: 'scmRepo',
+                            keyword: '%name%screwdriver-cd/screwdriver%'
+                        }
+                    });
+                })
+        );
+
         it('calls datastore scan with sorting option returns correct values', () =>
             factory.list({ paginate, sort: 'ascending' })
                 .then(() => {
