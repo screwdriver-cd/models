@@ -12,6 +12,7 @@ describe('Build Model', () => {
     const apiUri = 'https://notify.com/some/endpoint';
     const uiUri = 'https://display.com/some/endpoint';
     const jobId = 777;
+    const eventId = 555;
     const now = 112233445566;
     const buildId = 9876;
     const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
@@ -123,6 +124,7 @@ describe('Build Model', () => {
             container,
             createTime: now,
             jobId,
+            eventId,
             number: now,
             status: 'QUEUED',
             sha,
@@ -495,7 +497,8 @@ describe('Build Model', () => {
                         isPR: false,
                         jobId,
                         pipelineId,
-                        configPipelineId
+                        configPipelineId,
+                        eventId
                     }, scmContext, TEMPORAL_JWT_TIMEOUT);
 
                     assert.calledWith(scmMock.updateCommitStatus, {
@@ -662,6 +665,7 @@ describe('Build Model', () => {
                         isPR: false,
                         jobId,
                         pipelineId,
+                        eventId,
                         configPipelineId
                     }, scmContext, TEMPORAL_JWT_TIMEOUT);
 
