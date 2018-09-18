@@ -51,9 +51,9 @@
     "docker-parse-image": "^3.0.1",
     "hoek": "^5.0.4",
     "iron": "^5.0.1",
-    "lodash": "^4.17.10",
-    "screwdriver-config-parser": "^4.5.3",
-    "screwdriver-data-schema": "^18.32.1",
+    "lodash": "^4.17.11",
+    "screwdriver-config-parser": "^4.5.4",
+    "screwdriver-data-schema": "^18.32.5",
     "screwdriver-workflow-parser": "^1.6.1",
     "winston": "^2.4.4"
   }
