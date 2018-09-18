@@ -45,6 +45,11 @@ describe('Pipeline Model', () => {
     const scmContext = 'github:github.com';
     const testId = 123;
     const admins = { batman: true, robin: true };
+    const scmRepo = {
+        name: 'foo/bar',
+        branch: 'master',
+        url: 'https://github.com/foo/bar/tree/master'
+    };
     let jobs;
     let pipelineConfig;
     let publishJob;
@@ -178,7 +183,7 @@ describe('Pipeline Model', () => {
         scmMock = {
             addWebhook: sinon.stub(),
             getFile: sinon.stub(),
-            decorateUrl: sinon.stub(),
+            decorateUrl: sinon.stub().resolves(scmRepo),
             getOpenedPRs: sinon.stub(),
             getPrInfo: sinon.stub()
         };
@@ -1431,17 +1436,12 @@ describe('Pipeline Model', () => {
     });
 
     describe('update', () => {
-        const scmRepo = {
-            name: 'foo/bar',
-            branch: 'master',
-            url: 'https://github.com/foo/bar/tree/master'
-        };
-
         it('updates a pipelines scm repository and branch', () => {
             const expected = {
                 params: {
                     admins: { d2lam: true },
                     id: 123,
+                    name: 'foo/bar',
                     scmContext,
                     scmRepo: {
                         branch: 'master',
@@ -1453,7 +1453,6 @@ describe('Pipeline Model', () => {
                 table: 'pipelines'
             };
 
-            scmMock.decorateUrl.resolves(scmRepo);
             userFactoryMock.get.withArgs({
                 username: 'd2lam',
                 scmContext
@@ -1487,6 +1486,7 @@ describe('Pipeline Model', () => {
                 params: {
                     admins: { d2lam: true },
                     id: 123,
+                    name: 'foo/bar',
                     scmContext,
                     scmRepo: {
                         branch: 'master',
@@ -1497,7 +1497,6 @@ describe('Pipeline Model', () => {
                 table: 'pipelines'
             };
 
-            scmMock.decorateUrl.resolves(scmRepo);
             userFactoryMock.get.withArgs({
                 username: 'd2lam',
                 scmContext
