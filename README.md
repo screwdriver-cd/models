@@ -41,7 +41,11 @@ factory.list(config).then(pipelines => {
 | config        | Object | Config Object |
 | config.paginate.page | Number | The page for pagination |
 | config.paginate.count | Number | The count for pagination |
-| config.params | Object | fields to search on |
+| config.params | Object | Fields to search on |
+| config.raw | Boolean | Whether to return raw data or not |
+| config.search | Object | Search parameters |
+| config.search.field | String or Array | Search field(s) (e.g.: jobName) |
+| config.search.keyword | String | Search keyword (e.g.: %PR-%) |
 | config.sort | String | Order to sort by (`ascending` or `descending`) |
 | config.sortBy | String | Key to sort by (default `id`) |
 

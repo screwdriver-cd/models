@@ -332,6 +332,36 @@ describe('Base Factory', () => {
                 })
         );
 
+        it('returns raw scan results when raw is true', () => {
+            const distinctRows = [
+                'namespace1',
+                'namespace2',
+                'namespace3'
+            ];
+
+            datastore.scan.resolves(distinctRows);
+
+            return factory.list({
+                params: {
+                    distinct: 'namespace'
+                },
+                raw: true
+            })
+                .then((data) => {
+                    assert.calledWith(datastore.scan, {
+                        table: 'base',
+                        params: {
+                            distinct: 'namespace'
+                        }
+                    });
+                    assert.deepEqual(data, [
+                        'namespace1',
+                        'namespace2',
+                        'namespace3'
+                    ]);
+                });
+        });
+
         it('handles when the scan does not return an array', () => {
             datastore.scan.resolves(null);
 
