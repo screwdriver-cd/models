@@ -94,7 +94,8 @@ describe('Job Model', () => {
 
         executorMock = {
             startPeriodic: sinon.stub().resolves(null),
-            stopPeriodic: sinon.stub().resolves(null)
+            stopPeriodic: sinon.stub().resolves(null),
+            stop: sinon.stub().resolves(null)
         };
 
         tokenGen = sinon.stub().returns(token);
