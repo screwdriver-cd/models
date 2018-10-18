@@ -94,7 +94,8 @@ describe('Job Model', () => {
 
         executorMock = {
             startPeriodic: sinon.stub().resolves(null),
-            stopPeriodic: sinon.stub().resolves(null)
+            stopPeriodic: sinon.stub().resolves(null),
+            stop: sinon.stub().resolves(null)
         };
 
         tokenGen = sinon.stub().returns(token);
@@ -368,6 +369,7 @@ describe('Job Model', () => {
                 assert.callCount(build1.remove, 4); // remove builds recursively
                 assert.callCount(build2.remove, 4);
                 assert.calledOnce(datastore.remove); // remove the job
+                assert.callCount(executorMock.stop, 8);
                 assert.notCalled(executorMock.stopPeriodic);
             });
         });
