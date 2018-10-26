@@ -1397,13 +1397,101 @@ factory.create(config)
 ```
 
 #### Update
-Update a specific collection
+Update a specific banner
 ```js
 model.update()
 ```
 
 #### Remove
-Remove a specific collection
+Remove a specific banner
+```js
+model.remove()
+```
+
+### BuildCluster Factory
+#### Search
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.BuildClusterFactory.getInstance({
+    datastore
+});
+const config = {
+    params: {
+        isActive: true
+    }
+};
+
+factory.list(config).then(buildclusters => {
+    // Do stuff with list of buildclusters
+});
+```
+
+| Parameter     | Type   | Description         |
+| :-------------| :------| :-------------------|
+| config        | Object | Config object       |
+| config.params | Object | Fields to search on |
+
+#### Create
+```js
+factory.create(config).then(model => {
+    // do stuff with buildCluster model
+});
+```
+
+| Parameter                     | Type    | Required | Default | Description                                      |
+| :-----------------------------| :-------| :--------| :-------| :------------------------------------------------|
+| config                        | Object  | Yes      |         | Configuration Object                             |
+| config.name                   | String  | Yes      |         | Name of the build cluster (unique constraint)    |
+| config.description            | String  | No       |         | Description of the build cluster                 |
+| config.scmContext             | String  | Yes      |         | SCM context                                      |
+| config.scmOrganizations       | Array   | Yes      |         | SCM organizations that can use the build cluster |
+| config.isActive               | Boolean | No       | false   | Flag for whether banner should display           |
+| config.managedByScrewdriver   | Boolean | Yes      |         | Flag for whether the cluster managed by Screwdriver|
+| config.maintainer             | String  | Yes      |         | Email of the maintainer                          |
+
+#### Get
+Get a buildcluster based on unique id of buildcluster.
+```js
+factory.get(id).then(model => {
+    // do stuff with buildcluster model
+});
+```
+
+| Parameter | Type   | Description                            |
+| :---------| :------| :--------------------------------------|
+| id        | Number | The unique id for the buildcluster     |
+
+### BuildCluster Model
+```js
+'use strict';
+const Model = require('screwdriver-models');
+const factory = Model.BuildClusterFactory.getInstance({
+    datastore
+});
+const config = {
+    name: 'sd',
+    scmContext: 'github:github.com',
+    scmOrganizations: [],
+    isActive: true,
+    managedByScrewdriver: true,
+    maintainer: 'foo@bar.com'
+};
+
+factory.create(config)
+    .then(model => {
+        // do something with model
+    });
+```
+
+#### Update
+Update a specific BuildCluster
+```js
+model.update()
+```
+
+#### Remove
+Remove a specific BuildCluster
 ```js
 model.remove()
 ```
