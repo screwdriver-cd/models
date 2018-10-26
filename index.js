@@ -2,6 +2,7 @@
 
 const BannerFactory = require('./lib/bannerFactory');
 const BuildFactory = require('./lib/buildFactory');
+const BuildClusterFactory = require('./lib/buildClusterFactory');
 const CollectionFactory = require('./lib/collectionFactory');
 const CommandFactory = require('./lib/commandFactory');
 const CommandTagFactory = require('./lib/commandTagFactory');
@@ -19,6 +20,7 @@ const UserFactory = require('./lib/userFactory');
 module.exports = {
     BannerFactory,
     BuildFactory,
+    BuildClusterFactory,
     CollectionFactory,
     CommandFactory,
     CommandTagFactory,

@@ -33,10 +33,12 @@ describe('Build Factory', () => {
     let jobFactoryMock;
     let userFactoryMock;
     let stepFactoryMock;
+    let buildClusterFactoryMock;
     let scmMock;
     let factory;
     let jobFactory;
     let stepFactory;
+    let buildClusterFactory;
     const apiUri = 'https://notify.com/some/endpoint';
     const tokenGen = sinon.stub();
     const uiUri = 'http://display.com/some/endpoint';
@@ -46,6 +48,21 @@ describe('Build Factory', () => {
         { command: 'npm install', name: 'init' },
         { command: 'npm test', name: 'test' }
     ];
+    const scmContext = 'github: github.com';
+    const sdBuildClusters = [{
+        name: 'sd1',
+        managedByScrewdriver: true,
+        isActive: true,
+        scmContext,
+        scmOrganizations: []
+    }];
+    const externalBuildCluster = {
+        name: 'iOS',
+        managedByScrewdriver: false,
+        isActive: true,
+        scmContext,
+        scmOrganizations: ['screwdriver']
+    };
 
     before(() => {
         mockery.enable({
@@ -74,6 +91,10 @@ describe('Build Factory', () => {
         stepFactoryMock = {
             create: sinon.stub().resolves({})
         };
+        buildClusterFactoryMock = {
+            list: sinon.stub().resolves([]),
+            get: sinon.stub().resolves(externalBuildCluster)
+        };
         scmMock = {
             getCommitSha: sinon.stub(),
             decorateCommit: sinon.stub(),
@@ -85,6 +106,9 @@ describe('Build Factory', () => {
         };
         stepFactory = {
             getInstance: sinon.stub().returns(stepFactoryMock)
+        };
+        buildClusterFactory = {
+            getInstance: sinon.stub().returns(buildClusterFactoryMock)
         };
         startStub = sinon.stub();
         getStepsModelStub = sinon.stub();
@@ -100,6 +124,7 @@ describe('Build Factory', () => {
         mockery.registerMock('./userFactory', {
             getInstance: sinon.stub().returns(userFactoryMock)
         });
+        mockery.registerMock('./buildClusterFactory', buildClusterFactory);
         mockery.registerMock('./build', Build);
 
         // eslint-disable-next-line global-require
@@ -163,7 +188,6 @@ describe('Build Factory', () => {
         const scmRepo = {
             name: 'screwdriver-cd/models'
         };
-        const scmContext = 'github:github.com';
         const displayName = 'github';
         const prRef = 'pull/3/merge';
         const username = 'i_made_the_request';
@@ -192,6 +216,17 @@ describe('Build Factory', () => {
             ],
             environment: { NODE_ENV: 'test', NODE_VERSION: '6' },
             image: 'node:6'
+        }];
+        const permutationsWithAnnotations = [{
+            annotations: {
+                'screwdriver.cd/buildCluster': 'iOS'
+            },
+            commands: [
+                { command: 'npm install', name: 'init' },
+                { command: 'npm test', name: 'test' }
+            ],
+            environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
+            image: 'node:4'
         }];
 
         const commit = {
@@ -270,6 +305,89 @@ describe('Build Factory', () => {
             }).then(() => {
                 assert.callCount(stepFactoryMock.create, steps.length);
                 assert.calledWith(datastore.save, saveConfig);
+            });
+        });
+
+        it('pick from screrdriver build cluster if no annotation passed in', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const jobMock = {
+                permutations,
+                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
+            };
+
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+            delete saveConfig.params.commit;
+            saveConfig.params.buildClusterName = 'sd1';
+
+            return factory.create({
+                username, jobId, eventId, sha, parentBuildId: 12345, meta
+            }).then(() => {
+                assert.callCount(stepFactoryMock.create, steps.length);
+                assert.calledWith(datastore.save, saveConfig);
+            });
+        });
+
+        it('pick build cluster based on annotations passed in', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const jobMock = {
+                permutations: permutationsWithAnnotations,
+                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext })
+            };
+
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+            delete saveConfig.params.commit;
+            saveConfig.params.buildClusterName = 'iOS';
+
+            return factory.create({
+                username, jobId, eventId, sha, parentBuildId: 12345, meta
+            }).then(() => {
+                assert.callCount(stepFactoryMock.create, steps.length);
+                assert.calledWith(datastore.save, saveConfig);
+            });
+        });
+
+        it('throws err if the pipeline is unauthorized to use the build cluster', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const jobMock = {
+                permutations: permutationsWithAnnotations,
+                pipeline: Promise.resolve({ name: 'test/ui', scmUri, scmRepo, scmContext })
+            };
+
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+            delete saveConfig.params.commit;
+            saveConfig.params.buildClusterName = 'iOS';
+
+            return factory.create({
+                username, jobId, eventId, sha, parentBuildId: 12345, meta
+            }).catch((err) => {
+                assert.instanceOf(err, Error);
+                assert.strictEqual(err.message,
+                    'This pipeline is not authorized to use this build cluster.');
+            });
+        });
+
+        it('throws err if the build cluster specified does not exist', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const jobMock = {
+                permutations: permutationsWithAnnotations,
+                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext })
+            };
+
+            buildClusterFactoryMock.get.resolves(null);
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+            delete saveConfig.params.commit;
+
+            return factory.create({
+                username, jobId, eventId, sha, parentBuildId: 12345, meta
+            }).catch((err) => {
+                assert.instanceOf(err, Error);
+                assert.strictEqual(err.message,
+                    'Cluster specified in screwdriver.cd/buildCluster iOS does not exist.');
             });
         });
 
