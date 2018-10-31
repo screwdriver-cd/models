@@ -14,6 +14,7 @@ describe('BuildCluster Factory', () => {
     const isActive = true;
     const managedByScrewdriver = true;
     const maintainer = 'foo@bar.com';
+    const weightage = 80;
     const buildClusterData = {
         id: buildClusterId,
         name,
@@ -21,7 +22,8 @@ describe('BuildCluster Factory', () => {
         scmOrganizations,
         managedByScrewdriver,
         maintainer,
-        isActive
+        isActive,
+        weightage
     };
 
     let BuildClusterFactory;
@@ -77,7 +79,8 @@ describe('BuildCluster Factory', () => {
                 scmOrganizations,
                 managedByScrewdriver,
                 maintainer,
-                isActive
+                isActive,
+                weightage
             }).then((model) => {
                 assert.isTrue(datastore.save.calledOnce);
                 assert.instanceOf(model, BuildCluster);
@@ -88,10 +91,11 @@ describe('BuildCluster Factory', () => {
             });
         });
 
-        it('should create a BuildCluster without isActive status defined', () => {
+        it('should create a BuildCluster without isActive ans weightage defined', () => {
             const dataWithDefaultStatus = Object.assign({}, buildClusterData);
 
             dataWithDefaultStatus.isActive = true;
+            dataWithDefaultStatus.weightage = 100;
             datastore.save.resolves(dataWithDefaultStatus);
 
             return factory.create({

@@ -54,7 +54,8 @@ describe('Build Factory', () => {
         managedByScrewdriver: true,
         isActive: true,
         scmContext,
-        scmOrganizations: []
+        scmOrganizations: [],
+        weightage: 100
     }];
     const externalBuildCluster = {
         name: 'iOS',

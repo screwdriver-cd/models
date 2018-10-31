@@ -1449,6 +1449,7 @@ factory.create(config).then(model => {
 | config.isActive               | Boolean | No       | false   | Flag for whether banner should display           |
 | config.managedByScrewdriver   | Boolean | Yes      |         | Flag for whether the cluster managed by Screwdriver|
 | config.maintainer             | String  | Yes      |         | Email of the maintainer                          |
+| config.weightage              | String  | No       | 100     | Weight percentage for build cluster (from 1 to 100) |
 
 #### Get
 Get a buildcluster based on unique id of buildcluster.
