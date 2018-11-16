@@ -412,6 +412,21 @@ describe('Build Model', () => {
                 })
         );
 
+        it('passes buildClusterName to executor when it exists', () => {
+            build.buildClusterName = 'sd';
+
+            return build.stop()
+                .then(() => {
+                    assert.calledWith(executorMock.stop, {
+                        buildId,
+                        buildClusterName: 'sd',
+                        jobId,
+                        annotations,
+                        blockedBy: [jobId]
+                    });
+                });
+        });
+
         it('rejects on executor failure', () => {
             const expectedError = new Error('cantStopTheRock');
 
@@ -513,6 +528,43 @@ describe('Build Model', () => {
                     });
                 })
         );
+
+        it('passes buildClusterName to executor if it exists', () => {
+            build.buildClusterName = 'sd';
+
+            return build.start()
+                .then(() => {
+                    assert.calledWith(executorMock.start, {
+                        jobId,
+                        annotations,
+                        blockedBy: [jobId],
+                        apiUri,
+                        buildId,
+                        buildClusterName: 'sd',
+                        container,
+                        token
+                    });
+
+                    assert.calledWith(tokenGen, buildId, {
+                        isPR: false,
+                        jobId,
+                        pipelineId,
+                        configPipelineId,
+                        eventId
+                    }, scmContext, TEMPORAL_JWT_TIMEOUT);
+
+                    assert.calledWith(scmMock.updateCommitStatus, {
+                        token: 'foo',
+                        scmUri,
+                        scmContext,
+                        sha,
+                        jobName: 'main',
+                        buildStatus: 'QUEUED',
+                        url,
+                        pipelineId
+                    });
+                });
+        });
 
         it('get internal blockedby job Ids and pass to executor start', () => {
             const blocking1 = {
