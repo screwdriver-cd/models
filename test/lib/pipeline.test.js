@@ -493,6 +493,22 @@ describe('Pipeline Model', () => {
             });
         });
 
+        it('stores prChain to pipeline', () => {
+            const configMock = Object.assign({}, PARSED_YAML);
+
+            configMock.prChain = true;
+            parserMock.withArgs('superyamlcontent', templateFactoryMock)
+                .resolves(configMock);
+            jobs = [];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+
+            return pipeline.sync().then(() => {
+                assert.equal(pipeline.prChain, true);
+            });
+        });
+
         it('creates new jobs', () => {
             jobs = [];
             jobFactoryMock.list.resolves(jobs);
@@ -896,6 +912,19 @@ describe('Pipeline Model', () => {
             return pipeline.syncPR(1).catch((err) => {
                 assert.deepEqual(err, error);
             });
+        });
+
+        it('archives old PR job and does not create a PR job if prChain is true', () => {
+            jobs = [mainJob, prJob];
+            jobFactoryMock.list.resolves(jobs);
+            pipeline.prChain = true;
+
+            return pipeline.syncPR(1)
+                .then(() => {
+                    assert.calledOnce(prJob.update);
+                    assert.equal(prJob.archived, true);
+                    assert.notCalled(jobFactoryMock.create);
+                });
         });
     });
 

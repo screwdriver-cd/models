@@ -573,6 +573,28 @@ describe('Event Factory', () => {
                     }));
                 });
             });
+
+            it('should create build of the "main" job with prChain config', () => {
+                config.startFrom = '~pr';
+                config.prRef = 'branch';
+                config.prNum = 1;
+                config.webhooks = true;
+
+                afterSyncedPRPipelineMock.jobs = Promise.resolve(jobsMock);
+                afterSyncedPRPipelineMock.prChain = true;
+                afterSyncedPRPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
+
+                return eventFactory.create(config).then((model) => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 1,
+                        prRef: 'branch'
+                    }));
+                });
+            });
         });
 
         it('should create an Event', () =>
