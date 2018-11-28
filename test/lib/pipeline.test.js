@@ -918,11 +918,11 @@ describe('Pipeline Model', () => {
             prJob = {
                 update: sinon.stub().resolves(null),
                 isPR: sinon.stub().returns(true),
-                name: 'PR-1',
+                name: 'PR-1:main',
                 state: 'ENABLED',
                 archived: false
             };
-            jobs = [mainJob, prJob];
+            jobs = [mainJob, publishJob, prJob];
             jobFactoryMock.list.resolves(jobs);
         });
 
@@ -940,7 +940,7 @@ describe('Pipeline Model', () => {
             prJob.archived = true;
             const prJob2 = {
                 pipelineId: testId,
-                name: 'PR-2',
+                name: 'PR-2:main',
                 permutations: PARSED_YAML.jobs.main
             };
 
@@ -952,7 +952,8 @@ describe('Pipeline Model', () => {
                     assert.calledWith(jobFactoryMock.create, {
                         pipelineId: testId,
                         name: 'PR-2:main',
-                        permutations: PARSED_YAML.jobs.main
+                        permutations: PARSED_YAML.jobs.main,
+                        prParentJobId: 99998
                     });
                 });
         });
