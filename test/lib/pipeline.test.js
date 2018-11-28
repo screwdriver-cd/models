@@ -55,6 +55,7 @@ describe('Pipeline Model', () => {
     let publishJob;
     let mainJob;
     let blahJob;
+    let testJob;
     let pr10;
     let pr3;
 
@@ -88,6 +89,12 @@ describe('Pipeline Model', () => {
         publishJob = getJobMocks({
             id: 99999,
             name: 'publish',
+            archived: false
+        });
+
+        testJob = getJobMocks({
+            id: 100,
+            name: 'test',
             archived: false
         });
 
@@ -783,8 +790,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it.only('update PR config for multiple PR jobs and create missing PR jobs', () => {
-            const jobList = [publishJob, mainJob, pr10, pr3];
+        it('update PR config for multiple PR jobs and create missing PR jobs', () => {
             const firstPRJob = {
                 update: sinon.stub().resolves(null),
                 isPR: sinon.stub().returns(true),
@@ -792,22 +798,11 @@ describe('Pipeline Model', () => {
                 state: 'ENABLED',
                 archived: false
             };
-            const secondPRJob = {
-                update: sinon.stub().resolves(null),
-                isPR: sinon.stub().returns(true),
-                name: 'PR-1:publish',
-                state: 'ENABLED',
-                archived: false
-            };
             const clonedYAML = JSON.parse(JSON.stringify(PARSED_YAML_PR));
 
-            jobFactoryMock.list.onCall(0).resolves(jobList);
-            jobFactoryMock.list.onCall(1).resolves([firstPRJob, secondPRJob]);
+            jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob, testJob, firstPRJob]); // all jobs
+            jobFactoryMock.list.onCall(1).resolves([mainJob, publishJob, testJob]); // pipeline jobs
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(clonedYAML);
-
-            clonedYAML.workflowGraph.edges.push({
-                src: '~pr', dest: 'publish'
-            });
 
             return pipeline.syncPR(1).then(() => {
                 assert.calledWith(scmMock.getFile, {
@@ -823,15 +818,24 @@ describe('Pipeline Model', () => {
                     }
                 });
                 assert.calledOnce(firstPRJob.update);
-                assert.calledOnce(secondPRJob.update);
-                assert.calledWith(jobFactoryMock.create, sinon.match({
+                assert.calledTwice(jobFactoryMock.create);
+                assert.calledWith(jobFactoryMock.create.firstCall, {
+                    name: 'PR-1:test',
+                    permutations: [{
+                        commands: [{ command: 'npm test', name: 'test' }],
+                        image: 'node:10',
+                        requires: ['~pr']
+                    }],
+                    pipelineId: 123,
+                    prParentJobIdMap: 100
+
+                });
+                assert.calledWith(jobFactoryMock.create.secondCall, sinon.match({
                     pipelineId: 123,
                     name: 'PR-1:new_pr_job'
                 }));
                 assert.deepEqual(firstPRJob.permutations, clonedYAML.jobs.main);
-                assert.deepEqual(secondPRJob.permutations, clonedYAML.jobs.publish);
                 assert.isFalse(firstPRJob.archived);
-                assert.isFalse(secondPRJob.archived);
             });
         });
 
