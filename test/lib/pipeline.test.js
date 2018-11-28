@@ -783,7 +783,8 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('update PR config for multiple PR jobs and create missing PR jobs', () => {
+        it.only('update PR config for multiple PR jobs and create missing PR jobs', () => {
+            const jobList = [publishJob, mainJob, pr10, pr3];
             const firstPRJob = {
                 update: sinon.stub().resolves(null),
                 isPR: sinon.stub().returns(true),
@@ -800,12 +801,13 @@ describe('Pipeline Model', () => {
             };
             const clonedYAML = JSON.parse(JSON.stringify(PARSED_YAML_PR));
 
+            jobFactoryMock.list.onCall(0).resolves(jobList);
+            jobFactoryMock.list.onCall(1).resolves([firstPRJob, secondPRJob]);
+            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(clonedYAML);
+
             clonedYAML.workflowGraph.edges.push({
                 src: '~pr', dest: 'publish'
             });
-
-            jobFactoryMock.list.resolves([firstPRJob, secondPRJob]);
-            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(clonedYAML);
 
             return pipeline.syncPR(1).then(() => {
                 assert.calledWith(scmMock.getFile, {
