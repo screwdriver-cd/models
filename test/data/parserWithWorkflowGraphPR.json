@@ -56,21 +56,25 @@
                 "requires": ["~pr", "~commit", "~sd@12345:test"]
             }
         ],
+        "test": [
+            {
+                "image": "node:10",
+                "commands": [
+                    {
+                        "name": "test",
+                        "command": "npm test"
+                    }
+                ],
+                "requires": ["~pr"]
+            }
+        ],
         "publish": [
             {
                 "image": "node:4",
                 "commands": [
                     {
-                        "name": "bump",
-                        "command": "npm run bump"
-                    },
-                    {
                         "name": "publish",
                         "command": "npm publish --tag $NODE_TAG"
-                    },
-                    {
-                        "name": "tag",
-                        "command": "git push origin --tags"
                     }
                 ],
                 "environment": {
@@ -98,11 +102,13 @@
             { "name": "~pr" },
             { "name": "~commit" },
             { "name": "main" },
+            { "name": "test" },
             { "name": "publish" },
             { "name": "new_pr_job" }
         ],
         "edges": [
             { "src": "~pr", "dest": "main" },
+            { "src": "~pr", "dest": "test" },
             { "src": "~pr", "dest": "new_pr_job" },
             { "src": "~commit", "dest": "main" },
             { "src": "main", "dest": "publish" }
