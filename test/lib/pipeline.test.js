@@ -980,7 +980,8 @@ describe('Pipeline Model', () => {
                 });
         });
 
-        it('unarchive PR job if it was previously archived', () => {
+        it('unarchive PR job if it was previously archived and prChain is false.', () => {
+            pipeline.prChain = false;
             prJob.archived = true;
             scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
 
