@@ -827,7 +827,7 @@ describe('Pipeline Model', () => {
                         requires: ['~pr']
                     }],
                     pipelineId: 123,
-                    prParentJobIdMap: 100
+                    prParentJobId: 100
 
                 });
                 assert.calledWith(jobFactoryMock.create.secondCall, sinon.match({
