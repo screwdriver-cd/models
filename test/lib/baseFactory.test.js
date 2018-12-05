@@ -332,6 +332,18 @@ describe('Base Factory', () => {
                 })
         );
 
+        it('call datastore scan with exclude and groupBy options', () =>
+            factory.list({ exclude: ['unwanted_col'], groupBy: ['colA', 'colB'] })
+                .then(() =>
+                    assert.calledWith(datastore.scan, {
+                        table: 'base',
+                        params: {},
+                        exclude: ['unwanted_col'],
+                        groupBy: ['colA', 'colB']
+                    })
+                )
+        );
+
         it('returns raw scan results when raw is true', () => {
             const distinctRows = [
                 'namespace1',

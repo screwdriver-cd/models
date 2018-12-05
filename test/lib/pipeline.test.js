@@ -55,6 +55,7 @@ describe('Pipeline Model', () => {
     let publishJob;
     let mainJob;
     let blahJob;
+    let testJob;
     let pr10;
     let pr3;
 
@@ -88,6 +89,12 @@ describe('Pipeline Model', () => {
         publishJob = getJobMocks({
             id: 99999,
             name: 'publish',
+            archived: false
+        });
+
+        testJob = getJobMocks({
+            id: 100,
+            name: 'test',
             archived: false
         });
 
@@ -807,20 +814,10 @@ describe('Pipeline Model', () => {
                 state: 'ENABLED',
                 archived: false
             };
-            const secondPRJob = {
-                update: sinon.stub().resolves(null),
-                isPR: sinon.stub().returns(true),
-                name: 'PR-1:publish',
-                state: 'ENABLED',
-                archived: false
-            };
             const clonedYAML = JSON.parse(JSON.stringify(PARSED_YAML_PR));
 
-            clonedYAML.workflowGraph.edges.push({
-                src: '~pr', dest: 'publish'
-            });
-
-            jobFactoryMock.list.resolves([firstPRJob, secondPRJob]);
+            jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob, testJob, firstPRJob]); // all jobs
+            jobFactoryMock.list.onCall(1).resolves([mainJob, publishJob, testJob]); // pipeline jobs
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(clonedYAML);
 
             return pipeline.syncPR(1).then(() => {
@@ -837,15 +834,24 @@ describe('Pipeline Model', () => {
                     }
                 });
                 assert.calledOnce(firstPRJob.update);
-                assert.calledOnce(secondPRJob.update);
-                assert.calledWith(jobFactoryMock.create, sinon.match({
+                assert.calledTwice(jobFactoryMock.create);
+                assert.calledWith(jobFactoryMock.create.firstCall, {
+                    name: 'PR-1:test',
+                    permutations: [{
+                        commands: [{ command: 'npm test', name: 'test' }],
+                        image: 'node:10',
+                        requires: ['~pr']
+                    }],
+                    pipelineId: 123,
+                    prParentJobId: 100
+
+                });
+                assert.calledWith(jobFactoryMock.create.secondCall, sinon.match({
                     pipelineId: 123,
                     name: 'PR-1:new_pr_job'
                 }));
                 assert.deepEqual(firstPRJob.permutations, clonedYAML.jobs.main);
-                assert.deepEqual(secondPRJob.permutations, clonedYAML.jobs.publish);
                 assert.isFalse(firstPRJob.archived);
-                assert.isFalse(secondPRJob.archived);
             });
         });
 
@@ -941,11 +947,11 @@ describe('Pipeline Model', () => {
             prJob = {
                 update: sinon.stub().resolves(null),
                 isPR: sinon.stub().returns(true),
-                name: 'PR-1',
+                name: 'PR-1:main',
                 state: 'ENABLED',
                 archived: false
             };
-            jobs = [mainJob, prJob];
+            jobs = [mainJob, publishJob, prJob];
             jobFactoryMock.list.resolves(jobs);
         });
 
@@ -963,7 +969,7 @@ describe('Pipeline Model', () => {
             prJob.archived = true;
             const prJob2 = {
                 pipelineId: testId,
-                name: 'PR-2',
+                name: 'PR-2:main',
                 permutations: PARSED_YAML.jobs.main
             };
 
@@ -975,7 +981,8 @@ describe('Pipeline Model', () => {
                     assert.calledWith(jobFactoryMock.create, {
                         pipelineId: testId,
                         name: 'PR-2:main',
-                        permutations: PARSED_YAML.jobs.main
+                        permutations: PARSED_YAML.jobs.main,
+                        prParentJobId: 99998
                     });
                 });
         });
