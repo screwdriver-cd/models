@@ -470,6 +470,7 @@ describe('Build Model', () => {
 
     describe('start', () => {
         let sandbox;
+        const prParentJobId = 1000;
 
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
@@ -477,6 +478,7 @@ describe('Build Model', () => {
             executorMock.start.resolves(null);
             jobFactoryMock.get.resolves({
                 id: jobId,
+                prParentJobId,
                 name: 'main',
                 pipeline: Promise.resolve({
                     id: pipelineId,
@@ -513,7 +515,8 @@ describe('Build Model', () => {
                         jobId,
                         pipelineId,
                         configPipelineId,
-                        eventId
+                        eventId,
+                        prParentJobId
                     }, scmContext, TEMPORAL_JWT_TIMEOUT);
 
                     assert.calledWith(scmMock.updateCommitStatus, {
@@ -550,7 +553,8 @@ describe('Build Model', () => {
                         jobId,
                         pipelineId,
                         configPipelineId,
-                        eventId
+                        eventId,
+                        prParentJobId
                     }, scmContext, TEMPORAL_JWT_TIMEOUT);
 
                     assert.calledWith(scmMock.updateCommitStatus, {
