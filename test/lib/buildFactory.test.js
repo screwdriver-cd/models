@@ -280,7 +280,8 @@ describe('Build Factory', () => {
                     steps,
                     jobId,
                     sha,
-                    meta
+                    meta,
+                    stats: {}
                 }
             };
         });
@@ -448,6 +449,7 @@ describe('Build Factory', () => {
                     build: sinon.match.object
                 });
                 assert.calledOnce(startStub);
+
                 assert.calledWith(datastore.save, saveConfig);
             });
         });
