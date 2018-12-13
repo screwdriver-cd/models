@@ -318,6 +318,7 @@ describe('Pipeline Model', () => {
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
             pipeline.admins = { batman: true, robin: true };
+            pipelineFactoryMock.create.resolves({ id: '98765' });
             triggerFactoryMock.list.resolves([]);
             triggerFactoryMock.create.resolves(null);
 
@@ -639,7 +640,7 @@ describe('Pipeline Model', () => {
                 });
         });
 
-        it('Sync child pipeline if detects changes in scmUrls', () => {
+        it('syncs child pipeline if there are changes in scmUrls', () => {
             const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
 
             parsedYaml.childPipelines = {
@@ -685,7 +686,7 @@ describe('Pipeline Model', () => {
                 });
         });
 
-        it('Do not sync child pipelines if no admin permissions', () => {
+        it('does not sync child pipelines if no admin permissions', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
@@ -701,7 +702,7 @@ describe('Pipeline Model', () => {
                 });
         });
 
-        it('Do not update child pipelines if not belong to this parent', () => {
+        it('does not update child pipelines if does not belong to this parent', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
@@ -719,7 +720,7 @@ describe('Pipeline Model', () => {
                 });
         });
 
-        it('Remove child pipeline and reset scmUrls if it is removed from new yaml', () => {
+        it('removes child pipeline and resets scmUrls if it is removed from new yaml', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
