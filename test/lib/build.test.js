@@ -501,6 +501,7 @@ describe('Build Model', () => {
             build.start()
                 .then(() => {
                     assert.calledWith(executorMock.start, {
+                        build,
                         jobId,
                         annotations,
                         blockedBy: [jobId],
@@ -538,6 +539,7 @@ describe('Build Model', () => {
             return build.start()
                 .then(() => {
                     assert.calledWith(executorMock.start, {
+                        build,
                         jobId,
                         annotations,
                         blockedBy: [jobId],
@@ -606,6 +608,7 @@ describe('Build Model', () => {
             return build.start()
                 .then(() => {
                     assert.calledWith(executorMock.start, {
+                        build,
                         jobId,
                         blockedBy: [jobId, blocking1.id, blocking2.id],
                         annotations,
@@ -678,6 +681,7 @@ describe('Build Model', () => {
             return build.start()
                 .then(() => {
                     assert.calledWith(executorMock.start, {
+                        build,
                         jobId,
                         blockedBy: [jobId, internalJob.id, externalJob1.id, externalJob2.id],
                         annotations,
@@ -708,6 +712,7 @@ describe('Build Model', () => {
             return build.start()
                 .then(() => {
                     assert.calledWith(executorMock.start, {
+                        build,
                         jobId,
                         annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' },
                         blockedBy: [jobId],
