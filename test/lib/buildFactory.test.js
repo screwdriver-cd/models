@@ -136,7 +136,8 @@ describe('Build Factory', () => {
             executor,
             scm: scmMock,
             uiUri,
-            bookend: bookendMock
+            bookend: bookendMock,
+            multiBuildClusterEnabled: true
         });
         factory.apiUri = apiUri;
         factory.tokenGen = tokenGen;
@@ -304,6 +305,26 @@ describe('Build Factory', () => {
 
             return factory.create({
                 garbage, username, jobId, eventId, sha, parentBuildId: 12345, meta
+            }).then(() => {
+                assert.callCount(stepFactoryMock.create, steps.length);
+                assert.calledWith(datastore.save, saveConfig);
+            });
+        });
+
+        it('do not set buildClusterName if multiBuildClusterEnabled is false', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const jobMock = {
+                permutations: permutationsWithAnnotations,
+                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext })
+            };
+
+            factory.multiBuildClusterEnabled = false;
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+            delete saveConfig.params.commit;
+
+            return factory.create({
+                username, jobId, eventId, sha, parentBuildId: 12345, meta
             }).then(() => {
                 assert.callCount(stepFactoryMock.create, steps.length);
                 assert.calledWith(datastore.save, saveConfig);
