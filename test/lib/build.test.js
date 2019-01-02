@@ -267,6 +267,7 @@ describe('Build Model', () => {
                     });
                     assert.calledWith(scmMock.addPrComment, {
                         token: 'foo',
+                        scmContext,
                         scmUri,
                         comment: '### SD Pipeline [#1234](https://display.com/some/' +
                         'endpoint/pipelines/1234)\n\n' +
