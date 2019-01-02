@@ -24,6 +24,12 @@ describe('Build Model', () => {
     const scmContext = 'github:github.com';
     const token = 'equivalentToOneQuarter';
     const url = `${uiUri}/pipelines/${pipelineId}/builds/${buildId}`;
+    const meta = {
+        summary: {
+            coverage: 'Coverage increased by 15%',
+            markdown: 'this markdown comment is **bold** and *italic*'
+        }
+    };
     const TEMPORAL_JWT_TIMEOUT = 12 * 60;
     let BuildModel;
     let datastore;
@@ -86,10 +92,12 @@ describe('Build Model', () => {
             id: jobId,
             name: 'main',
             pipeline: Promise.resolve(pipelineMock),
-            permutations: [{ annotations }]
+            permutations: [{ annotations }],
+            isPR: sinon.stub().returns(false)
         };
         scmMock = {
-            updateCommitStatus: sinon.stub().resolves(null)
+            updateCommitStatus: sinon.stub().resolves(null),
+            addPrComment: sinon.stub().resolves(null)
         };
         tokenGen = sinon.stub().returns(token);
         const uF = {
@@ -125,6 +133,7 @@ describe('Build Model', () => {
             createTime: now,
             jobId,
             eventId,
+            meta,
             number: now,
             status: 'QUEUED',
             sha,
@@ -208,11 +217,25 @@ describe('Build Model', () => {
             build.steps = [step0, step1, step2];
 
             executorMock.stop.resolves(null);
-            jobFactoryMock.get.resolves(jobMock);
             datastore.update.resolves({});
+            jobFactoryMock.get.resolves(jobMock);
         });
 
         it('promises to update a build, stop the executor, and update status to failure', () => {
+            jobFactoryMock.get.resolves({
+                id: jobId,
+                name: 'PR-5:main',
+                pipeline: Promise.resolve({
+                    id: pipelineId,
+                    configPipelineId,
+                    scmUri,
+                    scmContext,
+                    admin: Promise.resolve(adminUser),
+                    token: Promise.resolve('foo')
+                }),
+                permutations: [{ annotations }],
+                isPR: sinon.stub().returns(true)
+            });
             build.status = 'FAILURE';
 
             return build.update()
@@ -237,10 +260,19 @@ describe('Build Model', () => {
                         scmUri,
                         scmContext,
                         sha,
-                        jobName: 'main',
+                        jobName: 'PR-5:main',
                         buildStatus: 'FAILURE',
                         url,
                         pipelineId
+                    });
+                    assert.calledWith(scmMock.addPrComment, {
+                        token: 'foo',
+                        scmUri,
+                        comment: '### SD Pipeline [#1234](https://display.com/some/' +
+                        'endpoint/pipelines/1234)\n\n' +
+                        '__coverage__ - Coverage increased by 15%\n' +
+                        '__markdown__ - this markdown comment is **bold** and *italic*\n\n',
+                        prNum: 5
                     });
                 });
         });
@@ -390,6 +422,56 @@ describe('Build Model', () => {
                         annotations,
                         blockedBy: [jobId]
                     });
+                });
+        });
+
+        it('skips pr commenting if meta summary key is not a string', () => {
+            jobFactoryMock.get.resolves({
+                id: jobId,
+                name: 'PR-5:main',
+                pipeline: Promise.resolve({
+                    id: pipelineId,
+                    configPipelineId,
+                    scmUri,
+                    scmContext,
+                    admin: Promise.resolve(adminUser),
+                    token: Promise.resolve('foo')
+                }),
+                permutations: [{ annotations }],
+                isPR: sinon.stub().returns(true)
+            });
+            build.status = 'FAILURE';
+            build.meta.summary = {
+                1: 3
+            };
+
+            return build.update()
+                .then(() => {
+                    assert.calledWith(executorMock.stop, {
+                        buildId,
+                        jobId,
+                        annotations,
+                        blockedBy: [jobId]
+                    });
+
+                    // Completed step is not modified
+                    assert.deepEqual(build.steps[0], step0);
+                    // In progress step is aborted
+                    assert.ok(build.steps[1].endTime);
+                    assert.equal(build.steps[1].code, 130);
+                    // Unstarted step is not modified
+                    assert.deepEqual(build.steps[2], step2);
+                    assert.calledWith(scmMock.updateCommitStatus, {
+                        token: 'foo',
+                        scmUri,
+                        scmContext,
+                        sha,
+                        jobName: 'PR-5:main',
+                        buildStatus: 'FAILURE',
+                        url,
+                        pipelineId
+                    });
+                    assert.notCalled(scmMock.addPrComment);
                 });
         });
     });
