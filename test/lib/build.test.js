@@ -25,9 +25,11 @@ describe('Build Model', () => {
     const token = 'equivalentToOneQuarter';
     const url = `${uiUri}/pipelines/${pipelineId}/builds/${buildId}`;
     const meta = {
-        summary: {
-            coverage: 'Coverage increased by 15%',
-            markdown: 'this markdown comment is **bold** and *italic*'
+        meta: {
+            summary: {
+                coverage: 'Coverage increased by 15%',
+                markdown: 'this markdown comment is **bold** and *italic*'
+            }
         }
     };
     const TEMPORAL_JWT_TIMEOUT = 12 * 60;
@@ -269,10 +271,11 @@ describe('Build Model', () => {
                         token: 'foo',
                         scmContext,
                         scmUri,
-                        comment: '### SD Pipeline [#1234](https://display.com/some/' +
-                        'endpoint/pipelines/1234)\n\n' +
+                        comment: '### SD Build [#9876](https://display.com/some/' +
+                        'endpoint/pipelines/1234/builds/9876)\n_node:4_\n- - - -\n' +
                         '__coverage__ - Coverage increased by 15%\n' +
-                        '__markdown__ - this markdown comment is **bold** and *italic*\n\n',
+                        '__markdown__ - this markdown comment is **bold** and *italic*\n\n' +
+                        '###### ~ Screwdriver automated build summary',
                         prNum: 5
                     });
                 });
@@ -442,7 +445,7 @@ describe('Build Model', () => {
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
-            build.meta.summary = {
+            build.meta.meta.summary = {
                 1: 3
             };
 
