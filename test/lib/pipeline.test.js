@@ -58,6 +58,8 @@ describe('Pipeline Model', () => {
     let testJob;
     let pr10;
     let pr3;
+    let pr3Info;
+    let pr10Info;
 
     const decorateJobMock = (job) => {
         const decorated = hoek.clone(job);
@@ -121,6 +123,22 @@ describe('Pipeline Model', () => {
             name: 'PR-3',
             archived: false
         });
+
+        pr3Info = {
+            name: 'PR-3',
+            ref: 'abc',
+            title: 'Test ref abc',
+            username: 'janedoe',
+            createTime: '2018-10-10T21:35:31Z'
+        };
+
+        pr10Info = {
+            name: 'PR-10',
+            ref: 'efg',
+            title: 'Test ref efg',
+            username: 'johnsmith',
+            createTime: '2018-10-10T21:35:31Z'
+        };
 
         pr10.isPR.returns(true);
         pr3.isPR.returns(true);
@@ -1219,6 +1237,13 @@ describe('Pipeline Model', () => {
     });
 
     describe('get jobs', () => {
+        beforeEach(() => {
+            getUserPermissionMocks({ username: 'janedoe', push: true });
+            getUserPermissionMocks({ username: 'johnsmith', push: true });
+            pipeline.admins = { janedoe: true, johnsmith: true };
+            scmMock.getOpenedPRs.resolves([pr3Info, pr10Info]);
+        });
+
         it('gets all jobs', () => {
             const expected = {
                 params: {
@@ -1235,6 +1260,8 @@ describe('Pipeline Model', () => {
             return pipeline.getJobs().then((result) => {
                 assert.calledWith(jobFactoryMock.list, expected);
                 assert.deepEqual(result, expectedJobs);
+                assert.equal(result[2].title, pr3Info.title);
+                assert.equal(result[3].title, pr10Info.title);
             });
         });
 
@@ -1256,6 +1283,8 @@ describe('Pipeline Model', () => {
             return pipeline.getJobs(config).then((result) => {
                 assert.calledWith(jobFactoryMock.list, expected);
                 assert.deepEqual(result, expectedJobs);
+                assert.equal(result[0].title, pr3Info.title);
+                assert.equal(result[1].title, pr10Info.title);
             });
         });
 
