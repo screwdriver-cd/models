@@ -247,13 +247,18 @@ describe('Build Factory', () => {
             one: 1
         };
 
+        steps.unshift({
+            name: 'sd-setup-init',
+            startTime: isoTime
+        });
+
         let saveConfig;
 
         beforeEach(() => {
             scmMock.getCommitSha.resolves(sha);
             scmMock.decorateCommit.resolves(commit);
             scmMock.getDisplayName.returns(displayName);
-            bookendMock.getSetupCommands.resolves([steps[1]]);
+            bookendMock.getSetupCommands.resolves([steps[2]]);
             bookendMock.getTeardownCommands.resolves([]);
             datastore.save.resolves({});
 
@@ -510,7 +515,7 @@ describe('Build Factory', () => {
             bookendMock.getTeardownCommands.resolves([teardown]);
             bookendMock.getSetupCommands.resolves([]);
 
-            const expectedSteps = steps.slice(0, 1).concat(steps.slice(2));
+            const expectedSteps = steps.slice(0, 2).concat(steps.slice(3));
 
             expectedSteps.push(teardown);
 
