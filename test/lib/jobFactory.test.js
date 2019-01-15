@@ -170,6 +170,41 @@ describe('Job Factory', () => {
                 });
             });
         });
+
+        it('does not create a periodic job if job is PR', () => {
+            const tokenGenFunc = () => 'bar';
+            const periodicPermutations = [
+                Object.assign(
+                    { annotations: { 'screwdriver.cd/buildPeriodically': 'H * * * *' } }
+                    , permutations[0])
+            ];
+
+            factory.tokenGen = tokenGenFunc;
+
+            const expected = {
+                name: 'PR-1:main',
+                pipelineId,
+                state: 'ENABLED',
+                archived: false,
+                id: jobId,
+                permutations: periodicPermutations
+            };
+
+            datastore.save.resolves(expected);
+            saveConfig.params.permutations = periodicPermutations;
+            saveConfig.params.name = 'PR-1:main';
+
+            return factory.create({
+                pipelineId,
+                name: 'PR-1:main',
+                permutations: periodicPermutations
+            }).then((model) => {
+                assert.calledWith(datastore.save, saveConfig);
+                assert.instanceOf(model, Job);
+                assert.notCalled(pipelineFactoryMock.get);
+                assert.notCalled(executor.startPeriodic);
+            });
+        });
     });
 
     describe('getInstance', () => {
