@@ -20,6 +20,9 @@ const EXTERNAL_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML, {
         scmUrls: SCM_URLS
     }
 });
+const PRCHAIN_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML_PR, {
+    prChain: true
+});
 
 describe('Pipeline Model', () => {
     let PipelineModel;
@@ -939,17 +942,69 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('archives old PR job and does not create a PR job if prChain is true', () => {
-            jobs = [mainJob, prJob];
-            jobFactoryMock.list.resolves(jobs);
-            pipeline.prChain = true;
+        it('update PR config and create missing PR jobs if prChain is true', () => {
+            const firstPRJob = {
+                update: sinon.stub().resolves(null),
+                isPR: sinon.stub().returns(true),
+                name: 'PR-1:main',
+                state: 'ENABLED',
+                archived: false
+            };
+            const clonedYAML = JSON.parse(JSON.stringify(PRCHAIN_PARSED_YAML));
 
-            return pipeline.syncPR(1)
-                .then(() => {
-                    assert.calledOnce(prJob.update);
-                    assert.equal(prJob.archived, true);
-                    assert.notCalled(jobFactoryMock.create);
+            jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob, testJob, firstPRJob]); // all jobs
+            jobFactoryMock.list.onCall(1).resolves([mainJob, publishJob, testJob]); // pipeline jobs
+            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(clonedYAML);
+
+            return pipeline.syncPR(1).then(() => {
+                assert.calledWith(scmMock.getFile, {
+                    path: 'screwdriver.yaml',
+                    ref: 'pulls/1/merge',
+                    scmUri,
+                    scmContext,
+                    token: 'foo',
+                    scmRepo: {
+                        branch: 'branch',
+                        url: 'https://host/owner/repo/tree/branch',
+                        name: 'owner/repo'
+                    }
                 });
+                assert.calledOnce(firstPRJob.update);
+                assert.calledThrice(jobFactoryMock.create);
+                assert.calledWith(jobFactoryMock.create.firstCall, {
+                    name: 'PR-1:test',
+                    permutations: [{
+                        commands: [{ command: 'npm test', name: 'test' }],
+                        image: 'node:10',
+                        requires: ['~pr']
+                    }],
+                    pipelineId: 123,
+                    prParentJobId: 100
+
+                });
+                assert.calledWith(jobFactoryMock.create.secondCall, sinon.match({
+                    name: 'PR-1:new_pr_job',
+                    permutations: [{
+                        commands: [{ command: 'npm install test', name: 'install' }],
+                        image: 'node:8',
+                        requires: ['~pr']
+                    }],
+                    pipelineId: 123
+                }));
+                assert.calledWith(jobFactoryMock.create.thirdCall, sinon.match({
+                    name: 'PR-1:publish',
+                    permutations: [{
+                        commands: [{ command: 'npm publish --tag $NODE_TAG', name: 'publish' }],
+                        environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
+                        image: 'node:4',
+                        requires: ['main']
+                    }],
+                    pipelineId: 123,
+                    prParentJobId: 99999
+                }));
+                assert.deepEqual(firstPRJob.permutations, clonedYAML.jobs.main);
+                assert.isFalse(firstPRJob.archived);
+            });
         });
     });
 
