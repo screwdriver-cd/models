@@ -218,80 +218,6 @@ describe('Event Factory', () => {
                 branch: Promise.resolve('branch')
             };
 
-            jobsMock = [{
-                id: 1,
-                pipelineId: 8765,
-                name: 'main',
-                permutations: [{
-                    requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch', '~pr:branch']
-                }],
-                state: 'ENABLED'
-            }, {
-                id: 2,
-                pipelineId: 8765,
-                name: 'disabledjob',
-                permutations: [{
-                    requires: ['main']
-                }],
-                state: 'DISABLED'
-            }, {
-                id: 4,
-                pipelineId: 8765,
-                name: 'publish',
-                permutations: [{
-                    requires: ['~pr']
-                }],
-                state: 'ENABLED'
-            }, {
-                id: 5,
-                pipelineId: 8765,
-                name: 'commit-branch',
-                permutations: [{
-                    requires: ['~commit:branch']
-                }],
-                state: 'ENABLED'
-            }, {
-                id: 6,
-                pipelineId: 8765,
-                name: 'only-commit',
-                permutations: [{
-                    requires: ['~commit']
-                }],
-                state: 'ENABLED'
-            }, {
-                id: 7,
-                pipelineId: 8765,
-                name: 'commit-wild',
-                permutations: [{
-                    requires: ['~commit:/^.*$/']
-                }],
-                state: 'ENABLED'
-            }, {
-                id: 8,
-                pipelineId: 8765,
-                name: 'pr-branch',
-                permutations: [{
-                    requires: ['~pr:branch']
-                }],
-                state: 'ENABLED'
-            }, {
-                id: 9,
-                pipelineId: 8765,
-                name: 'pr-wild',
-                permutations: [{
-                    requires: ['~pr:/^.*$/']
-                }],
-                state: 'ENABLED'
-            }, {
-                id: 10,
-                pipelineId: 8765,
-                name: 'PR-1:main',
-                permutations: [{
-                    requires: ['~pr']
-                }],
-                state: 'ENABLED'
-            }];
-
             afterSyncedPRPipelineMock = Object.assign({}, syncedPipelineMock);
             syncedPipelineMock.syncPR = sinon.stub().resolves(afterSyncedPRPipelineMock);
 
@@ -301,8 +227,6 @@ describe('Event Factory', () => {
                 branch: sinon.stub().resolves('branch')
             };
 
-            syncedPipelineMock.jobs = Promise.resolve(jobsMock);
-            buildFactoryMock.create.resolves('a build object');
             pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
             scm.decorateAuthor.resolves(creator);
             scm.decorateCommit.resolves(commit);
@@ -311,6 +235,85 @@ describe('Event Factory', () => {
         });
 
         describe('with new workflow', () => {
+            beforeEach(() => {
+                jobsMock = [{
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [{
+                        requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch', '~pr:branch']
+                    }],
+                    state: 'ENABLED'
+                }, {
+                    id: 2,
+                    pipelineId: 8765,
+                    name: 'disabledjob',
+                    permutations: [{
+                        requires: ['main']
+                    }],
+                    state: 'DISABLED'
+                }, {
+                    id: 4,
+                    pipelineId: 8765,
+                    name: 'publish',
+                    permutations: [{
+                        requires: ['~pr']
+                    }],
+                    state: 'ENABLED'
+                }, {
+                    id: 5,
+                    pipelineId: 8765,
+                    name: 'commit-branch',
+                    permutations: [{
+                        requires: ['~commit:branch']
+                    }],
+                    state: 'ENABLED'
+                }, {
+                    id: 6,
+                    pipelineId: 8765,
+                    name: 'only-commit',
+                    permutations: [{
+                        requires: ['~commit']
+                    }],
+                    state: 'ENABLED'
+                }, {
+                    id: 7,
+                    pipelineId: 8765,
+                    name: 'commit-wild',
+                    permutations: [{
+                        requires: ['~commit:/^.*$/']
+                    }],
+                    state: 'ENABLED'
+                }, {
+                    id: 8,
+                    pipelineId: 8765,
+                    name: 'pr-branch',
+                    permutations: [{
+                        requires: ['~pr:branch']
+                    }],
+                    state: 'ENABLED'
+                }, {
+                    id: 9,
+                    pipelineId: 8765,
+                    name: 'pr-wild',
+                    permutations: [{
+                        requires: ['~pr:/^.*$/']
+                    }],
+                    state: 'ENABLED'
+                }, {
+                    id: 10,
+                    pipelineId: 8765,
+                    name: 'PR-1:main',
+                    permutations: [{
+                        requires: ['~pr']
+                    }],
+                    state: 'ENABLED'
+                }];
+
+                syncedPipelineMock.jobs = Promise.resolve(jobsMock);
+                buildFactoryMock.create.resolves('a build object');
+            });
+
             it('should start existing unarchived pr jobs without creating duplicates', () => {
                 jobsMock = [{
                     id: 1,
@@ -527,16 +530,20 @@ describe('Event Factory', () => {
                 });
             });
 
-            it('should return null if startFrom job does not exist', () => {
+            it('should throw error if startFrom job does not exist', () => {
                 config.startFrom = 'doesnnotexist';
 
-                return eventFactory.create(config).then(() => null);
+                return eventFactory.create(config).then((event) => {
+                    assert.equal(event.builds, null);
+                });
             });
 
-            it('should return null if startFrom job is disabled', () => {
+            it('should throw error if startFrom job is disabled', () => {
                 config.startFrom = 'disabledjob';
 
-                return eventFactory.create(config).then(() => null);
+                return eventFactory.create(config).then((event) => {
+                    assert.equal(event.builds, null);
+                });
             });
 
             it('should create builds with config pipeline sha if it is a child pipeline', () => {
@@ -580,13 +587,7 @@ describe('Event Factory', () => {
             });
         });
 
-        it('should create an Event', () => {
-            config.startFrom = '~commit';
-            syncedPipelineMock.update = sinon.stub().resolves({
-                jobs: Promise.resolve(jobsMock),
-                branch: Promise.resolve('branch')
-            });
-
+        it('should create an Event', () =>
             eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
                 assert.calledWith(scm.decorateAuthor, {
@@ -609,11 +610,10 @@ describe('Event Factory', () => {
                         assert.strictEqual(model[key], expected[key]);
                     }
                 });
-            });
-        });
+            })
+        );
 
         it('should create an Event with meta', () => {
-            config.startFrom = '~commit';
             const meta = {
                 foo: 'bar',
                 one: 1
@@ -648,7 +648,6 @@ describe('Event Factory', () => {
         });
 
         it('should call pipeline sync with configPipelineSha if passed in', () => {
-            config.startFrom = '~commit';
             config.parentEventId = 222;
             config.configPipelineSha = 'configpipelinesha';
 
@@ -661,7 +660,6 @@ describe('Event Factory', () => {
         });
 
         it('should create event with config pipeline sha if it is child pipeline', () => {
-            config.startFrom = '~commit';
             pipelineMock.configPipelineId = 1;
             pipelineFactoryMock.get.withArgs(1).resolves({
                 id: 1,
@@ -723,7 +721,9 @@ describe('Event Factory', () => {
             config.webhooks = true;
             config.changedFiles = ['README.md', 'root/src/test/file'];
 
-            return eventFactory.create(config).then(() => null);
+            return eventFactory.create(config).then((event) => {
+                assert.equal(event.builds, null);
+            });
         });
 
         // eslint-disable-next-line max-len
@@ -831,7 +831,6 @@ describe('Event Factory', () => {
         });
 
         it('use username as displayName if displayLabel is not set', () => {
-            config.startFrom = '~commit';
             scm.getDisplayName.returns(null);
 
             return eventFactory.create(config).then((model) => {
@@ -840,7 +839,6 @@ describe('Event Factory', () => {
         });
 
         it('should create using parentEvent workflowGraph and job configs', () => {
-            config.startFrom = '~commit';
             config.parentEventId = 222;
             config.workflowGraph = {
                 nodes: [
@@ -851,23 +849,9 @@ describe('Event Factory', () => {
                     { src: '~commit', dest: 'testJob' }
                 ]
             };
-            jobsMock = [{
-                id: 1,
-                pipelineId: 8765,
-                name: 'testJob',
-                permutations: [{
-                    requires: ['~commit']
-                }],
-                state: 'ENABLED'
-            }];
-
             expected.workflowGraph = config.workflowGraph;
             expected.parentEventId = config.parentEventId;
             syncedPipelineMock.workflowGraph = config.workflowGraph;
-            syncedPipelineMock.update = sinon.stub().resolves({
-                jobs: Promise.resolve(jobsMock),
-                branch: Promise.resolve('branch')
-            });
 
             return eventFactory.create(config).then((model) => {
                 assert.calledWith(pipelineMock.sync, config.sha);
