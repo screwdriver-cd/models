@@ -942,7 +942,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('update PR config and create missing PR jobs if prChain is true', () => {
+        it('updates PR config and create missing PR jobs if prChain is true', () => {
             const firstPRJob = {
                 update: sinon.stub().resolves(null),
                 isPR: sinon.stub().returns(true),
