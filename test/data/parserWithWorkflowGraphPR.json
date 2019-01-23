@@ -95,6 +95,18 @@
                 ],
                 "requires": ["~pr"]
             }
+        ],
+        "not_pr_job": [
+            {
+                "image": "node:8",
+                "commands": [
+                    {
+                        "name": "install",
+                        "command": "npm install test"
+                    }
+                ],
+                "requires": ["~commit"]
+            }
         ]
     },
     "workflowGraph": {
@@ -104,14 +116,16 @@
             { "name": "main" },
             { "name": "test" },
             { "name": "publish" },
-            { "name": "new_pr_job" }
+            { "name": "new_pr_job" },
+            { "name": "not_pr_job" }
         ],
         "edges": [
             { "src": "~pr", "dest": "main" },
             { "src": "~pr", "dest": "test" },
             { "src": "~pr", "dest": "new_pr_job" },
             { "src": "~commit", "dest": "main" },
-            { "src": "main", "dest": "publish" }
+            { "src": "main", "dest": "publish" },
+            { "src": "~commit", "dest": "not_pr_job" }
         ]
     },
     "annotations": {
