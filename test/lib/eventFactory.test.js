@@ -564,7 +564,7 @@ describe('Event Factory', () => {
                 });
             });
 
-            it('should create build of the "main" job with prChain config', () => {
+            it('should create build of the "PR-1:main" job with prChain config', () => {
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
                 config.prNum = 1;
@@ -580,7 +580,7 @@ describe('Event Factory', () => {
                     assert.calledWith(buildFactoryMock.create, sinon.match({
                         parentBuildId: 12345,
                         eventId: model.id,
-                        jobId: 1,
+                        jobId: 10,
                         prRef: 'branch'
                     }));
                 });
