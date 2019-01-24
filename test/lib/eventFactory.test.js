@@ -533,26 +533,16 @@ describe('Event Factory', () => {
             it('should throw error if startFrom job does not exist', () => {
                 config.startFrom = 'doesnnotexist';
 
-                return eventFactory.create(config).then(() => {
-                    throw new Error('Should not get here');
-                }, (err) => {
-                    assert.isOk(err, 'Error should be returned');
-                    assert.equal(err.message, 'No jobs to start');
-                    assert.notCalled(jobFactoryMock.create);
-                    assert.notCalled(buildFactoryMock.create);
+                return eventFactory.create(config).then((event) => {
+                    assert.equal(event.builds, null);
                 });
             });
 
             it('should throw error if startFrom job is disabled', () => {
                 config.startFrom = 'disabledjob';
 
-                return eventFactory.create(config).then(() => {
-                    throw new Error('Should not get here');
-                }, (err) => {
-                    assert.isOk(err, 'Error should be returned');
-                    assert.equal(err.message, 'No jobs to start');
-                    assert.notCalled(jobFactoryMock.create);
-                    assert.notCalled(buildFactoryMock.create);
+                return eventFactory.create(config).then((event) => {
+                    assert.equal(event.builds, null);
                 });
             });
 
@@ -731,12 +721,8 @@ describe('Event Factory', () => {
             config.webhooks = true;
             config.changedFiles = ['README.md', 'root/src/test/file'];
 
-            return eventFactory.create(config).then(() => {
-                throw new Error('Should not get here');
-            }, (err) => {
-                assert.isOk(err, 'Error should be returned');
-                assert.equal(err.message, 'No jobs to start');
-                assert.notCalled(buildFactoryMock.create);
+            return eventFactory.create(config).then((event) => {
+                assert.equal(event.builds, null);
             });
         });
 
