@@ -36,6 +36,7 @@ describe('Pipeline Model', () => {
     let userFactoryMock;
     let secretFactoryMock;
     let eventFactoryMock;
+    let buildFactoryMock;
     let templateFactoryMock;
     let triggerFactoryMock;
     let pipelineFactoryMock;
@@ -165,6 +166,9 @@ describe('Pipeline Model', () => {
         eventFactoryMock = {
             list: sinon.stub()
         };
+        buildFactoryMock = {
+            list: sinon.stub()
+        };
         userFactoryMock = {
             get: sinon.stub(),
             getPermissions: sinon.stub()
@@ -221,6 +225,8 @@ describe('Pipeline Model', () => {
             getInstance: sinon.stub().returns(jobFactoryMock) });
         mockery.registerMock('./eventFactory', {
             getInstance: sinon.stub().returns(eventFactoryMock) });
+        mockery.registerMock('./buildFactory', {
+            getInstance: sinon.stub().returns(buildFactoryMock) });
         mockery.registerMock('./userFactory', {
             getInstance: sinon.stub().returns(userFactoryMock)
         });
@@ -1897,6 +1903,71 @@ describe('Pipeline Model', () => {
             // ...but the factory was not recreated, since the promise is stored
             // as the model's tokens property, now
             assert.calledOnce(tokenFactoryMock.list);
+        });
+    });
+
+    describe('get metrics', () => {
+        const startTime = '2019-01-20T12:00:00.000Z';
+        const endTime = '2019-01-30T12:00:00.000Z';
+        const event1 = {
+            id: 1,
+            createTime: '2019-01-22T21:49:03.610Z'
+        };
+        const event2 = {
+            id: 2,
+            createTime: '2019-01-24T11:00:00.610Z'
+        };
+        const metrics = [{
+            id: 1,
+            createTime: '2019-01-22T21:49:03.610Z',
+            duration: 3600
+        }, {
+            id: 2,
+            createTime: '2019-01-24T11:00:00.610Z',
+            duration: 47481
+        }];
+        const eventListConfig = {
+            params: {
+                pipelineId: 123,
+                type: 'pipeline'
+            },
+            sort: 'descending',
+            startTime,
+            endTime
+
+        };
+        const buildListConfig1 = {
+            params: {
+                eventId: event1.id
+            },
+            startTime,
+            endTime
+        };
+        const buildListConfig2 = Object.assign(
+            {}, buildListConfig1, { params: { eventId: event2.id } });
+
+        it.only('generates metrics', () => {
+            eventFactoryMock.list.resolves([event1, event2]);
+
+            return pipeline.getMetrics({ startTime, endTime }).then((result) => {
+                assert.calledWith(eventFactoryMock.list, eventListConfig);
+                assert.calledTwice(buildFactoryMock.list);
+                assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig1);
+                assert.calledWith(buildFactoryMock.list.secondCall, buildListConfig2);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('rejects with errors', () => {
+            eventFactoryMock.list.rejects(new Error('cannotgetit'));
+
+            return pipeline.getEvents()
+                .then(() => {
+                    assert.fail('Should not get here');
+                }).catch((err) => {
+                    assert.instanceOf(err, Error);
+                    assert.equal(err.message, 'cannotgetit');
+                });
         });
     });
 });
