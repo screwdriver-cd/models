@@ -281,6 +281,89 @@ describe('Build Model', () => {
                 });
         });
 
+        it('promises to update a build, stop the executor, and update statuses', () => {
+            jobFactoryMock.get.resolves({
+                id: jobId,
+                name: 'PR-5:main',
+                pipeline: Promise.resolve({
+                    id: pipelineId,
+                    configPipelineId,
+                    scmUri,
+                    scmContext,
+                    admin: Promise.resolve(adminUser),
+                    token: Promise.resolve('foo')
+                }),
+                permutations: [{ annotations }],
+                isPR: sinon.stub().returns(true)
+            });
+            build.status = 'FAILURE';
+            build.meta.meta.summary = {};
+            build.meta.meta.status = {
+                findbugs: {
+                    status: 'SUCCESS',
+                    message: '923 issues found. Previous count: 914 issues.',
+                    url: 'http://findbugs.com'
+                },
+                snyk: {
+                    status: 'FAILURE',
+                    message: '23 package vulnerabilities found. Previous count: 0 vulnerabilities.'
+                }
+            };
+
+            return build.update()
+                .then(() => {
+                    assert.calledWith(executorMock.stop, {
+                        buildId,
+                        jobId,
+                        annotations,
+                        blockedBy: [jobId]
+                    });
+
+                    // Completed step is not modified
+                    assert.deepEqual(build.steps[0], step0);
+                    // In progress step is aborted
+                    assert.ok(build.steps[1].endTime);
+                    assert.equal(build.steps[1].code, 130);
+                    // Unstarted step is not modified
+                    assert.deepEqual(build.steps[2], step2);
+                    assert.calledWith(scmMock.updateCommitStatus.firstCall, {
+                        token: 'foo',
+                        scmUri,
+                        scmContext,
+                        sha,
+                        jobName: 'PR-5:main',
+                        buildStatus: 'FAILURE',
+                        url,
+                        pipelineId
+                    });
+                    assert.calledWith(scmMock.updateCommitStatus.secondCall, {
+                        token: 'foo',
+                        scmUri,
+                        scmContext,
+                        sha,
+                        jobName: 'PR-5:main',
+                        buildStatus: 'SUCCESS',
+                        url: 'http://findbugs.com',
+                        pipelineId,
+                        context: 'findbugs',
+                        description: '923 issues found. Previous count: 914 issues.'
+                    });
+                    assert.calledWith(scmMock.updateCommitStatus.thirdCall, {
+                        token: 'foo',
+                        scmUri,
+                        scmContext,
+                        sha,
+                        jobName: 'PR-5:main',
+                        buildStatus: 'FAILURE',
+                        url: 'https://display.com/some/endpoint/pipelines/1234/builds/9876',
+                        pipelineId,
+                        context: 'snyk',
+                        description: '23 package vulnerabilities found. ' +
+                            'Previous count: 0 vulnerabilities.'
+                    });
+                });
+        });
+
         it('aborts running steps, and sets an endTime', () => {
             build.status = 'ABORTED';
 
@@ -475,6 +558,44 @@ describe('Build Model', () => {
                         url,
                         pipelineId
                     });
+                    assert.notCalled(scmMock.addPrComment);
+                });
+        });
+
+        it('skips custom status update if meta status field is not an object', () => {
+            jobFactoryMock.get.resolves({
+                id: jobId,
+                name: 'PR-5:main',
+                pipeline: Promise.resolve({
+                    id: pipelineId,
+                    configPipelineId,
+                    scmUri,
+                    scmContext,
+                    admin: Promise.resolve(adminUser),
+                    token: Promise.resolve('foo')
+                }),
+                permutations: [{ annotations }],
+                isPR: sinon.stub().returns(true)
+            });
+            build.status = 'FAILURE';
+            build.meta.meta.status = {
+                findbugs: 'hello'
+            };
+            delete build.meta.meta.summary;
+
+            return build.update()
+                .then(() => {
+                    assert.calledWith(scmMock.updateCommitStatus.firstCall, {
+                        token: 'foo',
+                        scmUri,
+                        scmContext,
+                        sha,
+                        jobName: 'PR-5:main',
+                        buildStatus: 'FAILURE',
+                        url,
+                        pipelineId
+                    });
+                    assert.notOk(scmMock.updateCommitStatus.secondCall);
                     assert.notCalled(scmMock.addPrComment);
                 });
         });
