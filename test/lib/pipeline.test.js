@@ -132,7 +132,9 @@ describe('Pipeline Model', () => {
             ref: 'abc',
             title: 'Test ref abc',
             username: 'janedoe',
-            createTime: '2018-10-10T21:35:31Z'
+            createTime: '2018-10-10T21:35:31Z',
+            url: '/PR-3',
+            userProfile: '/janedoe'
         };
 
         pr10Info = {
@@ -140,7 +142,9 @@ describe('Pipeline Model', () => {
             ref: 'efg',
             title: 'Test ref efg',
             username: 'johnsmith',
-            createTime: '2018-10-10T21:35:31Z'
+            createTime: '2018-10-10T21:35:31Z',
+            url: '/PR-3',
+            userProfile: '/johnsmith'
         };
 
         pr10.isPR.returns(true);
@@ -1316,7 +1320,11 @@ describe('Pipeline Model', () => {
                 assert.calledWith(jobFactoryMock.list, expected);
                 assert.deepEqual(result, expectedJobs);
                 assert.equal(result[2].title, pr3Info.title);
+                assert.equal(result[2].url, pr3Info.url);
+                assert.equal(result[2].userProfile, pr3Info.userProfile);
                 assert.equal(result[3].title, pr10Info.title);
+                assert.equal(result[3].url, pr10Info.url);
+                assert.equal(result[3].userProfile, pr10Info.userProfile);
             });
         });
 
@@ -1339,7 +1347,11 @@ describe('Pipeline Model', () => {
                 assert.calledWith(jobFactoryMock.list, expected);
                 assert.deepEqual(result, expectedJobs);
                 assert.equal(result[0].title, pr3Info.title);
+                assert.equal(result[0].url, pr3Info.url);
+                assert.equal(result[0].userProfile, pr3Info.userProfile);
                 assert.equal(result[1].title, pr10Info.title);
+                assert.equal(result[1].url, pr10Info.url);
+                assert.equal(result[1].userProfile, pr10Info.userProfile);
             });
         });
 
