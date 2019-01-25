@@ -1943,15 +1943,11 @@ describe('Pipeline Model', () => {
             createTime: '2019-01-24T11:25:00.610Z',
             getBuilds: sinon.stub().resolves([build21, build22])
         };
-        const metrics = [{
-            id: 1,
-            createTime: event1.createTime,
-            duration: (new Date(build12.endTime) - new Date(build11.startTime)) / 1000
-        }, {
-            id: 2,
-            createTime: event2.createTime,
-            duration: (new Date(build22.endTime) - new Date(build22.startTime)) / 1000
-        }];
+        const metrics = [
+            Object.assign({}, event1,
+                { duration: (new Date(build12.endTime) - new Date(build11.startTime)) / 1000 }),
+            Object.assign({}, event2,
+                { duration: (new Date(build22.endTime) - new Date(build22.startTime)) / 1000 })];
 
         it('generates metrics', () => {
             const eventListConfig = {
