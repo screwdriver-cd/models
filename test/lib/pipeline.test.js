@@ -1976,8 +1976,8 @@ describe('Pipeline Model', () => {
 
             return pipeline.getMetrics({ startTime, endTime }).then((result) => {
                 assert.calledWith(eventFactoryMock.list, eventListConfig);
-                assert.calledWith(event1.getBuilds, { startTime, endTime });
-                assert.calledWith(event2.getBuilds, { startTime, endTime });
+                assert.calledOnce(event1.getBuilds);
+                assert.calledOnce(event2.getBuilds);
                 assert.deepEqual(result, metrics);
             });
         });
