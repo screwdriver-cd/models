@@ -658,7 +658,9 @@ describe('Build Model', () => {
             });
             build.status = 'FAILURE';
             build.meta.meta.status = {
-                findbugs: 'hello'
+                findbugs: 'hello',
+                snyk: '{"status":"FAILURE","message":"23 package vulnerabilities found. ' +
+                    'Previous count: 0 vulnerabilities."}'
             };
             delete build.meta.meta.summary;
 
@@ -674,7 +676,20 @@ describe('Build Model', () => {
                         url,
                         pipelineId
                     });
-                    assert.notOk(scmMock.updateCommitStatus.secondCall);
+                    assert.calledWith(scmMock.updateCommitStatus.secondCall, {
+                        token: 'foo',
+                        scmUri,
+                        scmContext,
+                        sha,
+                        jobName: 'PR-5:main',
+                        buildStatus: 'FAILURE',
+                        url: 'https://display.com/some/endpoint/pipelines/1234/builds/9876',
+                        pipelineId,
+                        context: 'snyk',
+                        description: '23 package vulnerabilities found. ' +
+                            'Previous count: 0 vulnerabilities.'
+                    });
+                    assert.notOk(scmMock.updateCommitStatus.thirdCall);
                     assert.notCalled(scmMock.addPrComment);
                 });
         });
@@ -696,7 +711,9 @@ describe('Build Model', () => {
             });
             build.status = 'FAILURE';
             build.meta.meta.status = {
-                findbugs: 12345
+                findbugs: 12345,
+                snyk: '{"status":"FAILURE","message":"23 package vulnerabilities found. ' +
+                    'Previous count: 0 vulnerabilities."}'
             };
             delete build.meta.meta.summary;
 
@@ -712,7 +729,20 @@ describe('Build Model', () => {
                         url,
                         pipelineId
                     });
-                    assert.notOk(scmMock.updateCommitStatus.secondCall);
+                    assert.calledWith(scmMock.updateCommitStatus.secondCall, {
+                        token: 'foo',
+                        scmUri,
+                        scmContext,
+                        sha,
+                        jobName: 'PR-5:main',
+                        buildStatus: 'FAILURE',
+                        url: 'https://display.com/some/endpoint/pipelines/1234/builds/9876',
+                        pipelineId,
+                        context: 'snyk',
+                        description: '23 package vulnerabilities found. ' +
+                            'Previous count: 0 vulnerabilities.'
+                    });
+                    assert.notOk(scmMock.updateCommitStatus.thirdCall);
                     assert.notCalled(scmMock.addPrComment);
                 });
         });
