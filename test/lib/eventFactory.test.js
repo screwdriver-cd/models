@@ -373,6 +373,7 @@ describe('Event Factory', () => {
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
                 config.prNum = 1;
+                config.prTitle = 'Update the README with new information';
                 config.webhooks = true;
 
                 return eventFactory.create(config).then((model) => {
@@ -383,7 +384,8 @@ describe('Event Factory', () => {
                         parentBuildId: 12345,
                         eventId: model.id,
                         jobId: 5,
-                        prRef: 'branch'
+                        prRef: 'branch',
+                        prTitle: 'Update the README with new information'
                     }));
                     assert.calledOnce(syncedPipelineMock.syncPR);
                     assert.calledWith(syncedPipelineMock.syncPR.firstCall, 1);
@@ -481,6 +483,7 @@ describe('Event Factory', () => {
                 config.startFrom = '~pr:branch';
                 config.prRef = 'branch';
                 config.prNum = 1;
+                config.prTitle = 'Update the README with new information';
                 config.webhooks = true;
 
                 afterSyncedPRPipelineMock.getConfiguration = sinon.stub().resolves({
@@ -568,6 +571,7 @@ describe('Event Factory', () => {
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
                 config.prNum = 1;
+                config.prTitle = 'Update the README with new information';
                 config.webhooks = true;
 
                 afterSyncedPRPipelineMock.jobs = Promise.resolve(jobsMock);
@@ -581,7 +585,8 @@ describe('Event Factory', () => {
                         parentBuildId: 12345,
                         eventId: model.id,
                         jobId: 10,
-                        prRef: 'branch'
+                        prRef: 'branch',
+                        prTitle: 'Update the README with new information'
                     }));
                 });
             });
@@ -786,6 +791,7 @@ describe('Event Factory', () => {
             config.startFrom = '~pr';
             config.prRef = 'branch';
             config.prNum = 1;
+            config.prTitle = 'Update the README with new information';
             config.changedFiles = ['src/test/README.md', 'NOTINSOURCEPATH.md'];
 
             return eventFactory.create(config).then((model) => {
@@ -822,6 +828,7 @@ describe('Event Factory', () => {
             config.webhooks = true;
             config.prRef = 'branch';
             config.prNum = 1;
+            config.prTitle = 'Update the README with new information';
             config.changedFiles = ['src/test', 'NOTINSOURCEPATH.md'];
 
             return eventFactory.create(config).then((model) => {
