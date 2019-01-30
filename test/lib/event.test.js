@@ -39,7 +39,7 @@ describe('Event Model', () => {
         BaseModel = require('../../lib/base');
 
         createConfig = {
-            id: '1234',
+            id: 1234,
             datastore
         };
         event = new EventModel(createConfig);
@@ -67,13 +67,44 @@ describe('Event Model', () => {
         it('use the default config when not passed in', () => {
             const expected = {
                 params: {
-                    eventId: '1234'
+                    eventId: 1234
                 }
             };
 
             return event.getBuilds().then(() => {
                 assert.calledWith(buildFactoryMock.list, expected);
             });
+        });
+
+        it('merges the passed in config with the default config', () => {
+            const startTime = '2019-01-20T12:00:00.000Z';
+            const endTime = '2019-01-30T12:00:00.000Z';
+            const expected = {
+                params: {
+                    eventId: 1234
+                },
+                startTime,
+                endTime
+            };
+
+            return event.getBuilds({
+                startTime,
+                endTime
+            }).then(() => {
+                assert.calledWith(buildFactoryMock.list, expected);
+            });
+        });
+
+        it('rejects with errors', () => {
+            buildFactoryMock.list.rejects(new Error('cannotgetit'));
+
+            return event.getBuilds()
+                .then(() => {
+                    assert.fail('Should not get here');
+                }).catch((err) => {
+                    assert.instanceOf(err, Error);
+                    assert.equal(err.message, 'cannotgetit');
+                });
         });
     });
 });

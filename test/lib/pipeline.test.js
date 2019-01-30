@@ -36,6 +36,7 @@ describe('Pipeline Model', () => {
     let userFactoryMock;
     let secretFactoryMock;
     let eventFactoryMock;
+    let buildFactoryMock;
     let templateFactoryMock;
     let triggerFactoryMock;
     let pipelineFactoryMock;
@@ -169,6 +170,9 @@ describe('Pipeline Model', () => {
         eventFactoryMock = {
             list: sinon.stub()
         };
+        buildFactoryMock = {
+            list: sinon.stub()
+        };
         userFactoryMock = {
             get: sinon.stub(),
             getPermissions: sinon.stub()
@@ -225,6 +229,8 @@ describe('Pipeline Model', () => {
             getInstance: sinon.stub().returns(jobFactoryMock) });
         mockery.registerMock('./eventFactory', {
             getInstance: sinon.stub().returns(eventFactoryMock) });
+        mockery.registerMock('./buildFactory', {
+            getInstance: sinon.stub().returns(buildFactoryMock) });
         mockery.registerMock('./userFactory', {
             getInstance: sinon.stub().returns(userFactoryMock)
         });
@@ -1909,6 +1915,100 @@ describe('Pipeline Model', () => {
             // ...but the factory was not recreated, since the promise is stored
             // as the model's tokens property, now
             assert.calledOnce(tokenFactoryMock.list);
+        });
+    });
+
+    describe('get metrics', () => {
+        const startTime = '2019-01-20T12:00:00.000Z';
+        const endTime = '2019-01-30T12:00:00.000Z';
+        const build11 = {
+            id: 11,
+            eventId: 1,
+            startTime: '2019-01-22T21:08:00.000Z', // minStartTime for event1
+            endTime: '2019-01-22T21:30:00.000Z'
+        };
+        const build12 = {
+            id: 12,
+            eventId: 1,
+            startTime: '2019-01-22T21:21:00.000Z',
+            endTime: '2019-01-22T22:30:00.000Z' // maxEndTime for event1
+        };
+        const build21 = {
+            id: 21,
+            eventId: 2,
+            startTime: '2019-01-24T11:31:00.000Z',
+            endTime: '2019-01-24T12:20:00.000Z'
+        };
+        const build22 = {
+            id: 22,
+            eventId: 2,
+            startTime: '2019-01-24T11:30:00.000Z', // minStartTime for event1
+            endTime: '2019-01-24T15:30:00.000Z' // maxEndTime for event1
+        };
+        const event1 = {
+            id: 1,
+            createTime: '2019-01-22T21:00:00.000Z',
+            getBuilds: sinon.stub().resolves([build11, build12])
+        };
+        const event2 = {
+            id: 2,
+            createTime: '2019-01-24T11:25:00.610Z',
+            getBuilds: sinon.stub().resolves([build21, build22])
+        };
+        const metrics = [
+            Object.assign({}, event1,
+                { duration: (new Date(build12.endTime) - new Date(build11.startTime)) / 1000 }),
+            Object.assign({}, event2,
+                { duration: (new Date(build22.endTime) - new Date(build22.startTime)) / 1000 })];
+
+        it('generates metrics', () => {
+            const eventListConfig = {
+                params: {
+                    pipelineId: 123,
+                    type: 'pipeline'
+                },
+                sort: 'descending',
+                startTime,
+                endTime
+            };
+
+            eventFactoryMock.list.resolves([event1, event2]);
+
+            return pipeline.getMetrics({ startTime, endTime }).then((result) => {
+                assert.calledWith(eventFactoryMock.list, eventListConfig);
+                assert.calledOnce(event1.getBuilds);
+                assert.calledOnce(event2.getBuilds);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('works with no startTime or endTime params passed in', () => {
+            const eventListConfig = {
+                params: {
+                    pipelineId: 123,
+                    type: 'pipeline'
+                },
+                sort: 'descending'
+            };
+
+            eventFactoryMock.list.resolves([event1, event2]);
+
+            return pipeline.getMetrics().then((result) => {
+                assert.calledWith(eventFactoryMock.list, eventListConfig);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('rejects with errors', () => {
+            eventFactoryMock.list.rejects(new Error('cannotgetit'));
+
+            return pipeline.getMetrics({ startTime, endTime })
+                .then(() => {
+                    assert.fail('Should not get here');
+                }).catch((err) => {
+                    assert.instanceOf(err, Error);
+                    assert.equal(err.message, 'cannotgetit');
+                });
         });
     });
 });
