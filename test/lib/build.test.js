@@ -9,6 +9,7 @@ sinon.assert.expose(assert, { prefix: '' });
 
 describe('Build Model', () => {
     const annotations = {};
+    const freezeWindows = ['* * ? * 1', '0-59 0-23 * 1 ?'];
     const apiUri = 'https://notify.com/some/endpoint';
     const uiUri = 'https://display.com/some/endpoint';
     const jobId = 777;
@@ -94,7 +95,7 @@ describe('Build Model', () => {
             id: jobId,
             name: 'main',
             pipeline: Promise.resolve(pipelineMock),
-            permutations: [{ annotations }],
+            permutations: [{ annotations, freezeWindows }],
             isPR: sinon.stub().returns(false)
         };
         scmMock = {
@@ -235,7 +236,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations }],
+                permutations: [{ annotations, freezeWindows }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
@@ -246,6 +247,7 @@ describe('Build Model', () => {
                         buildId,
                         jobId,
                         annotations,
+                        freezeWindows,
                         blockedBy: [jobId]
                     });
 
@@ -293,7 +295,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations }],
+                permutations: [{ annotations, freezeWindows }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
@@ -316,6 +318,7 @@ describe('Build Model', () => {
                         buildId,
                         jobId,
                         annotations,
+                        freezeWindows,
                         blockedBy: [jobId]
                     });
 
@@ -377,7 +380,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations }],
+                permutations: [{ annotations, freezeWindows }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
@@ -395,6 +398,7 @@ describe('Build Model', () => {
                         buildId,
                         jobId,
                         annotations,
+                        freezeWindows,
                         blockedBy: [jobId]
                     });
 
@@ -452,6 +456,7 @@ describe('Build Model', () => {
                         buildId,
                         jobId,
                         annotations,
+                        freezeWindows,
                         blockedBy: [jobId]
                     });
 
@@ -494,6 +499,7 @@ describe('Build Model', () => {
                         buildId,
                         jobId,
                         annotations,
+                        freezeWindows,
                         blockedBy: [jobId]
                     });
 
@@ -586,6 +592,7 @@ describe('Build Model', () => {
                         buildId,
                         jobId,
                         annotations,
+                        freezeWindows,
                         blockedBy: [jobId]
                     });
                 });
@@ -603,7 +610,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations }],
+                permutations: [{ annotations, freezeWindows }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
@@ -617,6 +624,7 @@ describe('Build Model', () => {
                         buildId,
                         jobId,
                         annotations,
+                        freezeWindows,
                         blockedBy: [jobId]
                     });
 
@@ -653,7 +661,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations }],
+                permutations: [{ annotations, freezeWindows }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
@@ -706,7 +714,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations }],
+                permutations: [{ annotations, freezeWindows }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
@@ -761,6 +769,7 @@ describe('Build Model', () => {
                         buildId,
                         jobId,
                         annotations,
+                        freezeWindows,
                         blockedBy: [jobId]
                     });
                 })
@@ -776,6 +785,7 @@ describe('Build Model', () => {
                         buildClusterName: 'sd',
                         jobId,
                         annotations,
+                        freezeWindows,
                         blockedBy: [jobId]
                     });
                 });
@@ -842,7 +852,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations }],
+                permutations: [{ annotations, freezeWindows }],
                 isPR: () => false
             });
         });
@@ -858,6 +868,7 @@ describe('Build Model', () => {
                         build,
                         jobId,
                         annotations,
+                        freezeWindows,
                         blockedBy: [jobId],
                         apiUri,
                         buildId,
@@ -896,6 +907,7 @@ describe('Build Model', () => {
                         build,
                         jobId,
                         annotations,
+                        freezeWindows,
                         blockedBy: [jobId],
                         apiUri,
                         buildId,
@@ -954,6 +966,7 @@ describe('Build Model', () => {
                 }),
                 permutations: [{
                     annotations,
+                    freezeWindows,
                     blockedBy: [blocking1.name, blocking2.name]
                 }],
                 isPR: () => false
@@ -966,6 +979,7 @@ describe('Build Model', () => {
                         jobId,
                         blockedBy: [jobId, blocking1.id, blocking2.id],
                         annotations,
+                        freezeWindows,
                         apiUri,
                         buildId,
                         container,
@@ -1023,6 +1037,7 @@ describe('Build Model', () => {
                 }),
                 permutations: [{
                     annotations,
+                    freezeWindows,
                     blockedBy: [
                         `~sd@${externalPid1}:externalJob1`,
                         `~${internalJob.name}`,
@@ -1039,6 +1054,7 @@ describe('Build Model', () => {
                         jobId,
                         blockedBy: [jobId, internalJob.id, externalJob1.id, externalJob2.id],
                         annotations,
+                        freezeWindows,
                         apiUri,
                         buildId,
                         container,
@@ -1069,6 +1085,7 @@ describe('Build Model', () => {
                         build,
                         jobId,
                         annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' },
+                        freezeWindows: [],
                         blockedBy: [jobId],
                         apiUri,
                         buildId,
