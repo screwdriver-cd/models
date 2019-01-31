@@ -1945,22 +1945,27 @@ describe('Pipeline Model', () => {
             startTime: '2019-01-24T11:30:00.000Z', // minStartTime for event1
             endTime: '2019-01-24T15:30:00.000Z' // maxEndTime for event1
         };
-        const event1 = {
-            id: 1,
-            createTime: '2019-01-22T21:00:00.000Z',
-            getBuilds: sinon.stub().resolves([build11, build12])
-        };
-        const event2 = {
-            id: 2,
-            createTime: '2019-01-24T11:25:00.610Z',
-            getBuilds: sinon.stub().resolves([build21, build22])
-        };
-        const metrics = [
-            Object.assign({}, event1,
-                { duration: (new Date(build12.endTime) - new Date(build11.startTime)) / 1000 }),
-            Object.assign({}, event2,
-                { duration: (new Date(build22.endTime) - new Date(build22.startTime)) / 1000 })];
+        let metrics;
+        let event1;
+        let event2;
 
+        beforeEach(() => {
+            event1 = {
+                id: 1,
+                createTime: '2019-01-22T21:00:00.000Z',
+                getBuilds: sinon.stub().resolves([build11, build12])
+            };
+            event2 = {
+                id: 2,
+                createTime: '2019-01-24T11:25:00.610Z',
+                getBuilds: sinon.stub().resolves([build21, build22])
+            };
+            metrics = [
+                Object.assign({}, event1, {
+                    duration: (new Date(build12.endTime) - new Date(build11.startTime)) / 1000 }),
+                Object.assign({}, event2, {
+                    duration: (new Date(build22.endTime) - new Date(build22.startTime)) / 1000 })];
+        });
         it('generates metrics', () => {
             const eventListConfig = {
                 params: {
@@ -1978,6 +1983,16 @@ describe('Pipeline Model', () => {
                 assert.calledWith(eventFactoryMock.list, eventListConfig);
                 assert.calledOnce(event1.getBuilds);
                 assert.calledOnce(event2.getBuilds);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('does not fail if empty builds', () => {
+            eventFactoryMock.list.resolves([event1, event2]);
+            event1.getBuilds = sinon.stub().resolves([]);
+            metrics[0] = Object.assign({}, event1, { duration: 0 });
+
+            return pipeline.getMetrics({ startTime, endTime }).then((result) => {
                 assert.deepEqual(result, metrics);
             });
         });
