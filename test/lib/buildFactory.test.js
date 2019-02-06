@@ -6,7 +6,7 @@ const hoek = require('hoek');
 const schema = require('screwdriver-data-schema');
 const sinon = require('sinon');
 let startStub;
-let getStepsModelStub;
+let getStepsStub;
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -21,7 +21,7 @@ class Build {
         this.uiUri = config.uiUri;
         this.steps = config.steps;
         this.start = startStub.resolves(this);
-        this.getStepsModel = getStepsModelStub;
+        this.getSteps = getStepsStub;
     }
 }
 
@@ -112,7 +112,7 @@ describe('Build Factory', () => {
             getInstance: sinon.stub().returns(buildClusterFactoryMock)
         };
         startStub = sinon.stub();
-        getStepsModelStub = sinon.stub();
+        getStepsStub = sinon.stub();
 
         // Fixing mockery issue with duplicate file names
         // by re-registering data-schema with its own implementation
@@ -680,7 +680,7 @@ describe('Build Factory', () => {
         });
 
         it('should get a build by ID without step models', () => {
-            getStepsModelStub.resolves([]);
+            getStepsStub.resolves([]);
             datastore.get.resolves(buildData);
 
             return factory.get(buildId)
@@ -688,7 +688,7 @@ describe('Build Factory', () => {
         });
 
         it('should get a build by ID with merged step data', () => {
-            getStepsModelStub.resolves(stepsMock);
+            getStepsStub.resolves(stepsMock);
             datastore.get.resolves(buildData);
 
             return factory.get(buildId)
@@ -717,7 +717,7 @@ describe('Build Factory', () => {
         });
 
         it('should list builds without step models', () => {
-            getStepsModelStub.resolves([]);
+            getStepsStub.resolves([]);
             datastore.scan.resolves([buildData, buildData]);
 
             return factory.list({})
@@ -725,7 +725,7 @@ describe('Build Factory', () => {
         });
 
         it('should list builds with merged step data', () => {
-            getStepsModelStub.resolves(stepsMock);
+            getStepsStub.resolves(stepsMock);
             datastore.scan.resolves([buildData, buildData]);
 
             return factory.list({})

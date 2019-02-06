@@ -161,7 +161,7 @@ describe('Build Model', () => {
         assert.instanceOf(build, BaseModel);
         assert.isFunction(build.start);
         assert.isFunction(build.stop);
-        assert.isFunction(build.getStepsModel);
+        assert.isFunction(build.getSteps);
 
         schema.models.build.allKeys.forEach((key) => {
             assert.strictEqual(build[key], config[key]);
@@ -1212,7 +1212,7 @@ describe('Build Model', () => {
         });
     });
 
-    describe('getStepsModel', () => {
+    describe('getSteps', () => {
         it('use the default config when not passed in', () => {
             const expected = {
                 params: {
@@ -1220,7 +1220,7 @@ describe('Build Model', () => {
                 }
             };
 
-            return build.getStepsModel().then(() => {
+            return build.getSteps().then(() => {
                 assert.calledWith(stepFactoryMock.list, expected);
             });
         });
