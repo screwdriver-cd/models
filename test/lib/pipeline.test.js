@@ -1945,27 +1945,73 @@ describe('Pipeline Model', () => {
             startTime: '2019-01-24T11:30:00.000Z', // minStartTime for event1
             endTime: '2019-01-24T15:30:00.000Z' // maxEndTime for event1
         };
-        let metrics;
+        const duration1 = (new Date(build12.endTime) - new Date(build11.startTime)) / 1000;
+        const duration2 = (new Date(build22.endTime) - new Date(build22.startTime)) / 1000;
         let event1;
         let event2;
+        let metrics;
 
         beforeEach(() => {
             event1 = {
-                id: 1,
+                id: 1233,
+                causeMessage: 'Merged by batman',
+                commit: {
+                    author: {
+                        name: 'BatMan',
+                        username: 'batman'
+                    },
+                    message: 'Update screwdriver.yaml'
+                },
                 createTime: '2019-01-22T21:00:00.000Z',
+                creator: {
+                    name: 'BatMan',
+                    username: 'batman'
+                },
+                meta: {
+                    meta: { summary: { foo: 'bar' } }
+                },
+                pipelineId: 300123,
+                sha: '14b920bef306eb1bde8ec0b6a32372eebecc6d0e',
+                configPipelineSha: '14b920bef306eb1bde8ec0b6a32372eebecc6d0e',
+                startFrom: '~commit',
+                type: 'pipeline',
+                workflowGraph: {
+                    nodes: [{ name: '~pr' },
+                        { name: '~commit' },
+                        { name: 'test', id: 124 }
+                    ],
+                    edges: [
+                        { src: '~pr', dest: 'test' },
+                        { src: '~commit', dest: 'test' }
+                    ]
+                },
+                pr: {},
+                duration: 25,
                 getBuilds: sinon.stub().resolves([build11, build12])
             };
-            event2 = {
-                id: 2,
+            event2 = Object.assign({}, {
+                id: 1234,
                 createTime: '2019-01-24T11:25:00.610Z',
+                sha: '14b920bef306eb1bde8ec0b6a32372eebecc6d0e',
                 getBuilds: sinon.stub().resolves([build21, build22])
-            };
-            metrics = [
-                Object.assign({}, event1, {
-                    duration: (new Date(build12.endTime) - new Date(build11.startTime)) / 1000 }),
-                Object.assign({}, event2, {
-                    duration: (new Date(build22.endTime) - new Date(build22.startTime)) / 1000 })];
+            });
+            metrics = [{
+                id: event1.id,
+                createTime: event1.createTime,
+                sha: event1.sha,
+                commit: event1.commit,
+                causeMessage: event1.causeMessage,
+                duration: duration1
+            }, {
+                id: event2.id,
+                createTime: event2.createTime,
+                sha: event2.sha,
+                commit: event2.commit,
+                causeMessage: event2.causeMessage,
+                duration: duration2
+            }];
         });
+
         it('generates metrics', () => {
             const eventListConfig = {
                 params: {
@@ -1990,7 +2036,7 @@ describe('Pipeline Model', () => {
         it('does not fail if empty builds', () => {
             eventFactoryMock.list.resolves([event1, event2]);
             event1.getBuilds = sinon.stub().resolves([]);
-            metrics[0] = Object.assign({}, event1, { duration: 0 });
+            metrics[0] = Object.assign({}, metrics[0], { duration: 0 });
 
             return pipeline.getMetrics({ startTime, endTime }).then((result) => {
                 assert.deepEqual(result, metrics);
