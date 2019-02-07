@@ -1225,4 +1225,93 @@ describe('Build Model', () => {
             });
         });
     });
+
+    describe('get metrics', () => {
+        const startTime = '2019-01-20T12:00:00.000Z';
+        const endTime = '2019-01-30T12:00:00.000Z';
+        const step1 = {
+            id: 11,
+            name: 'sd-setup-init',
+            startTime: '2019-01-22T21:08:00.000Z',
+            endTime: '2019-01-22T21:30:00.000Z',
+            code: 0
+        };
+        const step2 = {
+            id: 12,
+            name: 'sd-setup-scm',
+            startTime: '2019-01-22T21:21:00.000Z',
+            endTime: '2019-01-22T22:30:00.000Z',
+            status: 127
+        };
+        const duration1 = (new Date(step1.endTime) - new Date(step1.startTime)) / 1000;
+        const duration2 = (new Date(step2.endTime) - new Date(step2.startTime)) / 1000;
+        let metrics;
+
+        beforeEach(() => {
+            metrics = [{
+                id: step1.id,
+                name: step1.name,
+                code: step1.code,
+                duration: duration1
+            }, {
+                id: step2.id,
+                name: step2.name,
+                code: step2.code,
+                duration: duration2
+            }];
+        });
+
+        it('generates metrics', () => {
+            const stepListConfig = {
+                params: {
+                    buildId: 9876
+                },
+                startTime,
+                endTime,
+                timeKey: 'startTime'
+            };
+
+            stepFactoryMock.list.resolves([step1, step2]);
+
+            return build.getMetrics({ startTime, endTime }).then((result) => {
+                assert.calledWith(stepFactoryMock.list, stepListConfig);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('does not fail if empty steps', () => {
+            stepFactoryMock.list.resolves([]);
+
+            return build.getMetrics({ startTime, endTime }).then((result) => {
+                assert.deepEqual(result, []);
+            });
+        });
+
+        it('works with no startTime or endTime params passed in', () => {
+            const stepListConfig = {
+                params: {
+                    buildId: 9876
+                }
+            };
+
+            stepFactoryMock.list.resolves([step1, step2]);
+
+            return build.getMetrics().then((result) => {
+                assert.calledWith(stepFactoryMock.list, stepListConfig);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('rejects with errors', () => {
+            stepFactoryMock.list.rejects(new Error('cannotgetit'));
+
+            return build.getMetrics({ startTime, endTime })
+                .then(() => {
+                    assert.fail('Should not get here');
+                }).catch((err) => {
+                    assert.instanceOf(err, Error);
+                    assert.equal(err.message, 'cannotgetit');
+                });
+        });
+    });
 });
