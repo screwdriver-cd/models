@@ -1291,12 +1291,14 @@ describe('Build Model', () => {
             const stepListConfig = {
                 params: {
                     buildId: 9876
-                }
+                },
+                endTime,
+                timeKey: 'startTime'
             };
 
             stepFactoryMock.list.resolves([step1, step2]);
 
-            return build.getMetrics().then((result) => {
+            return build.getMetrics({ endTime }).then((result) => {
                 assert.calledWith(stepFactoryMock.list, stepListConfig);
                 assert.deepEqual(result, metrics);
             });
