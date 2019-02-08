@@ -344,6 +344,20 @@ describe('Base Factory', () => {
                 )
         );
 
+        it('call datastore scan with startTime and endTime options', () =>
+            factory.list({
+                startTime: '2019-01-20T22:28:35.039Z',
+                endTime: '2019-01-24T22:28:35.039Z'
+            }).then(() =>
+                assert.calledWith(datastore.scan, {
+                    table: 'base',
+                    params: {},
+                    startTime: '2019-01-20T22:28:35.039Z',
+                    endTime: '2019-01-24T22:28:35.039Z'
+                })
+            )
+        );
+
         it('returns raw scan results when raw is true', () => {
             const distinctRows = [
                 'namespace1',
