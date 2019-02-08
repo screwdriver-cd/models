@@ -835,6 +835,14 @@ describe('Build Model', () => {
     describe('start', () => {
         let sandbox;
         const prParentJobId = 1000;
+        let pipelineMockB = {
+            id: pipelineId,
+            configPipelineId,
+            scmUri,
+            scmContext,
+            admin: Promise.resolve(adminUser),
+            token: Promise.resolve('foo')
+        };
 
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
@@ -844,14 +852,7 @@ describe('Build Model', () => {
                 id: jobId,
                 prParentJobId,
                 name: 'main',
-                pipeline: Promise.resolve({
-                    id: pipelineId,
-                    configPipelineId,
-                    scmUri,
-                    scmContext,
-                    admin: Promise.resolve(adminUser),
-                    token: Promise.resolve('foo')
-                }),
+                pipeline: Promise.resolve(pipelineMockB),
                 permutations: [{ annotations, freezeWindows }],
                 isPR: () => false
             });
@@ -866,6 +867,7 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.calledWith(executorMock.start, {
                         build,
+                        eventId,
                         jobId,
                         annotations,
                         freezeWindows,
@@ -873,7 +875,9 @@ describe('Build Model', () => {
                         apiUri,
                         buildId,
                         container,
-                        token
+                        token,
+                        pipeline: pipelineMockB,
+                        tokenGen
                     });
 
                     assert.calledWith(tokenGen, buildId, {
@@ -906,6 +910,7 @@ describe('Build Model', () => {
                     assert.calledWith(executorMock.start, {
                         build,
                         jobId,
+                        eventId,
                         annotations,
                         freezeWindows,
                         blockedBy: [jobId],
@@ -913,7 +918,9 @@ describe('Build Model', () => {
                         buildId,
                         buildClusterName: 'sd',
                         container,
-                        token
+                        token,
+                        tokenGen,
+                        pipeline: pipelineMockB
                     });
 
                     assert.calledWith(tokenGen, buildId, {
@@ -948,22 +955,24 @@ describe('Build Model', () => {
                 id: 222
             };
 
+            pipelineMockB = {
+                id: pipelineId,
+                scmUri,
+                scmContext,
+                admin: Promise.resolve(adminUser),
+                token: Promise.resolve('foo'),
+                jobs: Promise.resolve([
+                    { id: jobId, name: 'main' },
+                    { id: blocking1.id, name: blocking1.name },
+                    { id: 123, name: 'somejob' },
+                    { id: blocking2.id, name: blocking2.name },
+                    { id: 456, name: 'someotherjob' }])
+            };
+
             jobFactoryMock.get.resolves({
                 id: jobId,
                 name: 'main',
-                pipeline: Promise.resolve({
-                    id: pipelineId,
-                    scmUri,
-                    scmContext,
-                    admin: Promise.resolve(adminUser),
-                    token: Promise.resolve('foo'),
-                    jobs: Promise.resolve([
-                        { id: jobId, name: 'main' },
-                        { id: blocking1.id, name: blocking1.name },
-                        { id: 123, name: 'somejob' },
-                        { id: blocking2.id, name: blocking2.name },
-                        { id: 456, name: 'someotherjob' }])
-                }),
+                pipeline: Promise.resolve(pipelineMockB),
                 permutations: [{
                     annotations,
                     freezeWindows,
@@ -977,13 +986,16 @@ describe('Build Model', () => {
                     assert.calledWith(executorMock.start, {
                         build,
                         jobId,
+                        eventId,
                         blockedBy: [jobId, blocking1.id, blocking2.id],
                         annotations,
                         freezeWindows,
                         apiUri,
                         buildId,
                         container,
-                        token
+                        token,
+                        tokenGen,
+                        pipeline: pipelineMockB
                     });
                 });
         });
@@ -1021,20 +1033,22 @@ describe('Build Model', () => {
             pipelineFactoryMock.get.withArgs(externalPid1).resolves(pipeline1);
             pipelineFactoryMock.get.withArgs(externalPid2).resolves(pipeline2);
 
+            pipelineMockB = {
+                id: pipelineId,
+                scmUri,
+                scmContext,
+                admin: Promise.resolve(adminUser),
+                token: Promise.resolve('foo'),
+                jobs: Promise.resolve([
+                    { id: jobId, name: 'main' },
+                    { id: 123, name: 'somejob' },
+                    { id: internalJob.id, name: internalJob.name }])
+            };
+
             jobFactoryMock.get.resolves({
                 id: jobId,
                 name: 'main',
-                pipeline: Promise.resolve({
-                    id: pipelineId,
-                    scmUri,
-                    scmContext,
-                    admin: Promise.resolve(adminUser),
-                    token: Promise.resolve('foo'),
-                    jobs: Promise.resolve([
-                        { id: jobId, name: 'main' },
-                        { id: 123, name: 'somejob' },
-                        { id: internalJob.id, name: internalJob.name }])
-                }),
+                pipeline: Promise.resolve(pipelineMockB),
                 permutations: [{
                     annotations,
                     freezeWindows,
@@ -1052,29 +1066,34 @@ describe('Build Model', () => {
                     assert.calledWith(executorMock.start, {
                         build,
                         jobId,
+                        eventId,
                         blockedBy: [jobId, internalJob.id, externalJob1.id, externalJob2.id],
                         annotations,
                         freezeWindows,
                         apiUri,
                         buildId,
                         container,
-                        token
+                        token,
+                        tokenGen,
+                        pipeline: pipelineMockB
                     });
                 });
         });
 
         it('promises to start a build with the executor specified in job annotations', () => {
+            pipelineMockB = {
+                id: pipelineId,
+                configPipelineId,
+                scmUri,
+                scmContext,
+                admin: Promise.resolve(adminUser),
+                token: Promise.resolve('foo')
+            };
+
             jobFactoryMock.get.resolves({
                 id: jobId,
                 name: 'main',
-                pipeline: Promise.resolve({
-                    id: pipelineId,
-                    configPipelineId,
-                    scmUri,
-                    scmContext,
-                    admin: Promise.resolve(adminUser),
-                    token: Promise.resolve('foo')
-                }),
+                pipeline: Promise.resolve(pipelineMockB),
                 permutations: [{ annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' } }],
                 isPR: () => false
             });
@@ -1084,13 +1103,16 @@ describe('Build Model', () => {
                     assert.calledWith(executorMock.start, {
                         build,
                         jobId,
+                        eventId,
                         annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' },
                         freezeWindows: [],
                         blockedBy: [jobId],
                         apiUri,
                         buildId,
                         container,
-                        token
+                        token,
+                        tokenGen,
+                        pipeline: pipelineMockB
                     });
 
                     assert.calledWith(tokenGen, buildId, {
