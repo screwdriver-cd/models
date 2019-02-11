@@ -8,7 +8,7 @@ const hoek = require('hoek');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe('Job Model', () => {
+describe.only('Job Model', () => {
     const token = 'tokengenerated';
     const apiUri = 'https://notify.com/some/endpoint';
     let pipelineFactoryMock;
@@ -39,18 +39,23 @@ describe('Job Model', () => {
 
     const build1 = getBuildMocks({
         id: 1,
-        jobId: '1234',
-        status: 'RUNNING'
+        jobId: 1234,
+        status: 'RUNNING',
+        createTime: '2019-01-22T21:00:00.000Z',
+        startTime: '2019-01-22T21:08:00.000Z'
     });
     const build2 = getBuildMocks({
         id: 2,
-        jobId: '1234',
+        jobId: 1234,
         status: 'QUEUED'
     });
     const build3 = getBuildMocks({
         id: 3,
-        jobId: '1234',
-        status: 'SUCCESS'
+        jobId: 1234,
+        status: 'SUCCESS',
+        createTime: '2019-01-22T21:00:00.000Z',
+        startTime: '2019-01-22T21:21:00.000Z',
+        endTime: '2019-01-22T22:30:00.000Z'
     });
     const pipelineMock = {
         secrets: Promise.resolve([
@@ -117,9 +122,9 @@ describe('Job Model', () => {
             datastore,
             executor: executorMock,
             tokenGen,
-            id: '1234',
+            id: 1234,
             name: 'main',
-            pipelineId: 'abcd',
+            pipelineId: 9876,
             permutations: [
                 {
                     secrets: [
@@ -252,7 +257,7 @@ describe('Job Model', () => {
         it('use the default config when not passed in', () => {
             const expected = {
                 params: {
-                    jobId: '1234'
+                    jobId: 1234
                 },
                 sort: 'descending'
             };
@@ -265,12 +270,14 @@ describe('Job Model', () => {
         it('merge the passed in config with the default config', () => {
             const expected = {
                 params: {
-                    jobId: '1234'
+                    jobId: 1234
                 },
                 sort: 'ascending',
                 paginate: {
                     page: 1,
-                    count: 100
+                    count: 100,
+                    startTime: '2019-01-22T21:00:00.000Z',
+                    status: 'SUCCESS'
                 }
             };
 
@@ -278,7 +285,9 @@ describe('Job Model', () => {
                 sort: 'Ascending',
                 paginate: {
                     page: 1,
-                    count: 100
+                    count: 100,
+                    startTime: '2019-01-22T21:00:00.000Z',
+                    status: 'SUCCESS'
                 }
             }).then(() => {
                 assert.calledWith(buildFactoryMock.list, expected);
@@ -290,13 +299,13 @@ describe('Job Model', () => {
         it('gets all running builds', () => {
             const expectedFirstCall = {
                 params: {
-                    jobId: '1234',
+                    jobId: 1234,
                     status: 'RUNNING'
                 },
                 sort: 'descending'
             };
             const expectedSecondCall = Object.assign({}, expectedFirstCall, {
-                params: { jobId: '1234', status: 'QUEUED' } });
+                params: { jobId: 1234, status: 'QUEUED' } });
 
             buildFactoryMock.list.onCall(0).resolves([build1]);
             buildFactoryMock.list.onCall(1).resolves([build2]);
@@ -315,7 +324,7 @@ describe('Job Model', () => {
 
             const expected = {
                 params: {
-                    jobId: '1234',
+                    jobId: 1234,
                     status: 'SUCCESS'
                 },
                 sort: 'descending'
@@ -409,6 +418,88 @@ describe('Job Model', () => {
                 assert.isOk(err);
                 assert.equal(err.message, 'error removing build');
             });
+        });
+    });
+
+    describe('get metrics', () => {
+        const startTime = '2019-01-20T12:00:00.000Z';
+        const endTime = '2019-01-30T12:00:00.000Z';
+        const duration1 = (new Date(build1.endTime) - new Date(build1.startTime)) / 1000;
+        const duration2 = (new Date(build2.endTime) - new Date(build2.startTime)) / 1000;
+        const duration3 = (new Date(build3.endTime) - new Date(build3.startTime)) / 1000;
+        let metrics;
+
+        beforeEach(() => {
+            metrics = [{
+                id: build1.id,
+                createTime: build1.createTime,
+                status: build1.status,
+                duration: duration1
+            }, {
+                id: build2.id,
+                createTime: build2.createTime,
+                status: build2.status,
+                duration: duration2
+            }, {
+                id: build3.id,
+                createTime: build3.createTime,
+                status: build3.status,
+                duration: duration3
+            }];
+        });
+
+        it('generates metrics', () => {
+            const buildListConfig = {
+                params: {
+                    jobId: 1234
+                },
+                startTime,
+                endTime,
+                sort: 'descending'
+            };
+
+            buildFactoryMock.list.resolves([build1, build2, build3]);
+
+            return job.getMetrics({ startTime, endTime }).then((result) => {
+                assert.calledWith(buildFactoryMock.list, buildListConfig);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('does not fail if empty builds', () => {
+            buildFactoryMock.list.resolves([]);
+
+            return job.getMetrics({ startTime, endTime }).then((result) => {
+                assert.deepEqual(result, []);
+            });
+        });
+
+        it('works with no startTime or endTime params passed in', () => {
+            const buildListConfig = {
+                params: {
+                    jobId: 1234
+                },
+                sort: 'descending'
+            };
+
+            buildFactoryMock.list.resolves([build1, build2, build3]);
+
+            return job.getMetrics().then((result) => {
+                assert.calledWith(buildFactoryMock.list, buildListConfig);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('rejects with errors', () => {
+            buildFactoryMock.list.rejects(new Error('cannotgetit'));
+
+            return job.getMetrics({ startTime, endTime })
+                .then(() => {
+                    assert.fail('Should not get here');
+                }).catch((err) => {
+                    assert.instanceOf(err, Error);
+                    assert.equal(err.message, 'cannotgetit');
+                });
         });
     });
 });
