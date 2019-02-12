@@ -1290,7 +1290,8 @@ describe('Build Model', () => {
         it('works with no startTime or endTime params passed in', () => {
             const stepListConfig = {
                 params: {
-                    buildId: 9876
+                    buildId: 9876,
+                    name: 'sd-setup-scm'
                 },
                 endTime,
                 timeKey: 'startTime'
@@ -1298,7 +1299,22 @@ describe('Build Model', () => {
 
             stepFactoryMock.list.resolves([step1, step2]);
 
-            return build.getMetrics({ endTime }).then((result) => {
+            return build.getMetrics({ endTime, stepName: 'sd-setup-scm' }).then((result) => {
+                assert.calledWith(stepFactoryMock.list, stepListConfig);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('works with no params passed in', () => {
+            const stepListConfig = {
+                params: {
+                    buildId: 9876
+                }
+            };
+
+            stepFactoryMock.list.resolves([step1, step2]);
+
+            return build.getMetrics().then((result) => {
                 assert.calledWith(stepFactoryMock.list, stepListConfig);
                 assert.deepEqual(result, metrics);
             });

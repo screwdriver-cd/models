@@ -8,7 +8,7 @@ const hoek = require('hoek');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe.only('Job Model', () => {
+describe('Job Model', () => {
     const token = 'tokengenerated';
     const apiUri = 'https://notify.com/some/endpoint';
     let pipelineFactoryMock;
@@ -425,7 +425,6 @@ describe.only('Job Model', () => {
         const startTime = '2019-01-20T12:00:00.000Z';
         const endTime = '2019-01-30T12:00:00.000Z';
         const duration1 = (new Date(build1.endTime) - new Date(build1.startTime)) / 1000;
-        const duration2 = (new Date(build2.endTime) - new Date(build2.startTime)) / 1000;
         const duration3 = (new Date(build3.endTime) - new Date(build3.startTime)) / 1000;
         let metrics;
 
@@ -439,7 +438,7 @@ describe.only('Job Model', () => {
                 id: build2.id,
                 createTime: build2.createTime,
                 status: build2.status,
-                duration: duration2
+                duration: NaN
             }, {
                 id: build3.id,
                 createTime: build3.createTime,
@@ -460,7 +459,7 @@ describe.only('Job Model', () => {
 
             buildFactoryMock.list.resolves([build1, build2, build3]);
 
-            return job.getMetrics({ startTime, endTime }).then((result) => {
+            return job.getBuildMetrics({ startTime, endTime }).then((result) => {
                 assert.calledWith(buildFactoryMock.list, buildListConfig);
                 assert.deepEqual(result, metrics);
             });
@@ -469,7 +468,7 @@ describe.only('Job Model', () => {
         it('does not fail if empty builds', () => {
             buildFactoryMock.list.resolves([]);
 
-            return job.getMetrics({ startTime, endTime }).then((result) => {
+            return job.getBuildMetrics({ startTime, endTime }).then((result) => {
                 assert.deepEqual(result, []);
             });
         });
@@ -484,7 +483,7 @@ describe.only('Job Model', () => {
 
             buildFactoryMock.list.resolves([build1, build2, build3]);
 
-            return job.getMetrics().then((result) => {
+            return job.getBuildMetrics().then((result) => {
                 assert.calledWith(buildFactoryMock.list, buildListConfig);
                 assert.deepEqual(result, metrics);
             });
@@ -493,7 +492,92 @@ describe.only('Job Model', () => {
         it('rejects with errors', () => {
             buildFactoryMock.list.rejects(new Error('cannotgetit'));
 
-            return job.getMetrics({ startTime, endTime })
+            return job.getBuildMetrics({ startTime, endTime })
+                .then(() => {
+                    assert.fail('Should not get here');
+                }).catch((err) => {
+                    assert.instanceOf(err, Error);
+                    assert.equal(err.message, 'cannotgetit');
+                });
+        });
+    });
+
+    describe('get step metrics', () => {
+        const stepName = 'sd-setup-scm';
+        const mockMetrics1 = {
+            id: 1,
+            name: stepName,
+            code: 0,
+            duration: 20
+        };
+        const mockMetrics2 = Object.assign({}, mockMetrics1, { id: 2, duration: 15 });
+        const mockMetrics3 = Object.assign({}, mockMetrics1, { id: 3, duration: 25 });
+        const startTime = '2019-01-20T12:00:00.000Z';
+        const endTime = '2019-01-30T12:00:00.000Z';
+        let metrics;
+
+        beforeEach(() => {
+            build1.getMetrics = sinon.stub().resolves([mockMetrics1]);
+            build2.getMetrics = sinon.stub().resolves([mockMetrics2]);
+            build3.getMetrics = sinon.stub().resolves([mockMetrics3]);
+
+            metrics = [mockMetrics1, mockMetrics2, mockMetrics3];
+        });
+
+        it('generates metrics', () => {
+            const buildListConfig = {
+                params: {
+                    jobId: 1234
+                },
+                startTime,
+                endTime,
+                sort: 'descending'
+            };
+            const getMetricsParams = {
+                startTime,
+                endTime,
+                stepName
+            };
+
+            buildFactoryMock.list.resolves([build1, build2, build3]);
+
+            return job.getStepMetrics({ startTime, endTime, stepName }).then((result) => {
+                assert.calledWith(buildFactoryMock.list, buildListConfig);
+                assert.calledWith(build1.getMetrics, getMetricsParams);
+                assert.calledWith(build2.getMetrics, getMetricsParams);
+                assert.calledWith(build3.getMetrics, getMetricsParams);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('does not fail if empty builds', () => {
+            buildFactoryMock.list.resolves([]);
+
+            return job.getStepMetrics({ startTime, endTime, stepName }).then((result) => {
+                assert.deepEqual(result, []);
+            });
+        });
+
+        it('works with no startTime or endTime params passed in', () => {
+            const buildListConfig = {
+                params: {
+                    jobId: 1234
+                },
+                sort: 'descending'
+            };
+
+            buildFactoryMock.list.resolves([build1, build2, build3]);
+
+            return job.getStepMetrics({ stepName }).then((result) => {
+                assert.calledWith(buildFactoryMock.list, buildListConfig);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('rejects with errors', () => {
+            buildFactoryMock.list.rejects(new Error('cannotgetit'));
+
+            return job.getStepMetrics({ startTime, endTime, stepName })
                 .then(() => {
                     assert.fail('Should not get here');
                 }).catch((err) => {
