@@ -167,6 +167,15 @@ model.tokens
     });
 ```
 
+#### Get Event Metrics
+Get all the event durations for this pipeline within time range
+```js
+model.getEventMetrics()
+    .then((metrics) => {
+        // do stuff with metrics
+    });
+```
+
 ### Job Factory
 #### Search
 ```js
@@ -264,6 +273,25 @@ Return all running builds that belong to this jobId
 ```js
 model.getRunningBuilds()
 ```
+
+#### Get Build Metrics
+Get all the build durations for this job within time range
+```js
+model.getBuildMetrics()
+    .then((metrics) => {
+        // do stuff with metrics
+    });
+```
+
+#### Get Step Metrics
+Get all the durations for a specific step of this job within time range
+```js
+model.getStepMetrics()
+    .then((metrics) => {
+        // do stuff with metrics
+    });
+```
+
 
 ### Build Factory
 #### Search
@@ -761,6 +789,15 @@ model.update()
 Get builds that belong to this event
 ```js
 model.getBuilds()
+```
+
+#### Get Build Metrics
+Get all the build durations for this event within time range
+```js
+model.getBuildMetrics()
+    .then((metrics) => {
+        // do stuff with metrics
+    });
 ```
 
 ### Template Model
