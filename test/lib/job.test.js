@@ -421,7 +421,7 @@ describe('Job Model', () => {
         });
     });
 
-    describe('get metrics', () => {
+    describe('get build metrics', () => {
         const startTime = '2019-01-20T12:00:00.000Z';
         const endTime = '2019-01-30T12:00:00.000Z';
         const duration1 = (new Date(build1.endTime) - new Date(build1.startTime)) / 1000;
@@ -431,16 +431,22 @@ describe('Job Model', () => {
         beforeEach(() => {
             metrics = [{
                 id: build1.id,
+                eventId: build1.eventId,
+                jobId: build1.jobId,
                 createTime: build1.createTime,
                 status: build1.status,
                 duration: duration1
             }, {
                 id: build2.id,
+                eventId: build2.eventId,
+                jobId: build2.jobId,
                 createTime: build2.createTime,
                 status: build2.status,
                 duration: NaN
             }, {
                 id: build3.id,
+                eventId: build3.eventId,
+                jobId: build3.jobId,
                 createTime: build3.createTime,
                 status: build3.status,
                 duration: duration3
@@ -506,6 +512,7 @@ describe('Job Model', () => {
         const stepName = 'sd-setup-scm';
         const mockMetrics1 = {
             id: 1,
+            buildId: 2,
             name: stepName,
             code: 0,
             duration: 20

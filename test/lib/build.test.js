@@ -1270,6 +1270,7 @@ describe('Build Model', () => {
         const endTime = '2019-01-30T12:00:00.000Z';
         const step1 = {
             id: 11,
+            buildId: 9876,
             name: 'sd-setup-init',
             startTime: '2019-01-22T21:08:00.000Z',
             endTime: '2019-01-22T21:30:00.000Z',
@@ -1277,10 +1278,11 @@ describe('Build Model', () => {
         };
         const step2 = {
             id: 12,
+            buildId: 9876,
             name: 'sd-setup-scm',
             startTime: '2019-01-22T21:21:00.000Z',
             endTime: '2019-01-22T22:30:00.000Z',
-            status: 127
+            code: 127
         };
         const duration1 = (new Date(step1.endTime) - new Date(step1.startTime)) / 1000;
         const duration2 = (new Date(step2.endTime) - new Date(step2.startTime)) / 1000;
@@ -1289,11 +1291,13 @@ describe('Build Model', () => {
         beforeEach(() => {
             metrics = [{
                 id: step1.id,
+                buildId: step1.buildId,
                 name: step1.name,
                 code: step1.code,
                 duration: duration1
             }, {
                 id: step2.id,
+                buildId: step2.buildId,
                 name: step2.name,
                 code: step2.code,
                 duration: duration2
