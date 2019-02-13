@@ -1273,7 +1273,7 @@ describe('Build Model', () => {
 
             stepFactoryMock.list.resolves([step1, step2]);
 
-            return build.getMetrics({ startTime, endTime }).then((result) => {
+            return build.getStepMetrics({ startTime, endTime }).then((result) => {
                 assert.calledWith(stepFactoryMock.list, stepListConfig);
                 assert.deepEqual(result, metrics);
             });
@@ -1282,7 +1282,7 @@ describe('Build Model', () => {
         it('does not fail if empty steps', () => {
             stepFactoryMock.list.resolves([]);
 
-            return build.getMetrics({ startTime, endTime }).then((result) => {
+            return build.getStepMetrics({ startTime, endTime }).then((result) => {
                 assert.deepEqual(result, []);
             });
         });
@@ -1299,7 +1299,7 @@ describe('Build Model', () => {
 
             stepFactoryMock.list.resolves([step1, step2]);
 
-            return build.getMetrics({ endTime, stepName: 'sd-setup-scm' }).then((result) => {
+            return build.getStepMetrics({ endTime, stepName: 'sd-setup-scm' }).then((result) => {
                 assert.calledWith(stepFactoryMock.list, stepListConfig);
                 assert.deepEqual(result, metrics);
             });
@@ -1314,7 +1314,7 @@ describe('Build Model', () => {
 
             stepFactoryMock.list.resolves([step1, step2]);
 
-            return build.getMetrics().then((result) => {
+            return build.getStepMetrics().then((result) => {
                 assert.calledWith(stepFactoryMock.list, stepListConfig);
                 assert.deepEqual(result, metrics);
             });
@@ -1323,7 +1323,7 @@ describe('Build Model', () => {
         it('rejects with errors', () => {
             stepFactoryMock.list.rejects(new Error('cannotgetit'));
 
-            return build.getMetrics({ startTime, endTime })
+            return build.getStepMetrics({ startTime, endTime })
                 .then(() => {
                     assert.fail('Should not get here');
                 }).catch((err) => {

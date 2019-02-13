@@ -154,7 +154,7 @@ describe('Event Model', () => {
 
             buildFactoryMock.list.resolves([build1, build2]);
 
-            return event.getMetrics({ startTime, endTime }).then((result) => {
+            return event.getBuildMetrics({ startTime, endTime }).then((result) => {
                 assert.calledWith(buildFactoryMock.list, buildListConfig);
                 assert.deepEqual(result, metrics);
             });
@@ -163,7 +163,7 @@ describe('Event Model', () => {
         it('does not fail if empty builds', () => {
             buildFactoryMock.list.resolves([]);
 
-            return event.getMetrics({ startTime, endTime }).then((result) => {
+            return event.getBuildMetrics({ startTime, endTime }).then((result) => {
                 assert.deepEqual(result, []);
             });
         });
@@ -177,7 +177,7 @@ describe('Event Model', () => {
 
             buildFactoryMock.list.resolves([build1, build2]);
 
-            return event.getMetrics().then((result) => {
+            return event.getBuildMetrics().then((result) => {
                 assert.calledWith(buildFactoryMock.list, buildListConfig);
                 assert.deepEqual(result, metrics);
             });
@@ -186,7 +186,7 @@ describe('Event Model', () => {
         it('rejects with errors', () => {
             buildFactoryMock.list.rejects(new Error('cannotgetit'));
 
-            return event.getMetrics({ startTime, endTime })
+            return event.getBuildMetrics({ startTime, endTime })
                 .then(() => {
                     assert.fail('Should not get here');
                 }).catch((err) => {
