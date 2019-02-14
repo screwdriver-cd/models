@@ -844,18 +844,20 @@ describe('Build Model', () => {
             token: Promise.resolve('foo')
         };
 
+        let jobMockB = {
+            id: jobId,
+            prParentJobId,
+            name: 'main',
+            pipeline: Promise.resolve(pipelineMockB),
+            permutations: [{ annotations, freezeWindows }],
+            isPR: () => false
+        };
+
         beforeEach(() => {
             sandbox = sinon.sandbox.create();
             sandbox.useFakeTimers(now);
             executorMock.start.resolves(null);
-            jobFactoryMock.get.resolves({
-                id: jobId,
-                prParentJobId,
-                name: 'main',
-                pipeline: Promise.resolve(pipelineMockB),
-                permutations: [{ annotations, freezeWindows }],
-                isPR: () => false
-            });
+            jobFactoryMock.get.resolves(jobMockB);
         });
 
         afterEach(() => {
@@ -868,7 +870,7 @@ describe('Build Model', () => {
                     assert.calledWith(executorMock.start, {
                         build,
                         eventId,
-                        jobId,
+                        job: jobMockB,
                         annotations,
                         freezeWindows,
                         blockedBy: [jobId],
@@ -909,7 +911,7 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.calledWith(executorMock.start, {
                         build,
-                        jobId,
+                        job: jobMockB,
                         eventId,
                         annotations,
                         freezeWindows,
@@ -969,7 +971,7 @@ describe('Build Model', () => {
                     { id: 456, name: 'someotherjob' }])
             };
 
-            jobFactoryMock.get.resolves({
+            jobMockB = {
                 id: jobId,
                 name: 'main',
                 pipeline: Promise.resolve(pipelineMockB),
@@ -979,13 +981,15 @@ describe('Build Model', () => {
                     blockedBy: [blocking1.name, blocking2.name]
                 }],
                 isPR: () => false
-            });
+            };
+
+            jobFactoryMock.get.resolves(jobMockB);
 
             return build.start()
                 .then(() => {
                     assert.calledWith(executorMock.start, {
                         build,
-                        jobId,
+                        job: jobMockB,
                         eventId,
                         blockedBy: [jobId, blocking1.id, blocking2.id],
                         annotations,
@@ -1045,7 +1049,7 @@ describe('Build Model', () => {
                     { id: internalJob.id, name: internalJob.name }])
             };
 
-            jobFactoryMock.get.resolves({
+            jobMockB = {
                 id: jobId,
                 name: 'main',
                 pipeline: Promise.resolve(pipelineMockB),
@@ -1059,13 +1063,15 @@ describe('Build Model', () => {
                     ]
                 }],
                 isPR: () => false
-            });
+            };
+
+            jobFactoryMock.get.resolves(jobMockB);
 
             return build.start()
                 .then(() => {
                     assert.calledWith(executorMock.start, {
                         build,
-                        jobId,
+                        job: jobMockB,
                         eventId,
                         blockedBy: [jobId, internalJob.id, externalJob1.id, externalJob2.id],
                         annotations,
@@ -1090,19 +1096,21 @@ describe('Build Model', () => {
                 token: Promise.resolve('foo')
             };
 
-            jobFactoryMock.get.resolves({
+            jobMockB = {
                 id: jobId,
                 name: 'main',
                 pipeline: Promise.resolve(pipelineMockB),
                 permutations: [{ annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' } }],
                 isPR: () => false
-            });
+            };
+
+            jobFactoryMock.get.resolves(jobMockB);
 
             return build.start()
                 .then(() => {
                     assert.calledWith(executorMock.start, {
                         build,
-                        jobId,
+                        job: jobMockB,
                         eventId,
                         annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' },
                         freezeWindows: [],
