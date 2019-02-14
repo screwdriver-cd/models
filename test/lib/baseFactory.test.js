@@ -239,6 +239,16 @@ describe('Base Factory', () => {
             datastore.scan.resolves(returnValue);
         });
 
+        it('calls datastore scan', () =>
+            factory.list()
+                .then(() => {
+                    assert.calledWith(datastore.scan, {
+                        table: 'base',
+                        params: {}
+                    });
+                })
+        );
+
         it('calls datastore scan and returns correct values', () =>
             factory.list({ paginate })
                 .then((arr) => {
@@ -300,6 +310,23 @@ describe('Base Factory', () => {
                     });
                 })
         );
+
+        it('sets time range value if it is passed in', () => {
+            const startTime = '2019-02-01T18:33:42.461Z';
+            const endTime = '2019-02-11T18:33:42.461Z';
+            const timeKey = 'startTime';
+
+            return factory.list({ startTime, endTime, timeKey })
+                .then(() => {
+                    assert.calledWith(datastore.scan, {
+                        table: 'base',
+                        params: {},
+                        startTime,
+                        endTime,
+                        timeKey
+                    });
+                });
+        });
 
         it('sets search values if they are passed in', () =>
             factory.list({
