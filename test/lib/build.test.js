@@ -13,6 +13,7 @@ describe('Build Model', () => {
     const apiUri = 'https://notify.com/some/endpoint';
     const uiUri = 'https://display.com/some/endpoint';
     const jobId = 777;
+    const jobName = 'main';
     const eventId = 555;
     const now = 112233445566;
     const buildId = 9876;
@@ -869,6 +870,7 @@ describe('Build Model', () => {
                         build,
                         eventId,
                         jobId,
+                        jobName,
                         annotations,
                         freezeWindows,
                         blockedBy: [jobId],
@@ -910,6 +912,7 @@ describe('Build Model', () => {
                     assert.calledWith(executorMock.start, {
                         build,
                         jobId,
+                        jobName,
                         eventId,
                         annotations,
                         freezeWindows,
@@ -986,6 +989,7 @@ describe('Build Model', () => {
                     assert.calledWith(executorMock.start, {
                         build,
                         jobId,
+                        jobName,
                         eventId,
                         blockedBy: [jobId, blocking1.id, blocking2.id],
                         annotations,
@@ -1066,6 +1070,7 @@ describe('Build Model', () => {
                     assert.calledWith(executorMock.start, {
                         build,
                         jobId,
+                        jobName,
                         eventId,
                         blockedBy: [jobId, internalJob.id, externalJob1.id, externalJob2.id],
                         annotations,
@@ -1103,6 +1108,7 @@ describe('Build Model', () => {
                     assert.calledWith(executorMock.start, {
                         build,
                         jobId,
+                        jobName,
                         eventId,
                         annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' },
                         freezeWindows: [],
