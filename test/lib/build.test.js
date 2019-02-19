@@ -878,7 +878,10 @@ describe('Build Model', () => {
                         buildId,
                         container,
                         token,
-                        pipeline: pipelineMockB,
+                        pipeline: {
+                            id: pipelineMockB.id,
+                            scmContext: pipelineMockB.scmContext
+                        },
                         tokenGen
                     });
 
@@ -923,7 +926,10 @@ describe('Build Model', () => {
                         container,
                         token,
                         tokenGen,
-                        pipeline: pipelineMockB
+                        pipeline: {
+                            id: pipelineMockB.id,
+                            scmContext: pipelineMockB.scmContext
+                        }
                     });
 
                     assert.calledWith(tokenGen, buildId, {
@@ -999,7 +1005,10 @@ describe('Build Model', () => {
                         container,
                         token,
                         tokenGen,
-                        pipeline: pipelineMockB
+                        pipeline: {
+                            id: pipelineMockB.id,
+                            scmContext: pipelineMockB.scmContext
+                        }
                     });
                 });
         });
@@ -1080,7 +1089,10 @@ describe('Build Model', () => {
                         container,
                         token,
                         tokenGen,
-                        pipeline: pipelineMockB
+                        pipeline: {
+                            id: pipelineMockB.id,
+                            scmContext: pipelineMockB.scmContext
+                        }
                     });
                 });
         });
@@ -1118,7 +1130,10 @@ describe('Build Model', () => {
                         container,
                         token,
                         tokenGen,
-                        pipeline: pipelineMockB
+                        pipeline: {
+                            id: pipelineMockB.id,
+                            scmContext: pipelineMockB.scmContext
+                        }
                     });
 
                     assert.calledWith(tokenGen, buildId, {
