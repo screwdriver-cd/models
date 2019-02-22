@@ -20,8 +20,8 @@ const EXTERNAL_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML, {
         scmUrls: SCM_URLS
     }
 });
-const PRCHAIN_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML_PR, {
-    prChain: true
+const NON_PRCHAIN_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML_PR, {
+    prChain: false
 });
 
 describe('Pipeline Model', () => {
@@ -952,7 +952,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('updates PR config and create missing PR jobs if prChain is true', () => {
+        it('updates PR config, but it can not override prChain flag', () => {
             const firstPRJob = {
                 update: sinon.stub().resolves(null),
                 isPR: sinon.stub().returns(true),
@@ -960,7 +960,9 @@ describe('Pipeline Model', () => {
                 state: 'ENABLED',
                 archived: false
             };
-            const clonedYAML = JSON.parse(JSON.stringify(PRCHAIN_PARSED_YAML));
+
+            pipeline.prChain = true;
+            const clonedYAML = JSON.parse(JSON.stringify(NON_PRCHAIN_PARSED_YAML));
 
             jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob, testJob, firstPRJob]); // all jobs
             jobFactoryMock.list.onCall(1).resolves([mainJob, publishJob, testJob]); // pipeline jobs
