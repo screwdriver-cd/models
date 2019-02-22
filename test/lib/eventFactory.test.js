@@ -402,6 +402,7 @@ describe('Event Factory', () => {
                     assert.notCalled(jobFactoryMock.create);
                     assert.notCalled(buildFactoryMock.create);
                     assert.calledOnce(pipelineMock.sync);
+                    assert.calledOnce(syncedPipelineMock.update);
                     assert.notCalled(syncedPipelineMock.syncPR);
                 });
             });
