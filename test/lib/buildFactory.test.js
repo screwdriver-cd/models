@@ -724,12 +724,20 @@ describe('Build Factory', () => {
                 .then(builds => builds.map(build => assert.deepEqual(build.steps, steps)));
         });
 
-        it('should list builds with merged step data', () => {
+        it('should list builds with merged step data if config.fetchSteps is true', () => {
+            getStepsStub.resolves(stepsMock);
+            datastore.scan.resolves([buildData, buildData]);
+
+            return factory.list({ fetchSteps: true })
+                .then(builds => builds.map(build => assert.deepEqual(build.steps, stepsData)));
+        });
+
+        it('should not list builds with merged step data by default', () => {
             getStepsStub.resolves(stepsMock);
             datastore.scan.resolves([buildData, buildData]);
 
             return factory.list({})
-                .then(builds => builds.map(build => assert.deepEqual(build.steps, stepsData)));
+                .then(builds => builds.map(build => assert.deepEqual(build.steps, steps)));
         });
     });
 
