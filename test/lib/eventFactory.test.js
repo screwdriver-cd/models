@@ -3,6 +3,7 @@
 const assert = require('chai').assert;
 const sinon = require('sinon');
 const mockery = require('mockery');
+const rewire = require('rewire');
 const PARSED_YAML = require('../data/parserWithWorkflowGraph');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -41,7 +42,8 @@ describe('Event Factory', () => {
             create: sinon.stub()
         };
         jobFactoryMock = {
-            create: sinon.stub()
+            create: sinon.stub(),
+            list: sinon.stub()
         };
         scm = {
             decorateAuthor: sinon.stub(),
@@ -567,6 +569,92 @@ describe('Event Factory', () => {
                 });
             });
 
+            // Private function test
+            it('should keep the workflowGraph as is with prChain = false', () => {
+                const RewiredEventFactory = rewire('../../lib/eventFactory');
+                // eslint-disable-next-line no-underscore-dangle
+                const updateWorkflowGraph = RewiredEventFactory.__get__('updateWorkflowGraph');
+                const pipeline = { id: 1234, prChain: false };
+                const eventConfig = { prNum: 1 };
+                const inWorkflowGraph = {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: 'job-A' },
+                        { name: 'job-B' }
+                    ],
+                    edges: [
+                        { src: '~pr', dest: 'job-A' },
+                        { src: '~commit', dest: 'job-A' },
+                        { src: 'job-A', dest: 'job-B' }
+                    ]
+                };
+                const expectedWorkflowGraph = inWorkflowGraph;
+
+                return updateWorkflowGraph({
+                    pipeline,
+                    eventConfig,
+                    workflowGraph: inWorkflowGraph
+                }).then((actualWorkflowGraph) => {
+                    assert.notCalled(jobFactoryMock.list);
+                    assert.deepEqual(expectedWorkflowGraph, actualWorkflowGraph);
+                });
+            });
+
+            it('should update the workflowGraph properly with prChain = true', () => {
+                const RewiredEventFactory = rewire('../../lib/eventFactory');
+                // eslint-disable-next-line no-underscore-dangle
+                const updateWorkflowGraph = RewiredEventFactory.__get__('updateWorkflowGraph');
+                const pipeline = { id: 1234, prChain: true };
+                const eventConfig = { prNum: 1 };
+                const inWorkflowGraph = {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: 'job-A' },
+                        { name: 'job-B' }
+                    ],
+                    edges: [
+                        { src: '~pr', dest: 'job-A' },
+                        { src: '~commit', dest: 'job-A' },
+                        { src: 'job-A', dest: 'job-B' }
+                    ]
+                };
+                const expectedWorkflowGraph = {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        // add ids
+                        { name: 'job-A', id: 22 },
+                        { name: 'job-B', id: 23 }
+                    ],
+                    edges: [
+                        { src: '~pr', dest: 'job-A' },
+                        { src: '~commit', dest: 'job-A' },
+                        { src: 'job-A', dest: 'job-B' }
+                    ]
+                };
+                const jobs = [
+                    { name: 'PR-1:job-A', id: 22 },
+                    { name: 'PR-1:job-B', id: 23 }
+                ];
+
+                jobFactoryMock.list.onCall(0).resolves(jobs);
+
+                return updateWorkflowGraph({
+                    pipeline,
+                    eventConfig,
+                    workflowGraph: inWorkflowGraph
+                }).then((actualWorkflowGraph) => {
+                    assert.calledOnce(jobFactoryMock.list);
+                    assert.calledWith(jobFactoryMock.list, sinon.match({
+                        params: { pipelineId: pipeline.id, archived: false },
+                        search: { field: 'name', keyword: `PR-${eventConfig.prNum}:%` }
+                    }));
+                    assert.deepEqual(expectedWorkflowGraph, actualWorkflowGraph);
+                });
+            });
+
             it('should create build of the "PR-1:main" job with prChain config', () => {
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
@@ -577,10 +665,13 @@ describe('Event Factory', () => {
                 afterSyncedPRPipelineMock.jobs = Promise.resolve(jobsMock);
                 afterSyncedPRPipelineMock.prChain = true;
                 afterSyncedPRPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
+                // This function is called in updateWorkflowGraph() which is tested in another unit test.
+                jobFactoryMock.list.resolves([]);
 
                 return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
+                    assert.called(jobFactoryMock.list);
                     assert.calledWith(buildFactoryMock.create, sinon.match({
                         parentBuildId: 12345,
                         eventId: model.id,
