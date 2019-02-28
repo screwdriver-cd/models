@@ -570,12 +570,12 @@ describe('Event Factory', () => {
             });
 
             // Private function test
-            it('should keep the workflowGraph as is with prChain = false', () => {
+            it('should keep the workflowGraph as is with non pr event and prChain = true', () => {
                 const RewiredEventFactory = rewire('../../lib/eventFactory');
                 // eslint-disable-next-line no-underscore-dangle
                 const updateWorkflowGraph = RewiredEventFactory.__get__('updateWorkflowGraph');
-                const pipeline = { id: 1234, prChain: false };
-                const eventConfig = { prNum: 1 };
+                const pipeline = { id: 1234, prChain: true };
+                const eventConfig = {}; // non pr event
                 const inWorkflowGraph = {
                     nodes: [
                         { name: '~pr' },
@@ -601,12 +601,43 @@ describe('Event Factory', () => {
                 });
             });
 
-            it('should update the workflowGraph properly with prChain = true', () => {
+            it('should keep the workflowGraph as is with pr event and prChain = false', () => {
+                const RewiredEventFactory = rewire('../../lib/eventFactory');
+                // eslint-disable-next-line no-underscore-dangle
+                const updateWorkflowGraph = RewiredEventFactory.__get__('updateWorkflowGraph');
+                const pipeline = { id: 1234, prChain: false };
+                const eventConfig = { prRef: 'branch', prNum: 1 };
+                const inWorkflowGraph = {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: 'job-A' },
+                        { name: 'job-B' }
+                    ],
+                    edges: [
+                        { src: '~pr', dest: 'job-A' },
+                        { src: '~commit', dest: 'job-A' },
+                        { src: 'job-A', dest: 'job-B' }
+                    ]
+                };
+                const expectedWorkflowGraph = inWorkflowGraph;
+
+                return updateWorkflowGraph({
+                    pipeline,
+                    eventConfig,
+                    workflowGraph: inWorkflowGraph
+                }).then((actualWorkflowGraph) => {
+                    assert.notCalled(jobFactoryMock.list);
+                    assert.deepEqual(expectedWorkflowGraph, actualWorkflowGraph);
+                });
+            });
+
+            it('should update the workflowGraph properly with pr event and prChain = true', () => {
                 const RewiredEventFactory = rewire('../../lib/eventFactory');
                 // eslint-disable-next-line no-underscore-dangle
                 const updateWorkflowGraph = RewiredEventFactory.__get__('updateWorkflowGraph');
                 const pipeline = { id: 1234, prChain: true };
-                const eventConfig = { prNum: 1 };
+                const eventConfig = { prRef: 'branch', prNum: 1 };
                 const inWorkflowGraph = {
                     nodes: [
                         { name: '~pr' },
