@@ -394,6 +394,21 @@ describe('Event Factory', () => {
                 });
             });
 
+            it('should skip creating builds', () => {
+                config.startFrom = '~commit';
+                config.webhooks = true;
+                config.skipMessage = 'Skipping due to the commit message: [skip ci]';
+
+                return eventFactory.create(config).then((model) => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(buildFactoryMock.create);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.calledOnce(syncedPipelineMock.update);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                });
+            });
+
             it('should create commit builds', () => {
                 config.startFrom = '~commit';
                 config.webhooks = true;
