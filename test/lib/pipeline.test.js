@@ -1363,6 +1363,28 @@ describe('Pipeline Model', () => {
             });
         });
 
+        it('still gets PR jobs if scm.getOpenedPRs failed', () => {
+            const config = {
+                type: 'pr'
+            };
+            const expected = {
+                params: {
+                    pipelineId: 123,
+                    archived: false
+                }
+            };
+            const jobList = [publishJob, mainJob, pr10, pr3];
+            const expectedJobs = [pr3, pr10];
+
+            jobFactoryMock.list.resolves(jobList);
+            scmMock.getOpenedPRs.rejects(new Error('user account suspened'));
+
+            return pipeline.getJobs(config).then((result) => {
+                assert.calledWith(jobFactoryMock.list, expected);
+                assert.deepEqual(result, expectedJobs);
+            });
+        });
+
         it('only gets Pipeline jobs', () => {
             const config = {
                 type: 'pipeline'
