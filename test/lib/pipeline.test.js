@@ -24,7 +24,7 @@ const NON_PRCHAIN_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML_PR, {
     prChain: false
 });
 
-describe('Pipeline Model', () => {
+describe.only('Pipeline Model', () => {
     let PipelineModel;
     let datastore;
     let hashaMock;
@@ -1949,25 +1949,37 @@ describe('Pipeline Model', () => {
             id: 11,
             eventId: 1,
             startTime: '2019-01-22T21:08:00.000Z', // minStartTime for event1
-            endTime: '2019-01-22T21:30:00.000Z'
+            endTime: '2019-01-22T21:30:00.000Z',
+            status: 'SUCCESS',
+            imagePullTime: 20,
+            queuedTime: 1
         };
         const build12 = {
             id: 12,
             eventId: 1,
             startTime: '2019-01-22T21:21:00.000Z',
-            endTime: '2019-01-22T22:30:00.000Z' // maxEndTime for event1
+            endTime: '2019-01-22T22:30:00.000Z', // maxEndTime for event1
+            status: 'FAILURE',
+            imagePullTime: 30,
+            queuedTime: 2
         };
         const build21 = {
             id: 21,
             eventId: 2,
             startTime: '2019-01-24T11:31:00.000Z',
-            endTime: '2019-01-24T12:20:00.000Z'
+            endTime: '2019-01-24T12:20:00.000Z',
+            status: 'FAILURE',
+            imagePullTime: 40,
+            queuedTime: 3
         };
         const build22 = {
             id: 22,
             eventId: 2,
             startTime: '2019-01-24T11:30:00.000Z', // minStartTime for event1
-            endTime: '2019-01-24T15:30:00.000Z' // maxEndTime for event1
+            endTime: '2019-01-24T15:30:00.000Z', // maxEndTime for event1
+            status: 'SUCCESS',
+            imagePullTime: 50,
+            queuedTime: 4
         };
         const duration1 = (new Date(build12.endTime) - new Date(build11.startTime)) / 1000;
         const duration2 = (new Date(build22.endTime) - new Date(build22.startTime)) / 1000;
@@ -2011,28 +2023,32 @@ describe('Pipeline Model', () => {
                 },
                 pr: {},
                 duration: 25,
-                getBuilds: sinon.stub().resolves([build11, build12])
+                getBuildMetrics: sinon.stub().resolves([build11, build12])
             };
             event2 = Object.assign({}, {
                 id: 1234,
                 createTime: '2019-01-24T11:25:00.610Z',
                 sha: '14b920bef306eb1bde8ec0b6a32372eebecc6d0e',
-                getBuilds: sinon.stub().resolves([build21, build22])
+                getBuildMetrics: sinon.stub().resolves([build21, build22])
             });
             metrics = [{
                 id: event1.id,
                 createTime: event1.createTime,
                 sha: event1.sha,
-                commit: event1.commit,
                 causeMessage: event1.causeMessage,
-                duration: duration1
+                duration: duration1,
+                status: build12.status,
+                imagePullTime: build11.imagePullTime + build12.imagePullTime,
+                queuedTime: build11.queuedTime + build12.queuedTime
             }, {
                 id: event2.id,
                 createTime: event2.createTime,
                 sha: event2.sha,
-                commit: event2.commit,
                 causeMessage: event2.causeMessage,
-                duration: duration2
+                duration: duration2,
+                status: build22.status,
+                imagePullTime: build21.imagePullTime + build22.imagePullTime,
+                queuedTime: build21.queuedTime + build22.queuedTime
             }];
         });
 
@@ -2051,16 +2067,21 @@ describe('Pipeline Model', () => {
 
             return pipeline.getEventMetrics({ startTime, endTime }).then((result) => {
                 assert.calledWith(eventFactoryMock.list, eventListConfig);
-                assert.calledOnce(event1.getBuilds);
-                assert.calledOnce(event2.getBuilds);
+                assert.calledOnce(event1.getBuildMetrics);
+                assert.calledOnce(event2.getBuildMetrics);
                 assert.deepEqual(result, metrics);
             });
         });
 
         it('does not fail if empty builds', () => {
             eventFactoryMock.list.resolves([event1, event2]);
-            event1.getBuilds = sinon.stub().resolves([]);
-            metrics[0] = Object.assign({}, metrics[0], { duration: 0 });
+            event1.getBuildMetrics = sinon.stub().resolves([]);
+            metrics[0] = Object.assign({}, metrics[0], {
+                duration: 0,
+                queuedTime: 0,
+                imagePullTime: 0,
+                status: undefined
+            });
 
             return pipeline.getEventMetrics({ startTime, endTime }).then((result) => {
                 assert.deepEqual(result, metrics);
