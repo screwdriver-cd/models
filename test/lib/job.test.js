@@ -524,9 +524,9 @@ describe('Job Model', () => {
         let metrics;
 
         beforeEach(() => {
-            build1.getStepMetrics = sinon.stub().resolves([mockMetrics1]);
-            build2.getStepMetrics = sinon.stub().resolves([mockMetrics2]);
-            build3.getStepMetrics = sinon.stub().resolves([mockMetrics3]);
+            build1.getStepMetrics = sinon.stub().returns([mockMetrics1]);
+            build2.getStepMetrics = sinon.stub().returns([mockMetrics2]);
+            build3.getStepMetrics = sinon.stub().returns([mockMetrics3]);
 
             metrics = [mockMetrics1, mockMetrics2, mockMetrics3];
         });
@@ -541,8 +541,6 @@ describe('Job Model', () => {
                 sort: 'descending'
             };
             const getStepMetricsParams = {
-                startTime,
-                endTime,
                 stepName
             };
 
