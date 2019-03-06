@@ -24,7 +24,7 @@ const NON_PRCHAIN_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML_PR, {
     prChain: false
 });
 
-describe.only('Pipeline Model', () => {
+describe('Pipeline Model', () => {
     let PipelineModel;
     let datastore;
     let hashaMock;

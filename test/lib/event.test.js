@@ -125,9 +125,13 @@ describe('Event Model', () => {
             jobId: 2222,
             eventId: 1234,
             createTime: '2019-01-22T21:00:00.000Z',
-            startTime: '2019-01-22T21:21:00.000Z',
+            startTime: '2019-01-22T21:20:00.000Z',
             endTime: '2019-01-22T22:30:00.000Z',
-            status: 'FAILURE'
+            status: 'FAILURE',
+            stats: {
+                queueEnterTime: '2019-01-22T21:02:00.000Z',
+                imagePullStartTime: '2019-01-22T21:10:00.000Z'
+            }
         };
         const duration1 = (new Date(build1.endTime) - new Date(build1.startTime)) / 1000;
         const duration2 = (new Date(build2.endTime) - new Date(build2.startTime)) / 1000;
@@ -139,15 +143,23 @@ describe('Event Model', () => {
                 jobId: build2.jobId,
                 eventId: build1.eventId,
                 createTime: build1.createTime,
+                startTime: build1.startTime,
+                endTime: build1.endTime,
                 status: build1.status,
-                duration: duration1
+                duration: duration1,
+                imagePullTime: undefined,
+                queuedTime: undefined
             }, {
                 id: build2.id,
                 jobId: build2.jobId,
                 eventId: build2.eventId,
                 createTime: build2.createTime,
+                startTime: build2.startTime,
+                endTime: build2.endTime,
                 status: build2.status,
-                duration: duration2
+                duration: duration2,
+                imagePullTime: 600,
+                queuedTime: 480
             }];
         });
 
