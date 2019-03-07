@@ -2073,6 +2073,46 @@ describe('Pipeline Model', () => {
             });
         });
 
+        it('does not fail if stats is missing', () => {
+            const build13 = {
+                id: 13,
+                eventId: 1,
+                startTime: '2019-01-22T21:10:00.000Z',
+                endTime: '2019-01-22T21:12:00.000Z',
+                status: 'SUCCESS'
+            };
+
+            event1.getBuildMetrics = sinon.stub().resolves([build11, build12, build13]);
+
+            eventFactoryMock.list.resolves([event1, event2]);
+
+            return pipeline.getEventMetrics({ startTime, endTime }).then((result) => {
+                assert.calledOnce(event1.getBuildMetrics);
+                assert.calledOnce(event2.getBuildMetrics);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('do not fail if queuedTime and imagePullTime are not there', () => {
+            const build13 = {
+                id: 13,
+                eventId: 1,
+                startTime: '2019-01-22T21:10:00.000Z',
+                endTime: '2019-01-22T21:12:00.000Z',
+                status: 'SUCCESS'
+            };
+
+            event1.getBuildMetrics = sinon.stub().resolves([build13, build12, build11]);
+
+            eventFactoryMock.list.resolves([event1, event2]);
+
+            return pipeline.getEventMetrics({ startTime, endTime }).then((result) => {
+                assert.calledOnce(event1.getBuildMetrics);
+                assert.calledOnce(event2.getBuildMetrics);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
         it('does not fail if empty builds', () => {
             eventFactoryMock.list.resolves([event1, event2]);
             event1.getBuildMetrics = sinon.stub().resolves([]);
