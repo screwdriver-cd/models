@@ -525,11 +525,6 @@ describe('Event Factory', () => {
                         eventId: model.id,
                         jobId: 9
                     }));
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 10
-                    }));
                 });
             });
 
@@ -912,7 +907,7 @@ describe('Event Factory', () => {
             }, {
                 id: 2,
                 pipelineId: 8765,
-                name: 'PR-1:test',
+                name: 'PR-1:publish',
                 permutations: [{
                     requires: ['~pr'],
                     sourcePaths: ['src/test/']
