@@ -1286,8 +1286,6 @@ describe('Build Model', () => {
     });
 
     describe('get metrics', () => {
-        const startTime = '2019-01-20T12:00:00.000Z';
-        const endTime = '2019-01-30T12:00:00.000Z';
         const step1 = {
             id: 11,
             buildId: 9876,
@@ -1325,74 +1323,24 @@ describe('Build Model', () => {
         });
 
         it('generates metrics', () => {
-            const stepListConfig = {
-                params: {
-                    buildId: 9876
-                },
-                startTime,
-                endTime,
-                timeKey: 'startTime'
-            };
+            build.steps = [step1, step2];
 
-            stepFactoryMock.list.resolves([step1, step2]);
-
-            return build.getStepMetrics({ startTime, endTime }).then((result) => {
-                assert.calledWith(stepFactoryMock.list, stepListConfig);
-                assert.deepEqual(result, metrics);
-            });
+            assert.deepEqual(build.getStepMetrics(), metrics);
         });
 
         it('does not fail if empty steps', () => {
-            stepFactoryMock.list.resolves([]);
+            build.steps = [];
 
-            return build.getStepMetrics({ startTime, endTime }).then((result) => {
-                assert.deepEqual(result, []);
-            });
+            assert.deepEqual(build.getStepMetrics(), []);
         });
 
         it('works with no startTime or endTime params passed in', () => {
-            const stepListConfig = {
-                params: {
-                    buildId: 9876,
-                    name: 'sd-setup-scm'
-                },
-                endTime,
-                timeKey: 'startTime'
-            };
+            const stepName = 'sd-setup-scm';
 
-            stepFactoryMock.list.resolves([step1, step2]);
+            build.steps = [step1, step2];
+            metrics = metrics.filter(m => m.name === stepName);
 
-            return build.getStepMetrics({ endTime, stepName: 'sd-setup-scm' }).then((result) => {
-                assert.calledWith(stepFactoryMock.list, stepListConfig);
-                assert.deepEqual(result, metrics);
-            });
-        });
-
-        it('works with no params passed in', () => {
-            const stepListConfig = {
-                params: {
-                    buildId: 9876
-                }
-            };
-
-            stepFactoryMock.list.resolves([step1, step2]);
-
-            return build.getStepMetrics().then((result) => {
-                assert.calledWith(stepFactoryMock.list, stepListConfig);
-                assert.deepEqual(result, metrics);
-            });
-        });
-
-        it('rejects with errors', () => {
-            stepFactoryMock.list.rejects(new Error('cannotgetit'));
-
-            return build.getStepMetrics({ startTime, endTime })
-                .then(() => {
-                    assert.fail('Should not get here');
-                }).catch((err) => {
-                    assert.instanceOf(err, Error);
-                    assert.equal(err.message, 'cannotgetit');
-                });
+            assert.deepEqual(build.getStepMetrics({ stepName }), metrics);
         });
     });
 });
