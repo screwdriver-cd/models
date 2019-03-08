@@ -1288,7 +1288,7 @@ describe('Build Model', () => {
     describe('get metrics', () => {
         const step1 = {
             id: 11,
-            buildId: 9876,
+            buildId,
             name: 'sd-setup-init',
             startTime: '2019-01-22T21:08:00.000Z',
             endTime: '2019-01-22T21:30:00.000Z',
@@ -1296,34 +1296,50 @@ describe('Build Model', () => {
         };
         const step2 = {
             id: 12,
-            buildId: 9876,
+            buildId,
             name: 'sd-setup-scm',
             startTime: '2019-01-22T21:21:00.000Z',
             endTime: '2019-01-22T22:30:00.000Z',
             code: 127
         };
+        const step3 = {
+            name: 'install',
+            startTime: '2019-01-22T21:31:00.000Z',
+            endTime: '2019-01-22T22:35:00.000Z',
+            code: 127
+        };
         const duration1 = (new Date(step1.endTime) - new Date(step1.startTime)) / 1000;
         const duration2 = (new Date(step2.endTime) - new Date(step2.startTime)) / 1000;
+        const duration3 = (new Date(step3.endTime) - new Date(step3.startTime)) / 1000;
         let metrics;
 
         beforeEach(() => {
             metrics = [{
                 id: step1.id,
-                buildId: step1.buildId,
+                buildId,
                 name: step1.name,
                 code: step1.code,
-                duration: duration1
+                duration: duration1,
+                createTime: build.createTime
             }, {
                 id: step2.id,
-                buildId: step2.buildId,
+                buildId,
                 name: step2.name,
                 code: step2.code,
-                duration: duration2
+                duration: duration2,
+                createTime: build.createTime
+            }, {
+                id: undefined,
+                buildId,
+                name: step3.name,
+                code: step3.code,
+                duration: duration3,
+                createTime: build.createTime
             }];
         });
 
         it('generates metrics', () => {
-            build.steps = [step1, step2];
+            build.steps = [step1, step2, step3];
 
             assert.deepEqual(build.getStepMetrics(), metrics);
         });
