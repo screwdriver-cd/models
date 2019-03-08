@@ -114,7 +114,7 @@ describe('User Factory', () => {
         let sandbox;
 
         beforeEach(() => {
-            sandbox = sinon.sandbox.create();
+            sandbox = sinon.createSandbox();
             sandbox.useFakeTimers(now);
             tokenFactoryMock.get.resolves(tokenMock);
             tokenMock.update.resolves(tokenMock);

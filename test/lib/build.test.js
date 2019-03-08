@@ -845,7 +845,7 @@ describe('Build Model', () => {
         };
 
         beforeEach(() => {
-            sandbox = sinon.sandbox.create();
+            sandbox = sinon.createSandbox();
             sandbox.useFakeTimers(now);
             executorMock.start.resolves(null);
             jobFactoryMock.get.resolves({

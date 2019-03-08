@@ -262,7 +262,7 @@ describe('Build Factory', () => {
             bookendMock.getTeardownCommands.resolves([]);
             datastore.save.resolves({});
 
-            sandbox = sinon.sandbox.create({
+            sandbox = sinon.createSandbox({
                 useFakeTimers: false
             });
             sandbox.useFakeTimers(dateNow);

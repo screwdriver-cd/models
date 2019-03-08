@@ -93,7 +93,7 @@ describe('Event Factory', () => {
         let sandbox;
 
         beforeEach(() => {
-            sandbox = sinon.sandbox.create({
+            sandbox = sinon.createSandbox({
                 useFakeTimers: false
             });
             sandbox.useFakeTimers(dateNow);
@@ -535,6 +535,96 @@ describe('Event Factory', () => {
 
             it('should create build if startFrom is a jobName', () => {
                 config.startFrom = 'main';
+
+                return eventFactory.create(config).then((model) => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.calledOnce(buildFactoryMock.create);
+                    assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 1
+                    }));
+                });
+            });
+
+            it('should create build if startFrom is ~release', () => {
+                const releaseWorkflow = {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: '~release' },
+                        { name: 'release' }
+                    ],
+                    edges: [
+                        { src: '~release', dest: 'release' }
+                    ]
+                };
+
+                jobsMock = [{
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'release',
+                    permutations: [{
+                        requires: ['~release']
+                    }],
+                    state: 'ENABLED'
+                }];
+
+                syncedPipelineMock.workflowGraph = releaseWorkflow;
+                syncedPipelineMock.jobs = Promise.resolve(jobsMock);
+                syncedPipelineMock.update = sinon.stub().resolves({
+                    jobs: Promise.resolve(jobsMock),
+                    branch: Promise.resolve('branch')
+                });
+                config.startFrom = '~release';
+
+                return eventFactory.create(config).then((model) => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.calledOnce(buildFactoryMock.create);
+                    assert.calledWith(buildFactoryMock.create, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 1
+                    }));
+                });
+            });
+
+            it('should create build if startFrom is ~tag', () => {
+                const tagWorkflow = {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: '~tag' },
+                        { name: 'tag' }
+                    ],
+                    edges: [
+                        { src: '~tag', dest: 'tag' }
+                    ]
+                };
+
+                jobsMock = [{
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'tag',
+                    permutations: [{
+                        requires: ['~tag']
+                    }],
+                    state: 'ENABLED'
+                }];
+
+                syncedPipelineMock.workflowGraph = tagWorkflow;
+                syncedPipelineMock.jobs = Promise.resolve(jobsMock);
+                syncedPipelineMock.update = sinon.stub().resolves({
+                    jobs: Promise.resolve(jobsMock),
+                    branch: Promise.resolve('branch')
+                });
+                config.startFrom = '~tag';
 
                 return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
