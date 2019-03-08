@@ -41,6 +41,7 @@
     "eslint-config-screwdriver": "^3.0.1",
     "jenkins-mocha": "^6.0.0",
     "mockery": "^2.0.0",
+    "rewire": "^4.0.1",
     "sinon": "^4.5.0"
   },
   "dependencies": {
