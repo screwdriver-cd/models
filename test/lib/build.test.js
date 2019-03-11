@@ -962,6 +962,11 @@ describe('Build Model', () => {
                 name: 'blocking2',
                 id: 222
             };
+            const prJob = {
+                name: `PR-999:${blocking2.name}`,
+                isPR: true,
+                id: 333
+            };
 
             pipelineMockB = {
                 id: pipelineId,
@@ -974,7 +979,9 @@ describe('Build Model', () => {
                     { id: blocking1.id, name: blocking1.name },
                     { id: 123, name: 'somejob' },
                     { id: blocking2.id, name: blocking2.name },
-                    { id: 456, name: 'someotherjob' }])
+                    { id: 456, name: 'someotherjob' },
+                    prJob
+                ])
             };
 
             jobFactoryMock.get.resolves({
@@ -996,7 +1003,7 @@ describe('Build Model', () => {
                         jobId,
                         jobName,
                         eventId,
-                        blockedBy: [jobId, blocking1.id, blocking2.id],
+                        blockedBy: [jobId, blocking1.id, blocking2.id, prJob.id],
                         annotations,
                         freezeWindows,
                         apiUri,
