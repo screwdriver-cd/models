@@ -956,15 +956,17 @@ describe('Build Model', () => {
         it('get internal blockedby job Ids and pass to executor start', () => {
             const blocking1 = {
                 name: 'blocking1',
-                id: 111
+                id: 111,
+                isPR: () => false
             };
             const blocking2 = {
                 name: 'blocking2',
-                id: 222
+                id: 222,
+                isPR: () => false
             };
             const prJob = {
                 name: `PR-999:${blocking2.name}`,
-                isPR: true,
+                isPR: () => true,
                 id: 333
             };
 
@@ -975,11 +977,11 @@ describe('Build Model', () => {
                 admin: Promise.resolve(adminUser),
                 token: Promise.resolve('foo'),
                 jobs: Promise.resolve([
-                    { id: jobId, name: 'main' },
-                    { id: blocking1.id, name: blocking1.name },
-                    { id: 123, name: 'somejob' },
-                    { id: blocking2.id, name: blocking2.name },
-                    { id: 456, name: 'someotherjob' },
+                    { id: jobId, name: 'main', isPR: () => false },
+                    blocking1,
+                    { id: 123, name: 'somejob', isPR: () => false },
+                    blocking2,
+                    { id: 456, name: 'someotherjob', isPR: () => false },
                     prJob
                 ])
             };
@@ -1024,29 +1026,32 @@ describe('Build Model', () => {
             const externalPid2 = 202;
             const externalJob1 = {
                 name: 'externalJob1',
-                id: 111
+                id: 111,
+                isPR: () => false
             };
             const externalJob2 = {
                 name: 'externalJob2',
-                id: 222
+                id: 222,
+                isPR: () => false
             };
             const pipeline1 = {
                 id: externalPid1,
                 jobs: Promise.resolve([
-                    { id: 999, name: 'somejob' },
+                    { id: 999, name: 'somejob', isPR: () => false },
                     externalJob1
                 ])
             };
             const pipeline2 = {
                 id: externalPid2,
                 jobs: Promise.resolve([
-                    { id: 888, name: 'somerandomjob' },
+                    { id: 888, name: 'somerandomjob', isPR: () => false },
                     externalJob2
                 ])
             };
             const internalJob = {
                 name: 'internalJob',
-                id: 333
+                id: 333,
+                isPR: () => false
             };
 
             pipelineFactoryMock.get.withArgs(externalPid1).resolves(pipeline1);
@@ -1059,9 +1064,9 @@ describe('Build Model', () => {
                 admin: Promise.resolve(adminUser),
                 token: Promise.resolve('foo'),
                 jobs: Promise.resolve([
-                    { id: jobId, name: 'main' },
-                    { id: 123, name: 'somejob' },
-                    { id: internalJob.id, name: internalJob.name }])
+                    { id: jobId, name: 'main', isPR: () => false },
+                    { id: 123, name: 'somejob', isPR: () => false },
+                    { id: internalJob.id, name: internalJob.name, isPR: () => false }])
             };
 
             jobFactoryMock.get.resolves({

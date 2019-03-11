@@ -949,12 +949,13 @@ describe('Event Factory', () => {
             config.changedFiles = ['README.md', 'root/src/test/file'];
 
             return eventFactory.create(config).then((event) => {
+                assert.notCalled(buildFactoryMock.create);
                 assert.equal(event.builds, null);
             });
         });
 
         // eslint-disable-next-line max-len
-        it('should start build if changed file is not in sourcePaths and build not triggered by webhooks', () => {
+        it('should start build from event if changed file is not in sourcePaths and build not triggered by webhooks', () => {
             jobsMock = [{
                 id: 1,
                 pipelineId: 8765,
@@ -970,6 +971,7 @@ describe('Event Factory', () => {
                 branch: Promise.resolve('branch')
             });
 
+            config.prInfo = null;
             config.startFrom = 'main';
             config.webhooks = false;
             config.changedFiles = ['README.md', 'root/src/test/file'];
