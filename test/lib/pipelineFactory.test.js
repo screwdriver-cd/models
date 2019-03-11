@@ -112,7 +112,7 @@ describe('Pipeline Factory', () => {
         };
 
         beforeEach(() => {
-            sandbox = sinon.sandbox.create({
+            sandbox = sinon.createSandbox({
                 useFakeTimers: false
             });
             sandbox.useFakeTimers(dateNow);
@@ -163,7 +163,7 @@ describe('Pipeline Factory', () => {
         let sandbox;
 
         beforeEach(() => {
-            sandbox = sinon.sandbox.create();
+            sandbox = sinon.createSandbox();
             sandbox.useFakeTimers(now);
             tokenFactoryMock.get.resolves(tokenMock);
             tokenMock.update.resolves(tokenMock);
