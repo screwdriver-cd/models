@@ -91,6 +91,7 @@
         ]
     },
     "annotations": {
-        "beta.screwdriver.cd/executor" : "screwdriver-executor-vm"
+        "beta.screwdriver.cd/executor" : "screwdriver-executor-vm",
+        "screwdriver.cd/chainPR" : true
     }
 }
