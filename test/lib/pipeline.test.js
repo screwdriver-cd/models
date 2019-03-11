@@ -2039,7 +2039,8 @@ describe('Pipeline Model', () => {
                 duration: duration1,
                 status: build12.status,
                 imagePullTime: build11.imagePullTime + build12.imagePullTime,
-                queuedTime: build11.queuedTime + build12.queuedTime
+                queuedTime: build11.queuedTime + build12.queuedTime,
+                builds: [build11, build12]
             }, {
                 id: event2.id,
                 createTime: event2.createTime,
@@ -2048,7 +2049,8 @@ describe('Pipeline Model', () => {
                 duration: duration2,
                 status: build22.status,
                 imagePullTime: build21.imagePullTime + build22.imagePullTime,
-                queuedTime: build21.queuedTime + build22.queuedTime
+                queuedTime: build21.queuedTime + build22.queuedTime,
+                builds: [build21, build22]
             }];
         });
 
@@ -2083,6 +2085,7 @@ describe('Pipeline Model', () => {
             };
 
             event1.getMetrics = sinon.stub().resolves([build11, build12, build13]);
+            metrics[0].builds = [build11, build12, build13];
 
             eventFactoryMock.list.resolves([event1, event2]);
 
@@ -2103,7 +2106,7 @@ describe('Pipeline Model', () => {
             };
 
             event1.getMetrics = sinon.stub().resolves([build13, build12, build11]);
-
+            metrics[0].builds = [build13, build12, build11];
             eventFactoryMock.list.resolves([event1, event2]);
 
             return pipeline.getMetrics({ startTime, endTime }).then((result) => {
@@ -2120,7 +2123,8 @@ describe('Pipeline Model', () => {
                 duration: 0,
                 queuedTime: 0,
                 imagePullTime: 0,
-                status: undefined
+                status: undefined,
+                builds: []
             });
 
             return pipeline.getMetrics({ startTime, endTime }).then((result) => {
