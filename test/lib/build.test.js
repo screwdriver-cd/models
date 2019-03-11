@@ -1325,13 +1325,13 @@ describe('Build Model', () => {
         it('generates metrics', () => {
             build.steps = [step1, step2];
 
-            assert.deepEqual(build.getStepMetrics(), metrics);
+            assert.deepEqual(build.getMetrics(), metrics);
         });
 
         it('does not fail if empty steps', () => {
             build.steps = [];
 
-            assert.deepEqual(build.getStepMetrics(), []);
+            assert.deepEqual(build.getMetrics(), []);
         });
 
         it('works with no startTime or endTime params passed in', () => {
@@ -1340,7 +1340,7 @@ describe('Build Model', () => {
             build.steps = [step1, step2];
             metrics = metrics.filter(m => m.name === stepName);
 
-            assert.deepEqual(build.getStepMetrics({ stepName }), metrics);
+            assert.deepEqual(build.getMetrics({ stepName }), metrics);
         });
     });
 });

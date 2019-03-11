@@ -2023,13 +2023,13 @@ describe('Pipeline Model', () => {
                 },
                 pr: {},
                 duration: 25,
-                getBuildMetrics: sinon.stub().resolves([build11, build12])
+                getMetrics: sinon.stub().resolves([build11, build12])
             };
             event2 = Object.assign({}, {
                 id: 1234,
                 createTime: '2019-01-24T11:25:00.610Z',
                 sha: '14b920bef306eb1bde8ec0b6a32372eebecc6d0e',
-                getBuildMetrics: sinon.stub().resolves([build21, build22])
+                getMetrics: sinon.stub().resolves([build21, build22])
             });
             metrics = [{
                 id: event1.id,
@@ -2065,10 +2065,10 @@ describe('Pipeline Model', () => {
 
             eventFactoryMock.list.resolves([event1, event2]);
 
-            return pipeline.getEventMetrics({ startTime, endTime }).then((result) => {
+            return pipeline.getMetrics({ startTime, endTime }).then((result) => {
                 assert.calledWith(eventFactoryMock.list, eventListConfig);
-                assert.calledOnce(event1.getBuildMetrics);
-                assert.calledOnce(event2.getBuildMetrics);
+                assert.calledOnce(event1.getMetrics);
+                assert.calledOnce(event2.getMetrics);
                 assert.deepEqual(result, metrics);
             });
         });
@@ -2082,13 +2082,13 @@ describe('Pipeline Model', () => {
                 status: 'SUCCESS'
             };
 
-            event1.getBuildMetrics = sinon.stub().resolves([build11, build12, build13]);
+            event1.getMetrics = sinon.stub().resolves([build11, build12, build13]);
 
             eventFactoryMock.list.resolves([event1, event2]);
 
-            return pipeline.getEventMetrics({ startTime, endTime }).then((result) => {
-                assert.calledOnce(event1.getBuildMetrics);
-                assert.calledOnce(event2.getBuildMetrics);
+            return pipeline.getMetrics({ startTime, endTime }).then((result) => {
+                assert.calledOnce(event1.getMetrics);
+                assert.calledOnce(event2.getMetrics);
                 assert.deepEqual(result, metrics);
             });
         });
@@ -2102,20 +2102,20 @@ describe('Pipeline Model', () => {
                 status: 'SUCCESS'
             };
 
-            event1.getBuildMetrics = sinon.stub().resolves([build13, build12, build11]);
+            event1.getMetrics = sinon.stub().resolves([build13, build12, build11]);
 
             eventFactoryMock.list.resolves([event1, event2]);
 
-            return pipeline.getEventMetrics({ startTime, endTime }).then((result) => {
-                assert.calledOnce(event1.getBuildMetrics);
-                assert.calledOnce(event2.getBuildMetrics);
+            return pipeline.getMetrics({ startTime, endTime }).then((result) => {
+                assert.calledOnce(event1.getMetrics);
+                assert.calledOnce(event2.getMetrics);
                 assert.deepEqual(result, metrics);
             });
         });
 
         it('does not fail if empty builds', () => {
             eventFactoryMock.list.resolves([event1, event2]);
-            event1.getBuildMetrics = sinon.stub().resolves([]);
+            event1.getMetrics = sinon.stub().resolves([]);
             metrics[0] = Object.assign({}, metrics[0], {
                 duration: 0,
                 queuedTime: 0,
@@ -2123,7 +2123,7 @@ describe('Pipeline Model', () => {
                 status: undefined
             });
 
-            return pipeline.getEventMetrics({ startTime, endTime }).then((result) => {
+            return pipeline.getMetrics({ startTime, endTime }).then((result) => {
                 assert.deepEqual(result, metrics);
             });
         });
@@ -2139,7 +2139,7 @@ describe('Pipeline Model', () => {
 
             eventFactoryMock.list.resolves([event1, event2]);
 
-            return pipeline.getEventMetrics().then((result) => {
+            return pipeline.getMetrics().then((result) => {
                 assert.calledWith(eventFactoryMock.list, eventListConfig);
                 assert.deepEqual(result, metrics);
             });
@@ -2148,7 +2148,7 @@ describe('Pipeline Model', () => {
         it('rejects with errors', () => {
             eventFactoryMock.list.rejects(new Error('cannotgetit'));
 
-            return pipeline.getEventMetrics({ startTime, endTime })
+            return pipeline.getMetrics({ startTime, endTime })
                 .then(() => {
                     assert.fail('Should not get here');
                 }).catch((err) => {
