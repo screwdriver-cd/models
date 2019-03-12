@@ -170,7 +170,7 @@ model.tokens
 #### Get Event Metrics
 Get all the event durations for this pipeline within time range
 ```js
-model.getEventMetrics()
+model.getMetrics()
     .then((metrics) => {
         // do stuff with metrics
     });
@@ -277,7 +277,7 @@ model.getRunningBuilds()
 #### Get Build Metrics
 Get all the build durations for this job within time range
 ```js
-model.getBuildMetrics()
+model.getMetrics()
     .then((metrics) => {
         // do stuff with metrics
     });
@@ -286,7 +286,7 @@ model.getBuildMetrics()
 #### Get Step Metrics
 Get all the durations for a specific step of this job within time range
 ```js
-model.getStepMetrics()
+model.getMetrics()
     .then((metrics) => {
         // do stuff with metrics
     });
@@ -794,7 +794,7 @@ model.getBuilds()
 #### Get Build Metrics
 Get all the build durations for this event within time range
 ```js
-model.getBuildMetrics()
+model.getMetrics()
     .then((metrics) => {
         // do stuff with metrics
     });
