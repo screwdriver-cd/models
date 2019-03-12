@@ -21,7 +21,7 @@ const EXTERNAL_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML, {
     }
 });
 const NON_PRCHAIN_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML_PR, {
-    prChain: false
+    annotations: { 'screwdriver.cd/chainPR': false }
 });
 
 describe('Pipeline Model', () => {
@@ -527,15 +527,16 @@ describe('Pipeline Model', () => {
 
             return pipeline.sync().then(() => {
                 assert.deepEqual(pipeline.annotations, {
-                    'beta.screwdriver.cd/executor': 'screwdriver-executor-vm'
+                    'beta.screwdriver.cd/executor': 'screwdriver-executor-vm',
+                    'screwdriver.cd/chainPR': true
                 });
             });
         });
 
         it('stores prChain to pipeline', () => {
             const configMock = Object.assign({}, PARSED_YAML);
+            const defatulChainPR = false;
 
-            configMock.prChain = true;
             parserMock.withArgs('superyamlcontent', templateFactoryMock)
                 .resolves(configMock);
             jobs = [];
@@ -543,7 +544,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
             jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
 
-            return pipeline.sync().then(() => {
+            return pipeline.sync(null, defatulChainPR).then(() => {
                 assert.equal(pipeline.prChain, true);
             });
         });
