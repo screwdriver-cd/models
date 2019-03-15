@@ -524,9 +524,9 @@ describe('Job Model', () => {
         let metrics;
 
         beforeEach(() => {
-            build1.getStepMetrics = sinon.stub().returns([mockMetrics1]);
-            build2.getStepMetrics = sinon.stub().returns([mockMetrics2]);
-            build3.getStepMetrics = sinon.stub().returns([mockMetrics3]);
+            build1.getMetrics = sinon.stub().returns([mockMetrics1]);
+            build2.getMetrics = sinon.stub().returns([mockMetrics2]);
+            build3.getMetrics = sinon.stub().returns([mockMetrics3]);
 
             metrics = [mockMetrics1, mockMetrics2, mockMetrics3];
         });
@@ -540,7 +540,7 @@ describe('Job Model', () => {
                 endTime,
                 sort: 'descending'
             };
-            const getStepMetricsParams = {
+            const getMetricsParams = {
                 stepName
             };
 
@@ -548,9 +548,9 @@ describe('Job Model', () => {
 
             return job.getStepMetrics({ startTime, endTime, stepName }).then((result) => {
                 assert.calledWith(buildFactoryMock.list, buildListConfig);
-                assert.calledWith(build1.getStepMetrics, getStepMetricsParams);
-                assert.calledWith(build2.getStepMetrics, getStepMetricsParams);
-                assert.calledWith(build3.getStepMetrics, getStepMetricsParams);
+                assert.calledWith(build1.getMetrics, getMetricsParams);
+                assert.calledWith(build2.getMetrics, getMetricsParams);
+                assert.calledWith(build3.getMetrics, getMetricsParams);
                 assert.deepEqual(result, metrics);
             });
         });
