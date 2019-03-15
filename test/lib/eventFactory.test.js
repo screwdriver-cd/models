@@ -900,6 +900,16 @@ describe('Event Factory', () => {
             });
         });
 
+        it('should create event with pr info if it is pr event', () => {
+            config.prNum = 20;
+
+            return eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.deepEqual(model.pr, config.prInfo);
+                assert.deepEqual(model.prNum, config.prNum);
+            });
+        });
+
         it('throw error if sourcepaths is not supported', () => {
             jobsMock = [{
                 id: 1,
