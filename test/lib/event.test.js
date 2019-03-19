@@ -169,7 +169,8 @@ describe('Event Model', () => {
                     eventId: 1234
                 },
                 startTime,
-                endTime
+                endTime,
+                sort: 'ascending'
             };
 
             buildFactoryMock.list.resolves([build1, build2]);
@@ -192,7 +193,8 @@ describe('Event Model', () => {
             const buildListConfig = {
                 params: {
                     eventId: 1234
-                }
+                },
+                sort: 'ascending'
             };
 
             buildFactoryMock.list.resolves([build1, build2]);

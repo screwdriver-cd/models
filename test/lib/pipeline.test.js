@@ -2061,7 +2061,10 @@ describe('Pipeline Model', () => {
                     pipelineId: 123,
                     type: 'pipeline'
                 },
-                sort: 'descending',
+                sort: 'ascending',
+                paginate: {
+                    count: 1000
+                },
                 startTime,
                 endTime
             };
@@ -2139,7 +2142,10 @@ describe('Pipeline Model', () => {
                     pipelineId: 123,
                     type: 'pipeline'
                 },
-                sort: 'descending'
+                sort: 'ascending',
+                paginate: {
+                    count: 1000
+                }
             };
 
             eventFactoryMock.list.resolves([event1, event2]);
