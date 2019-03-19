@@ -460,7 +460,10 @@ describe('Job Model', () => {
                 },
                 startTime,
                 endTime,
-                sort: 'ascending'
+                sort: 'ascending',
+                paginate: {
+                    count: 1000
+                }
             };
 
             buildFactoryMock.list.resolves([build1, build2, build3]);
@@ -484,7 +487,10 @@ describe('Job Model', () => {
                 params: {
                     jobId: 1234
                 },
-                sort: 'ascending'
+                sort: 'ascending',
+                paginate: {
+                    count: 1000
+                }
             };
 
             buildFactoryMock.list.resolves([build1, build2, build3]);
