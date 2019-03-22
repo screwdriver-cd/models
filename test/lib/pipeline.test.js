@@ -734,6 +734,23 @@ describe('Pipeline Model', () => {
                 });
         });
 
+        it('does not fail if admin is not a user and has no admin permissions', () => {
+            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves(null);
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
+                checkoutUrl: 'foo.git'
+            })).resolves('foo');
+            pipelineFactoryMock.get.resolves(null);
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+
+            return pipeline.sync()
+                .then((p) => {
+                    assert.equal(p.id, testId);
+                    assert.notCalled(pipelineFactoryMock.create);
+                });
+        });
+
         it('does not update child pipelines if does not belong to this parent', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
