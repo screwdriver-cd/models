@@ -5,6 +5,10 @@ const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
 const hoek = require('hoek');
+const rewire = require('rewire');
+const dayjs = require('dayjs');
+const MAX_COUNT = 1000;
+const FAKE_MAX_COUNT = 5;
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -115,6 +119,7 @@ describe('Job Model', () => {
 
         // eslint-disable-next-line global-require
         JobModel = require('../../lib/job');
+
         // eslint-disable-next-line global-require
         BaseModel = require('../../lib/base');
 
@@ -424,7 +429,6 @@ describe('Job Model', () => {
     describe('get build metrics', () => {
         const startTime = '2019-01-20T12:00:00.000Z';
         const endTime = '2019-01-30T12:00:00.000Z';
-        const duration1 = (new Date(build1.endTime) - new Date(build1.startTime)) / 1000;
         const duration3 = (new Date(build3.endTime) - new Date(build3.startTime)) / 1000;
         let metrics;
 
@@ -435,14 +439,14 @@ describe('Job Model', () => {
                 jobId: build1.jobId,
                 createTime: build1.createTime,
                 status: build1.status,
-                duration: duration1
+                duration: null
             }, {
                 id: build2.id,
                 eventId: build2.eventId,
                 jobId: build2.jobId,
                 createTime: build2.createTime,
                 status: build2.status,
-                duration: NaN
+                duration: null
             }, {
                 id: build3.id,
                 eventId: build3.eventId,
@@ -462,7 +466,7 @@ describe('Job Model', () => {
                 endTime,
                 sort: 'ascending',
                 paginate: {
-                    count: 1000
+                    count: MAX_COUNT
                 }
             };
 
@@ -470,6 +474,64 @@ describe('Job Model', () => {
 
             return job.getMetrics({ startTime, endTime }).then((result) => {
                 assert.calledWith(buildFactoryMock.list, buildListConfig);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('generates daily aggregated metrics', () => {
+            const RewireJobModel = rewire('../../lib/job');
+
+            // eslint-disable-next-line no-underscore-dangle
+            RewireJobModel.__set__('MAX_COUNT', FAKE_MAX_COUNT);
+
+            job = new RewireJobModel(config);
+
+            const buildListConfig = {
+                params: {
+                    jobId: 1234
+                },
+                startTime,
+                endTime,
+                sort: 'ascending',
+                paginate: {
+                    page: 1,
+                    count: FAKE_MAX_COUNT
+                }
+            };
+
+            metrics = [{
+                createTime: '2019-01-24T21:00:00.000Z', duration: 660 }, {
+                createTime: '2019-01-26T21:00:00.000Z', duration: 840 }, {
+                createTime: '2019-01-28T21:00:00.000Z', duration: 990
+            }];
+
+            const testBuilds = [];
+            let currentDay = build3.createTime;
+
+            // generate 8 mock builds
+            for (let i = 0; i < 8; i += 1) {
+                testBuilds.push(Object.assign({}, build3));
+                testBuilds[i].id = i;
+
+                if (i % 3 === 0) {
+                    currentDay = dayjs(currentDay).add(2, 'day');
+                }
+
+                testBuilds[i].createTime = currentDay.toISOString();
+                testBuilds[i].startTime = dayjs(currentDay).add(10, 'minute').toISOString();
+                testBuilds[i].endTime = dayjs(currentDay).add(20 + i, 'minute').toISOString();
+            }
+
+            buildFactoryMock.list.onCall(0).resolves(testBuilds.slice(0, 5));
+            buildFactoryMock.list.onCall(1).resolves(testBuilds.slice(5, testBuilds.lenth));
+
+            return job.getMetrics({ startTime, endTime, aggregate: true }).then((result) => {
+                assert.calledTwice(buildFactoryMock.list);
+                assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig);
+
+                buildListConfig.paginate.page = 2;
+                assert.calledWith(buildFactoryMock.list.secondCall, buildListConfig);
+
                 assert.deepEqual(result, metrics);
             });
         });
@@ -489,7 +551,7 @@ describe('Job Model', () => {
                 },
                 sort: 'ascending',
                 paginate: {
-                    count: 1000
+                    count: MAX_COUNT
                 }
             };
 
@@ -545,7 +607,7 @@ describe('Job Model', () => {
                 startTime,
                 endTime,
                 paginate: {
-                    count: 1000
+                    count: MAX_COUNT
                 },
                 sort: 'ascending'
             };
@@ -579,7 +641,7 @@ describe('Job Model', () => {
                 },
                 sort: 'ascending',
                 paginate: {
-                    count: 1000
+                    count: MAX_COUNT
                 }
             };
 
