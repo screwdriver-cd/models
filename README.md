@@ -260,7 +260,7 @@ model.update()
 #### Get builds
 Return builds that belong to this job
 ```js
-mode..getBuilds(config)
+model.getBuilds(config)
 ```
 
 | Parameter        | Type  | Required | Default |  Description |
@@ -282,16 +282,6 @@ model.getMetrics()
         // do stuff with metrics
     });
 ```
-
-#### Get Step Metrics
-Get all the durations for a specific step of this job within time range
-```js
-model.getMetrics()
-    .then((metrics) => {
-        // do stuff with metrics
-    });
-```
-
 
 ### Build Factory
 #### Search
