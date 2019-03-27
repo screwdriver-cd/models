@@ -41,17 +41,39 @@ describe('Job Model', () => {
         return decorateBuildMock(b);
     };
 
+    const stepMetrics = [{
+        id: 1,
+        name: 'sd-setup',
+        code: 0,
+        duration: 5,
+        createTime: '2019-01-22T21:10:00.000Z'
+    }, {
+        id: 2,
+        name: 'test',
+        code: 0,
+        duration: 10,
+        createTime: '2019-01-22T21:11:00.000Z'
+    }, {
+        id: 3,
+        name: 'sd-teardown',
+        code: 0,
+        duration: 2,
+        createTime: '2019-01-22T21:12:00.000Z'
+    }];
     const build1 = getBuildMocks({
         id: 1,
         jobId: 1234,
         status: 'RUNNING',
         createTime: '2019-01-22T21:00:00.000Z',
-        startTime: '2019-01-22T21:08:00.000Z'
+        startTime: '2019-01-22T21:08:00.000Z',
+        getMetrics: sinon.stub().returns(stepMetrics)
     });
     const build2 = getBuildMocks({
         id: 2,
         jobId: 1234,
-        status: 'QUEUED'
+        status: 'QUEUED',
+        getMetrics: sinon.stub().returns([])
+
     });
     const build3 = getBuildMocks({
         id: 3,
@@ -59,7 +81,8 @@ describe('Job Model', () => {
         status: 'SUCCESS',
         createTime: '2019-01-22T21:00:00.000Z',
         startTime: '2019-01-22T21:21:00.000Z',
-        endTime: '2019-01-22T22:30:00.000Z'
+        endTime: '2019-01-22T22:30:00.000Z',
+        getMetrics: sinon.stub().returns(stepMetrics)
     });
     const pipelineMock = {
         secrets: Promise.resolve([
@@ -439,21 +462,24 @@ describe('Job Model', () => {
                 jobId: build1.jobId,
                 createTime: build1.createTime,
                 status: build1.status,
-                duration: null
+                duration: null,
+                steps: stepMetrics
             }, {
                 id: build2.id,
                 eventId: build2.eventId,
                 jobId: build2.jobId,
                 createTime: build2.createTime,
                 status: build2.status,
-                duration: null
+                duration: null,
+                steps: []
             }, {
                 id: build3.id,
                 eventId: build3.eventId,
                 jobId: build3.jobId,
                 createTime: build3.createTime,
                 status: build3.status,
-                duration: duration3
+                duration: duration3,
+                steps: stepMetrics
             }];
         });
 
@@ -567,96 +593,6 @@ describe('Job Model', () => {
             buildFactoryMock.list.rejects(new Error('cannotgetit'));
 
             return job.getMetrics({ startTime, endTime })
-                .then(() => {
-                    assert.fail('Should not get here');
-                }).catch((err) => {
-                    assert.instanceOf(err, Error);
-                    assert.equal(err.message, 'cannotgetit');
-                });
-        });
-    });
-
-    describe('get step metrics', () => {
-        const stepName = 'sd-setup-scm';
-        const mockMetrics1 = {
-            id: 1,
-            buildId: 2,
-            name: stepName,
-            code: 0,
-            duration: 20
-        };
-        const mockMetrics2 = Object.assign({}, mockMetrics1, { id: 2, duration: 15 });
-        const mockMetrics3 = Object.assign({}, mockMetrics1, { id: 3, duration: 25 });
-        const startTime = '2019-01-20T12:00:00.000Z';
-        const endTime = '2019-01-30T12:00:00.000Z';
-        let metrics;
-
-        beforeEach(() => {
-            build1.getMetrics = sinon.stub().returns([mockMetrics1]);
-            build2.getMetrics = sinon.stub().returns([mockMetrics2]);
-            build3.getMetrics = sinon.stub().returns([mockMetrics3]);
-
-            metrics = [mockMetrics1, mockMetrics2, mockMetrics3];
-        });
-
-        it('generates metrics', () => {
-            const buildListConfig = {
-                params: {
-                    jobId: 1234
-                },
-                startTime,
-                endTime,
-                paginate: {
-                    count: MAX_COUNT
-                },
-                sort: 'ascending'
-            };
-            const getMetricsParams = {
-                stepName
-            };
-
-            buildFactoryMock.list.resolves([build1, build2, build3]);
-
-            return job.getStepMetrics({ startTime, endTime, stepName }).then((result) => {
-                assert.calledWith(buildFactoryMock.list, buildListConfig);
-                assert.calledWith(build1.getMetrics, getMetricsParams);
-                assert.calledWith(build2.getMetrics, getMetricsParams);
-                assert.calledWith(build3.getMetrics, getMetricsParams);
-                assert.deepEqual(result, metrics);
-            });
-        });
-
-        it('does not fail if empty builds', () => {
-            buildFactoryMock.list.resolves([]);
-
-            return job.getStepMetrics({ startTime, endTime, stepName }).then((result) => {
-                assert.deepEqual(result, []);
-            });
-        });
-
-        it('works with no startTime or endTime params passed in', () => {
-            const buildListConfig = {
-                params: {
-                    jobId: 1234
-                },
-                sort: 'ascending',
-                paginate: {
-                    count: MAX_COUNT
-                }
-            };
-
-            buildFactoryMock.list.resolves([build1, build2, build3]);
-
-            return job.getStepMetrics({ stepName }).then((result) => {
-                assert.calledWith(buildFactoryMock.list, buildListConfig);
-                assert.deepEqual(result, metrics);
-            });
-        });
-
-        it('rejects with errors', () => {
-            buildFactoryMock.list.rejects(new Error('cannotgetit'));
-
-            return job.getStepMetrics({ startTime, endTime, stepName })
                 .then(() => {
                     assert.fail('Should not get here');
                 }).catch((err) => {
