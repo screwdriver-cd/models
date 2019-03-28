@@ -1328,21 +1328,18 @@ describe('Build Model', () => {
         beforeEach(() => {
             metrics = [{
                 id: step1.id,
-                buildId,
                 name: step1.name,
                 code: step1.code,
                 duration: duration1,
                 createTime: build.createTime
             }, {
                 id: step2.id,
-                buildId,
                 name: step2.name,
                 code: step2.code,
                 duration: duration2,
                 createTime: build.createTime
             }, {
                 id: undefined,
-                buildId,
                 name: step3.name,
                 code: step3.code,
                 duration: duration3,
