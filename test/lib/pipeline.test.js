@@ -2123,13 +2123,7 @@ describe('Pipeline Model', () => {
         it('does not fail if empty builds', () => {
             eventFactoryMock.list.resolves([event1, event2]);
             event1.getMetrics = sinon.stub().resolves([]);
-            metrics[0] = Object.assign({}, metrics[0], {
-                duration: 0,
-                queuedTime: 0,
-                imagePullTime: 0,
-                status: undefined,
-                builds: []
-            });
+            metrics = metrics.slice(1);
 
             return pipeline.getMetrics({ startTime, endTime }).then((result) => {
                 assert.deepEqual(result, metrics);
