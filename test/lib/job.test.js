@@ -12,7 +12,7 @@ const FAKE_MAX_COUNT = 5;
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe.only('Job Model', () => {
+describe('Job Model', () => {
     const token = 'tokengenerated';
     const apiUri = 'https://notify.com/some/endpoint';
     let pipelineFactoryMock;
