@@ -5,6 +5,8 @@ const mockery = require('mockery');
 const sinon = require('sinon');
 const hoek = require('hoek');
 const schema = require('screwdriver-data-schema');
+const rewire = require('rewire');
+const dayjs = require('dayjs');
 
 sinon.assert.expose(assert, { prefix: '' });
 const PARSED_YAML = require('../data/parser');
@@ -23,6 +25,8 @@ const EXTERNAL_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML, {
 const NON_PRCHAIN_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML_PR, {
     annotations: { 'screwdriver.cd/chainPR': false }
 });
+const MAX_COUNT = 1000;
+const FAKE_MAX_COUNT = 5;
 
 describe('Pipeline Model', () => {
     let PipelineModel;
@@ -1976,14 +1980,14 @@ describe('Pipeline Model', () => {
         const build22 = {
             id: 22,
             eventId: 2,
-            startTime: '2019-01-24T11:30:00.000Z', // minStartTime for event1
-            endTime: '2019-01-24T15:30:00.000Z', // maxEndTime for event1
+            startTime: '2019-01-24T11:30:00.000Z', // minStartTime for event2
+            endTime: '2019-01-24T15:30:00.000Z', // maxEndTime for event2
             status: 'SUCCESS',
             imagePullTime: 50,
             queuedTime: 4
         };
-        const duration1 = (new Date(build12.endTime) - new Date(build11.startTime)) / 1000;
-        const duration2 = (new Date(build22.endTime) - new Date(build22.startTime)) / 1000;
+        const duration1 = dayjs(build12.endTime).diff(dayjs(build11.startTime), 'second');
+        const duration2 = dayjs(build22.endTime).diff(dayjs(build22.startTime), 'second');
         let event1;
         let event2;
         let metrics;
@@ -2063,7 +2067,7 @@ describe('Pipeline Model', () => {
                 },
                 sort: 'ascending',
                 paginate: {
-                    count: 1000
+                    count: MAX_COUNT
                 },
                 startTime,
                 endTime
@@ -2075,6 +2079,75 @@ describe('Pipeline Model', () => {
                 assert.calledWith(eventFactoryMock.list, eventListConfig);
                 assert.calledOnce(event1.getMetrics);
                 assert.calledOnce(event2.getMetrics);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('generates daily aggregated metrics', () => {
+            const RewirePipelineModel = rewire('../../lib/pipeline');
+
+            // eslint-disable-next-line no-underscore-dangle
+            RewirePipelineModel.__set__('MAX_COUNT', FAKE_MAX_COUNT);
+
+            pipeline = new RewirePipelineModel(pipelineConfig);
+
+            const eventListConfig = {
+                params: {
+                    pipelineId: 123,
+                    type: 'pipeline'
+                },
+                startTime,
+                endTime,
+                sort: 'ascending',
+                paginate: {
+                    page: 1,
+                    count: FAKE_MAX_COUNT
+                }
+            };
+
+            const testEvents = [];
+            let currentDay = event1.createTime;
+
+            // generate 8 mock builds
+            for (let i = 0; i < 8; i += 1) {
+                testEvents.push(Object.assign({}, event1));
+                testEvents[i].id = i;
+
+                if (i % 3 === 0) {
+                    currentDay = dayjs(currentDay).add(2, 'day');
+                }
+
+                const testBuild = {
+                    id: 8888,
+                    eventId: i,
+                    status: 'SUCCESS',
+                    imagePullTime: 10 + i,
+                    queuedTime: 5 + i,
+                    createTime: currentDay.toISOString(),
+                    startTime: dayjs(currentDay).add(10, 'minute').toISOString(),
+                    endTime: dayjs(currentDay).add(20 + i, 'minute').toISOString()
+                };
+
+                testEvents[i].getMetrics = sinon.stub().resolves([testBuild]);
+            }
+
+            eventFactoryMock.list.onCall(0).resolves(testEvents.slice(0, 5));
+            eventFactoryMock.list.onCall(1).resolves(testEvents.slice(5, testEvents.length));
+
+            metrics = [{
+                createTime: event1.createTime,
+                duration: 810, // AVG(SUM(10:17)) * 60 seconds
+                imagePullTime: 13.5, // AVG(SUM(10:17))
+                queuedTime: 8.5 // AVG(SUM(5:12))
+            }];
+
+            return pipeline.getMetrics({ startTime, endTime, aggregate: true }).then((result) => {
+                assert.calledTwice(eventFactoryMock.list);
+                assert.calledWith(eventFactoryMock.list.firstCall, eventListConfig);
+
+                eventListConfig.paginate.page = 2;
+                assert.calledWith(eventFactoryMock.list.secondCall, eventListConfig);
+
                 assert.deepEqual(result, metrics);
             });
         });
@@ -2138,7 +2211,7 @@ describe('Pipeline Model', () => {
                 },
                 sort: 'ascending',
                 paginate: {
-                    count: 1000
+                    count: MAX_COUNT
                 }
             };
 

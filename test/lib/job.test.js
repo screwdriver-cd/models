@@ -452,7 +452,7 @@ describe('Job Model', () => {
     describe('get build metrics', () => {
         const startTime = '2019-01-20T12:00:00.000Z';
         const endTime = '2019-01-30T12:00:00.000Z';
-        const duration3 = (new Date(build3.endTime) - new Date(build3.startTime)) / 1000;
+        const duration3 = dayjs(build3.endTime).diff(dayjs(build3.startTime), 'second');
         let metrics;
 
         beforeEach(() => {
