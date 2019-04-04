@@ -910,6 +910,22 @@ describe('Event Factory', () => {
             });
         });
 
+        it('should not call pipeline sync with configPipelineSha if it is pr event', () => {
+            config.parentEventId = 222;
+            config.configPipelineSha = 'configpipelinesha';
+            config.sha = 'configsha';
+            config.prRef = 'branch';
+            config.prNum = 20;
+
+            return eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.neverCalledWith(pipelineMock.sync, config.configPipelineSha);
+                assert.neverCalledWith(pipelineMock.sync, config.sha);
+                assert.deepEqual(model.pr, config.prInfo);
+                assert.deepEqual(model.prNum, config.prNum);
+            });
+        });
+
         it('throw error if sourcepaths is not supported', () => {
             jobsMock = [{
                 id: 1,
