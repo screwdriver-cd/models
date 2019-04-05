@@ -41,6 +41,8 @@ describe('Job Model', () => {
         return decorateBuildMock(b);
     };
 
+    const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
+
     const stepMetrics = [{
         id: 1,
         name: 'sd-setup',
@@ -63,6 +65,7 @@ describe('Job Model', () => {
     const build1 = getBuildMocks({
         id: 1,
         jobId: 1234,
+        sha,
         status: 'RUNNING',
         createTime: '2019-01-22T21:00:00.000Z',
         startTime: '2019-01-22T21:08:00.000Z',
@@ -71,6 +74,7 @@ describe('Job Model', () => {
     const build2 = getBuildMocks({
         id: 2,
         jobId: 1234,
+        sha,
         status: 'QUEUED',
         getMetrics: sinon.stub().returns([])
 
@@ -78,6 +82,7 @@ describe('Job Model', () => {
     const build3 = getBuildMocks({
         id: 3,
         jobId: 1234,
+        sha,
         status: 'SUCCESS',
         createTime: '2019-01-22T21:00:00.000Z',
         startTime: '2019-01-22T21:21:00.000Z',
@@ -461,6 +466,7 @@ describe('Job Model', () => {
                 eventId: build1.eventId,
                 jobId: build1.jobId,
                 createTime: build1.createTime,
+                sha: build1.sha,
                 status: build1.status,
                 duration: null,
                 steps: stepMetrics
@@ -469,6 +475,7 @@ describe('Job Model', () => {
                 eventId: build2.eventId,
                 jobId: build2.jobId,
                 createTime: build2.createTime,
+                sha: build2.sha,
                 status: build2.status,
                 duration: null,
                 steps: []
@@ -477,6 +484,7 @@ describe('Job Model', () => {
                 eventId: build3.eventId,
                 jobId: build3.jobId,
                 createTime: build3.createTime,
+                sha: build3.sha,
                 status: build3.status,
                 duration: duration3,
                 steps: stepMetrics
