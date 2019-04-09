@@ -138,7 +138,8 @@ describe('Event Factory', () => {
                 parentBuildId: 12345,
                 scmContext,
                 prInfo: {
-                    url: 'https://github.com/screwdriver-cd/screwdriver/pull/1063'
+                    url: 'https://github.com/screwdriver-cd/screwdriver/pull/1063',
+                    ref: 'branch'
                 }
             };
             expected = {
@@ -902,6 +903,7 @@ describe('Event Factory', () => {
 
         it('should create event with pr info if it is pr event', () => {
             config.prNum = 20;
+            config.prRef = 'branch';
 
             return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
