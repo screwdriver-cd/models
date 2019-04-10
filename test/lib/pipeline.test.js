@@ -2091,74 +2091,119 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('generates daily aggregated metrics', () => {
+        describe('aggregated metrics', () => {
             const RewirePipelineModel = rewire('../../lib/pipeline');
 
             // eslint-disable-next-line no-underscore-dangle
             RewirePipelineModel.__set__('MAX_COUNT', FAKE_MAX_COUNT);
+            let eventListConfig;
 
-            pipeline = new RewirePipelineModel(pipelineConfig);
-
-            const eventListConfig = {
-                params: {
-                    pipelineId: 123,
-                    type: 'pipeline'
-                },
-                startTime,
-                endTime,
-                sort: 'ascending',
-                sortBy: 'id',
-                paginate: {
-                    page: 1,
-                    count: FAKE_MAX_COUNT
-                }
-            };
-
-            const testEvents = [];
-            let currentDay = event1.createTime;
-
-            // generate 8 mock builds
-            for (let i = 0; i < 8; i += 1) {
-                testEvents.push(Object.assign({}, event1));
-                testEvents[i].id = i;
-
-                if (i % 3 === 0) {
-                    currentDay = dayjs(currentDay).add(2, 'day');
-                }
-
-                const testBuild = {
-                    id: 8888,
-                    eventId: i,
-                    status: 'SUCCESS',
-                    imagePullTime: 10 + i,
-                    queuedTime: 5 + i,
-                    createTime: currentDay.toISOString(),
-                    startTime: dayjs(currentDay).add(10, 'minute').toISOString(),
-                    endTime: dayjs(currentDay).add(20 + i, 'minute').toISOString()
+            beforeEach(() => {
+                pipeline = new RewirePipelineModel(pipelineConfig);
+                eventListConfig = {
+                    params: {
+                        pipelineId: 123,
+                        type: 'pipeline'
+                    },
+                    startTime,
+                    endTime,
+                    sort: 'ascending',
+                    sortBy: 'id',
+                    paginate: {
+                        page: 1,
+                        count: FAKE_MAX_COUNT
+                    }
                 };
+                const testEvents = [];
+                let currentDay = event1.createTime;
 
-                testEvents[i].getMetrics = sinon.stub().resolves([testBuild]);
-            }
+                // generate 8 mock builds
+                for (let i = 0; i < 8; i += 1) {
+                    testEvents.push(Object.assign({}, event1));
+                    testEvents[i].id = i;
 
-            eventFactoryMock.list.onCall(0).resolves(testEvents.slice(0, 5));
-            eventFactoryMock.list.onCall(1).resolves(testEvents.slice(5, testEvents.length));
+                    if (i % 3 === 0) {
+                        currentDay = dayjs(currentDay).add(2, 'day');
+                    }
 
-            metrics = [{
-                createTime: event1.createTime,
-                duration: 810, // AVG(SUM(10:17)) * 60 seconds
-                imagePullTime: 13.5, // AVG(SUM(10:17))
-                queuedTime: 8.5 // AVG(SUM(5:12))
-            }];
+                    const testBuild = {
+                        id: 8888,
+                        eventId: i,
+                        status: 'SUCCESS',
+                        imagePullTime: 10 + i,
+                        queuedTime: 5 + i,
+                        createTime: currentDay.toISOString(),
+                        startTime: dayjs(currentDay).add(10, 'minute').toISOString(),
+                        endTime: dayjs(currentDay).add(20 + i, 'minute').toISOString()
+                    };
 
-            return pipeline.getMetrics({ startTime, endTime, aggregate: true }).then((result) => {
-                assert.calledTwice(eventFactoryMock.list);
-                assert.calledWith(eventFactoryMock.list.firstCall, eventListConfig);
+                    testEvents[i].getMetrics = sinon.stub().resolves([testBuild]);
+                    testEvents[i].createTime = currentDay.toISOString();
+                }
 
-                eventListConfig.paginate.page = 2;
-                assert.calledWith(eventFactoryMock.list.secondCall, eventListConfig);
-
-                assert.deepEqual(result, metrics);
+                eventFactoryMock.list.onCall(0).resolves(testEvents.slice(0, 5));
+                eventFactoryMock.list.onCall(1).resolves(testEvents.slice(5, testEvents.length));
             });
+
+            it('generates daily aggregated metrics', () => {
+                metrics = [{
+                    createTime: '2019-01-24T21:00:00.000Z',
+                    duration: 660,
+                    queuedTime: 6,
+                    imagePullTime: 11
+                }, {
+                    createTime: '2019-01-26T21:00:00.000Z',
+                    duration: 840,
+                    queuedTime: 9,
+                    imagePullTime: 14
+                }, {
+                    createTime: '2019-01-28T21:00:00.000Z',
+                    duration: 990,
+                    queuedTime: 11.5,
+                    imagePullTime: 16.5
+                }];
+
+                return pipeline.getMetrics({ startTime, endTime, aggregate: 'day' })
+                    .then((result) => {
+                        assert.calledTwice(eventFactoryMock.list);
+                        assert.calledWith(eventFactoryMock.list.firstCall, eventListConfig);
+
+                        eventListConfig.paginate.page = 2;
+                        assert.calledWith(eventFactoryMock.list.secondCall, eventListConfig);
+
+                        assert.deepEqual(result, metrics);
+                    });
+            });
+
+            it('generates monthly aggregated metrics', () => {
+                metrics = [{
+                    createTime: '2019-01-24T21:00:00.000Z',
+                    duration: 810, // AVG(SUM(10:17)) * 60 seconds
+                    imagePullTime: 13.5, // AVG(SUM(10:17))
+                    queuedTime: 8.5 // AVG(SUM(5:12))
+                }];
+
+                return pipeline.getMetrics({ startTime, endTime, aggregate: 'month' })
+                    .then((result) => {
+                        assert.calledTwice(eventFactoryMock.list);
+                        assert.calledWith(eventFactoryMock.list.firstCall, eventListConfig);
+
+                        eventListConfig.paginate.page = 2;
+                        assert.calledWith(eventFactoryMock.list.secondCall, eventListConfig);
+
+                        assert.deepEqual(result, metrics);
+                    });
+            });
+
+            it('throws error if aggregation option is invalid', () =>
+                pipeline.getMetrics({ startTime, endTime, aggregate: 'badopts' })
+                    .then(() => {
+                        assert.fail('Error should be thrown');
+                    }).catch((err) => {
+                        assert.isOk(err);
+                        assert.equal(err.message, 'Invalid aggregation option. badopts is not ' +
+                        'one of these values [\'day\', \'week\', \'month\', \'year\']');
+                    }));
         });
 
         it('does not fail if stats is missing', () => {
