@@ -2091,7 +2091,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        describe('aggregated metrics', () => {
+        describe('aggregate metrics', () => {
             const RewirePipelineModel = rewire('../../lib/pipeline');
 
             // eslint-disable-next-line no-underscore-dangle
@@ -2163,7 +2163,7 @@ describe('Pipeline Model', () => {
                     imagePullTime: 16.5
                 }];
 
-                return pipeline.getMetrics({ startTime, endTime, aggregate: 'day' })
+                return pipeline.getMetrics({ startTime, endTime, aggregateInterval: 'day' })
                     .then((result) => {
                         assert.calledTwice(eventFactoryMock.list);
                         assert.calledWith(eventFactoryMock.list.firstCall, eventListConfig);
@@ -2183,7 +2183,7 @@ describe('Pipeline Model', () => {
                     queuedTime: 8.5 // AVG(SUM(5:12))
                 }];
 
-                return pipeline.getMetrics({ startTime, endTime, aggregate: 'month' })
+                return pipeline.getMetrics({ startTime, endTime, aggregateInterval: 'month' })
                     .then((result) => {
                         assert.calledTwice(eventFactoryMock.list);
                         assert.calledWith(eventFactoryMock.list.firstCall, eventListConfig);
@@ -2196,7 +2196,7 @@ describe('Pipeline Model', () => {
             });
 
             it('throws error if aggregation option is invalid', () =>
-                pipeline.getMetrics({ startTime, endTime, aggregate: 'badopts' })
+                pipeline.getMetrics({ startTime, endTime, aggregateInterval: 'badopts' })
                     .then(() => {
                         assert.fail('Error should be thrown');
                     }).catch((err) => {

@@ -566,15 +566,16 @@ describe('Job Model', () => {
                     createTime: '2019-01-28T21:00:00.000Z', duration: 990
                 }];
 
-                return job.getMetrics({ startTime, endTime, aggregate: 'day' }).then((result) => {
-                    assert.calledTwice(buildFactoryMock.list);
-                    assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig);
+                return job.getMetrics({ startTime, endTime, aggregateInterval: 'day' })
+                    .then((result) => {
+                        assert.calledTwice(buildFactoryMock.list);
+                        assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig);
 
-                    buildListConfig.paginate.page = 2;
-                    assert.calledWith(buildFactoryMock.list.secondCall, buildListConfig);
+                        buildListConfig.paginate.page = 2;
+                        assert.calledWith(buildFactoryMock.list.secondCall, buildListConfig);
 
-                    assert.deepEqual(result, metrics);
-                });
+                        assert.deepEqual(result, metrics);
+                    });
             });
 
             it('generates monthly aggregated metrics', () => {
@@ -582,15 +583,16 @@ describe('Job Model', () => {
                     createTime: '2019-01-24T21:00:00.000Z', duration: 810
                 }];
 
-                return job.getMetrics({ startTime, endTime, aggregate: 'month' }).then((result) => {
-                    assert.calledTwice(buildFactoryMock.list);
-                    assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig);
+                return job.getMetrics({ startTime, endTime, aggregateInterval: 'month' })
+                    .then((result) => {
+                        assert.calledTwice(buildFactoryMock.list);
+                        assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig);
 
-                    buildListConfig.paginate.page = 2;
-                    assert.calledWith(buildFactoryMock.list.secondCall, buildListConfig);
+                        buildListConfig.paginate.page = 2;
+                        assert.calledWith(buildFactoryMock.list.secondCall, buildListConfig);
 
-                    assert.deepEqual(result, metrics);
-                });
+                        assert.deepEqual(result, metrics);
+                    });
             });
         });
 
