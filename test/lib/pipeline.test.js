@@ -1988,6 +1988,7 @@ describe('Pipeline Model', () => {
         };
         const duration1 = dayjs(build12.endTime).diff(dayjs(build11.startTime), 'second');
         const duration2 = dayjs(build22.endTime).diff(dayjs(build22.startTime), 'second');
+        let event0;
         let event1;
         let event2;
         let metrics;
@@ -2036,6 +2037,12 @@ describe('Pipeline Model', () => {
                 sha: '14b920bef306eb1bde8ec0b6a32372eebecc6d0e',
                 getMetrics: sinon.stub().resolves([build21, build22])
             });
+            event0 = Object.assign({}, {
+                id: 1235,
+                createTime: '2019-01-24T11:25:00.610Z',
+                sha: '14b920bef306eb1bde8ec0b6a32372eebecc6d0e',
+                getMetrics: sinon.stub().resolves([])
+            });
             metrics = [{
                 id: event1.id,
                 createTime: event1.createTime,
@@ -2074,7 +2081,7 @@ describe('Pipeline Model', () => {
                 endTime
             };
 
-            eventFactoryMock.list.resolves([event1, event2]);
+            eventFactoryMock.list.resolves([event1, event0, event2]);
 
             return pipeline.getMetrics({ startTime, endTime }).then((result) => {
                 assert.calledWith(eventFactoryMock.list, eventListConfig);
