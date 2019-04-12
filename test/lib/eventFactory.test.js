@@ -787,6 +787,50 @@ describe('Event Factory', () => {
                 });
             });
 
+            // eslint-disable-next-line max-len
+            it('should update the workflowGraph properly when a "startFrom" node is missing in the workflowGraph', () => {
+                const RewiredEventFactory = rewire('../../lib/eventFactory');
+                // eslint-disable-next-line no-underscore-dangle
+                const updateWorkflowGraph = RewiredEventFactory.__get__('updateWorkflowGraph');
+                const eventConfig = { startFrom: '~release' };
+                const inWorkflowGraph = {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: 'job-A', id: 22 },
+                        { name: 'job-B', id: 23 }
+                    ],
+                    edges: [
+                        { src: '~pr', dest: 'job-A' },
+                        { src: '~commit', dest: 'job-A' },
+                        { src: 'job-A', dest: 'job-B' }
+                    ]
+                };
+                const expectedWorkflowGraph = {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: 'job-A', id: 22 },
+                        { name: 'job-B', id: 23 },
+                        // add a missing startFrom node
+                        { name: '~release' }
+                    ],
+                    edges: [
+                        { src: '~pr', dest: 'job-A' },
+                        { src: '~commit', dest: 'job-A' },
+                        { src: 'job-A', dest: 'job-B' }
+                    ]
+                };
+
+                return updateWorkflowGraph({
+                    pipelineConfig: {},
+                    eventConfig,
+                    workflowGraph: inWorkflowGraph
+                }).then((actualWorkflowGraph) => {
+                    assert.deepEqual(expectedWorkflowGraph, actualWorkflowGraph);
+                });
+            });
+
             it('should create build of the "PR-1:main" job with prChain config', () => {
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
