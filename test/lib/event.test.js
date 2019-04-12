@@ -171,7 +171,7 @@ describe('Event Model', () => {
                 startTime,
                 endTime,
                 sort: 'ascending',
-                sortBy: 'createTime'
+                sortBy: 'id'
             };
 
             buildFactoryMock.list.resolves([build1, build2]);
@@ -196,7 +196,7 @@ describe('Event Model', () => {
                     eventId: 1234
                 },
                 sort: 'ascending',
-                sortBy: 'createTime'
+                sortBy: 'id'
             };
 
             buildFactoryMock.list.resolves([build1, build2]);
