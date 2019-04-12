@@ -2066,7 +2066,7 @@ describe('Pipeline Model', () => {
                     type: 'pipeline'
                 },
                 sort: 'ascending',
-                sortBy: 'createTime',
+                sortBy: 'id',
                 paginate: {
                     count: MAX_COUNT
                 },
@@ -2100,7 +2100,7 @@ describe('Pipeline Model', () => {
                 startTime,
                 endTime,
                 sort: 'ascending',
-                sortBy: 'createTime',
+                sortBy: 'id',
                 paginate: {
                     page: 1,
                     count: FAKE_MAX_COUNT
@@ -2212,7 +2212,7 @@ describe('Pipeline Model', () => {
                     type: 'pipeline'
                 },
                 sort: 'ascending',
-                sortBy: 'createTime',
+                sortBy: 'id',
                 paginate: {
                     count: MAX_COUNT
                 }

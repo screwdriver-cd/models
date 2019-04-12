@@ -499,7 +499,7 @@ describe('Job Model', () => {
                 startTime,
                 endTime,
                 sort: 'ascending',
-                sortBy: 'createTime',
+                sortBy: 'id',
                 paginate: {
                     count: MAX_COUNT
                 }
@@ -528,7 +528,7 @@ describe('Job Model', () => {
                 startTime,
                 endTime,
                 sort: 'ascending',
-                sortBy: 'createTime',
+                sortBy: 'id',
                 paginate: {
                     page: 1,
                     count: FAKE_MAX_COUNT
@@ -586,7 +586,7 @@ describe('Job Model', () => {
                     jobId: 1234
                 },
                 sort: 'ascending',
-                sortBy: 'createTime',
+                sortBy: 'id',
                 paginate: {
                     count: MAX_COUNT
                 }
