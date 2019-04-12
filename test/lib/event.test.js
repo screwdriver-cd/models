@@ -170,7 +170,8 @@ describe('Event Model', () => {
                 },
                 startTime,
                 endTime,
-                sort: 'ascending'
+                sort: 'ascending',
+                sortBy: 'id'
             };
 
             buildFactoryMock.list.resolves([build1, build2]);
@@ -194,7 +195,8 @@ describe('Event Model', () => {
                 params: {
                     eventId: 1234
                 },
-                sort: 'ascending'
+                sort: 'ascending',
+                sortBy: 'id'
             };
 
             buildFactoryMock.list.resolves([build1, build2]);
