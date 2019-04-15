@@ -2194,16 +2194,6 @@ describe('Pipeline Model', () => {
                         assert.deepEqual(result, metrics);
                     });
             });
-
-            it('throws error if aggregation option is invalid', () =>
-                pipeline.getMetrics({ startTime, endTime, aggregateInterval: 'badopts' })
-                    .then(() => {
-                        assert.fail('Error should be thrown');
-                    }).catch((err) => {
-                        assert.isOk(err);
-                        assert.equal(err.message, 'Invalid aggregation option. badopts is not ' +
-                        'one of these values [\'day\', \'week\', \'month\', \'year\']');
-                    }));
         });
 
         it('does not fail if stats is missing', () => {
