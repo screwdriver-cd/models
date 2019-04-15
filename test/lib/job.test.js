@@ -7,7 +7,7 @@ const schema = require('screwdriver-data-schema');
 const hoek = require('hoek');
 const rewire = require('rewire');
 const dayjs = require('dayjs');
-const MAX_COUNT = 1000;
+const MAX_COUNT = 2000;
 const FAKE_MAX_COUNT = 5;
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -591,6 +591,25 @@ describe('Job Model', () => {
                         buildListConfig.paginate.page = 2;
                         assert.calledWith(buildFactoryMock.list.secondCall, buildListConfig);
 
+                        assert.deepEqual(result, metrics);
+                    });
+            });
+
+            it('filters out bad values', () => {
+                const badBuild = Object.assign({}, build3);
+
+                delete badBuild.endTime;
+
+                buildFactoryMock.list.onCall(0).resolves([build3, badBuild]);
+
+                metrics = [{
+                    createTime: '2019-01-22T21:00:00.000Z', duration: 4140
+                }];
+
+                return job.getMetrics({ startTime, endTime, aggregateInterval: 'month' })
+                    .then((result) => {
+                        assert.calledOnce(buildFactoryMock.list);
+                        assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig);
                         assert.deepEqual(result, metrics);
                     });
             });
