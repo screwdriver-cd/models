@@ -513,62 +513,86 @@ describe('Job Model', () => {
             });
         });
 
-        it('generates daily aggregated metrics', () => {
+        describe('aggregate metrics', () => {
             const RewireJobModel = rewire('../../lib/job');
 
             // eslint-disable-next-line no-underscore-dangle
             RewireJobModel.__set__('MAX_COUNT', FAKE_MAX_COUNT);
+            let buildListConfig;
 
-            job = new RewireJobModel(config);
+            beforeEach(() => {
+                job = new RewireJobModel(config);
+                buildListConfig = {
+                    params: {
+                        jobId: 1234
+                    },
+                    startTime,
+                    endTime,
+                    sort: 'ascending',
+                    sortBy: 'id',
+                    paginate: {
+                        page: 1,
+                        count: FAKE_MAX_COUNT
+                    }
+                };
 
-            const buildListConfig = {
-                params: {
-                    jobId: 1234
-                },
-                startTime,
-                endTime,
-                sort: 'ascending',
-                sortBy: 'id',
-                paginate: {
-                    page: 1,
-                    count: FAKE_MAX_COUNT
+                const testBuilds = [];
+                let currentDay = build3.createTime;
+
+                // generate 8 mock builds
+                for (let i = 0; i < 8; i += 1) {
+                    testBuilds.push(Object.assign({}, build3));
+                    testBuilds[i].id = i;
+
+                    if (i % 3 === 0) {
+                        currentDay = dayjs(currentDay).add(2, 'day');
+                    }
+
+                    testBuilds[i].createTime = currentDay.toISOString();
+
+                    // testBuilds' durations are 10, 11, 12, 13 ... 17
+                    testBuilds[i].startTime = dayjs(currentDay).add(10, 'minute').toISOString();
+                    testBuilds[i].endTime = dayjs(currentDay).add(20 + i, 'minute').toISOString();
                 }
-            };
 
-            metrics = [{
-                createTime: '2019-01-24T21:00:00.000Z', duration: 660 }, {
-                createTime: '2019-01-26T21:00:00.000Z', duration: 840 }, {
-                createTime: '2019-01-28T21:00:00.000Z', duration: 990
-            }];
+                buildFactoryMock.list.onCall(0).resolves(testBuilds.slice(0, 5));
+                buildFactoryMock.list.onCall(1).resolves(testBuilds.slice(5, testBuilds.length));
+            });
 
-            const testBuilds = [];
-            let currentDay = build3.createTime;
+            it('generates daily aggregated metrics', () => {
+                metrics = [{
+                    createTime: '2019-01-24T21:00:00.000Z', duration: 660 }, {
+                    createTime: '2019-01-26T21:00:00.000Z', duration: 840 }, {
+                    createTime: '2019-01-28T21:00:00.000Z', duration: 990
+                }];
 
-            // generate 8 mock builds
-            for (let i = 0; i < 8; i += 1) {
-                testBuilds.push(Object.assign({}, build3));
-                testBuilds[i].id = i;
+                return job.getMetrics({ startTime, endTime, aggregateInterval: 'day' })
+                    .then((result) => {
+                        assert.calledTwice(buildFactoryMock.list);
+                        assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig);
 
-                if (i % 3 === 0) {
-                    currentDay = dayjs(currentDay).add(2, 'day');
-                }
+                        buildListConfig.paginate.page = 2;
+                        assert.calledWith(buildFactoryMock.list.secondCall, buildListConfig);
 
-                testBuilds[i].createTime = currentDay.toISOString();
-                testBuilds[i].startTime = dayjs(currentDay).add(10, 'minute').toISOString();
-                testBuilds[i].endTime = dayjs(currentDay).add(20 + i, 'minute').toISOString();
-            }
+                        assert.deepEqual(result, metrics);
+                    });
+            });
 
-            buildFactoryMock.list.onCall(0).resolves(testBuilds.slice(0, 5));
-            buildFactoryMock.list.onCall(1).resolves(testBuilds.slice(5, testBuilds.lenth));
+            it('generates monthly aggregated metrics', () => {
+                metrics = [{
+                    createTime: '2019-01-24T21:00:00.000Z', duration: 810
+                }];
 
-            return job.getMetrics({ startTime, endTime, aggregate: true }).then((result) => {
-                assert.calledTwice(buildFactoryMock.list);
-                assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig);
+                return job.getMetrics({ startTime, endTime, aggregateInterval: 'month' })
+                    .then((result) => {
+                        assert.calledTwice(buildFactoryMock.list);
+                        assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig);
 
-                buildListConfig.paginate.page = 2;
-                assert.calledWith(buildFactoryMock.list.secondCall, buildListConfig);
+                        buildListConfig.paginate.page = 2;
+                        assert.calledWith(buildFactoryMock.list.secondCall, buildListConfig);
 
-                assert.deepEqual(result, metrics);
+                        assert.deepEqual(result, metrics);
+                    });
             });
         });
 
