@@ -919,6 +919,36 @@ describe('Event Factory', () => {
             });
         });
 
+        it('should create an Event with creator', () => {
+            const creatorTest = {
+                name: 'sd:scheduler',
+                username: 'sd-buildbot'
+            };
+
+            config.creator = creatorTest;
+            expected.creator = creatorTest;
+
+            eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.notCalled(scm.decorateAuthor);
+                assert.calledWith(scm.decorateCommit, {
+                    scmUri: 'github.com:1234:branch',
+                    scmContext,
+                    sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
+                    token: 'foo'
+                });
+                assert.strictEqual(syncedPipelineMock.lastEventId, model.id);
+                assert.strictEqual(config.prInfo.url, model.pr.url);
+                Object.keys(expected).forEach((key) => {
+                    if (key === 'workflowGraph' || key === 'meta' || key === 'creator') {
+                        assert.deepEqual(model[key], expected[key]);
+                    } else {
+                        assert.strictEqual(model[key], expected[key]);
+                    }
+                });
+            });
+        });
+
         it('should call pipeline sync with configPipelineSha if passed in', () => {
             config.parentEventId = 222;
             config.configPipelineSha = 'configpipelinesha';
