@@ -849,19 +849,7 @@ describe('Event Factory', () => {
                         { src: 'job-A', dest: 'job-B' }
                     ]
                 };
-                const expectedWorkflowGraph = {
-                    nodes: [
-                        { name: '~pr' },
-                        { name: '~commit' },
-                        { name: 'job-A', id: 22 },
-                        { name: 'job-B', id: 23 }
-                    ],
-                    edges: [
-                        { src: '~pr', dest: 'job-A' },
-                        { src: '~commit', dest: 'job-A' },
-                        { src: 'job-A', dest: 'job-B' }
-                    ]
-                };
+                const expectedWorkflowGraph = inWorkflowGraph;
 
                 return updateWorkflowGraph({
                     pipelineConfig: {},
