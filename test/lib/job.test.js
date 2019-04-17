@@ -7,7 +7,7 @@ const schema = require('screwdriver-data-schema');
 const hoek = require('hoek');
 const rewire = require('rewire');
 const dayjs = require('dayjs');
-const MAX_COUNT = 2000;
+const MAX_COUNT = 1000;
 const FAKE_MAX_COUNT = 5;
 
 sinon.assert.expose(assert, { prefix: '' });

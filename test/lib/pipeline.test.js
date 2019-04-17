@@ -25,7 +25,7 @@ const EXTERNAL_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML, {
 const NON_PRCHAIN_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML_PR, {
     annotations: { 'screwdriver.cd/chainPR': false }
 });
-const MAX_COUNT = 2000;
+const MAX_COUNT = 1000;
 const FAKE_MAX_COUNT = 5;
 
 describe('Pipeline Model', () => {

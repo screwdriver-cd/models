@@ -831,6 +831,35 @@ describe('Event Factory', () => {
                 });
             });
 
+            it('should not push a invalid node in the workflowGraph', () => {
+                const RewiredEventFactory = rewire('../../lib/eventFactory');
+                // eslint-disable-next-line no-underscore-dangle
+                const updateWorkflowGraph = RewiredEventFactory.__get__('updateWorkflowGraph');
+                const eventConfig = { startFrom: 'PR-1:test' };
+                const inWorkflowGraph = {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: 'job-A', id: 22 },
+                        { name: 'job-B', id: 23 }
+                    ],
+                    edges: [
+                        { src: '~pr', dest: 'job-A' },
+                        { src: '~commit', dest: 'job-A' },
+                        { src: 'job-A', dest: 'job-B' }
+                    ]
+                };
+                const expectedWorkflowGraph = inWorkflowGraph;
+
+                return updateWorkflowGraph({
+                    pipelineConfig: {},
+                    eventConfig,
+                    workflowGraph: inWorkflowGraph
+                }).then((actualWorkflowGraph) => {
+                    assert.deepEqual(expectedWorkflowGraph, actualWorkflowGraph);
+                });
+            });
+
             it('should create build of the "PR-1:main" job with prChain config', () => {
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
