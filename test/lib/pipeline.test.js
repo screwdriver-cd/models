@@ -2078,7 +2078,8 @@ describe('Pipeline Model', () => {
                     count: MAX_COUNT
                 },
                 startTime,
-                endTime
+                endTime,
+                readOnly: true
             };
 
             eventFactoryMock.list.resolves([event1, event0, event2]);
@@ -2112,7 +2113,8 @@ describe('Pipeline Model', () => {
                     paginate: {
                         page: 1,
                         count: FAKE_MAX_COUNT
-                    }
+                    },
+                    readOnly: true
                 };
                 const testEvents = [];
                 let currentDay = event1.createTime;
@@ -2257,7 +2259,8 @@ describe('Pipeline Model', () => {
                 sortBy: 'id',
                 paginate: {
                     count: MAX_COUNT
-                }
+                },
+                readOnly: true
             };
 
             eventFactoryMock.list.resolves([event1, event2]);

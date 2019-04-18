@@ -502,7 +502,8 @@ describe('Job Model', () => {
                 sortBy: 'id',
                 paginate: {
                     count: MAX_COUNT
-                }
+                },
+                readOnly: true
             };
 
             buildFactoryMock.list.resolves([build1, build2, build3]);
@@ -533,7 +534,8 @@ describe('Job Model', () => {
                     paginate: {
                         page: 1,
                         count: FAKE_MAX_COUNT
-                    }
+                    },
+                    readOnly: true
                 };
 
                 const testBuilds = [];
@@ -613,7 +615,8 @@ describe('Job Model', () => {
                 sortBy: 'id',
                 paginate: {
                     count: MAX_COUNT
-                }
+                },
+                readOnly: true
             };
 
             buildFactoryMock.list.resolves([build1, build2, build3]);
