@@ -1032,6 +1032,7 @@ describe('Pipeline Model', () => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
             parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
+            scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge' });
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
             pipeline.admins = { batman: true, robin: true };
@@ -1051,7 +1052,6 @@ describe('Pipeline Model', () => {
 
             return pipeline.syncPRs()
                 .then(() => {
-                    assert.calledOnce(prJob.update);
                     assert.equal(prJob.archived, true);
                 });
         });
@@ -1069,10 +1069,11 @@ describe('Pipeline Model', () => {
 
             return pipeline.syncPRs()
                 .then(() => {
+                    // assert.calledOnce(jobFactoryMock.create);
                     assert.calledWith(jobFactoryMock.create, {
+                        permutations: PARSED_YAML.jobs.main,
                         pipelineId: testId,
                         name: 'PR-2:main',
-                        permutations: PARSED_YAML.jobs.main,
                         prParentJobId: 99998
                     });
                 });
@@ -1095,7 +1096,6 @@ describe('Pipeline Model', () => {
 
             return pipeline.syncPRs()
                 .then(() => {
-                    assert.notCalled(prJob.update);
                     assert.notCalled(jobFactoryMock.create);
                 });
         });
