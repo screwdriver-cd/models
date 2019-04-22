@@ -2196,6 +2196,38 @@ describe('Pipeline Model', () => {
                         assert.deepEqual(result, metrics);
                     });
             });
+
+            it('accounts for empty metrics', () => {
+                // this build missing some stats
+                const badbuild = {
+                    id: 22,
+                    eventId: 2,
+                    status: 'SUCCESS',
+                    queuedTime: 4,
+                    duration: 30
+                };
+                const testBuild = Object.assign({}, build21);
+
+                delete testBuild.startTime;
+
+                event2.getMetrics = sinon.stub().resolves([testBuild, badbuild]);
+
+                eventFactoryMock.list.onCall(0).resolves([event0, event1, event2]);
+                metrics = [{
+                    createTime: '2019-01-24T11:25:00.610Z',
+                    duration: 4920,
+                    imagePullTime: 45,
+                    queuedTime: 5
+                }];
+
+                return pipeline.getMetrics({ startTime, endTime, aggregateInterval: 'month' })
+                    .then((result) => {
+                        assert.calledOnce(eventFactoryMock.list);
+                        assert.calledWith(eventFactoryMock.list.firstCall, eventListConfig);
+
+                        assert.deepEqual(result, metrics);
+                    });
+            });
         });
 
         it('does not fail if stats is missing', () => {
