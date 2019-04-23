@@ -93,7 +93,7 @@ describe('Trigger Factory', () => {
                         { src: '~pr:/^.*$/', dest: 'pr-wild' }
                     ]
                 },
-                jobs: Promise.resolve(jobsMock)
+                getJobs: sinon.stub().resolves(jobsMock)
             }),
             scm: {
                 getCommitSha: sinon.stub().resolves('configpipelinesha')
