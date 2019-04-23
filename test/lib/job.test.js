@@ -502,7 +502,8 @@ describe('Job Model', () => {
                 sortBy: 'id',
                 paginate: {
                     count: MAX_COUNT
-                }
+                },
+                readOnly: true
             };
 
             buildFactoryMock.list.resolves([build1, build2, build3]);
@@ -533,7 +534,8 @@ describe('Job Model', () => {
                     paginate: {
                         page: 1,
                         count: FAKE_MAX_COUNT
-                    }
+                    },
+                    readOnly: true
                 };
 
                 const testBuilds = [];
@@ -594,6 +596,25 @@ describe('Job Model', () => {
                         assert.deepEqual(result, metrics);
                     });
             });
+
+            it('filters out bad values', () => {
+                const badBuild = Object.assign({}, build3);
+
+                delete badBuild.endTime;
+
+                buildFactoryMock.list.onCall(0).resolves([build3, badBuild]);
+
+                metrics = [{
+                    createTime: '2019-01-22T21:00:00.000Z', duration: 4140
+                }];
+
+                return job.getMetrics({ startTime, endTime, aggregateInterval: 'month' })
+                    .then((result) => {
+                        assert.calledOnce(buildFactoryMock.list);
+                        assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig);
+                        assert.deepEqual(result, metrics);
+                    });
+            });
         });
 
         it('does not fail if empty builds', () => {
@@ -613,7 +634,8 @@ describe('Job Model', () => {
                 sortBy: 'id',
                 paginate: {
                     count: MAX_COUNT
-                }
+                },
+                readOnly: true
             };
 
             buildFactoryMock.list.resolves([build1, build2, build3]);

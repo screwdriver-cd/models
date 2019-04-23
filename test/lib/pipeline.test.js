@@ -22,7 +22,7 @@ const EXTERNAL_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML, {
         scmUrls: SCM_URLS
     }
 });
-const NON_PRCHAIN_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML_PR, {
+const NON_CHAINPR_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML_PR, {
     annotations: { 'screwdriver.cd/chainPR': false }
 });
 const MAX_COUNT = 1000;
@@ -537,7 +537,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('stores prChain to pipeline', () => {
+        it('stores chainPR to pipeline', () => {
             const configMock = Object.assign({}, PARSED_YAML);
             const defatulChainPR = false;
 
@@ -549,7 +549,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
 
             return pipeline.sync(null, defatulChainPR).then(() => {
-                assert.equal(pipeline.prChain, true);
+                assert.equal(pipeline.chainPR, true);
             });
         });
 
@@ -957,7 +957,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('updates PR config, but it can not override prChain flag', () => {
+        it('updates PR config, but it can not override chainPR flag', () => {
             const firstPRJob = {
                 update: sinon.stub().resolves(null),
                 isPR: sinon.stub().returns(true),
@@ -966,8 +966,8 @@ describe('Pipeline Model', () => {
                 archived: false
             };
 
-            pipeline.prChain = true;
-            const clonedYAML = JSON.parse(JSON.stringify(NON_PRCHAIN_PARSED_YAML));
+            pipeline.chainPR = true;
+            const clonedYAML = JSON.parse(JSON.stringify(NON_CHAINPR_PARSED_YAML));
 
             jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob, testJob, firstPRJob]); // all jobs
             jobFactoryMock.list.onCall(1).resolves([mainJob, publishJob, testJob]); // pipeline jobs
@@ -1079,8 +1079,8 @@ describe('Pipeline Model', () => {
                 });
         });
 
-        it('unarchive PR job if it was previously archived and prChain is false.', () => {
-            pipeline.prChain = false;
+        it('unarchive PR job if it was previously archived and chainPR is false.', () => {
+            pipeline.chainPR = false;
             prJob.archived = true;
             scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
 
@@ -2078,7 +2078,8 @@ describe('Pipeline Model', () => {
                     count: MAX_COUNT
                 },
                 startTime,
-                endTime
+                endTime,
+                readOnly: true
             };
 
             eventFactoryMock.list.resolves([event1, event0, event2]);
@@ -2112,7 +2113,8 @@ describe('Pipeline Model', () => {
                     paginate: {
                         page: 1,
                         count: FAKE_MAX_COUNT
-                    }
+                    },
+                    readOnly: true
                 };
                 const testEvents = [];
                 let currentDay = event1.createTime;
@@ -2194,6 +2196,38 @@ describe('Pipeline Model', () => {
                         assert.deepEqual(result, metrics);
                     });
             });
+
+            it('accounts for empty metrics', () => {
+                // this build missing some stats
+                const badbuild = {
+                    id: 22,
+                    eventId: 2,
+                    status: 'SUCCESS',
+                    queuedTime: 4,
+                    duration: 30
+                };
+                const testBuild = Object.assign({}, build21);
+
+                delete testBuild.startTime;
+
+                event2.getMetrics = sinon.stub().resolves([testBuild, badbuild]);
+
+                eventFactoryMock.list.onCall(0).resolves([event0, event1, event2]);
+                metrics = [{
+                    createTime: '2019-01-24T11:25:00.610Z',
+                    duration: 4920,
+                    imagePullTime: 45,
+                    queuedTime: 5
+                }];
+
+                return pipeline.getMetrics({ startTime, endTime, aggregateInterval: 'month' })
+                    .then((result) => {
+                        assert.calledOnce(eventFactoryMock.list);
+                        assert.calledWith(eventFactoryMock.list.firstCall, eventListConfig);
+
+                        assert.deepEqual(result, metrics);
+                    });
+            });
         });
 
         it('does not fail if stats is missing', () => {
@@ -2257,7 +2291,8 @@ describe('Pipeline Model', () => {
                 sortBy: 'id',
                 paginate: {
                     count: MAX_COUNT
-                }
+                },
+                readOnly: true
             };
 
             eventFactoryMock.list.resolves([event1, event2]);
