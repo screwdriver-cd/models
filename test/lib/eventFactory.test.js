@@ -683,11 +683,11 @@ describe('Event Factory', () => {
             });
 
             // Private function test
-            it('should keep the workflowGraph as is with non pr event and prChain = true', () => {
+            it('should keep the workflowGraph as is with non pr event and chainPR = true', () => {
                 const RewiredEventFactory = rewire('../../lib/eventFactory');
                 // eslint-disable-next-line no-underscore-dangle
                 const updateWorkflowGraph = RewiredEventFactory.__get__('updateWorkflowGraph');
-                const pipeline = { id: 1234, prChain: true };
+                const pipeline = { id: 1234, chainPR: true };
                 const eventConfig = {}; // non pr event
                 const inWorkflowGraph = {
                     nodes: [
@@ -714,11 +714,11 @@ describe('Event Factory', () => {
                 });
             });
 
-            it('should keep the workflowGraph as is with pr event and prChain = false', () => {
+            it('should keep the workflowGraph as is with pr event and chainPR = false', () => {
                 const RewiredEventFactory = rewire('../../lib/eventFactory');
                 // eslint-disable-next-line no-underscore-dangle
                 const updateWorkflowGraph = RewiredEventFactory.__get__('updateWorkflowGraph');
-                const pipeline = { id: 1234, prChain: false };
+                const pipeline = { id: 1234, chainPR: false };
                 const eventConfig = { prRef: 'branch', prNum: 1 };
                 const inWorkflowGraph = {
                     nodes: [
@@ -745,11 +745,11 @@ describe('Event Factory', () => {
                 });
             });
 
-            it('should update the workflowGraph properly with pr event and prChain = true', () => {
+            it('should update the workflowGraph properly with pr event and chainPR = true', () => {
                 const RewiredEventFactory = rewire('../../lib/eventFactory');
                 // eslint-disable-next-line no-underscore-dangle
                 const updateWorkflowGraph = RewiredEventFactory.__get__('updateWorkflowGraph');
-                const pipeline = { id: 1234, prChain: true };
+                const pipeline = { id: 1234, chainPR: true };
                 const eventConfig = { prRef: 'branch', prNum: 1 };
                 const inWorkflowGraph = {
                     nodes: [
@@ -872,7 +872,7 @@ describe('Event Factory', () => {
                 });
             });
 
-            it('should create build of the "PR-1:main" job with prChain config', () => {
+            it('should create build of the "PR-1:main" job with chainPR config', () => {
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
                 config.prNum = 1;
@@ -880,7 +880,7 @@ describe('Event Factory', () => {
                 config.webhooks = true;
 
                 afterSyncedPRPipelineMock.jobs = Promise.resolve(jobsMock);
-                afterSyncedPRPipelineMock.prChain = true;
+                afterSyncedPRPipelineMock.chainPR = true;
                 afterSyncedPRPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
                 // This function is called in updateWorkflowGraph() which is tested in another unit test.
                 jobFactoryMock.list.resolves([]);
