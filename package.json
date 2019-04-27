@@ -42,20 +42,20 @@
     "jenkins-mocha": "^7.0.0",
     "mockery": "^2.0.0",
     "rewire": "^4.0.1",
-    "sinon": "^7.3.1"
+    "sinon": "^7.3.2"
   },
   "dependencies": {
     "async": "^2.6.2",
     "base64url": "^3.0.1",
     "compare-versions": "^3.4.0",
-    "dayjs": "^1.8.12",
+    "dayjs": "^1.8.13",
     "docker-parse-image": "^3.0.1",
     "hoek": "^5.0.4",
     "iron": "^5.0.6",
     "lodash": "^4.17.11",
     "screwdriver-config-parser": "^4.11.1",
-    "screwdriver-data-schema": "^18.45.1",
-    "screwdriver-workflow-parser": "^1.8.3",
+    "screwdriver-data-schema": "^18.45.5",
+    "screwdriver-workflow-parser": "^1.8.4",
     "winston": "^2.4.4"
   }
 }

@@ -1097,6 +1097,71 @@ describe('Event Factory', () => {
             });
         });
 
+        it('should start build if changed file is in rootDir', () => {
+            jobsMock = [{
+                id: 1,
+                pipelineId: 8765,
+                name: 'main',
+                permutations: [{
+                    requires: ['~pr']
+                }],
+                state: 'ENABLED'
+            }];
+            syncedPipelineMock.update = sinon.stub().resolves({
+                jobs: Promise.resolve(jobsMock),
+                branch: Promise.resolve('branch'),
+                rootDir: Promise.resolve('root/src/test')
+            });
+
+            config.startFrom = 'main';
+            config.webhooks = true;
+            config.changedFiles = ['README.md', 'root/src/test/file'];
+
+            return eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.calledOnce(buildFactoryMock.create);
+                assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
+                    meta: {
+                        commit: {
+                            ...commit,
+                            changedFiles: 'README.md,root/src/test/file'
+                        }
+                    }
+                }));
+                assert.deepEqual(
+                    buildFactoryMock.create.args[0][0].environment,
+                    { SD_SOURCE_PATH: 'root/src/test/' }
+                );
+            });
+        });
+
+        it('should start build if changed file is in rootDir and sourcePaths exist', () => {
+            jobsMock = [{
+                id: 1,
+                pipelineId: 8765,
+                name: 'main',
+                permutations: [{
+                    requires: ['~pr'],
+                    sourcePaths: ['screwdriver.yaml', 'test.js']
+                }],
+                state: 'ENABLED'
+            }];
+            syncedPipelineMock.update = sinon.stub().resolves({
+                jobs: Promise.resolve(jobsMock),
+                branch: Promise.resolve('branch'),
+                rootDir: Promise.resolve('root/src/test')
+            });
+
+            config.startFrom = 'main';
+            config.webhooks = true;
+            config.changedFiles = ['README.md', 'root/src/test/file'];
+
+            return eventFactory.create(config).then((event) => {
+                assert.notCalled(buildFactoryMock.create);
+                assert.equal(event.builds, null);
+            });
+        });
+
         // eslint-disable-next-line max-len
         it('should start build from event if changed file is not in sourcePaths and build not triggered by webhooks', () => {
             jobsMock = [{
