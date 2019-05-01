@@ -20,6 +20,7 @@ describe('Trigger Factory', () => {
     let factory;
     let Trigger;
     let pipelineFactoryMock;
+    let pipelineMock;
     const jobsMock = [{
         id: 1,
         pipelineId,
@@ -59,42 +60,43 @@ describe('Trigger Factory', () => {
             get: sinon.stub(),
             scan: sinon.stub()
         };
+        pipelineMock = {
+            id: pipelineId,
+            scmUri: 'github.com:1234:branch',
+            scmContext: 'github:github.com',
+            token: Promise.resolve('foo'),
+            workflowGraph: {
+                nodes: [
+                    { name: '~pr' },
+                    { name: '~commit' },
+                    { name: 'main' },
+                    { name: 'disabledJob' },
+                    { name: 'publish' },
+                    { name: '~sd@123:main' },
+                    { name: '~commit:branch' },
+                    { name: '~commit:/^.*$/' },
+                    { name: '~pr:branch' },
+                    { name: '~pr:/^.*$/' }
+                ],
+                edges: [
+                    { src: '~sd@123:main', dest: 'main' },
+                    { src: '~pr', dest: 'main' },
+                    { src: '~commit', dest: 'main' },
+                    { src: 'main', dest: 'disabledJob' },
+                    { src: '~pr', dest: 'publish' },
+                    { src: '~commit', dest: 'only-commit' },
+                    { src: '~commit:branch', dest: 'main' },
+                    { src: '~commit:branch', dest: 'commit-branch' },
+                    { src: '~commit:/^.*$/', dest: 'commit-wild' },
+                    { src: '~pr:branch', dest: 'main' },
+                    { src: '~pr:branch', dest: 'pr-branch' },
+                    { src: '~pr:/^.*$/', dest: 'pr-wild' }
+                ]
+            },
+            getJobs: sinon.stub().resolves(jobsMock)
+        };
         pipelineFactoryMock = {
-            get: sinon.stub().resolves({
-                id: pipelineId,
-                scmUri: 'github.com:1234:branch',
-                scmContext: 'github:github.com',
-                token: Promise.resolve('foo'),
-                workflowGraph: {
-                    nodes: [
-                        { name: '~pr' },
-                        { name: '~commit' },
-                        { name: 'main' },
-                        { name: 'disabledJob' },
-                        { name: 'publish' },
-                        { name: '~sd@123:main' },
-                        { name: '~commit:branch' },
-                        { name: '~commit:/^.*$/' },
-                        { name: '~pr:branch' },
-                        { name: '~pr:/^.*$/' }
-                    ],
-                    edges: [
-                        { src: '~sd@123:main', dest: 'main' },
-                        { src: '~pr', dest: 'main' },
-                        { src: '~commit', dest: 'main' },
-                        { src: 'main', dest: 'disabledJob' },
-                        { src: '~pr', dest: 'publish' },
-                        { src: '~commit', dest: 'only-commit' },
-                        { src: '~commit:branch', dest: 'main' },
-                        { src: '~commit:branch', dest: 'commit-branch' },
-                        { src: '~commit:/^.*$/', dest: 'commit-wild' },
-                        { src: '~pr:branch', dest: 'main' },
-                        { src: '~pr:branch', dest: 'pr-branch' },
-                        { src: '~pr:/^.*$/', dest: 'pr-wild' }
-                    ]
-                },
-                getJobs: sinon.stub().resolves(jobsMock)
-            }),
+            get: sinon.stub().resolves(pipelineMock),
             scm: {
                 getCommitSha: sinon.stub().resolves('configpipelinesha')
             }
@@ -179,6 +181,7 @@ describe('Trigger Factory', () => {
             }).then((model) => {
                 model.forEach((m) => {
                     assert.instanceOf(m.triggers, Array);
+                    assert.calledWith(pipelineMock.getJobs, { type: 'pipeline' });
                 });
             });
         });
