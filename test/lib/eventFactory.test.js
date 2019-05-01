@@ -121,6 +121,12 @@ describe('Event Factory', () => {
                 url: 'https://internal-ghe.mycompany.com/imbatman',
                 username: 'imbatman'
             },
+            committer: {
+                avatar: 'https://avatars.githubusercontent.com/u/1234567?v=3',
+                name: 'Batman',
+                url: 'https://internal-ghe.mycompany.com/imbatman',
+                username: 'imbatman'
+            },
             message: 'some commit message that is here',
             url: 'https://link.to/commitDiff'
         };
@@ -388,7 +394,13 @@ describe('Event Factory', () => {
                         eventId: model.id,
                         jobId: 5,
                         prRef: 'branch',
-                        prTitle: 'Update the README with new information'
+                        prTitle: 'Update the README with new information',
+                        meta: {
+                            commit: {
+                                ...commit,
+                                changedFiles: ''
+                            }
+                        }
                     }));
                     assert.calledOnce(syncedPipelineMock.syncPR);
                     assert.calledWith(syncedPipelineMock.syncPR.firstCall, 1);
@@ -1110,6 +1122,14 @@ describe('Event Factory', () => {
             return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
                 assert.calledOnce(buildFactoryMock.create);
+                assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
+                    meta: {
+                        commit: {
+                            ...commit,
+                            changedFiles: 'README.md,root/src/test/file'
+                        }
+                    }
+                }));
                 assert.deepEqual(
                     buildFactoryMock.create.args[0][0].environment,
                     {}
