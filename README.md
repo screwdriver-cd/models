@@ -1049,7 +1049,7 @@ factory.list({
 #### Get Triggers
 Get triggers based on pipeline ID.
 ```js
-factory.getTriggers({pipelineId}).then(result => {
+factory.getTriggers({ pipelineId, type }).then(result => {
     console.log(result);
     // [{
     //     jobName1,
@@ -1065,6 +1065,7 @@ factory.getTriggers({pipelineId}).then(result => {
 | :-------------   | :---- | :-------------|
 | config           | Object | Config object |
 | config.pipelineId | Number | The unique ID for the pipeline |
+| config.type | String | Type of jobs to get (`pr` or `pipeline`; default `pipeline`) |
 
 ### Token Factory
 #### Search

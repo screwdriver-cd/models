@@ -173,7 +173,7 @@ describe('Trigger Factory', () => {
             }];
         });
 
-        it('gets all Triggers given a pipelineId', () => {
+        it('gets all pipeline Triggers given a pipelineId', () => {
             datastore.scan.resolves(expected);
 
             return factory.getTriggers({
@@ -182,6 +182,29 @@ describe('Trigger Factory', () => {
                 model.forEach((m) => {
                     assert.instanceOf(m.triggers, Array);
                     assert.calledWith(pipelineMock.getJobs, { type: 'pipeline' });
+                });
+            });
+        });
+
+        it('gets all PR Triggers given a pipelineId and type', () => {
+            datastore.scan.resolves(expected);
+            pipelineMock.getJobs.withArgs({ type: 'pr' }).resolves([{
+                id: 1,
+                pipelineId,
+                name: 'PR-1:main',
+                permutations: [{
+                    requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch', '~pr:branch']
+                }],
+                state: 'ENABLED'
+            }]);
+
+            return factory.getTriggers({
+                pipelineId,
+                type: 'pr'
+            }).then((model) => {
+                model.forEach((m) => {
+                    assert.instanceOf(m.triggers, Array);
+                    assert.calledWith(pipelineMock.getJobs, { type: 'pr' });
                 });
             });
         });
