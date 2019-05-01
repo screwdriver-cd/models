@@ -1110,7 +1110,7 @@ describe('Event Factory', () => {
                 state: 'ENABLED'
             }];
             syncedPipelineMock.update = sinon.stub().resolves({
-                jobs: Promise.resolve(jobsMock),
+                getJobs: sinon.stub().resolves(jobsMock),
                 branch: Promise.resolve('branch'),
                 rootDir: Promise.resolve('root/src/test')
             });
@@ -1149,7 +1149,7 @@ describe('Event Factory', () => {
                 state: 'ENABLED'
             }];
             syncedPipelineMock.update = sinon.stub().resolves({
-                jobs: Promise.resolve(jobsMock),
+                getJobs: sinon.stub().resolves(jobsMock),
                 branch: Promise.resolve('branch'),
                 rootDir: Promise.resolve('root/src/test')
             });
