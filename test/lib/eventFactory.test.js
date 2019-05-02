@@ -937,7 +937,7 @@ describe('Event Factory', () => {
             config.meta = meta;
             expected.meta = meta;
 
-            eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
                 assert.calledWith(scm.decorateAuthor, {
                     username: 'stjohn',
@@ -1139,7 +1139,7 @@ describe('Event Factory', () => {
             });
         });
 
-        it('should start builds if changed file is in sourcePaths', () => {
+        it('should start builds if changedFiles in sourcePaths and pass in clusterenv', () => {
             jobsMock = [{
                 id: 1,
                 pipelineId: 8765,
@@ -1170,18 +1170,21 @@ describe('Event Factory', () => {
             config.prNum = 1;
             config.prTitle = 'Update the README with new information';
             config.changedFiles = ['src/test/README.md', 'NOTINSOURCEPATH.md'];
+            config.clusterEnv = { FOO: 'bar' };
 
             return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
                 assert.calledTwice(buildFactoryMock.create);
                 assert.deepEqual(
-                    buildFactoryMock.create.args[0][0].environment,
-                    { SD_SOURCE_PATH: 'src/test/' }
-                );
+                    buildFactoryMock.create.args[0][0].environment, {
+                        SD_SOURCE_PATH: 'src/test/',
+                        FOO: 'bar'
+                    });
                 assert.deepEqual(
-                    buildFactoryMock.create.args[1][0].environment,
-                    { SD_SOURCE_PATH: 'src/test/' }
-                );
+                    buildFactoryMock.create.args[1][0].environment, {
+                        SD_SOURCE_PATH: 'src/test/',
+                        FOO: 'bar'
+                    });
             });
         });
 
