@@ -8,7 +8,7 @@ const PARSED_YAML = require('../data/parserWithWorkflowGraph');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe('Event Factory', () => {
+describe.only('Event Factory', () => {
     const dateNow = 1234567;
     const nowTime = (new Date(dateNow)).toISOString();
     let EventFactory;
@@ -1170,20 +1170,17 @@ describe('Event Factory', () => {
             config.prNum = 1;
             config.prTitle = 'Update the README with new information';
             config.changedFiles = ['src/test/README.md', 'NOTINSOURCEPATH.md'];
-            config.clusterEnv = { FOO: 'bar' };
 
             return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
                 assert.calledTwice(buildFactoryMock.create);
                 assert.deepEqual(
                     buildFactoryMock.create.args[0][0].environment, {
-                        SD_SOURCE_PATH: 'src/test/',
-                        FOO: 'bar'
+                        SD_SOURCE_PATH: 'src/test/'
                     });
                 assert.deepEqual(
                     buildFactoryMock.create.args[1][0].environment, {
-                        SD_SOURCE_PATH: 'src/test/',
-                        FOO: 'bar'
+                        SD_SOURCE_PATH: 'src/test/'
                     });
             });
         });
