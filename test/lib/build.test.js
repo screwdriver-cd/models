@@ -976,7 +976,7 @@ describe('Build Model', () => {
                 scmContext,
                 admin: Promise.resolve(adminUser),
                 token: Promise.resolve('foo'),
-                jobs: Promise.resolve([
+                getJobs: sinon.stub().resolves([
                     { id: jobId, name: 'main', isPR: () => false },
                     blocking1,
                     { id: 123, name: 'somejob', isPR: () => false },
@@ -1036,14 +1036,14 @@ describe('Build Model', () => {
             };
             const pipeline1 = {
                 id: externalPid1,
-                jobs: Promise.resolve([
+                getJobs: sinon.stub().resolves([
                     { id: 999, name: 'somejob', isPR: () => false },
                     externalJob1
                 ])
             };
             const pipeline2 = {
                 id: externalPid2,
-                jobs: Promise.resolve([
+                getJobs: sinon.stub().resolves([
                     { id: 888, name: 'somerandomjob', isPR: () => false },
                     externalJob2
                 ])
@@ -1063,7 +1063,7 @@ describe('Build Model', () => {
                 scmContext,
                 admin: Promise.resolve(adminUser),
                 token: Promise.resolve('foo'),
-                jobs: Promise.resolve([
+                getJobs: sinon.stub().resolves([
                     { id: jobId, name: 'main', isPR: () => false },
                     { id: 123, name: 'somejob', isPR: () => false },
                     { id: internalJob.id, name: internalJob.name, isPR: () => false }])
@@ -1119,7 +1119,7 @@ describe('Build Model', () => {
             };
             const pipeline1 = {
                 id: externalPid1,
-                jobs: Promise.resolve([
+                getJobs: sinon.stub().resolves([
                     { id: 999, name: 'somejob', isPR: () => false },
                     externalJob1
                 ])
@@ -1139,7 +1139,7 @@ describe('Build Model', () => {
                 scmContext,
                 admin: Promise.resolve(adminUser),
                 token: Promise.resolve('foo'),
-                jobs: Promise.resolve([
+                getJobs: sinon.stub().resolves([
                     { id: jobId, name: 'main', isPR: () => false },
                     { id: 123, name: 'somejob', isPR: () => false },
                     { id: internalJob.id, name: internalJob.name, isPR: () => false }])
