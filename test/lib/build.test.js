@@ -4,6 +4,7 @@ const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
+const hoek = require('hoek');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -51,6 +52,32 @@ describe('Build Model', () => {
     let pipelineMock;
     let jobMock;
 
+    const decorateStepMock = (step) => {
+        const decorated = hoek.clone(step);
+
+        decorated.remove = sinon.stub().returns(null);
+
+        return decorated;
+    };
+
+    const getStepMocks = (s) => {
+        if (Array.isArray(s)) {
+            return s.map(decorateStepMock);
+        }
+
+        return decorateStepMock(s);
+    };
+
+    const stepA = getStepMocks({
+        id: 1,
+        buildId: 1234
+    });
+
+    const stepB = getStepMocks({
+        id: 1,
+        buildId: 1234
+    });
+
     before(() => {
         mockery.enable({
             useCleanCache: true,
@@ -63,7 +90,8 @@ describe('Build Model', () => {
             get: sinon.stub(),
             save: sinon.stub(),
             scan: sinon.stub(),
-            update: sinon.stub()
+            update: sinon.stub(),
+            remove: sinon.stub()
         };
         hashaMock = {
             sha1: sinon.stub()
@@ -1356,6 +1384,54 @@ describe('Build Model', () => {
                     assert.instanceOf(err, Error);
                     assert.strictEqual(err.message, 'Job does not exist');
                 });
+        });
+    });
+
+    describe('remove', () => {
+        afterEach(() => {
+            stepFactoryMock.list.reset();
+            stepA.remove.reset();
+            stepB.remove.reset();
+        });
+
+        it('remove steps recursively', () => {
+            let i;
+
+            for (i = 0; i < 4; i += 1) {
+                stepFactoryMock.list.onCall(i).resolves([stepA, stepB]);
+            }
+
+            stepFactoryMock.list.onCall(i).resolves([]);
+
+            return build.remove().then(() => {
+                assert.callCount(stepFactoryMock.list, 5);
+                assert.callCount(stepA.remove, 4); // remove steps recursively
+                assert.callCount(stepB.remove, 4);
+                assert.calledOnce(datastore.remove); // remove the build
+            });
+        });
+
+        it('fail if getSteps returns error', () => {
+            stepFactoryMock.list.rejects(new Error('error'));
+
+            return build.remove().then(() => {
+                assert.fail('should not get here');
+            }).catch((err) => {
+                assert.isOk(err);
+                assert.equal(err.message, 'error');
+            });
+        });
+
+        it('fail if step.remove returns error', () => {
+            stepA.remove.rejects(new Error('error removing build'));
+            stepFactoryMock.list.resolves([stepA, stepB]);
+
+            return build.remove().then(() => {
+                assert.fail('should not get here');
+            }).catch((err) => {
+                assert.isOk(err);
+                assert.equal(err.message, 'error removing build');
+            });
         });
     });
 
