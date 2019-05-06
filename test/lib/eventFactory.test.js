@@ -121,6 +121,12 @@ describe('Event Factory', () => {
                 url: 'https://internal-ghe.mycompany.com/imbatman',
                 username: 'imbatman'
             },
+            committer: {
+                avatar: 'https://avatars.githubusercontent.com/u/1234567?v=3',
+                name: 'Batman',
+                url: 'https://internal-ghe.mycompany.com/imbatman',
+                username: 'imbatman'
+            },
             message: 'some commit message that is here',
             url: 'https://link.to/commitDiff'
         };
@@ -218,8 +224,9 @@ describe('Event Factory', () => {
                 getConfiguration: sinon.stub().resolves(PARSED_YAML),
                 update: sinon.stub().resolves(syncedPipelineMock),
                 jobs: Promise.resolve([]),
-                branch: Promise.resolve('branch'),
-                syncPRs: sinon.stub().resolves(syncedPipelineMock)
+                syncPRs: sinon.stub().resolves(syncedPipelineMock),
+                getJobs: sinon.stub().resolves([]),
+                branch: Promise.resolve('branch')
             };
 
             afterSyncedPRPipelineMock = Object.assign({}, syncedPipelineMock);
@@ -315,7 +322,7 @@ describe('Event Factory', () => {
                     state: 'ENABLED'
                 }];
 
-                syncedPipelineMock.jobs = Promise.resolve(jobsMock);
+                syncedPipelineMock.getJobs = sinon.stub().resolves(jobsMock);
                 buildFactoryMock.create.resolves('a build object');
             });
 
@@ -401,8 +408,9 @@ describe('Event Factory', () => {
                     state: 'DISABLED'
                 }];
 
-                afterSyncedPRPipelineMock.jobs = Promise.resolve(jobsMock);
+                afterSyncedPRPipelineMock.getJobs.resolves(jobsMock);
                 afterSyncedPRPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
+                syncedPipelineMock.update = sinon.stub().resolves(syncedPipelineMock);
 
                 config.startFrom = '~pr';
                 config.prRef = 'branch';
@@ -419,7 +427,13 @@ describe('Event Factory', () => {
                         eventId: model.id,
                         jobId: 5,
                         prRef: 'branch',
-                        prTitle: 'Update the README with new information'
+                        prTitle: 'Update the README with new information',
+                        meta: {
+                            commit: {
+                                ...commit,
+                                changedFiles: ''
+                            }
+                        }
                     }));
                     assert.calledOnce(syncedPipelineMock.syncPR);
                     assert.calledWith(syncedPipelineMock.syncPR.firstCall, 1);
@@ -444,6 +458,7 @@ describe('Event Factory', () => {
             it('should create commit builds', () => {
                 config.startFrom = '~commit';
                 config.webhooks = true;
+                syncedPipelineMock.id = 123566;
 
                 return eventFactory.create(config).then((model) => {
                     assert.instanceOf(model, Event);
@@ -601,9 +616,9 @@ describe('Event Factory', () => {
                 }];
 
                 syncedPipelineMock.workflowGraph = releaseWorkflow;
-                syncedPipelineMock.jobs = Promise.resolve(jobsMock);
+                syncedPipelineMock.getJobs = sinon.stub().resolves(jobsMock);
                 syncedPipelineMock.update = sinon.stub().resolves({
-                    jobs: Promise.resolve(jobsMock),
+                    getJobs: sinon.stub().resolves(jobsMock),
                     branch: Promise.resolve('branch')
                 });
                 config.startFrom = '~release';
@@ -646,9 +661,9 @@ describe('Event Factory', () => {
                 }];
 
                 syncedPipelineMock.workflowGraph = tagWorkflow;
-                syncedPipelineMock.jobs = Promise.resolve(jobsMock);
+                syncedPipelineMock.getJobs = sinon.stub().resolves(jobsMock);
                 syncedPipelineMock.update = sinon.stub().resolves({
-                    jobs: Promise.resolve(jobsMock),
+                    getJobs: sinon.stub().resolves(jobsMock),
                     branch: Promise.resolve('branch')
                 });
                 config.startFrom = '~tag';
@@ -898,7 +913,7 @@ describe('Event Factory', () => {
                 config.prTitle = 'Update the README with new information';
                 config.webhooks = true;
 
-                afterSyncedPRPipelineMock.jobs = Promise.resolve(jobsMock);
+                afterSyncedPRPipelineMock.getJobs = sinon.stub().resolves(jobsMock);
                 afterSyncedPRPipelineMock.chainPR = true;
                 afterSyncedPRPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
                 // This function is called in updateWorkflowGraph() which is tested in another unit test.
@@ -1074,7 +1089,7 @@ describe('Event Factory', () => {
                 state: 'ENABLED'
             }];
             syncedPipelineMock.update = sinon.stub().resolves({
-                jobs: Promise.resolve(jobsMock),
+                getJobs: sinon.stub().resolves(jobsMock),
                 branch: Promise.resolve('branch')
             });
 
@@ -1102,7 +1117,7 @@ describe('Event Factory', () => {
                 state: 'ENABLED'
             }];
             syncedPipelineMock.update = sinon.stub().resolves({
-                jobs: Promise.resolve(jobsMock),
+                getJobs: sinon.stub().resolves(jobsMock),
                 branch: Promise.resolve('branch')
             });
 
@@ -1129,7 +1144,7 @@ describe('Event Factory', () => {
                 state: 'ENABLED'
             }];
             syncedPipelineMock.update = sinon.stub().resolves({
-                jobs: Promise.resolve(jobsMock),
+                getJobs: sinon.stub().resolves(jobsMock),
                 branch: Promise.resolve('branch')
             });
 
@@ -1141,6 +1156,14 @@ describe('Event Factory', () => {
             return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
                 assert.calledOnce(buildFactoryMock.create);
+                assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
+                    meta: {
+                        commit: {
+                            ...commit,
+                            changedFiles: 'README.md,root/src/test/file'
+                        }
+                    }
+                }));
                 assert.deepEqual(
                     buildFactoryMock.create.args[0][0].environment,
                     {}
@@ -1169,7 +1192,7 @@ describe('Event Factory', () => {
                 state: 'ENABLED'
             }];
             afterSyncedPRPipelineMock.update = sinon.stub().resolves({
-                jobs: Promise.resolve(jobsMock),
+                getJobs: sinon.stub().resolves(jobsMock),
                 branch: Promise.resolve('branch')
             });
 
@@ -1206,7 +1229,7 @@ describe('Event Factory', () => {
                 state: 'ENABLED'
             }];
             afterSyncedPRPipelineMock.update = sinon.stub().resolves({
-                jobs: Promise.resolve(jobsMock),
+                getJobs: sinon.stub().resolves(jobsMock),
                 branch: Promise.resolve('branch')
             });
 
