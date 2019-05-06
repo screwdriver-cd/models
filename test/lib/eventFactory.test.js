@@ -223,6 +223,8 @@ describe('Event Factory', () => {
                 },
                 getConfiguration: sinon.stub().resolves(PARSED_YAML),
                 update: sinon.stub().resolves(syncedPipelineMock),
+                jobs: Promise.resolve([]),
+                syncPRs: sinon.stub().resolves(syncedPipelineMock),
                 getJobs: sinon.stub().resolves([]),
                 branch: Promise.resolve('branch')
             };
@@ -233,7 +235,8 @@ describe('Event Factory', () => {
             pipelineMock = {
                 sync: sinon.stub().resolves(syncedPipelineMock),
                 update: sinon.stub().resolves(syncedPipelineMock),
-                branch: sinon.stub().resolves('branch')
+                branch: sinon.stub().resolves('branch'),
+                syncPRs: sinon.stub().resolves([])
             };
 
             pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
@@ -321,6 +324,35 @@ describe('Event Factory', () => {
 
                 syncedPipelineMock.getJobs = sinon.stub().resolves(jobsMock);
                 buildFactoryMock.create.resolves('a build object');
+            });
+
+            it('should call syncPRs when chainPR changed false to true', () => {
+                pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
+                pipelineMock.chainPR = false;
+                syncedPipelineMock.chainPR = true;
+
+                return eventFactory.create(config).then(() => {
+                    assert.calledOnce(syncedPipelineMock.syncPRs);
+                });
+            });
+
+            it('should call syncPRs when chainPR changed undefined to true', () => {
+                pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
+                syncedPipelineMock.chainPR = true;
+
+                return eventFactory.create(config).then(() => {
+                    assert.calledOnce(syncedPipelineMock.syncPRs);
+                });
+            });
+
+            it('should not call syncPRs when chainPR is not change', () => {
+                pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
+                pipelineMock.chainPR = true;
+                syncedPipelineMock.chainPR = true;
+
+                return eventFactory.create(config).then(() => {
+                    assert.notCalled(syncedPipelineMock.syncPRs);
+                });
             });
 
             it('should start existing unarchived pr jobs without creating duplicates', () => {
