@@ -8,7 +8,7 @@ const PARSED_YAML = require('../data/parserWithWorkflowGraph');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe.only('Event Factory', () => {
+describe('Event Factory', () => {
     const dateNow = 1234567;
     const nowTime = (new Date(dateNow)).toISOString();
     let EventFactory;
@@ -1139,7 +1139,7 @@ describe.only('Event Factory', () => {
             });
         });
 
-        it('should start builds if changedFiles in sourcePaths and pass in clusterenv', () => {
+        it('should start builds if changed file is in sourcePaths', () => {
             jobsMock = [{
                 id: 1,
                 pipelineId: 8765,
@@ -1175,12 +1175,51 @@ describe.only('Event Factory', () => {
                 assert.instanceOf(model, Event);
                 assert.calledTwice(buildFactoryMock.create);
                 assert.deepEqual(
-                    buildFactoryMock.create.args[0][0].environment, {
-                        SD_SOURCE_PATH: 'src/test/'
-                    });
+                    buildFactoryMock.create.args[0][0].environment,
+                    { SD_SOURCE_PATH: 'src/test/' }
+                );
                 assert.deepEqual(
-                    buildFactoryMock.create.args[1][0].environment, {
-                        SD_SOURCE_PATH: 'src/test/'
+                    buildFactoryMock.create.args[1][0].environment,
+                    { SD_SOURCE_PATH: 'src/test/' }
+                );
+            });
+        });
+
+        it('should start builds with clusterEnv', () => {
+            const mockEventFactory = new EventFactory({
+                datastore, scm, clusterEnv: { FOO: 'BAR', TEST: 'BAZ' }
+            });
+
+            jobsMock = [{
+                id: 1,
+                pipelineId: 8765,
+                name: 'PR-1:main',
+                permutations: [{
+                    requires: ['~pr'],
+                    sourcePaths: ['src/test/']
+                }],
+                state: 'ENABLED'
+            }];
+            afterSyncedPRPipelineMock.update = sinon.stub().resolves({
+                getJobs: sinon.stub().resolves(jobsMock),
+                branch: Promise.resolve('branch')
+            });
+
+            config.webhooks = true;
+            config.startFrom = '~pr';
+            config.prRef = 'branch';
+            config.prNum = 1;
+            config.prTitle = 'Update the README with new information';
+            config.changedFiles = ['src/test/README.md', 'NOTINSOURCEPATH.md'];
+
+            return mockEventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.calledOnce(buildFactoryMock.create);
+                assert.deepEqual(
+                    buildFactoryMock.create.args[0][0].environment, {
+                        SD_SOURCE_PATH: 'src/test/',
+                        FOO: 'BAR',
+                        TEST: 'BAZ'
                     });
             });
         });
