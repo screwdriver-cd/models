@@ -1190,6 +1190,29 @@ describe('Pipeline Model', () => {
         });
     });
 
+    describe('get rootDir', () => {
+        it('has an rootDir getter', () => {
+            pipeline.scmUri = 'github.com:1234:branch:src/app/component';
+            pipeline.rootDir.then((rootDir) => {
+                assert.equal(rootDir, 'src/app/component');
+            });
+        });
+
+        it('return blank if scmUri is blank', () => {
+            pipeline.scmUri = '';
+            pipeline.rootDir.then((rootDir) => {
+                assert.equal(rootDir, '');
+            });
+        });
+
+        it('return blank if scmUri is invalid', () => {
+            pipeline.scmUri = 'github.com:1234:branch';
+            pipeline.rootDir.then((rootDir) => {
+                assert.equal(rootDir, '');
+            });
+        });
+    });
+
     describe('get jobs', () => {
         it('has a jobs getter', () => {
             const listConfig = {
