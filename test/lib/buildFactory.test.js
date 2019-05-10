@@ -20,6 +20,7 @@ class Build {
         this.tokenGen = config.tokenGen;
         this.uiUri = config.uiUri;
         this.steps = config.steps;
+        this.clusterEnv = config.clusterEnv || {};
         this.start = startStub.resolves(this);
         this.getSteps = getStepsStub;
     }
@@ -42,6 +43,7 @@ describe('Build Factory', () => {
     const apiUri = 'https://notify.com/some/endpoint';
     const tokenGen = sinon.stub();
     const uiUri = 'http://display.com/some/endpoint';
+    const clusterEnv = { CLUSTER_FOO: 'bar' };
     const steps = [
         { name: 'sd-setup-launcher' },
         { name: 'sd-setup-scm', command: 'git clone' },
@@ -137,6 +139,7 @@ describe('Build Factory', () => {
             scm: scmMock,
             uiUri,
             bookend: bookendMock,
+            clusterEnv,
             multiBuildClusterEnabled: true
         });
         factory.apiUri = apiUri;
@@ -196,7 +199,7 @@ describe('Build Factory', () => {
         const dateNow = Date.now();
         const isoTime = (new Date(dateNow)).toISOString();
         const container = 'node:4';
-        const environment = { NODE_ENV: 'test', NODE_VERSION: '4' };
+        const environment = { CLUSTER_FOO: 'bar', NODE_ENV: 'test', NODE_VERSION: '4' };
         const permutations = [{
             commands: [
                 { command: 'npm install', name: 'init' },
@@ -620,7 +623,9 @@ describe('Build Factory', () => {
                 meta
             }).then(() => {
                 assert.notCalled(startStub);
-                saveConfig.params.environment.EXTRA = true;
+                saveConfig.params.environment = {
+                    CLUSTER_FOO: 'bar', EXTRA: true, NODE_ENV: 'test', NODE_VERSION: '4'
+                };
                 assert.calledWith(datastore.save, saveConfig);
                 delete saveConfig.params.environment.EXTRA;
             });
