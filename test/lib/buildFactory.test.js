@@ -205,21 +205,21 @@ describe('Build Factory', () => {
                 { command: 'npm install', name: 'init' },
                 { command: 'npm test', name: 'test' }
             ],
-            environment: { CLUSTER_FOO: 'bar', NODE_ENV: 'test', NODE_VERSION: '4' },
+            environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
             image: 'node:4'
         }, {
             commands: [
                 { command: 'npm install', name: 'init' },
                 { command: 'npm test', name: 'test' }
             ],
-            environment: { CLUSTER_FOO: 'bar', NODE_ENV: 'test', NODE_VERSION: '5' },
+            environment: { NODE_ENV: 'test', NODE_VERSION: '5' },
             image: 'node:5'
         }, {
             commands: [
                 { command: 'npm install', name: 'init' },
                 { command: 'npm test', name: 'test' }
             ],
-            environment: { CLUSTER_FOO: 'bar', NODE_ENV: 'test', NODE_VERSION: '6' },
+            environment: { NODE_ENV: 'test', NODE_VERSION: '6' },
             image: 'node:6'
         }];
         const permutationsWithAnnotations = [{
@@ -230,7 +230,7 @@ describe('Build Factory', () => {
                 { command: 'npm install', name: 'init' },
                 { command: 'npm test', name: 'test' }
             ],
-            environment: { CLUSTER_FOO: 'bar', NODE_ENV: 'test', NODE_VERSION: '4' },
+            environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
             image: 'node:4'
         }];
 
@@ -623,7 +623,9 @@ describe('Build Factory', () => {
                 meta
             }).then(() => {
                 assert.notCalled(startStub);
-                saveConfig.params.environment.EXTRA = true;
+                saveConfig.params.environment = {
+                    CLUSTER_FOO: 'bar', EXTRA: true, NODE_ENV: 'test', NODE_VERSION: '4'
+                };
                 assert.calledWith(datastore.save, saveConfig);
                 delete saveConfig.params.environment.EXTRA;
             });
