@@ -487,7 +487,7 @@ describe('Event Factory', () => {
                     state: 'ENABLED'
                 },
                 {
-                    id: 6,
+                    id: 9,
                     pipelineId: 8765,
                     name: 'PR-1:pr-branch',
                     permutations: [{
