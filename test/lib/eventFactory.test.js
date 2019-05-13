@@ -440,6 +440,100 @@ describe('Event Factory', () => {
                 });
             });
 
+            // eslint-disable-next-line max-len
+            it('should start existing unarchived branch pr jobs without creating duplicates', () => {
+                jobsMock = [{
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [{
+                        requires: ['~pr:branch']
+                    }],
+                    state: 'ENABLED'
+                }, {
+                    id: 5,
+                    pipelineId: 8765,
+                    name: 'PR-1:main',
+                    permutations: [{
+                        requires: ['~pr:branch']
+                    }],
+                    state: 'ENABLED'
+                }, {
+                    id: 6,
+                    pipelineId: 8765,
+                    name: 'PR-1:outdated',
+                    permutations: [{
+                        requires: ['~pr:branch']
+                    }],
+                    state: 'ENABLED',
+                    archived: true
+                },
+                {
+                    id: 7,
+                    pipelineId: 8765,
+                    name: 'PR-2:main',
+                    permutations: [{
+                        requires: ['~pr:branch']
+                    }],
+                    state: 'ENABLED'
+                },
+                {
+                    id: 8,
+                    pipelineId: 8765,
+                    name: 'pr-branch',
+                    permutations: [{
+                        requires: ['~pr:branch']
+                    }],
+                    state: 'ENABLED'
+                },
+                {
+                    id: 9,
+                    pipelineId: 8765,
+                    name: 'PR-1:pr-branch',
+                    permutations: [{
+                        requires: ['~pr:branch']
+                    }],
+                    state: 'DISABLED'
+                }
+                ];
+
+                afterSyncedPRPipelineMock.getJobs.resolves(jobsMock);
+                afterSyncedPRPipelineMock.getConfiguration = sinon.stub().resolves({
+                    jobs: jobsMock,
+                    workflowGraph: syncedPipelineMock.workflowGraph
+                });
+                afterSyncedPRPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
+                syncedPipelineMock.update = sinon.stub().resolves(syncedPipelineMock);
+
+                config.startFrom = '~pr:branch';
+                config.prRef = 'branch-pr';
+                config.prNum = 1;
+                config.prInfo.ref = 'branch-pr';
+                config.prTitle = 'Update the README with new information';
+                config.webhooks = true;
+
+                return eventFactory.create(config).then((model) => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.calledOnce(buildFactoryMock.create);
+                    assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 5,
+                        prRef: 'branch-pr',
+                        prTitle: 'Update the README with new information',
+                        meta: {
+                            commit: {
+                                ...commit,
+                                changedFiles: ''
+                            }
+                        }
+                    }));
+                    assert.calledOnce(syncedPipelineMock.syncPR);
+                    assert.calledWith(syncedPipelineMock.syncPR.firstCall, 1);
+                });
+            });
+
             it('should skip creating builds', () => {
                 config.startFrom = '~commit';
                 config.webhooks = true;
@@ -539,38 +633,6 @@ describe('Event Factory', () => {
                         parentBuildId: 12345,
                         eventId: model.id,
                         jobId: 7
-                    }));
-                });
-            });
-
-            it('should create ~pr:branch triggered builds', () => {
-                config.startFrom = '~pr:branch';
-                config.prRef = 'branch';
-                config.prNum = 1;
-                config.prTitle = 'Update the README with new information';
-                config.webhooks = true;
-
-                afterSyncedPRPipelineMock.getConfiguration = sinon.stub().resolves({
-                    jobs: jobsMock,
-                    workflowGraph: syncedPipelineMock.workflowGraph
-                });
-
-                return eventFactory.create(config).then((model) => {
-                    assert.instanceOf(model, Event);
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 1
-                    }));
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 8
-                    }));
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 9
                     }));
                 });
             });
