@@ -7,7 +7,7 @@ const sinon = require('sinon');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('Trigger Factory', () => {
-    const src = '~sd@12345:component';
+    const src = '~sd@8765:main';
     const dest = '~sd@5678:main';
     const metaData = {
         src,
@@ -170,6 +170,14 @@ describe('Trigger Factory', () => {
                 id: 1234567,
                 src,
                 dest: '~sd@12345:main'
+            }, {
+                id: 1234568,
+                src: '~sd@8765:disabledjob',
+                dest: '~sd@58967:main'
+            }, {
+                id: 1234569,
+                src: '~sd@8765:publish',
+                dest: '~sd@58967:publish'
             }];
         });
 
