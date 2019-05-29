@@ -1123,6 +1123,7 @@ describe('Pipeline Model', () => {
                 });
                 assert.calledOnce(prJobs[0].update);
                 assert.calledOnce(prJobs[1].update);
+                assert.calledOnce(prJobs[2].update);
                 // PR-1:test is triggered by ~pr and ~pr:testBranch, but it should be created just once
                 assert.calledOnce(jobFactoryMock.create);
                 assert.calledWith(jobFactoryMock.create, {
