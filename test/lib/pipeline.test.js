@@ -1081,6 +1081,62 @@ describe('Pipeline Model', () => {
                 }));
             });
         });
+        it("updates PR config, and it doesn't create duplicated PR jobs", () => {
+            const prJobs = [{
+                update: sinon.stub().resolves(null),
+                isPR: sinon.stub().returns(true),
+                name: 'PR-1:main',
+                state: 'ENABLED',
+                archived: false
+            }, {
+                update: sinon.stub().resolves(null),
+                isPR: sinon.stub().returns(true),
+                name: 'PR-1:new_pr_job',
+                state: 'ENABLED',
+                archived: false
+            }, {
+                update: sinon.stub().resolves(null),
+                isPR: sinon.stub().returns(true),
+                name: 'PR-1:pr_specific_branch',
+                state: 'ENABLED',
+                archived: false
+            }];
+            const clonedYAML = JSON.parse(JSON.stringify(PARSED_YAML_PR));
+
+            clonedYAML.jobs.test[0].requires = ['~pr', '~pr:testBranch'];
+
+            jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob].concat(prJobs));
+            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(clonedYAML);
+
+            return pipeline.syncPR(1).then(() => {
+                assert.calledWith(scmMock.getFile, {
+                    path: 'screwdriver.yaml',
+                    ref: 'pulls/1/merge',
+                    scmUri,
+                    scmContext,
+                    token: 'foo',
+                    scmRepo: {
+                        branch: 'branch',
+                        url: 'https://host/owner/repo/tree/branch',
+                        name: 'owner/repo'
+                    }
+                });
+                assert.calledOnce(prJobs[0].update);
+                assert.calledOnce(prJobs[1].update);
+                // PR-1:test is triggered by ~pr and ~pr:testBranch, but it should be created just once
+                assert.calledOnce(jobFactoryMock.create);
+                assert.calledWith(jobFactoryMock.create, {
+                    name: 'PR-1:test',
+                    permutations: [{
+                        commands: [{ command: 'npm test', name: 'test' }],
+                        image: 'node:10',
+                        requires: ['~pr', '~pr:testBranch']
+                    }],
+                    pipelineId: 123
+
+                });
+            });
+        });
     });
 
     describe('syncPRs', () => {
