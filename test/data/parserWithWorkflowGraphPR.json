@@ -107,6 +107,18 @@
                 ],
                 "requires": ["~commit"]
             }
+        ],
+        "pr_specific_branch": [
+            {
+                "image": "node:8",
+                "commands": [
+                    {
+                        "name": "install",
+                        "command": "npm install test"
+                    }
+                ],
+                "requires": ["~pr:testBranch"]
+            }
         ]
     },
     "workflowGraph": {
@@ -125,7 +137,8 @@
             { "src": "~pr", "dest": "new_pr_job" },
             { "src": "~commit", "dest": "main" },
             { "src": "main", "dest": "publish" },
-            { "src": "~commit", "dest": "not_pr_job" }
+            { "src": "~commit", "dest": "not_pr_job" },
+            { "src": "~pr:testBranch", "dest": "pr_specific_branch" }
         ]
     },
     "annotations": {
