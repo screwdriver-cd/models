@@ -1853,6 +1853,11 @@ describe('Pipeline Model', () => {
             pipelineId: testId,
             remove: sinon.stub().resolves(null)
         };
+        const trigger = {
+            src: '~sd@123:main',
+            dest: '~sd@345:main',
+            remove: sinon.stub().resolves(null)
+        };
 
         beforeEach(() => {
             archived = {
@@ -1874,6 +1879,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.list.resolves([]);
             secretFactoryMock.list.resolves([secret]);
             tokenFactoryMock.list.resolves([token]);
+            triggerFactoryMock.list.resolves([trigger]);
         });
 
         afterEach(() => {
@@ -1881,11 +1887,13 @@ describe('Pipeline Model', () => {
             jobFactoryMock.list.reset();
             secretFactoryMock.list.reset();
             tokenFactoryMock.list.reset();
+            triggerFactoryMock.list.reset();
             publishJob.remove.reset();
             mainJob.remove.reset();
             blahJob.remove.reset();
             secret.remove.reset();
             token.remove.reset();
+            trigger.remove.reset();
         });
 
         it('remove secrets', () =>
@@ -1899,6 +1907,13 @@ describe('Pipeline Model', () => {
             pipeline.remove().then(() => {
                 assert.calledOnce(tokenFactoryMock.list);
                 assert.calledOnce(token.remove);
+            })
+        );
+
+        it('remove triggers', () =>
+            pipeline.remove().then(() => {
+                assert.calledOnce(triggerFactoryMock.list);
+                assert.calledOnce(trigger.remove);
             })
         );
 
@@ -1922,8 +1937,8 @@ describe('Pipeline Model', () => {
                 assert.callCount(jobFactoryMock.list, 8);
 
                 // Delete all the jobs
-                assert.callCount(publishJob.remove, 4);
-                assert.callCount(mainJob.remove, 4);
+                assert.callCount(publishJob.remove, 3);
+                assert.callCount(mainJob.remove, 3);
                 assert.callCount(blahJob.remove, 2);
 
                 // Delete the pipeline
