@@ -534,6 +534,77 @@ describe('Event Factory', () => {
                 });
             });
 
+            // eslint-disable-next-line max-len
+            it('should start existing pipeline\'s branch pr jobs without creating duplicates', () => {
+                jobsMock = [{
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'PR-1:main',
+                    permutations: [{
+                        requires: ['~pr', '~pr:branch']
+                    }],
+                    state: 'ENABLED'
+                }, {
+                    id: 2,
+                    pipelineId: 8765,
+                    name: 'PR-1:pr-branch',
+                    permutations: [{
+                        requires: ['~pr:branch']
+                    }],
+                    state: 'ENABLED'
+                }
+                ];
+
+                afterSyncedPRPipelineMock.getJobs.resolves(jobsMock);
+                afterSyncedPRPipelineMock.getConfiguration = sinon.stub().resolves({
+                    jobs: jobsMock,
+                    workflowGraph: syncedPipelineMock.workflowGraph
+                });
+                afterSyncedPRPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
+                syncedPipelineMock.update = sinon.stub().resolves(syncedPipelineMock);
+
+                config.startFrom = '~pr';
+                config.prRef = 'branch-pr';
+                config.prNum = 1;
+                config.prInfo.ref = 'branch-pr';
+                config.prTitle = 'Update the README with new information';
+                config.webhooks = true;
+
+                return eventFactory.create(config).then((model) => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.calledTwice(buildFactoryMock.create);
+                    assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 1,
+                        prRef: 'branch-pr',
+                        prTitle: 'Update the README with new information',
+                        meta: {
+                            commit: {
+                                ...commit,
+                                changedFiles: ''
+                            }
+                        }
+                    }));
+                    assert.calledWith(buildFactoryMock.create.secondCall, sinon.match({
+                        parentBuildId: 12345,
+                        eventId: model.id,
+                        jobId: 2,
+                        prRef: 'branch-pr',
+                        prTitle: 'Update the README with new information',
+                        meta: {
+                            commit: {
+                                ...commit,
+                                changedFiles: ''
+                            }
+                        }
+                    }));
+                    assert.calledOnce(syncedPipelineMock.syncPR);
+                    assert.calledWith(syncedPipelineMock.syncPR.firstCall, 1);
+                });
+            });
+
             it('should skip creating builds', () => {
                 config.startFrom = '~commit';
                 config.webhooks = true;
