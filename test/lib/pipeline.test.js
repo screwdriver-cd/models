@@ -1912,6 +1912,8 @@ describe('Pipeline Model', () => {
 
         it('remove triggers', () =>
             pipeline.remove().then(() => {
+                assert.calledWith(triggerFactoryMock.list, { params: { dest: [] } });
+                assert.calledThrice(jobFactoryMock.list);
                 assert.calledOnce(triggerFactoryMock.list);
                 assert.calledOnce(trigger.remove);
             })
