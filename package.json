@@ -6,7 +6,9 @@
   "scripts": {
     "pretest": "eslint .",
     "test": "jenkins-mocha --recursive",
-    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -56,6 +58,8 @@
     "screwdriver-config-parser": "^4.11.1",
     "screwdriver-data-schema": "^18.46.2",
     "screwdriver-workflow-parser": "^1.8.6",
-    "winston": "^2.4.4"
-  }
+    "winston": "^2.4.4",
+    "snyk": "^1.192.0"
+  },
+  "snyk": true
 }
