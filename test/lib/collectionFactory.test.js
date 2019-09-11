@@ -6,25 +6,27 @@ const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe('Collection Factory', () => {
+describe.only('Collection Factory', () => {
     const name = 'Favorites';
     const description = 'Collection of favorite pipelines';
     const userId = 1;
     const collectionId = 123;
     const pipelineIds = [12, 34, 56];
+    const type = 'normal';
     const collectionData = {
         id: collectionId,
         userId,
         name,
         description,
         pipelineIds,
-        type: undefined
+        type
     };
     const expected = {
         userId,
         name,
         description,
-        pipelineIds
+        pipelineIds,
+        type
     };
 
     let CollectionFactory;
@@ -78,7 +80,8 @@ describe('Collection Factory', () => {
                 userId,
                 name,
                 description,
-                pipelineIds
+                pipelineIds,
+                type
             }).then((model) => {
                 assert.isTrue(datastore.save.calledOnce);
                 assert.calledWith(datastore.save, {
@@ -101,7 +104,8 @@ describe('Collection Factory', () => {
             return factory.create({
                 userId,
                 name,
-                description
+                description,
+                type
             }).then((model) => {
                 assert.isTrue(datastore.save.calledOnce);
                 assert.calledWith(datastore.save, {
