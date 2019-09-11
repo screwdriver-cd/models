@@ -12,18 +12,21 @@ describe('Collection Factory', () => {
     const userId = 1;
     const collectionId = 123;
     const pipelineIds = [12, 34, 56];
+    const type = 'normal';
     const collectionData = {
         id: collectionId,
         userId,
         name,
         description,
-        pipelineIds
+        pipelineIds,
+        type
     };
     const expected = {
         userId,
         name,
         description,
-        pipelineIds
+        pipelineIds,
+        type
     };
 
     let CollectionFactory;
@@ -77,7 +80,8 @@ describe('Collection Factory', () => {
                 userId,
                 name,
                 description,
-                pipelineIds
+                pipelineIds,
+                type
             }).then((model) => {
                 assert.isTrue(datastore.save.calledOnce);
                 assert.calledWith(datastore.save, {
@@ -100,7 +104,8 @@ describe('Collection Factory', () => {
             return factory.create({
                 userId,
                 name,
-                description
+                description,
+                type
             }).then((model) => {
                 assert.isTrue(datastore.save.calledOnce);
                 assert.calledWith(datastore.save, {
@@ -108,7 +113,8 @@ describe('Collection Factory', () => {
                         userId,
                         name,
                         description,
-                        pipelineIds: [] // The collectionFactory should add this field
+                        pipelineIds: [], // The collectionFactory should add this field
+                        type
                     },
                     table: 'collections'
                 });
