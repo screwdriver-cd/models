@@ -726,7 +726,10 @@ describe('Build Factory', () => {
             datastore.scan.resolves([buildData, buildData]);
 
             return factory.list({})
-                .then(builds => builds.map(build => assert.deepEqual(build.steps, steps)));
+                .then((builds) => {
+                    builds.map(build => assert.deepEqual(build.steps, steps));
+                    assert.calledWithMatch(datastore.scan, { sortBy: 'createTime' });
+                });
         });
 
         it('should list builds with merged step data if config.fetchSteps is true', () => {

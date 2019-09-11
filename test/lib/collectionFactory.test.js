@@ -17,7 +17,8 @@ describe('Collection Factory', () => {
         userId,
         name,
         description,
-        pipelineIds
+        pipelineIds,
+        type: undefined
     };
     const expected = {
         userId,
