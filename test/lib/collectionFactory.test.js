@@ -6,7 +6,7 @@ const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe.only('Collection Factory', () => {
+describe('Collection Factory', () => {
     const name = 'Favorites';
     const description = 'Collection of favorite pipelines';
     const userId = 1;
@@ -113,7 +113,8 @@ describe.only('Collection Factory', () => {
                         userId,
                         name,
                         description,
-                        pipelineIds: [] // The collectionFactory should add this field
+                        pipelineIds: [], // The collectionFactory should add this field
+                        type
                     },
                     table: 'collections'
                 });
