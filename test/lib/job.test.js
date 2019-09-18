@@ -289,6 +289,9 @@ describe('Job Model', () => {
     describe('getBuilds', () => {
         it('use the default config when not passed in', () => {
             const expected = {
+                paginate: {
+                    count: 10
+                },
                 params: {
                     jobId: 1234
                 },
@@ -331,6 +334,9 @@ describe('Job Model', () => {
     describe('getRunningBuilds', () => {
         it('gets all running builds', () => {
             const expectedFirstCall = {
+                paginate: {
+                    count: 10
+                },
                 params: {
                     jobId: 1234,
                     status: 'RUNNING'
@@ -356,6 +362,9 @@ describe('Job Model', () => {
             buildFactoryMock.list.resolves([build3]);
 
             const expected = {
+                paginate: {
+                    count: 10
+                },
                 params: {
                     jobId: 1234,
                     status: 'SUCCESS'
