@@ -14,6 +14,8 @@ describe('Build Model', () => {
     const uiUri = 'https://display.com/some/endpoint';
     const jobId = 777;
     const jobName = 'main';
+    const jobState = 'ENABLED';
+    const jobArchived = false;
     const eventId = 555;
     const now = 112233445566;
     const buildId = 9876;
@@ -94,6 +96,8 @@ describe('Build Model', () => {
         };
         jobMock = {
             id: jobId,
+            state: 'ENABLED',
+            archived: false,
             name: 'main',
             pipeline: Promise.resolve(pipelineMock),
             permutations: [{ annotations, freezeWindows }],
@@ -850,6 +854,8 @@ describe('Build Model', () => {
             executorMock.start.resolves(null);
             jobFactoryMock.get.resolves({
                 id: jobId,
+                archived: false,
+                state: 'ENABLED',
                 prParentJobId,
                 name: 'main',
                 pipeline: Promise.resolve(pipelineMockB),
@@ -870,6 +876,8 @@ describe('Build Model', () => {
                         eventId,
                         jobId,
                         jobName,
+                        jobState,
+                        jobArchived,
                         annotations,
                         freezeWindows,
                         blockedBy: [jobId],
@@ -915,6 +923,8 @@ describe('Build Model', () => {
                         build,
                         jobId,
                         jobName,
+                        jobState,
+                        jobArchived,
                         eventId,
                         annotations,
                         freezeWindows,
@@ -989,6 +999,8 @@ describe('Build Model', () => {
             jobFactoryMock.get.resolves({
                 id: jobId,
                 name: 'main',
+                state: 'ENABLED',
+                archived: false,
                 pipeline: Promise.resolve(pipelineMockB),
                 permutations: [{
                     annotations,
@@ -1004,6 +1016,8 @@ describe('Build Model', () => {
                         build,
                         jobId,
                         jobName,
+                        jobState,
+                        jobArchived,
                         eventId,
                         blockedBy: [jobId, blocking1.id, blocking2.id, prJob.id],
                         annotations,
@@ -1072,6 +1086,8 @@ describe('Build Model', () => {
             jobFactoryMock.get.resolves({
                 id: jobId,
                 name: 'main',
+                state: 'ENABLED',
+                archived: false,
                 pipeline: Promise.resolve(pipelineMockB),
                 permutations: [{
                     annotations,
@@ -1091,6 +1107,8 @@ describe('Build Model', () => {
                         build,
                         jobId,
                         jobName,
+                        jobState,
+                        jobArchived,
                         eventId,
                         blockedBy: [jobId, internalJob.id, externalJob1.id, externalJob2.id],
                         annotations,
@@ -1148,6 +1166,8 @@ describe('Build Model', () => {
             jobFactoryMock.get.resolves({
                 id: jobId,
                 name: 'main',
+                state: 'ENABLED',
+                archived: false,
                 pipeline: Promise.resolve(pipelineMockB),
                 permutations: [{
                     annotations,
@@ -1167,6 +1187,8 @@ describe('Build Model', () => {
                         build,
                         jobId,
                         jobName,
+                        jobState,
+                        jobArchived,
                         eventId,
                         blockedBy: [jobId, internalJob.id, externalJob1.id],
                         annotations,
@@ -1197,6 +1219,8 @@ describe('Build Model', () => {
             jobFactoryMock.get.resolves({
                 id: jobId,
                 name: 'main',
+                state: 'ENABLED',
+                archived: false,
                 pipeline: Promise.resolve(pipelineMockB),
                 permutations: [{ annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' } }],
                 isPR: () => false
@@ -1208,6 +1232,8 @@ describe('Build Model', () => {
                         build,
                         jobId,
                         jobName,
+                        jobState,
+                        jobArchived,
                         eventId,
                         annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' },
                         freezeWindows: [],
