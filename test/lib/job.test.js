@@ -357,8 +357,28 @@ describe('Job Model', () => {
         });
     });
 
-    describe('getLastSuccessfulBuild', () => {
-        it('gets last successful build', () => {
+    describe('getLatestBuild', () => {
+        it('gets latest build', () => {
+            buildFactoryMock.list.resolves([build3]);
+
+            const expected = {
+                paginate: {
+                    count: 10
+                },
+                params: {
+                    jobId: 1234
+                },
+                sort: 'descending'
+            };
+
+            return job.getLatestBuild()
+                .then((latestBuild) => {
+                    assert.calledWith(buildFactoryMock.list, expected);
+                    assert.equal(latestBuild, build3);
+                });
+        });
+
+        it('gets last queued build', () => {
             buildFactoryMock.list.resolves([build3]);
 
             const expected = {
@@ -367,15 +387,16 @@ describe('Job Model', () => {
                 },
                 params: {
                     jobId: 1234,
-                    status: 'SUCCESS'
+                    status: 'QUEUED'
                 },
                 sort: 'descending'
             };
 
-            return job.getLastSuccessfulBuild().then((successfulBuild) => {
-                assert.calledWith(buildFactoryMock.list, expected);
-                assert.equal(successfulBuild, build3);
-            });
+            return job.getLatestBuild({ status: 'QUEUED' })
+                .then((queueBuild) => {
+                    assert.calledWith(buildFactoryMock.list, expected);
+                    assert.equal(queueBuild, build3);
+                });
         });
     });
 
