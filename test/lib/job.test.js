@@ -358,7 +358,7 @@ describe('Job Model', () => {
     });
 
     describe('getLatestBuild', () => {
-        it('gets lastest build', () => {
+        it('gets latest build', () => {
             buildFactoryMock.list.resolves([build3]);
 
             const expected = {
