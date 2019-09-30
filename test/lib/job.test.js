@@ -379,7 +379,7 @@ describe('Job Model', () => {
         });
 
         it('gets last queued build', () => {
-            buildFactoryMock.list.resolves([build3]);
+            buildFactoryMock.list.resolves([build2]);
 
             const expected = {
                 paginate: {
@@ -395,7 +395,28 @@ describe('Job Model', () => {
             return job.getLatestBuild({ status: 'QUEUED' })
                 .then((queueBuild) => {
                     assert.calledWith(buildFactoryMock.list, expected);
-                    assert.equal(queueBuild, build3);
+                    assert.equal(queueBuild, build2);
+                });
+        });
+
+        it('gets last failure build that does not exists', () => {
+            buildFactoryMock.list.resolves([]);
+
+            const expected = {
+                paginate: {
+                    count: 10
+                },
+                params: {
+                    jobId: 1234,
+                    status: 'FAILURE'
+                },
+                sort: 'descending'
+            };
+
+            return job.getLatestBuild({ status: 'FAILURE' })
+                .then((failureBuild) => {
+                    assert.calledWith(buildFactoryMock.list, expected);
+                    assert.isEmpty(failureBuild);
                 });
         });
     });
