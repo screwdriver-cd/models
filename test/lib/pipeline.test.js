@@ -2157,9 +2157,7 @@ describe('Pipeline Model', () => {
                         name: 'BatMan',
                         username: 'batman'
                     },
-                    message: 'Update screwdriver.yaml',
-                    // eslint-disable-next-line max-len
-                    url: 'https://github.com/Code-Beast/models/commit/14b920bef306eb1bde8ec0b6a32372eebecc6d0e'
+                    message: 'Update screwdriver.yaml'
                 },
                 createTime: '2019-01-22T21:00:00.000Z',
                 creator: {
@@ -2190,15 +2188,6 @@ describe('Pipeline Model', () => {
             };
             event2 = Object.assign({}, {
                 id: 1234,
-                commit: {
-                    author: {
-                        name: 'BatMan',
-                        username: 'batman'
-                    },
-                    message: 'Update package.json',
-                    // eslint-disable-next-line max-len
-                    url: 'https://github.com/Code-Beast/models/commit/14b920bef306eb1bde8ec0b6a32372eebecc6d0e'
-                },
                 createTime: '2019-01-24T11:25:00.610Z',
                 sha: '14b920bef306eb1bde8ec0b6a32372eebecc6d0e',
                 getMetrics: sinon.stub().resolves([build21, build22])
@@ -2213,7 +2202,6 @@ describe('Pipeline Model', () => {
                 id: event1.id,
                 createTime: event1.createTime,
                 sha: event1.sha,
-                commit: event1.commit,
                 causeMessage: event1.causeMessage,
                 duration: duration1,
                 status: build12.status,
@@ -2224,7 +2212,6 @@ describe('Pipeline Model', () => {
                 id: event2.id,
                 createTime: event2.createTime,
                 sha: event2.sha,
-                commit: event2.commit,
                 causeMessage: event2.causeMessage,
                 duration: duration2,
                 status: build22.status,
