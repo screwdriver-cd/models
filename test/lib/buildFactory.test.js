@@ -339,7 +339,7 @@ describe('Build Factory', () => {
             });
         });
 
-        it('pick from screrdriver build cluster if no annotation passed in', () => {
+        it('pick from screwdriver build cluster if no annotation passed in', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
             const jobMock = {
                 permutations,
@@ -441,6 +441,7 @@ describe('Build Factory', () => {
 
         it('creates a new build in the datastore, looking up sha', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
+            const causeMessage = `Started by ${displayName}`;
             const jobMock = {
                 permutations,
                 pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
@@ -450,7 +451,14 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves(user);
 
             return factory.create({
-                username, scmContext, jobId, eventId, prRef, parentBuildId: 12345, meta
+                username,
+                causeMessage,
+                scmContext,
+                jobId,
+                eventId,
+                prRef,
+                parentBuildId: 12345,
+                meta
             }).then((model) => {
                 assert.instanceOf(model, Build);
                 assert.calledOnce(jobFactory.getInstance);
@@ -478,7 +486,59 @@ describe('Build Factory', () => {
                     build: sinon.match.object
                 });
                 assert.calledOnce(startStub);
+                assert.calledWith(startStub, { causeMessage: 'Started by github' });
+                assert.calledWith(datastore.save, saveConfig);
+            });
+        });
 
+        it('creates a new build in the datastore with causeMessage', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const causeMessage = '[force start] Push out hotfix';
+            const jobMock = {
+                permutations,
+                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
+            };
+
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+
+            return factory.create({
+                username,
+                causeMessage,
+                scmContext,
+                jobId,
+                eventId,
+                prRef,
+                parentBuildId: 12345,
+                meta
+            }).then((model) => {
+                assert.instanceOf(model, Build);
+                assert.calledOnce(jobFactory.getInstance);
+                assert.calledWith(jobFactoryMock.get, jobId);
+                assert.calledWith(userFactoryMock.get, { username, scmContext });
+                assert.calledWith(scmMock.getCommitSha, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext
+                });
+                assert.calledWith(scmMock.decorateCommit, {
+                    token: 'foo',
+                    sha,
+                    scmUri,
+                    scmContext
+                });
+                assert.calledWith(bookendMock.getSetupCommands, {
+                    pipeline: { scmUri, scmRepo, scmContext },
+                    job: jobMock,
+                    build: sinon.match.object
+                });
+                assert.calledWith(bookendMock.getTeardownCommands, {
+                    pipeline: { scmUri, scmRepo, scmContext },
+                    job: jobMock,
+                    build: sinon.match.object
+                });
+                assert.calledOnce(startStub);
+                assert.calledWith(startStub, { causeMessage });
                 assert.calledWith(datastore.save, saveConfig);
             });
         });
