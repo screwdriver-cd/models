@@ -17,6 +17,7 @@ describe('Build Model', () => {
     const jobState = 'ENABLED';
     const jobArchived = false;
     const eventId = 555;
+    const causeMessage = '';
     const now = 112233445566;
     const buildId = 9876;
     const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
@@ -873,6 +874,7 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.calledWith(executorMock.start, {
                         build,
+                        causeMessage,
                         eventId,
                         jobId,
                         jobName,
@@ -921,6 +923,7 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.calledWith(executorMock.start, {
                         build,
+                        causeMessage,
                         jobId,
                         jobName,
                         jobState,
@@ -962,6 +965,54 @@ describe('Build Model', () => {
                     });
                 });
         });
+
+        it('passes causeMessage to executor if it exists', () => build.start({
+            causeMessage: '[force start] Push out hotfix'
+        })
+            .then(() => {
+                assert.calledWith(executorMock.start, {
+                    build,
+                    causeMessage: '[force start] Push out hotfix',
+                    jobId,
+                    jobName,
+                    jobState,
+                    jobArchived,
+                    eventId,
+                    annotations,
+                    freezeWindows,
+                    blockedBy: [jobId],
+                    apiUri,
+                    buildId,
+                    container,
+                    token,
+                    tokenGen,
+                    pipeline: {
+                        id: pipelineMockB.id,
+                        scmContext: pipelineMockB.scmContext
+                    }
+                });
+
+                assert.calledWith(tokenGen, buildId, {
+                    isPR: false,
+                    jobId,
+                    pipelineId,
+                    configPipelineId,
+                    eventId,
+                    prParentJobId
+                }, scmContext, TEMPORAL_JWT_TIMEOUT);
+
+                assert.calledWith(scmMock.updateCommitStatus, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'main',
+                    buildStatus: 'QUEUED',
+                    url,
+                    pipelineId
+                });
+            })
+        );
 
         it('get internal blockedby job Ids and pass to executor start', () => {
             const blocking1 = {
@@ -1014,6 +1065,7 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.calledWith(executorMock.start, {
                         build,
+                        causeMessage,
                         jobId,
                         jobName,
                         jobState,
@@ -1105,6 +1157,7 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.calledWith(executorMock.start, {
                         build,
+                        causeMessage,
                         jobId,
                         jobName,
                         jobState,
@@ -1185,6 +1238,7 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.calledWith(executorMock.start, {
                         build,
+                        causeMessage,
                         jobId,
                         jobName,
                         jobState,
@@ -1230,6 +1284,7 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.calledWith(executorMock.start, {
                         build,
+                        causeMessage,
                         jobId,
                         jobName,
                         jobState,
