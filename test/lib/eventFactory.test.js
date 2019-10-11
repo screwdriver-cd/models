@@ -1506,6 +1506,50 @@ describe('Event Factory', () => {
                 });
             });
         });
+
+        it('should have parameters if create with parameters', () => {
+            const currentPipelineConfig = Object.assign({
+                parameters: {
+                    user: 'actualValue'
+                }
+            }, syncedPipelineMock);
+
+            const fixedPipelineConfig = Object.assign({
+                parameters: {
+                    user: 'originalValue'
+                }
+            }, syncedPipelineMock);
+
+            config.startFrom = 'main';
+            config.meta = currentPipelineConfig;
+            syncedPipelineMock.update = sinon.stub().resolves(fixedPipelineConfig);
+
+            return eventFactory.create(config).then((model) => {
+                assert.equal(model.meta.parameters.user, 'actualValue');
+            });
+        });
+
+        it('should not have parameters if create without parameters', () => {
+            const currentPipelineConfig = Object.assign({
+                parameters: {
+                    thisIsNotFromPipeline: 'nonExistingValue'
+                }
+            }, syncedPipelineMock);
+
+            const fixedPipelineConfig = Object.assign({
+                parameters: {
+                    user: 'originalValue'
+                }
+            }, syncedPipelineMock);
+
+            config.startFrom = 'main';
+            config.meta = currentPipelineConfig;
+            syncedPipelineMock.update = sinon.stub().resolves(fixedPipelineConfig);
+
+            return eventFactory.create(config).then((model) => {
+                assert.equal(model.meta.parameters.user, 'originalValue');
+            });
+        });
     });
 
     describe('getInstance', () => {

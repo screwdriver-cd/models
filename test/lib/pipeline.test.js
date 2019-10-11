@@ -25,6 +25,7 @@ const EXTERNAL_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML, {
 const NON_CHAINPR_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML_PR, {
     annotations: { 'screwdriver.cd/chainPR': false }
 });
+const DEFAULT_PAGE = 1;
 const MAX_COUNT = 1000;
 const FAKE_MAX_COUNT = 5;
 
@@ -2125,6 +2126,8 @@ describe('Pipeline Model', () => {
     describe('get metrics', () => {
         const startTime = '2019-01-20T12:00:00.000Z';
         const endTime = '2019-01-30T12:00:00.000Z';
+        const page = 1;
+        const count = 2;
         const build11 = {
             id: 11,
             eventId: 1,
@@ -2254,7 +2257,7 @@ describe('Pipeline Model', () => {
             }];
         });
 
-        it('generates metrics', () => {
+        it('generates metrics by time', () => {
             const eventListConfig = {
                 params: {
                     pipelineId: 123,
@@ -2263,6 +2266,7 @@ describe('Pipeline Model', () => {
                 sort: 'ascending',
                 sortBy: 'id',
                 paginate: {
+                    page: DEFAULT_PAGE,
                     count: MAX_COUNT
                 },
                 startTime,
@@ -2276,6 +2280,32 @@ describe('Pipeline Model', () => {
                 assert.calledWith(eventFactoryMock.list, eventListConfig);
                 assert.calledOnce(event1.getMetrics);
                 assert.calledOnce(event2.getMetrics);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('generates metrics by pagination', () => {
+            const eventListConfig = {
+                params: {
+                    pipelineId: 123,
+                    type: 'pipeline'
+                },
+                sort: 'ascending',
+                sortBy: 'id',
+                paginate: {
+                    page,
+                    count
+                },
+                readOnly: true
+            };
+
+            eventFactoryMock.list.resolves([event1, event0, event2]);
+
+            return pipeline.getMetrics({ page, count }).then((result) => {
+                assert.calledWith(eventFactoryMock.list, eventListConfig);
+                assert.calledOnce(event0.getMetrics);
+                assert.calledOnce(event2.getMetrics);
+                assert.calledOnce(event1.getMetrics);
                 assert.deepEqual(result, metrics);
             });
         });
@@ -2299,7 +2329,7 @@ describe('Pipeline Model', () => {
                     sort: 'ascending',
                     sortBy: 'id',
                     paginate: {
-                        page: 1,
+                        page: DEFAULT_PAGE,
                         count: FAKE_MAX_COUNT
                     },
                     readOnly: true
@@ -2478,6 +2508,7 @@ describe('Pipeline Model', () => {
                 sort: 'ascending',
                 sortBy: 'id',
                 paginate: {
+                    page: DEFAULT_PAGE,
                     count: MAX_COUNT
                 },
                 readOnly: true
