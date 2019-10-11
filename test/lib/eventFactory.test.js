@@ -1507,7 +1507,7 @@ describe('Event Factory', () => {
             });
         });
 
-        it.only('should have parameters if create with parameters', () => {
+        it('should have parameters if create with parameters', () => {
             const currentPipelineConfig = Object.assign({
                 parameters: {
                     user: 'actualValue'
@@ -1529,7 +1529,7 @@ describe('Event Factory', () => {
             });
         });
 
-        it.only('should not have parameters if create without parameters', () => {
+        it('should not have parameters if create without parameters', () => {
             const currentPipelineConfig = Object.assign({
                 parameters: {
                     thisIsNotFromPipeline: 'nonExistingValue'
