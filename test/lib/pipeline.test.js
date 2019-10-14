@@ -2290,7 +2290,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it.only('generates metrics by pagination if page is available but count', () => {
+        it('generates metrics by pagination if page is available but count', () => {
             const eventListConfig = {
                 params: {
                     pipelineId: 123,
@@ -2316,7 +2316,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it.only('generates metrics by pagination if count is available but page', () => {
+        it('generates metrics by pagination if count is available but page', () => {
             const eventListConfig = {
                 params: {
                     pipelineId: 123,
