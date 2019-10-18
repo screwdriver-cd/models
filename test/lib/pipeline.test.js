@@ -2310,6 +2310,58 @@ describe('Pipeline Model', () => {
             });
         });
 
+        it('generates metrics by pagination if page is available but count', () => {
+            const eventListConfig = {
+                params: {
+                    pipelineId: 123,
+                    type: 'pipeline'
+                },
+                sort: 'ascending',
+                sortBy: 'id',
+                paginate: {
+                    page,
+                    count: undefined
+                },
+                readOnly: true
+            };
+
+            eventFactoryMock.list.resolves([event1, event0, event2]);
+
+            return pipeline.getMetrics({ page }).then((result) => {
+                assert.calledWith(eventFactoryMock.list, eventListConfig);
+                assert.calledOnce(event0.getMetrics);
+                assert.calledOnce(event2.getMetrics);
+                assert.calledOnce(event1.getMetrics);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('generates metrics by pagination if count is available but page', () => {
+            const eventListConfig = {
+                params: {
+                    pipelineId: 123,
+                    type: 'pipeline'
+                },
+                sort: 'ascending',
+                sortBy: 'id',
+                paginate: {
+                    page: undefined,
+                    count
+                },
+                readOnly: true
+            };
+
+            eventFactoryMock.list.resolves([event1, event0, event2]);
+
+            return pipeline.getMetrics({ count }).then((result) => {
+                assert.calledWith(eventFactoryMock.list, eventListConfig);
+                assert.calledOnce(event0.getMetrics);
+                assert.calledOnce(event2.getMetrics);
+                assert.calledOnce(event1.getMetrics);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
         describe('aggregate metrics', () => {
             const RewirePipelineModel = rewire('../../lib/pipeline');
 
