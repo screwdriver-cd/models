@@ -1525,7 +1525,7 @@ describe('Event Factory', () => {
             syncedPipelineMock.update = sinon.stub().resolves(fixedPipelineConfig);
 
             return eventFactory.create(config).then((model) => {
-                assert.equal(model.meta.parameters.user, 'actualValue');
+                assert.equal(model.meta.parameters.user.value, 'actualValue');
             });
         });
 
@@ -1547,7 +1547,7 @@ describe('Event Factory', () => {
             syncedPipelineMock.update = sinon.stub().resolves(fixedPipelineConfig);
 
             return eventFactory.create(config).then((model) => {
-                assert.equal(model.meta.parameters.user, 'originalValue');
+                assert.equal(model.meta.parameters.user.value, 'originalValue');
             });
         });
     });
