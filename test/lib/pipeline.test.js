@@ -2308,7 +2308,7 @@ describe('Pipeline Model', () => {
                     pipelineId: 123,
                     type: 'pipeline'
                 },
-                sort: 'ascending',
+                sort: 'descending',
                 sortBy: 'id',
                 paginate: {
                     page,
@@ -2334,7 +2334,7 @@ describe('Pipeline Model', () => {
                     pipelineId: 123,
                     type: 'pipeline'
                 },
-                sort: 'ascending',
+                sort: 'descending',
                 sortBy: 'id',
                 paginate: {
                     page,
@@ -2360,7 +2360,7 @@ describe('Pipeline Model', () => {
                     pipelineId: 123,
                     type: 'pipeline'
                 },
-                sort: 'ascending',
+                sort: 'descending',
                 sortBy: 'id',
                 paginate: {
                     page: undefined,
