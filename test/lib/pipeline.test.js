@@ -46,6 +46,7 @@ describe('Pipeline Model', () => {
     let buildClusterFactoryMock;
     let triggerFactoryMock;
     let pipelineFactoryMock;
+    let collectionFactoryMock;
     let tokenFactoryMock;
     let configPipelineMock;
     let childPipelineMock;
@@ -220,6 +221,9 @@ describe('Pipeline Model', () => {
                 parseUrl: sinon.stub()
             }
         };
+        collectionFactoryMock = {
+            list: sinon.stub().resolves([])
+        };
         tokenFactoryMock = {
             list: sinon.stub()
         };
@@ -254,6 +258,8 @@ describe('Pipeline Model', () => {
         mockery.registerMock('screwdriver-config-parser', parserMock);
         mockery.registerMock('./pipelineFactory', {
             getInstance: sinon.stub().returns(pipelineFactoryMock) });
+        mockery.registerMock('./collectionFactory', {
+            getInstance: sinon.stub().returns(collectionFactoryMock) });
         mockery.registerMock('./tokenFactory', {
             getInstance: sinon.stub().returns(tokenFactoryMock) });
 
@@ -1901,6 +1907,11 @@ describe('Pipeline Model', () => {
             dest: '~sd@345:main',
             remove: sinon.stub().resolves(null)
         };
+        const collection = {
+            name: 'TEST_COLLECTION',
+            pipelineIds: [123, 456],
+            update: sinon.stub().resolves(null)
+        };
 
         beforeEach(() => {
             archived = {
@@ -1920,6 +1931,7 @@ describe('Pipeline Model', () => {
 
             eventFactoryMock.list.resolves([]);
             jobFactoryMock.list.resolves([]);
+            collectionFactoryMock.list.resolves([collection]);
             secretFactoryMock.list.resolves([secret]);
             tokenFactoryMock.list.resolves([token]);
             triggerFactoryMock.list.resolves([trigger]);
@@ -1930,6 +1942,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.list.reset();
             secretFactoryMock.list.reset();
             tokenFactoryMock.list.reset();
+            collectionFactoryMock.list.reset();
             triggerFactoryMock.list.reset();
             publishJob.remove.reset();
             mainJob.remove.reset();
@@ -1993,6 +2006,31 @@ describe('Pipeline Model', () => {
 
         it('fail if getJobs returns error', () => {
             jobFactoryMock.list.rejects(new Error('error'));
+
+            return pipeline.remove().then(() => {
+                assert.fail('should not get here');
+            }).catch((err) => {
+                assert.isOk(err);
+                assert.equal(err.message, 'error');
+            });
+        });
+
+        it('update collection associated with pipeline', () => {
+            const expected = [456];
+            const search = {
+                field: 'pipelineIds',
+                keyword: `%${testId}%`
+            };
+
+            return pipeline.remove().then(() => {
+                assert.calledWith(collectionFactoryMock.list, { search });
+                assert.deepEqual(collection.pipelineIds, expected);
+                assert.calledOnce(collection.update);
+            });
+        });
+
+        it('fail if fail to get collections', () => {
+            collectionFactoryMock.list.rejects(new Error('error'));
 
             return pipeline.remove().then(() => {
                 assert.fail('should not get here');
