@@ -53,8 +53,8 @@
     "hoek": "^5.0.4",
     "iron": "^5.0.6",
     "lodash": "^4.17.15",
-    "screwdriver-config-parser": "^4.11.5",
-    "screwdriver-data-schema": "^18.47.6",
+    "screwdriver-config-parser": "^4.11.6",
+    "screwdriver-data-schema": "^18.47.8",
     "screwdriver-workflow-parser": "^1.8.8",
     "winston": "^2.4.4"
   }

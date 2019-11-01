@@ -158,6 +158,42 @@ describe('Trigger Factory', () => {
         });
     });
 
+    describe('getDestFromSrc', () => {
+        let expected;
+
+        beforeEach(() => {
+            expected = [{
+                id: generatedId,
+                src,
+                dest
+            }, {
+                id: 111,
+                src,
+                dest: '~sd@1234:main'
+            }, {
+                id: 222,
+                src,
+                dest: '~sd@2222:main'
+            }];
+        });
+
+        it('gets destination based on source', () => {
+            datastore.scan.resolves(expected);
+
+            return factory.getDestFromSrc(src).then((result) => {
+                assert.deepEqual(result, [dest, '~sd@1234:main', '~sd@2222:main']);
+            });
+        });
+
+        it('returns empty array if source is not found in trigger table', () => {
+            datastore.scan.resolves([]);
+
+            return factory.getDestFromSrc(src).then((result) => {
+                assert.deepEqual(result, []);
+            });
+        });
+    });
+
     describe('getTriggers', () => {
         let expected;
 
