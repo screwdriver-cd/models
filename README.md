@@ -1046,6 +1046,20 @@ factory.list({
 );
 ```
 
+#### Get destination(s) from source
+Get destinations based on source trigger.
+```js
+// update template version value
+factory.getDestFromSrc('~sd@456:main').then(dests =>
+    console.log(dests);
+    // [destA, destB]
+);
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| src           | String | The job that initiates the trigger (ex: ~sd@123:component) |
+
 #### Get Triggers
 Get triggers based on pipeline ID.
 ```js

@@ -43,6 +43,7 @@ describe('Pipeline Model', () => {
     let eventFactoryMock;
     let buildFactoryMock;
     let templateFactoryMock;
+    let buildClusterFactoryMock;
     let triggerFactoryMock;
     let pipelineFactoryMock;
     let collectionFactoryMock;
@@ -186,8 +187,8 @@ describe('Pipeline Model', () => {
         secretFactoryMock = {
             list: sinon.stub()
         };
-        templateFactoryMock = {
-        };
+        templateFactoryMock = {};
+        buildClusterFactoryMock = {};
         triggerFactoryMock = {
             list: sinon.stub(),
             create: sinon.stub()
@@ -211,6 +212,7 @@ describe('Pipeline Model', () => {
             remove: sinon.stub().resolves(null)
         };
         pipelineFactoryMock = {
+            getExternalJoinFlag: sinon.stub(),
             get: sinon.stub().resolves(configPipelineMock),
             update: sinon.stub().resolves(null),
             create: sinon.stub(),
@@ -233,6 +235,7 @@ describe('Pipeline Model', () => {
             getPrInfo: sinon.stub()
         };
         parserMock = sinon.stub();
+        pipelineFactoryMock.getExternalJoinFlag.returns(false);
 
         mockery.registerMock('./jobFactory', {
             getInstance: sinon.stub().returns(jobFactoryMock) });
@@ -247,6 +250,8 @@ describe('Pipeline Model', () => {
             getInstance: sinon.stub().returns(secretFactoryMock) });
         mockery.registerMock('./templateFactory', {
             getInstance: sinon.stub().returns(templateFactoryMock) });
+        mockery.registerMock('./buildClusterFactory', {
+            getInstance: sinon.stub().returns(buildClusterFactoryMock) });
         mockery.registerMock('./triggerFactory', {
             getInstance: sinon.stub().returns(triggerFactoryMock) });
         mockery.registerMock('screwdriver-hashr', hashaMock);
@@ -354,8 +359,11 @@ describe('Pipeline Model', () => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
             scmMock.addWebhook.resolves();
-            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
-            parserMock.withArgs('yamlcontentwithscmurls', templateFactoryMock)
+            parserMock.withArgs('superyamlcontent',
+                templateFactoryMock, buildClusterFactoryMock)
+                .resolves(PARSED_YAML);
+            parserMock.withArgs('yamlcontentwithscmurls',
+                templateFactoryMock, buildClusterFactoryMock)
                 .resolves(EXTERNAL_PARSED_YAML);
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
@@ -423,7 +431,7 @@ describe('Pipeline Model', () => {
 
         it('create external trigger in datastore for new jobs', () => {
             jobs = [];
-            parserMock.withArgs('superyamlcontent', templateFactoryMock)
+            parserMock.withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock)
                 .resolves(PARSED_YAML_WITH_REQUIRES);
             mainMock.permutations.forEach((p) => {
                 p.requires = ['~pr', '~commit', '~sd@12345:test'];
@@ -467,7 +475,7 @@ describe('Pipeline Model', () => {
                 remove: sinon.stub().resolves(null)
             };
 
-            parserMock.withArgs('superyamlcontent', templateFactoryMock)
+            parserMock.withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock)
                 .resolves(PARSED_YAML_WITH_REQUIRES);
             jobFactoryMock.list.resolves([mainModelMock, publishModelMock]);
             mainModelMock.update.resolves(mainModelMock);
@@ -516,7 +524,8 @@ describe('Pipeline Model', () => {
                 }
             ];
             scmMock.getFile.withArgs(sinon.match({ ref })).resolves('yamlcontentfromsha');
-            parserMock.withArgs('yamlcontentfromsha', templateFactoryMock).resolves(YAML_FROM_SHA);
+            parserMock.withArgs('yamlcontentfromsha', templateFactoryMock, buildClusterFactoryMock)
+                .resolves(YAML_FROM_SHA);
             publishMock.permutations[0].commands = YAML_FROM_SHA.jobs.publish[0].commands;
             jobs = [];
             jobFactoryMock.list.resolves(jobs);
@@ -692,11 +701,13 @@ describe('Pipeline Model', () => {
                     'bar.git'
                 ]
             };
+
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
             scmMock.getFile.resolves('yamlcontentwithscmurls');
-            parserMock.withArgs('yamlcontentwithscmurls', templateFactoryMock)
+            parserMock.withArgs('yamlcontentwithscmurls',
+                templateFactoryMock, buildClusterFactoryMock)
                 .resolves(parsedYaml);
             pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
                 checkoutUrl: 'foo.git'
@@ -785,9 +796,11 @@ describe('Pipeline Model', () => {
                     assert.calledOnce(childPipelineMock.remove);
                 });
         });
+
         it('does not sync child pipelines if the YAML has errors', () => {
             scmMock.getFile.resolves('yamlcontentwithscmurls');
-            parserMock.withArgs('yamlcontentwithscmurls', templateFactoryMock)
+            parserMock.withArgs('yamlcontentwithscmurls',
+                templateFactoryMock, buildClusterFactoryMock)
                 .resolves(PARSED_YAML_WITH_ERRORS);
             jobs = [mainJob];
             jobFactoryMock.list.resolves(jobs);
@@ -1153,7 +1166,9 @@ describe('Pipeline Model', () => {
         beforeEach(() => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
-            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
+            parserMock.withArgs('superyamlcontent',
+                templateFactoryMock, buildClusterFactoryMock)
+                .resolves(PARSED_YAML);
             scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge', baseBranch: 'testBranch' });
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
@@ -1642,8 +1657,12 @@ describe('Pipeline Model', () => {
     describe('getConfiguration', () => {
         beforeEach(() => {
             scmMock.getFile.resolves('superyamlcontent');
-            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
-            parserMock.withArgs('', templateFactoryMock).resolves('DEFAULT_YAML');
+            parserMock.withArgs('superyamlcontent',
+                templateFactoryMock, buildClusterFactoryMock)
+                .resolves(PARSED_YAML);
+            parserMock.withArgs('',
+                templateFactoryMock, buildClusterFactoryMock)
+                .resolves('DEFAULT_YAML');
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
             pipeline.admins = { batman: true, robin: true };
@@ -1665,9 +1684,32 @@ describe('Pipeline Model', () => {
                             name: 'owner/repo'
                         }
                     });
-                    assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock);
+                    assert.calledWith(parserMock, 'superyamlcontent',
+                        templateFactoryMock, buildClusterFactoryMock);
                 })
         );
+
+        it('passes triggerFactoryMock and pipelineId if external join flag is true', () => {
+            pipelineFactoryMock.getExternalJoinFlag.returns(true);
+
+            return pipeline.getConfiguration()
+                .then((config) => {
+                    assert.equal(config, PARSED_YAML);
+                    assert.calledWith(scmMock.getFile, {
+                        scmUri,
+                        scmContext,
+                        path: 'screwdriver.yaml',
+                        token: 'foo',
+                        scmRepo: {
+                            branch: 'branch',
+                            url: 'https://host/owner/repo/tree/branch',
+                            name: 'owner/repo'
+                        }
+                    });
+                    assert.calledWith(parserMock, 'superyamlcontent',
+                        templateFactoryMock, buildClusterFactoryMock);
+                });
+        });
 
         it('gets pipeline config from an alternate ref', () =>
             pipeline.getConfiguration({ ref: 'bar' })
