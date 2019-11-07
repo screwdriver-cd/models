@@ -50,6 +50,7 @@ describe('Pipeline Model', () => {
     let tokenFactoryMock;
     let configPipelineMock;
     let childPipelineMock;
+    let buildClusterFactory;
 
     const dateNow = 1111111111;
     const scmUri = 'github.com:12345:master';
@@ -71,6 +72,23 @@ describe('Pipeline Model', () => {
     let pr3;
     let pr3Info;
     let pr10Info;
+
+    const sdBuildClusters = [{
+        name: 'sd1',
+        managedByScrewdriver: true,
+        isActive: true,
+        scmContext,
+        scmOrganizations: [],
+        weightage: 100
+    }];
+
+    const externalBuildCluster = {
+        name: 'iOS',
+        managedByScrewdriver: false,
+        isActive: true,
+        scmContext,
+        scmOrganizations: ['screwdriver']
+    };
 
     const decorateJobMock = (job) => {
         const decorated = hoek.clone(job);
@@ -188,7 +206,7 @@ describe('Pipeline Model', () => {
             list: sinon.stub()
         };
         templateFactoryMock = {};
-        buildClusterFactoryMock = {};
+        // buildClusterFactoryMock = {};
         triggerFactoryMock = {
             list: sinon.stub(),
             create: sinon.stub()
@@ -231,11 +249,20 @@ describe('Pipeline Model', () => {
             addWebhook: sinon.stub(),
             getFile: sinon.stub(),
             decorateUrl: sinon.stub().resolves(scmRepo),
+            annotations: sinon.stub(),
             getOpenedPRs: sinon.stub(),
             getPrInfo: sinon.stub()
         };
         parserMock = sinon.stub();
         pipelineFactoryMock.getExternalJoinFlag.returns(false);
+
+        buildClusterFactoryMock = {
+            list: sinon.stub().resolves([]),
+            get: sinon.stub().resolves(externalBuildCluster)
+        };
+        buildClusterFactory = {
+            getInstance: sinon.stub().returns(buildClusterFactoryMock)
+        };
 
         mockery.registerMock('./jobFactory', {
             getInstance: sinon.stub().returns(jobFactoryMock) });
@@ -262,6 +289,7 @@ describe('Pipeline Model', () => {
             getInstance: sinon.stub().returns(collectionFactoryMock) });
         mockery.registerMock('./tokenFactory', {
             getInstance: sinon.stub().returns(tokenFactoryMock) });
+        mockery.registerMock('./buildClusterFactory', buildClusterFactory);
 
         // eslint-disable-next-line global-require
         PipelineModel = require('../../lib/pipeline');
@@ -280,7 +308,8 @@ describe('Pipeline Model', () => {
             },
             createTime: dateNow,
             admins,
-            scm: scmMock
+            scm: scmMock,
+            multiBuildClusterEnabled: true
         };
 
         pipeline = new PipelineModel(pipelineConfig);
@@ -1792,7 +1821,7 @@ describe('Pipeline Model', () => {
     });
 
     describe('update', () => {
-        it('updates a pipelines scm repository and branch', () => {
+        it('multipleBuildClusterDisabled - updates a pipelines scm repository and branch', () => {
             const expected = {
                 params: {
                     admins: { d2lam: true },
@@ -1825,6 +1854,7 @@ describe('Pipeline Model', () => {
             pipeline.admins = {
                 d2lam: true
             };
+            pipeline.multiBuildClusterEnabled = false;
 
             return pipeline.update().then((p) => {
                 assert.calledWith(scmMock.decorateUrl, {
@@ -1834,6 +1864,158 @@ describe('Pipeline Model', () => {
                 });
                 assert.calledWith(datastore.update, expected);
                 assert.ok(p);
+            });
+        });
+
+        it('multipleBuildClusterEnabled - without annotation - ' +
+            'updates a pipelines scm repository and branch', () => {
+            const expected = {
+                params: {
+                    admins: { d2lam: true },
+                    id: 123,
+                    name: 'foo/bar',
+                    scmContext,
+                    scmRepo: {
+                        branch: 'master',
+                        name: 'foo/bar',
+                        url: 'https://github.com/foo/bar/tree/master'
+                    },
+                    scmUri: 'github.com:12345:master',
+                    annotations: { 'screwdriver.cd/buildCluster': 'sd1' }
+                },
+                table: 'pipelines'
+            };
+
+            userFactoryMock.get.withArgs({
+                username: 'd2lam',
+                scmContext
+            }).resolves({
+                unsealToken: sinon.stub().resolves('foo'),
+                getPermissions: sinon.stub().resolves({
+                    push: true
+                })
+            });
+
+            datastore.update.resolves({});
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+
+            pipeline.scmUri = 'github.com:12345:master';
+            pipeline.scmContext = scmContext;
+            pipeline.admins = {
+                d2lam: true
+            };
+
+            return pipeline.update().then((p) => {
+                assert.calledWith(scmMock.decorateUrl, {
+                    scmUri,
+                    scmContext,
+                    token: 'foo'
+                });
+                assert.calledWith(datastore.update, expected);
+                assert.ok(p);
+            });
+        });
+
+        it('multipleBuildClusterEnabled - with annotation - ' +
+            'updates a pipelines scm repository and branch', () => {
+            const expected = {
+                params: {
+                    admins: { d2lam: true },
+                    id: 123,
+                    name: 'screwdriver/ui',
+                    scmContext,
+                    scmRepo: {
+                        branch: 'master',
+                        name: 'screwdriver/ui',
+                        url: 'https://github.com/foo/bar/tree/master'
+                    },
+                    scmUri: 'github.com:12345:master',
+                    annotations: { 'screwdriver.cd/buildCluster': 'iOS' }
+                },
+                table: 'pipelines'
+            };
+
+            userFactoryMock.get.withArgs({
+                username: 'd2lam',
+                scmContext
+            }).resolves({
+                unsealToken: sinon.stub().resolves('foo'),
+                getPermissions: sinon.stub().resolves({
+                    push: true
+                })
+            });
+            datastore.update.resolves({});
+            scmMock.decorateUrl.resolves({
+                branch: 'master',
+                name: 'screwdriver/ui',
+                url: 'https://github.com/foo/bar/tree/master'
+            });
+            pipeline.scmUri = 'github.com:12345:master';
+            pipeline.scmContext = scmContext;
+            pipeline.admins = {
+                d2lam: true
+            };
+            pipeline.annotations = { 'screwdriver.cd/buildCluster': 'iOS' };
+
+            return pipeline.update().then((p) => {
+                assert.calledWith(scmMock.decorateUrl, {
+                    scmUri,
+                    scmContext,
+                    token: 'foo'
+                });
+                assert.calledWith(datastore.update, expected);
+                assert.ok(p);
+            });
+        });
+
+        it('throws err if the pipeline is unauthorized to use the build cluster', () => {
+            userFactoryMock.get.withArgs({
+                username: 'd2lam',
+                scmContext
+            }).resolves({
+                unsealToken: sinon.stub().resolves('foo'),
+                getPermissions: sinon.stub().resolves({
+                    push: true
+                })
+            });
+            datastore.update.resolves({});
+            pipeline.scmUri = 'github.com:12345:master';
+            pipeline.scmContext = scmContext;
+            pipeline.admins = {
+                d2lam: true
+            };
+            pipeline.annotations = { 'screwdriver.cd/buildCluster': 'iOS' };
+
+            return pipeline.update().catch((err) => {
+                assert.instanceOf(err, Error);
+                assert.strictEqual(err.message,
+                    'This pipeline is not authorized to use this build cluster.');
+            });
+        });
+
+        it('throws err if the build cluster specified does not exist', () => {
+            userFactoryMock.get.withArgs({
+                username: 'd2lam',
+                scmContext
+            }).resolves({
+                unsealToken: sinon.stub().resolves('foo'),
+                getPermissions: sinon.stub().resolves({
+                    push: true
+                })
+            });
+            datastore.update.resolves({});
+            buildClusterFactoryMock.get.resolves(null);
+            pipeline.scmUri = 'github.com:12345:master';
+            pipeline.scmContext = scmContext;
+            pipeline.admins = {
+                d2lam: true
+            };
+            pipeline.annotations = { 'screwdriver.cd/buildCluster': 'iOS' };
+
+            return pipeline.update().catch((err) => {
+                assert.instanceOf(err, Error);
+                assert.strictEqual(err.message,
+                    'Cluster specified in screwdriver.cd/buildCluster iOS does not exist.');
             });
         });
 
