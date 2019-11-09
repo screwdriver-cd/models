@@ -217,7 +217,7 @@ describe('Pipeline Factory', () => {
             });
         });
 
-        it('throw err - multipleBuildClusterDisabled with cluster annotations - ' +
+        /* it('throw err - multipleBuildClusterDisabled with cluster annotations - ' +
             'creates a new pipeline in the datastore', () => {
             factory.multiBuildClusterEnabled = false;
             scm.decorateUrl.resolves(scmRepo);
@@ -241,7 +241,7 @@ describe('Pipeline Factory', () => {
                 assert.strictEqual(err.message,
                     'Cluster specified in screwdriver.cd/buildCluster iOS does not exist.');
             });
-        });
+        }); */
 
         it('multipleBuildClusterEnabled without annotations - ' +
             'creates a new pipeline in the datastore - ' +

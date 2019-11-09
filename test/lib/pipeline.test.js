@@ -1868,7 +1868,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('throw err - multipleBuildClusterDisabled with cluster annotations - ' +
+        /* it('throw err - multipleBuildClusterDisabled with cluster annotations - ' +
             'updates a pipelines scm repository and branch', () => {
             userFactoryMock.get.withArgs({
                 username: 'd2lam',
@@ -1897,7 +1897,7 @@ describe('Pipeline Model', () => {
                 assert.strictEqual(err.message,
                     'Cluster specified in screwdriver.cd/buildCluster sd1 does not exist.');
             });
-        });
+        }); */
 
         it('multipleBuildClusterDisabled with annotations - ' +
             'updates a pipelines scm repository and branch', () => {
