@@ -380,6 +380,46 @@ describe('Build Factory', () => {
             });
         });
 
+        it('pick pipeline build cluster even if ' +
+            'build cluster annotations is passed in', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const jobMock = {
+                permutations: [{
+                    annotations: {
+                        'screwdriver.cd/buildCluster': 'iOS1'
+                    },
+                    commands: [
+                        { command: 'npm install', name: 'init' },
+                        { command: 'npm test', name: 'test' }
+                    ],
+                    environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
+                    image: 'node:4'
+                }],
+                pipeline: Promise.resolve({
+                    name: 'screwdriver/ui',
+                    scmUri,
+                    scmRepo,
+                    scmContext,
+                    annotations: {
+                        'screwdriver.cd/buildCluster': 'iOS',
+                        'screwdriver.cd/prChain': 'fork'
+                    }
+                })
+            };
+
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+            delete saveConfig.params.commit;
+            saveConfig.params.buildClusterName = 'iOS';
+
+            return factory.create({
+                username, jobId, eventId, sha, parentBuildId: 12345, meta
+            }).then(() => {
+                assert.callCount(stepFactoryMock.create, steps.length);
+                assert.calledWith(datastore.save, saveConfig);
+            });
+        });
+
         it('throws err if the pipeline is unauthorized to use the build cluster', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
             const jobMock = {

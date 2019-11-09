@@ -1821,7 +1821,8 @@ describe('Pipeline Model', () => {
     });
 
     describe('update', () => {
-        it('multipleBuildClusterDisabled - updates a pipelines scm repository and branch', () => {
+        it('multipleBuildClusterDisabled without annotations - ' +
+            'updates a pipelines scm repository and branch ', () => {
             const expected = {
                 params: {
                     admins: { d2lam: true },
@@ -1867,7 +1868,38 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('multipleBuildClusterEnabled - without annotation - ' +
+        it('throw err - multipleBuildClusterDisabled with cluster annotations - ' +
+            'updates a pipelines scm repository and branch', () => {
+            userFactoryMock.get.withArgs({
+                username: 'd2lam',
+                scmContext
+            }).resolves({
+                unsealToken: sinon.stub().resolves('foo'),
+                getPermissions: sinon.stub().resolves({
+                    push: true
+                })
+            });
+            datastore.update.resolves({});
+
+            pipeline.scmUri = 'github.com:12345:master';
+            pipeline.scmContext = scmContext;
+            pipeline.admins = {
+                d2lam: true
+            };
+            pipeline.multiBuildClusterEnabled = false;
+            pipeline.annotations = {
+                'screwdriver.cd/prChain': 'fork',
+                'screwdriver.cd/buildCluster': 'sd1'
+            };
+
+            return pipeline.update().catch((err) => {
+                assert.instanceOf(err, Error);
+                assert.strictEqual(err.message,
+                    'Cluster specified in screwdriver.cd/buildCluster sd1 does not exist.');
+            });
+        });
+
+        it('multipleBuildClusterDisabled with annotations - ' +
             'updates a pipelines scm repository and branch', () => {
             const expected = {
                 params: {
@@ -1881,7 +1913,63 @@ describe('Pipeline Model', () => {
                         url: 'https://github.com/foo/bar/tree/master'
                     },
                     scmUri: 'github.com:12345:master',
-                    annotations: { 'screwdriver.cd/buildCluster': 'sd1' }
+                    annotations: {
+                        'screwdriver.cd/prChain': 'fork'
+                    }
+                },
+                table: 'pipelines'
+            };
+
+            userFactoryMock.get.withArgs({
+                username: 'd2lam',
+                scmContext
+            }).resolves({
+                unsealToken: sinon.stub().resolves('foo'),
+                getPermissions: sinon.stub().resolves({
+                    push: true
+                })
+            });
+            datastore.update.resolves({});
+
+            pipeline.scmUri = 'github.com:12345:master';
+            pipeline.scmContext = scmContext;
+            pipeline.admins = {
+                d2lam: true
+            };
+            pipeline.multiBuildClusterEnabled = false;
+            pipeline.annotations = {
+                'screwdriver.cd/prChain': 'fork'
+            };
+
+            return pipeline.update().then((p) => {
+                assert.calledWith(scmMock.decorateUrl, {
+                    scmUri,
+                    scmContext,
+                    token: 'foo'
+                });
+                assert.calledWith(datastore.update, expected);
+                assert.ok(p);
+            });
+        });
+
+        it('multipleBuildClusterEnabled - without annotation - ' +
+            'updates a pipelines scm repository and branch - ' +
+            'pick screwdriver build cluster', () => {
+            const expected = {
+                params: {
+                    admins: { d2lam: true },
+                    id: 123,
+                    name: 'foo/bar',
+                    scmContext,
+                    scmRepo: {
+                        branch: 'master',
+                        name: 'foo/bar',
+                        url: 'https://github.com/foo/bar/tree/master'
+                    },
+                    scmUri: 'github.com:12345:master',
+                    annotations: {
+                        'screwdriver.cd/buildCluster': 'sd1'
+                    }
                 },
                 table: 'pipelines'
             };
@@ -1916,7 +2004,63 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('multipleBuildClusterEnabled - with annotation - ' +
+        it('multipleBuildClusterEnabled - without cluster annotation - ' +
+            'updates a pipelines scm repository and branch - ' +
+            'pick screwdriver build cluster', () => {
+            const expected = {
+                params: {
+                    admins: { d2lam: true },
+                    id: 123,
+                    name: 'foo/bar',
+                    scmContext,
+                    scmRepo: {
+                        branch: 'master',
+                        name: 'foo/bar',
+                        url: 'https://github.com/foo/bar/tree/master'
+                    },
+                    scmUri: 'github.com:12345:master',
+                    annotations: {
+                        'screwdriver.cd/prChain': 'fork',
+                        'screwdriver.cd/buildCluster': 'sd1'
+                    }
+                },
+                table: 'pipelines'
+            };
+
+            userFactoryMock.get.withArgs({
+                username: 'd2lam',
+                scmContext
+            }).resolves({
+                unsealToken: sinon.stub().resolves('foo'),
+                getPermissions: sinon.stub().resolves({
+                    push: true
+                })
+            });
+
+            datastore.update.resolves({});
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+
+            pipeline.scmUri = 'github.com:12345:master';
+            pipeline.scmContext = scmContext;
+            pipeline.admins = {
+                d2lam: true
+            };
+            pipeline.annotations = {
+                'screwdriver.cd/prChain': 'fork'
+            };
+
+            return pipeline.update().then((p) => {
+                assert.calledWith(scmMock.decorateUrl, {
+                    scmUri,
+                    scmContext,
+                    token: 'foo'
+                });
+                assert.calledWith(datastore.update, expected);
+                assert.ok(p);
+            });
+        });
+
+        it('multipleBuildClusterEnabled - with cluster annotation - ' +
             'updates a pipelines scm repository and branch', () => {
             const expected = {
                 params: {
