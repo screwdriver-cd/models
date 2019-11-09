@@ -41,7 +41,8 @@ describe('Job Factory', () => {
             get: sinon.stub().resolves({ id: 9999 })
         };
         executor = {
-            startPeriodic: sinon.stub().resolves()
+            startPeriodic: sinon.stub().resolves(),
+            cleanUp: sinon.stub().resolves()
         };
         apiUri = 'https://notify.com/some/endpoint';
 
@@ -226,6 +227,14 @@ describe('Job Factory', () => {
 
         it('should throw when config not supplied', () => {
             assert.throw(JobFactory.getInstance, Error, 'No datastore provided to JobFactory');
+        });
+    });
+
+    describe('cleanUp', () => {
+        it('should call cleanUp', () => {
+            factory.cleanUp().then(() => {
+                assert.calledWith(executor.cleanUp);
+            });
         });
     });
 });
