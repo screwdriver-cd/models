@@ -1868,37 +1868,6 @@ describe('Pipeline Model', () => {
             });
         });
 
-        /* it('throw err - multipleBuildClusterDisabled with cluster annotations - ' +
-            'updates a pipelines scm repository and branch', () => {
-            userFactoryMock.get.withArgs({
-                username: 'd2lam',
-                scmContext
-            }).resolves({
-                unsealToken: sinon.stub().resolves('foo'),
-                getPermissions: sinon.stub().resolves({
-                    push: true
-                })
-            });
-            datastore.update.resolves({});
-
-            pipeline.scmUri = 'github.com:12345:master';
-            pipeline.scmContext = scmContext;
-            pipeline.admins = {
-                d2lam: true
-            };
-            pipeline.multiBuildClusterEnabled = false;
-            pipeline.annotations = {
-                'screwdriver.cd/prChain': 'fork',
-                'screwdriver.cd/buildCluster': 'sd1'
-            };
-
-            return pipeline.update().catch((err) => {
-                assert.instanceOf(err, Error);
-                assert.strictEqual(err.message,
-                    'Cluster specified in screwdriver.cd/buildCluster sd1 does not exist.');
-            });
-        }); */
-
         it('multipleBuildClusterDisabled with annotations - ' +
             'updates a pipelines scm repository and branch', () => {
             const expected = {

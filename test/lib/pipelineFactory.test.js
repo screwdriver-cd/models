@@ -217,32 +217,6 @@ describe('Pipeline Factory', () => {
             });
         });
 
-        /* it('throw err - multipleBuildClusterDisabled with cluster annotations - ' +
-            'creates a new pipeline in the datastore', () => {
-            factory.multiBuildClusterEnabled = false;
-            scm.decorateUrl.resolves(scmRepo);
-
-            userFactoryMock.get.withArgs({
-                username: Object.keys(admins)[0],
-                scmContext
-            }).resolves({
-                unsealToken: sinon.stub().resolves('foo')
-            });
-
-            return factory.create({
-                scmUri,
-                scmContext,
-                admins,
-                annotations: {
-                    'screwdriver.cd/buildCluster': 'iOS'
-                }
-            }).catch((err) => {
-                assert.instanceOf(err, Error);
-                assert.strictEqual(err.message,
-                    'Cluster specified in screwdriver.cd/buildCluster iOS does not exist.');
-            });
-        }); */
-
         it('multipleBuildClusterEnabled without annotations - ' +
             'creates a new pipeline in the datastore - ' +
             'pick screwdriver cluster', () => {
