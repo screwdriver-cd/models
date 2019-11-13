@@ -16,6 +16,8 @@ describe('Pipeline Factory', () => {
     let factory;
     let userFactoryMock;
     let tokenFactoryMock;
+    let buildClusterFactoryMock;
+    let buildClusterFactory;
     const dateNow = 1111111111;
     const nowTime = (new Date(dateNow)).toISOString();
     const scmUri = 'github.com:12345:master';
@@ -26,6 +28,21 @@ describe('Pipeline Factory', () => {
         name: 'foo/bar',
         branch: 'master',
         url: 'https://github.com/foo/bar/tree/master'
+    };
+    const sdBuildClusters = [{
+        name: 'sd1',
+        managedByScrewdriver: true,
+        isActive: true,
+        scmContext,
+        scmOrganizations: [],
+        weightage: 100
+    }];
+    const externalBuildCluster = {
+        name: 'iOS',
+        managedByScrewdriver: false,
+        isActive: true,
+        scmContext,
+        scmOrganizations: ['screwdriver']
     };
     let pipelineConfig;
 
@@ -51,6 +68,13 @@ describe('Pipeline Factory', () => {
         tokenFactoryMock = {
             get: sinon.stub()
         };
+        buildClusterFactoryMock = {
+            list: sinon.stub().resolves([]),
+            get: sinon.stub().resolves(externalBuildCluster)
+        };
+        buildClusterFactory = {
+            getInstance: sinon.stub().returns(buildClusterFactoryMock)
+        };
 
         // Fixing mockery issue with duplicate file names
         // by re-registering data-schema with its own implementation
@@ -62,6 +86,7 @@ describe('Pipeline Factory', () => {
         mockery.registerMock('./tokenFactory', {
             getInstance: sinon.stub().returns(tokenFactoryMock)
         });
+        mockery.registerMock('./buildClusterFactory', buildClusterFactory);
 
         // eslint-disable-next-line global-require
         PipelineFactory = require('../../lib/pipelineFactory');
@@ -73,7 +98,8 @@ describe('Pipeline Factory', () => {
             scmUri,
             scmContext,
             createTime: nowTime,
-            admins
+            admins,
+            multiBuildClusterEnabled: true
         };
 
         factory = new PipelineFactory(pipelineConfig);
@@ -122,7 +148,8 @@ describe('Pipeline Factory', () => {
             sandbox.restore();
         });
 
-        it('creates a new pipeline in the datastore', () => {
+        it('multipleBuildClusterDisabled without annotations - ' +
+            'creates a new pipeline in the datastore ', () => {
             const expected = {
                 id: testId,
                 admins,
@@ -131,8 +158,10 @@ describe('Pipeline Factory', () => {
                 scmRepo
             };
 
+            factory.multiBuildClusterEnabled = false;
             datastore.save.resolves(expected);
             scm.decorateUrl.resolves(scmRepo);
+
             userFactoryMock.get.withArgs({
                 username: Object.keys(admins)[0],
                 scmContext
@@ -148,6 +177,324 @@ describe('Pipeline Factory', () => {
                 assert.calledWith(scm.decorateUrl, { scmUri, scmContext, token: 'foo' });
                 assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Pipeline);
+            });
+        });
+
+        it('multipleBuildClusterDisabled with annotations - ' +
+            'creates a new pipeline in the datastore ', () => {
+            const expected = {
+                id: testId,
+                admins,
+                createTime: nowTime,
+                scmUri,
+                scmRepo,
+                annotations: {
+                    'screwdriver.cd/prChain': 'fork'
+                }
+            };
+
+            factory.multiBuildClusterEnabled = false;
+            datastore.save.resolves(expected);
+            scm.decorateUrl.resolves(scmRepo);
+
+            userFactoryMock.get.withArgs({
+                username: Object.keys(admins)[0],
+                scmContext
+            }).resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
+            saveConfig.params.annotations = { 'screwdriver.cd/prChain': 'fork' };
+
+            return factory.create({
+                scmUri,
+                scmContext,
+                admins,
+                annotations: { 'screwdriver.cd/prChain': 'fork' }
+            }).then((model) => {
+                assert.calledWith(scm.decorateUrl, { scmUri, scmContext, token: 'foo' });
+                assert.calledWith(datastore.save, saveConfig);
+                assert.instanceOf(model, Pipeline);
+            });
+        });
+
+        it('multipleBuildClusterEnabled without annotations - ' +
+            'creates a new pipeline in the datastore - ' +
+            'pick screwdriver cluster', () => {
+            const expected = {
+                id: testId,
+                admins,
+                createTime: nowTime,
+                scmUri,
+                scmRepo,
+                annotations: { 'screwdriver.cd/buildCluster': 'sd1' }
+            };
+
+            datastore.save.resolves(expected);
+            scm.decorateUrl.resolves(scmRepo);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+            saveConfig.params.annotations = { 'screwdriver.cd/buildCluster': 'sd1' };
+
+            userFactoryMock.get.withArgs({
+                username: Object.keys(admins)[0],
+                scmContext
+            }).resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
+
+            return factory.create({
+                scmUri,
+                scmContext,
+                admins
+            }).then((model) => {
+                assert.calledWith(scm.decorateUrl, { scmUri, scmContext, token: 'foo' });
+                assert.calledWith(datastore.save, saveConfig
+                );
+                assert.instanceOf(model, Pipeline);
+            });
+        });
+
+        it('multipleBuildClusterEnabled without cluster annotations - ' +
+            'creates a new pipeline in the datastore - ' +
+            'pick screwdriver cluster', () => {
+            const expected = {
+                id: testId,
+                admins,
+                createTime: nowTime,
+                scmUri,
+                scmRepo,
+                annotations: {
+                    'screwdriver.cd/prChain': 'fork',
+                    'screwdriver.cd/buildCluster': 'sd1'
+                }
+            };
+
+            datastore.save.resolves(expected);
+            scm.decorateUrl.resolves(scmRepo);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+            saveConfig.params.annotations = {
+                'screwdriver.cd/prChain': 'fork',
+                'screwdriver.cd/buildCluster': 'sd1'
+            };
+
+            userFactoryMock.get.withArgs({
+                username: Object.keys(admins)[0],
+                scmContext
+            }).resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
+
+            return factory.create({
+                scmUri,
+                scmContext,
+                admins,
+                annotations: {
+                    'screwdriver.cd/prChain': 'fork'
+                }
+            }).then((model) => {
+                assert.calledWith(scm.decorateUrl, { scmUri, scmContext, token: 'foo' });
+                assert.calledWith(datastore.save, saveConfig
+                );
+                assert.instanceOf(model, Pipeline);
+            });
+        });
+
+        it('multipleBuildClusterEnabled with cluster annotations - ' +
+            'creates a new pipeline in the datastore', () => {
+            scmRepo.name = 'screwdriver/ui';
+            const expected = {
+                id: testId,
+                admins,
+                createTime: nowTime,
+                scmUri,
+                scmRepo,
+                annotations: {
+                    'screwdriver.cd/prChain': 'fork',
+                    'screwdriver.cd/buildCluster': 'iOS'
+                }
+            };
+
+            datastore.save.resolves(expected);
+            scm.decorateUrl.resolves(scmRepo);
+            buildClusterFactoryMock.get.resolves(externalBuildCluster);
+            saveConfig.params.annotations = {
+                'screwdriver.cd/prChain': 'fork',
+                'screwdriver.cd/buildCluster': 'iOS'
+            };
+            saveConfig.params.name = scmRepo.name;
+
+            userFactoryMock.get.withArgs({
+                username: Object.keys(admins)[0],
+                scmContext
+            }).resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
+
+            return factory.create({
+                scmUri,
+                scmContext,
+                admins,
+                annotations: {
+                    'screwdriver.cd/prChain': 'fork',
+                    'screwdriver.cd/buildCluster': 'iOS'
+                }
+            }).then((model) => {
+                assert.calledWith(scm.decorateUrl, { scmUri, scmContext, token: 'foo' });
+                assert.calledWith(datastore.save, saveConfig);
+                assert.instanceOf(model, Pipeline);
+            });
+        });
+
+        it('multipleBuildClusterEnabled with cluster annotations no value - ' +
+            'creates a new pipeline in the datastore ' +
+            'pick screwdriver cluster', () => {
+            scmRepo.name = 'screwdriver/ui';
+            const expected = {
+                id: testId,
+                admins,
+                createTime: nowTime,
+                scmUri,
+                scmRepo,
+                annotations: {
+                    'screwdriver.cd/prChain': 'fork',
+                    'screwdriver.cd/buildCluster': 'sd1'
+                }
+            };
+
+            datastore.save.resolves(expected);
+            scm.decorateUrl.resolves(scmRepo);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+            saveConfig.params.annotations = {
+                'screwdriver.cd/prChain': 'fork',
+                'screwdriver.cd/buildCluster': 'sd1'
+            };
+            saveConfig.params.name = scmRepo.name;
+
+            userFactoryMock.get.withArgs({
+                username: Object.keys(admins)[0],
+                scmContext
+            }).resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
+
+            return factory.create({
+                scmUri,
+                scmContext,
+                admins,
+                annotations: {
+                    'screwdriver.cd/prChain': 'fork',
+                    'screwdriver.cd/buildCluster': ''
+                }
+            }).then((model) => {
+                assert.calledWith(scm.decorateUrl, { scmUri, scmContext, token: 'foo' });
+                assert.calledWith(datastore.save, saveConfig
+                );
+                assert.instanceOf(model, Pipeline);
+            });
+        });
+
+        it('throws err if the pipeline is unauthorized to use the build cluster', () => {
+            const expected = {
+                id: testId,
+                admins,
+                createTime: nowTime,
+                scmUri,
+                scmRepo,
+                annotations: { 'screwdriver.cd/buildCluster': 'iOS' }
+            };
+
+            datastore.save.resolves(expected);
+            scm.decorateUrl.resolves(scmRepo);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+            saveConfig.params.annotations = { 'screwdriver.cd/buildCluster': 'iOS' };
+
+            userFactoryMock.get.withArgs({
+                username: Object.keys(admins)[0],
+                scmContext
+            }).resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
+
+            return factory.create({
+                scmUri,
+                scmContext,
+                admins,
+                annotations: { 'screwdriver.cd/prChain': 'fork',
+                    'screwdriver.cd/buildCluster': 'iOS' }
+            }).catch((err) => {
+                assert.instanceOf(err, Error);
+                assert.strictEqual(err.message,
+                    'This pipeline is not authorized to use this build cluster.');
+            });
+        });
+
+        it('throws err with empty pipeline name is unauthorized to use the build cluster', () => {
+            const expected = {
+                id: testId,
+                admins,
+                createTime: nowTime,
+                scmUri,
+                scmRepo,
+                annotations: { 'screwdriver.cd/buildCluster': 'iOS' }
+            };
+
+            scmRepo.name = 'dummy';
+            datastore.save.resolves(expected);
+            scm.decorateUrl.resolves(scmRepo);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+            saveConfig.params.annotations = { 'screwdriver.cd/buildCluster': 'iOS' };
+
+            userFactoryMock.get.withArgs({
+                username: Object.keys(admins)[0],
+                scmContext
+            }).resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
+
+            return factory.create({
+                scmUri,
+                scmContext,
+                admins,
+                annotations: { 'screwdriver.cd/prChain': 'fork',
+                    'screwdriver.cd/buildCluster': 'iOS' }
+            }).catch((err) => {
+                assert.instanceOf(err, Error);
+                assert.strictEqual(err.message,
+                    'This pipeline is not authorized to use this build cluster.');
+            });
+        });
+
+        it('throws err if the build cluster specified does not exist', () => {
+            const expected = {
+                id: testId,
+                admins,
+                createTime: nowTime,
+                scmUri,
+                scmRepo,
+                annotations: { 'screwdriver.cd/buildCluster': 'iOS' }
+            };
+
+            datastore.save.resolves(expected);
+            scm.decorateUrl.resolves(scmRepo);
+            buildClusterFactoryMock.get.resolves(null);
+            saveConfig.params.annotations = { 'screwdriver.cd/buildCluster': 'iOS' };
+
+            userFactoryMock.get.withArgs({
+                username: Object.keys(admins)[0],
+                scmContext
+            }).resolves({
+                unsealToken: sinon.stub().resolves('foo')
+            });
+
+            return factory.create({
+                scmUri,
+                scmContext,
+                admins,
+                annotations: { 'screwdriver.cd/prChain': 'fork',
+                    'screwdriver.cd/buildCluster': 'iOS' }
+            }).catch((err) => {
+                assert.instanceOf(err, Error);
+                assert.strictEqual(err.message,
+                    'Cluster specified in screwdriver.cd/buildCluster iOS does not exist.');
             });
         });
     });
@@ -236,4 +583,25 @@ describe('Pipeline Factory', () => {
             }, Error, 'No datastore provided to PipelineFactory');
         });
     });
+
+    describe('getExternalJoin', () => {
+        beforeEach(() => {
+            // eslint-disable-next-line global-require
+            PipelineFactory = require('../../lib/pipelineFactory');
+            pipelineConfig = {
+                externalJoin: false
+            };
+            factory = new PipelineFactory(pipelineConfig);
+        });
+
+        it('getExternalJoin returns true', () => {
+            factory.externalJoin = true;
+            assert.isTrue(factory.getExternalJoinFlag());
+        });
+
+        it('getExternalJoin returns false', () => {
+            assert.isFalse(factory.getExternalJoinFlag());
+        });
+    });
 });
+
