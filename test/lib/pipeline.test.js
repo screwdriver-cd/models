@@ -206,7 +206,6 @@ describe('Pipeline Model', () => {
             list: sinon.stub()
         };
         templateFactoryMock = {};
-        // buildClusterFactoryMock = {};
         triggerFactoryMock = {
             list: sinon.stub(),
             create: sinon.stub()
@@ -277,8 +276,6 @@ describe('Pipeline Model', () => {
             getInstance: sinon.stub().returns(secretFactoryMock) });
         mockery.registerMock('./templateFactory', {
             getInstance: sinon.stub().returns(templateFactoryMock) });
-        mockery.registerMock('./buildClusterFactory', {
-            getInstance: sinon.stub().returns(buildClusterFactoryMock) });
         mockery.registerMock('./triggerFactory', {
             getInstance: sinon.stub().returns(triggerFactoryMock) });
         mockery.registerMock('screwdriver-hashr', hashaMock);
