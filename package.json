@@ -56,6 +56,6 @@
     "screwdriver-config-parser": "^4.11.6",
     "screwdriver-data-schema": "^18.47.8",
     "screwdriver-workflow-parser": "^1.8.8",
-    "winston": "^3.0.0"
+    "screwdriver-logger": "^1.0.0"
   }
 }
