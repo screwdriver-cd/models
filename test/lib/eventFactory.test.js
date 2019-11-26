@@ -1508,46 +1508,42 @@ describe('Event Factory', () => {
         });
 
         it('should have parameters if create with parameters', () => {
-            const currentPipelineConfig = Object.assign({
+            const pipelineWithParameter = Object.assign({
                 parameters: {
-                    user: 'actualValue'
-                }
-            }, syncedPipelineMock);
-
-            const fixedPipelineConfig = Object.assign({
-                parameters: {
-                    user: 'originalValue'
+                    user: 'adong'
                 }
             }, syncedPipelineMock);
 
             config.startFrom = 'main';
-            config.meta = currentPipelineConfig;
-            syncedPipelineMock.update = sinon.stub().resolves(fixedPipelineConfig);
+            config.meta = {
+                parameters: {
+                    user: 'batman'
+                }
+            };
+            pipelineMock.sync = sinon.stub().resolves(pipelineWithParameter);
 
             return eventFactory.create(config).then((model) => {
-                assert.equal(model.meta.parameters.user.value, 'actualValue');
+                assert.equal(model.meta.parameters.user.value, 'batman');
             });
         });
 
         it('should not have parameters if create without parameters', () => {
-            const currentPipelineConfig = Object.assign({
+            const pipelineWithParameter = Object.assign({
                 parameters: {
-                    thisIsNotFromPipeline: 'nonExistingValue'
-                }
-            }, syncedPipelineMock);
-
-            const fixedPipelineConfig = Object.assign({
-                parameters: {
-                    user: 'originalValue'
+                    user: 'adong'
                 }
             }, syncedPipelineMock);
 
             config.startFrom = 'main';
-            config.meta = currentPipelineConfig;
-            syncedPipelineMock.update = sinon.stub().resolves(fixedPipelineConfig);
+            config.meta = {
+                parameters: {
+                    random: 'batman'
+                }
+            };
+            pipelineMock.sync = sinon.stub().resolves(pipelineWithParameter);
 
             return eventFactory.create(config).then((model) => {
-                assert.equal(model.meta.parameters.user.value, 'originalValue');
+                assert.equal(model.meta.parameters.user.value, 'adong');
             });
         });
     });
