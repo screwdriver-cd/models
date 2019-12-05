@@ -1852,7 +1852,6 @@ describe('Pipeline Model', () => {
             pipeline.admins = {
                 d2lam: true
             };
-            pipeline.multiBuildClusterEnabled = false;
 
             return pipeline.update().then((p) => {
                 assert.calledWith(scmMock.decorateUrl, {
@@ -1902,7 +1901,6 @@ describe('Pipeline Model', () => {
             pipeline.admins = {
                 d2lam: true
             };
-            pipeline.multiBuildClusterEnabled = false;
             pipeline.annotations = {
                 'screwdriver.cd/prChain': 'fork'
             };
