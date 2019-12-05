@@ -13,6 +13,7 @@ describe('Base Model', () => {
     let base;
     let config;
     let scm;
+    let multiBuildClusterEnabled;
 
     before(() => {
         mockery.enable({
@@ -25,6 +26,7 @@ describe('Base Model', () => {
         scm = {
             foo: 'foo'
         };
+        multiBuildClusterEnabled = false;
         datastore = {
             get: sinon.stub(),
             scan: sinon.stub(),
@@ -48,6 +50,7 @@ describe('Base Model', () => {
         config = {
             datastore,
             scm,
+            multiBuildClusterEnabled,
             id: 12345,
             foo: 'foo',
             bar: 'bar'
@@ -190,6 +193,12 @@ describe('Base Model', () => {
     describe('scm', () => {
         it('should have a getter for the scm plugin', () => {
             assert.equal(base.scm, scm);
+        });
+    });
+
+    describe('multiBuildClusterEnabled', () => {
+        it('should have a getter for the multiBuildCluster plugin', () => {
+            assert.equal(base.multiBuildClusterEnabled, multiBuildClusterEnabled);
         });
     });
 });
