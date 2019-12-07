@@ -58,7 +58,24 @@ describe('Build Factory', () => {
         scmContext,
         scmOrganizations: [],
         weightage: 100
-    }];
+    },
+    {
+        name: 'sd2',
+        managedByScrewdriver: true,
+        isActive: false,
+        scmContext,
+        scmOrganizations: [],
+        weightage: 0
+    },
+    {
+        name: 'iOS',
+        managedByScrewdriver: false,
+        isActive: true,
+        scmContext,
+        scmOrganizations: ['screwdriver'],
+        weightage: 0
+    }
+    ];
     const externalBuildCluster = {
         name: 'iOS',
         managedByScrewdriver: false,
@@ -369,6 +386,7 @@ describe('Build Factory', () => {
 
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
             delete saveConfig.params.commit;
             saveConfig.params.buildClusterName = 'iOS';
 
@@ -380,13 +398,45 @@ describe('Build Factory', () => {
             });
         });
 
-        it('pick pipeline build cluster even if ' +
-            'build cluster annotations is passed in', () => {
+        it('pick random screwdriver build cluster if ' +
+            'annotation passed in is inactive', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
             const jobMock = {
                 permutations: [{
                     annotations: {
-                        'screwdriver.cd/buildCluster': 'iOS1'
+                        'screwdriver.cd/buildCluster': 'sd2'
+                    },
+                    commands: [
+                        { command: 'npm install', name: 'init' },
+                        { command: 'npm test', name: 'test' }
+                    ],
+                    environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
+                    image: 'node:4'
+                }],
+                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext })
+            };
+
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+            delete saveConfig.params.commit;
+            saveConfig.params.buildClusterName = 'sd1';
+
+            return factory.create({
+                username, jobId, eventId, sha, parentBuildId: 12345, meta
+            }).then(() => {
+                assert.callCount(stepFactoryMock.create, steps.length);
+                assert.calledWith(datastore.save, saveConfig);
+            });
+        });
+
+        it('pick job build cluster even if ' +
+            'pipeline level cluster annotations is passed in', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const jobMock = {
+                permutations: [{
+                    annotations: {
+                        'screwdriver.cd/buildCluster': 'iOS'
                     },
                     commands: [
                         { command: 'npm install', name: 'init' },
@@ -401,7 +451,7 @@ describe('Build Factory', () => {
                     scmRepo,
                     scmContext,
                     annotations: {
-                        'screwdriver.cd/buildCluster': 'iOS',
+                        'screwdriver.cd/buildCluster': 'sd1',
                         'screwdriver.cd/prChain': 'fork'
                     }
                 })
@@ -409,6 +459,7 @@ describe('Build Factory', () => {
 
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
             delete saveConfig.params.commit;
             saveConfig.params.buildClusterName = 'iOS';
 
@@ -429,6 +480,7 @@ describe('Build Factory', () => {
 
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
             delete saveConfig.params.commit;
             saveConfig.params.buildClusterName = 'iOS';
 
@@ -438,6 +490,27 @@ describe('Build Factory', () => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message,
                     'This pipeline is not authorized to use this build cluster.');
+            });
+        });
+
+        it('pick build cluster based on annotations passed in', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const jobMock = {
+                permutations: permutationsWithAnnotations,
+                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext })
+            };
+
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+            delete saveConfig.params.commit;
+            saveConfig.params.buildClusterName = 'iOS';
+
+            return factory.create({
+                username, jobId, eventId, sha, parentBuildId: 12345, meta
+            }).then(() => {
+                assert.callCount(stepFactoryMock.create, steps.length);
+                assert.calledWith(datastore.save, saveConfig);
             });
         });
 

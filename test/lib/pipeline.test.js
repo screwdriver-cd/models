@@ -80,7 +80,16 @@ describe('Pipeline Model', () => {
         scmContext,
         scmOrganizations: [],
         weightage: 100
-    }];
+    },
+    {
+        name: 'iOS',
+        managedByScrewdriver: false,
+        isActive: true,
+        scmContext,
+        scmOrganizations: ['screwdriver'],
+        weightage: 0
+    }
+    ];
 
     const externalBuildCluster = {
         name: 'iOS',
@@ -579,6 +588,24 @@ describe('Pipeline Model', () => {
             });
         });
 
+        it('store annotations with buildCluster to pipeline', () => {
+            jobs = [];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+
+            pipeline.annotations = { 'screwdriver.cd/buildCluster': 'sd1' };
+
+            return pipeline.sync().then(() => {
+                assert.deepEqual(pipeline.annotations, {
+                    'beta.screwdriver.cd/executor': 'screwdriver-executor-vm',
+                    'screwdriver.cd/chainPR': true,
+                    'screwdriver.cd/buildCluster': 'sd1'
+                });
+            });
+        });
+
         it('stores chainPR to pipeline', () => {
             const configMock = Object.assign({}, PARSED_YAML);
             const defatulChainPR = false;
@@ -589,6 +616,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.list.resolves(jobs);
             jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
             jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
             return pipeline.sync(null, defatulChainPR).then(() => {
                 assert.equal(pipeline.chainPR, true);
@@ -600,6 +628,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.list.resolves(jobs);
             jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
             jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
             return pipeline.sync()
                 .then((p) => {
@@ -626,6 +655,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.list.resolves(jobs);
             mainModelMock.update.resolves(mainModelMock);
             publishModelMock.update.resolves(publishModelMock);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
             return pipeline.sync()
                 .then(() => {
@@ -680,6 +710,7 @@ describe('Pipeline Model', () => {
             mainModelMock.update.resolves(mainModelMock);
             publishModelMock.update.resolves(publishModelMock);
             disableJobMock.update.resolves(disableJobMock);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
             return pipeline.sync()
                 .then(() => {
@@ -700,6 +731,7 @@ describe('Pipeline Model', () => {
             mainModelMock.update.resolves(mainModelMock);
             publishModelMock.update.resolves(publishModelMock);
             jobFactoryMock.list.resolves(jobs);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
             return pipeline.sync()
                 .then(() => {
@@ -814,6 +846,7 @@ describe('Pipeline Model', () => {
                     'bar.git'
                 ]
             };
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
             return pipeline.sync()
                 .then((p) => {
@@ -2052,7 +2085,9 @@ describe('Pipeline Model', () => {
                     push: true
                 })
             });
+
             datastore.update.resolves({});
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
             scmMock.decorateUrl.resolves({
                 branch: 'master',
                 name: 'screwdriver/ui',
@@ -2087,6 +2122,7 @@ describe('Pipeline Model', () => {
                 })
             });
             datastore.update.resolves({});
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
             pipeline.scmUri = 'github.com:12345:master';
             pipeline.scmContext = scmContext;
             pipeline.admins = {

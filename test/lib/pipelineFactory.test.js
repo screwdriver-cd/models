@@ -36,6 +36,22 @@ describe('Pipeline Factory', () => {
         scmContext,
         scmOrganizations: [],
         weightage: 100
+    },
+    {
+        name: 'sd2',
+        managedByScrewdriver: true,
+        isActive: false,
+        scmContext,
+        scmOrganizations: [],
+        weightage: 0
+    },
+    {
+        name: 'iOS',
+        managedByScrewdriver: false,
+        isActive: true,
+        scmContext,
+        scmOrganizations: ['screwdriver'],
+        weightage: 0
     }];
     const externalBuildCluster = {
         name: 'iOS',
@@ -309,16 +325,16 @@ describe('Pipeline Factory', () => {
                 scmRepo,
                 annotations: {
                     'screwdriver.cd/prChain': 'fork',
-                    'screwdriver.cd/buildCluster': 'iOS'
+                    'screwdriver.cd/buildCluster': 'sd1'
                 }
             };
 
             datastore.save.resolves(expected);
             scm.decorateUrl.resolves(scmRepo);
-            buildClusterFactoryMock.get.resolves(externalBuildCluster);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
             saveConfig.params.annotations = {
                 'screwdriver.cd/prChain': 'fork',
-                'screwdriver.cd/buildCluster': 'iOS'
+                'screwdriver.cd/buildCluster': 'sd1'
             };
             saveConfig.params.name = scmRepo.name;
 
@@ -335,7 +351,7 @@ describe('Pipeline Factory', () => {
                 admins,
                 annotations: {
                     'screwdriver.cd/prChain': 'fork',
-                    'screwdriver.cd/buildCluster': 'iOS'
+                    'screwdriver.cd/buildCluster': 'sd1'
                 }
             }).then((model) => {
                 assert.calledWith(scm.decorateUrl, { scmUri, scmContext, token: 'foo' });
