@@ -55,6 +55,7 @@ describe('Pipeline Model', () => {
     const dateNow = 1111111111;
     const scmUri = 'github.com:12345:master';
     const scmContext = 'github:github.com';
+    const buildClusterScmContexts = ['github:github.com'];
     const testId = 123;
     const admins = { batman: true, robin: true };
     const scmRepo = {
@@ -77,7 +78,7 @@ describe('Pipeline Model', () => {
         name: 'sd1',
         managedByScrewdriver: true,
         isActive: true,
-        scmContext,
+        scmContexts: buildClusterScmContexts,
         scmOrganizations: [],
         weightage: 100
     },
@@ -85,7 +86,7 @@ describe('Pipeline Model', () => {
         name: 'iOS',
         managedByScrewdriver: false,
         isActive: true,
-        scmContext,
+        scmContexts: buildClusterScmContexts,
         scmOrganizations: ['screwdriver'],
         weightage: 0
     }
@@ -95,7 +96,7 @@ describe('Pipeline Model', () => {
         name: 'iOS',
         managedByScrewdriver: false,
         isActive: true,
-        scmContext,
+        scmContexts: buildClusterScmContexts,
         scmOrganizations: ['screwdriver']
     };
 

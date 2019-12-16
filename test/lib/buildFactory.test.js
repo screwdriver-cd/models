@@ -51,11 +51,12 @@ describe('Build Factory', () => {
         { command: 'npm test', name: 'test' }
     ];
     const scmContext = 'github: github.com';
+    const buildClusterScmContexts = ['github: github.com'];
     const sdBuildClusters = [{
         name: 'sd1',
         managedByScrewdriver: true,
         isActive: true,
-        scmContext,
+        scmContexts: buildClusterScmContexts,
         scmOrganizations: [],
         weightage: 100
     },
@@ -63,7 +64,7 @@ describe('Build Factory', () => {
         name: 'sd2',
         managedByScrewdriver: true,
         isActive: false,
-        scmContext,
+        scmContexts: buildClusterScmContexts,
         scmOrganizations: [],
         weightage: 0
     },
@@ -71,7 +72,7 @@ describe('Build Factory', () => {
         name: 'iOS',
         managedByScrewdriver: false,
         isActive: true,
-        scmContext,
+        scmContexts: buildClusterScmContexts,
         scmOrganizations: ['screwdriver'],
         weightage: 0
     }
@@ -80,7 +81,7 @@ describe('Build Factory', () => {
         name: 'iOS',
         managedByScrewdriver: false,
         isActive: true,
-        scmContext,
+        scmContexts: buildClusterScmContexts,
         scmOrganizations: ['screwdriver']
     };
 
