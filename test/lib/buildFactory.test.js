@@ -50,7 +50,7 @@ describe('Build Factory', () => {
         { command: 'npm install', name: 'init' },
         { command: 'npm test', name: 'test' }
     ];
-    const scmContext = 'github: github.com';
+    const scmContext = 'github:github.com';
     const sdBuildClusters = [{
         name: 'sd1',
         managedByScrewdriver: true,
@@ -531,7 +531,8 @@ describe('Build Factory', () => {
             }).catch((err) => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message,
-                    'Cluster specified in screwdriver.cd/buildCluster iOS does not exist.');
+                    'Cluster specified in screwdriver.cd/buildCluster iOS ' +
+                        `for scmContext ${scmContext} does not exist.`);
             });
         });
 
