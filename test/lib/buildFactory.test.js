@@ -50,13 +50,12 @@ describe('Build Factory', () => {
         { command: 'npm install', name: 'init' },
         { command: 'npm test', name: 'test' }
     ];
-    const scmContext = 'github:github.com';
-    const buildClusterScmContexts = ['github:github.com', 'github:github.co.jp'];
+    const scmContext = 'github: github.com';
     const sdBuildClusters = [{
         name: 'sd1',
         managedByScrewdriver: true,
         isActive: true,
-        scmContexts: buildClusterScmContexts,
+        scmContext,
         scmOrganizations: [],
         weightage: 100
     },
@@ -64,7 +63,7 @@ describe('Build Factory', () => {
         name: 'sd2',
         managedByScrewdriver: true,
         isActive: false,
-        scmContexts: buildClusterScmContexts,
+        scmContext,
         scmOrganizations: [],
         weightage: 0
     },
@@ -72,7 +71,7 @@ describe('Build Factory', () => {
         name: 'iOS',
         managedByScrewdriver: false,
         isActive: true,
-        scmContexts: buildClusterScmContexts,
+        scmContext,
         scmOrganizations: ['screwdriver'],
         weightage: 0
     }
@@ -81,7 +80,7 @@ describe('Build Factory', () => {
         name: 'iOS',
         managedByScrewdriver: false,
         isActive: true,
-        scmContexts: buildClusterScmContexts,
+        scmContext,
         scmOrganizations: ['screwdriver']
     };
 
@@ -382,12 +381,7 @@ describe('Build Factory', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
             const jobMock = {
                 permutations: permutationsWithAnnotations,
-                pipeline: Promise.resolve({
-                    name: 'screwdriver/ui',
-                    scmUri,
-                    scmRepo,
-                    scmContext: 'github:github.co.jp'
-                })
+                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext })
             };
 
             jobFactoryMock.get.resolves(jobMock);
@@ -477,34 +471,6 @@ describe('Build Factory', () => {
             });
         });
 
-        it('throws err if the pipeline is unauthorized to use the build cluster' +
-            ' for invalid scmContext', () => {
-            const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
-                permutations: permutationsWithAnnotations,
-                pipeline: Promise.resolve({
-                    name: 'test/ui',
-                    scmUri,
-                    scmRepo,
-                    scmContext: 'github:github.wrong.url'
-                })
-            };
-
-            jobFactoryMock.get.resolves(jobMock);
-            userFactoryMock.get.resolves(user);
-            buildClusterFactoryMock.list.resolves(sdBuildClusters);
-            delete saveConfig.params.commit;
-            saveConfig.params.buildClusterName = 'iOS';
-
-            return factory.create({
-                username, jobId, eventId, sha, parentBuildId: 12345, meta
-            }).catch((err) => {
-                assert.instanceOf(err, Error);
-                assert.strictEqual(err.message,
-                    'This pipeline is not authorized to use this build cluster.');
-            });
-        });
-
         it('throws err if the pipeline is unauthorized to use the build cluster', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
             const jobMock = {
@@ -531,11 +497,7 @@ describe('Build Factory', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
             const jobMock = {
                 permutations: permutationsWithAnnotations,
-                pipeline: Promise.resolve({
-                    name: 'screwdriver/ui',
-                    scmUri,
-                    scmRepo,
-                    scmContext: 'github:github.co.jp' })
+                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext })
             };
 
             jobFactoryMock.get.resolves(jobMock);

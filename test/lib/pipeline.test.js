@@ -55,7 +55,6 @@ describe('Pipeline Model', () => {
     const dateNow = 1111111111;
     const scmUri = 'github.com:12345:master';
     const scmContext = 'github:github.com';
-    const buildClusterScmContexts = ['github:github.com', 'github:github.co.jp'];
     const testId = 123;
     const admins = { batman: true, robin: true };
     const scmRepo = {
@@ -78,7 +77,7 @@ describe('Pipeline Model', () => {
         name: 'sd1',
         managedByScrewdriver: true,
         isActive: true,
-        scmContexts: buildClusterScmContexts,
+        scmContext,
         scmOrganizations: [],
         weightage: 100
     },
@@ -86,7 +85,7 @@ describe('Pipeline Model', () => {
         name: 'iOS',
         managedByScrewdriver: false,
         isActive: true,
-        scmContexts: buildClusterScmContexts,
+        scmContext,
         scmOrganizations: ['screwdriver'],
         weightage: 0
     }
@@ -96,7 +95,7 @@ describe('Pipeline Model', () => {
         name: 'iOS',
         managedByScrewdriver: false,
         isActive: true,
-        scmContexts: buildClusterScmContexts,
+        scmContext,
         scmOrganizations: ['screwdriver']
     };
 
@@ -2109,33 +2108,6 @@ describe('Pipeline Model', () => {
                 });
                 assert.calledWith(datastore.update, expected);
                 assert.ok(p);
-            });
-        });
-
-        it('throws err pipeline is unauthorized to use the build cluster' +
-            ' for invalid scmContext', () => {
-            userFactoryMock.get.withArgs({
-                username: 'd2lam',
-                scmContext: 'github:github.wrong.url'
-            }).resolves({
-                unsealToken: sinon.stub().resolves('foo'),
-                getPermissions: sinon.stub().resolves({
-                    push: true
-                })
-            });
-            datastore.update.resolves({});
-            buildClusterFactoryMock.list.resolves(sdBuildClusters);
-            pipeline.scmUri = 'github.com:12345:master';
-            pipeline.scmContext = 'github:github.wrong.url';
-            pipeline.admins = {
-                d2lam: true
-            };
-            pipeline.annotations = { 'screwdriver.cd/buildCluster': 'sd1' };
-
-            return pipeline.update().catch((err) => {
-                assert.instanceOf(err, Error);
-                assert.strictEqual(err.message,
-                    'This pipeline is not authorized to use this build cluster.');
             });
         });
 
