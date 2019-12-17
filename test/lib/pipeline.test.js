@@ -2159,7 +2159,8 @@ describe('Pipeline Model', () => {
             return pipeline.update().catch((err) => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message,
-                    'Cluster specified in screwdriver.cd/buildCluster iOS does not exist.');
+                    'Cluster specified in screwdriver.cd/buildCluster iOS ' +
+                        `for scmContext ${pipeline.scmContext} does not exist.`);
             });
         });
 
