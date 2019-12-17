@@ -9,7 +9,7 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('BuildCluster Factory', () => {
     const buildClusterId = 123;
     const name = 'sd';
-    const scmContexts = 'github:github.com';
+    const scmContext = 'github:github.com';
     const scmOrganizations = 'screwdriver-cd';
     const isActive = true;
     const managedByScrewdriver = true;
@@ -18,7 +18,7 @@ describe('BuildCluster Factory', () => {
     const buildClusterData = {
         id: buildClusterId,
         name,
-        scmContexts,
+        scmContext,
         scmOrganizations,
         managedByScrewdriver,
         maintainer,
@@ -75,7 +75,7 @@ describe('BuildCluster Factory', () => {
 
             return factory.create({
                 name,
-                scmContexts,
+                scmContext,
                 scmOrganizations,
                 managedByScrewdriver,
                 maintainer,
@@ -91,7 +91,7 @@ describe('BuildCluster Factory', () => {
             });
         });
 
-        it('should create a BuildCluster without isActive and weightage defined', () => {
+        it('should create a BuildCluster without isActive ans weightage defined', () => {
             const dataWithDefaultStatus = Object.assign({}, buildClusterData);
 
             dataWithDefaultStatus.isActive = true;
@@ -100,7 +100,7 @@ describe('BuildCluster Factory', () => {
 
             return factory.create({
                 name,
-                scmContexts,
+                scmContext,
                 scmOrganizations,
                 managedByScrewdriver,
                 maintainer

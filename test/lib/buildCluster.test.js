@@ -37,7 +37,7 @@ describe('BuildCluster Model', () => {
             datastore,
             id: 51,
             name: 'sd',
-            scmContexts: ['github:github.com'],
+            scmContext: 'github:github.com',
             scmOrganizations: ['screwdriver-cd'],
             managedByScrewdriver: true
         };
