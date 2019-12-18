@@ -10,7 +10,7 @@ Asynchronous methods return promises.
 npm install screwdriver-models
 ```
 
-### Pipeline Factory
+### Pipeline  Factory
 #### Search
 ```js
 'use strict';
