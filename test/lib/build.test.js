@@ -597,7 +597,6 @@ describe('Build Model', () => {
             config.status = 'UNSTABLE';
             build = new BuildModel(config);
 
-            build.steps = [step0, step1, step2];
             build.endTime = '2018-06-27T18:22:20.153Z';
 
             return build.update()

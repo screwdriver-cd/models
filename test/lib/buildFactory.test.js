@@ -844,82 +844,15 @@ describe('Build Factory', () => {
         });
     });
 
-    describe('get', () => {
-        const buildId = 123;
-        const buildData = {
-            steps
-        };
-        const stepsData = steps.map(step => Object.assign({ code: 0 }, step));
-        const stepsMock = stepsData.map((step) => {
-            const mock = hoek.clone(step);
-
-            mock.toJson = sinon.stub().returns(step);
-
-            return mock;
-        });
-
-        it('should get a build by ID without step models', () => {
-            getStepsStub.resolves([]);
-            datastore.get.resolves(buildData);
-
-            return factory.get(buildId)
-                .then(build => assert.deepEqual(build.steps, steps));
-        });
-
-        it('should get a build by ID with merged step data', () => {
-            getStepsStub.resolves(stepsMock);
-            datastore.get.resolves(buildData);
-
-            return factory.get(buildId)
-                .then(build => assert.deepEqual(build.steps, stepsData));
-        });
-
-        it('should not throw when build does not exist', () => {
-            datastore.get.resolves(null);
-
-            return factory.get(buildId)
-                .then(build => assert.deepEqual(build, null));
-        });
-    });
-
     describe('list', () => {
-        const buildData = {
-            steps
-        };
-        const stepsData = steps.map(step => Object.assign({ code: 0 }, step));
-        const stepsMock = stepsData.map((step) => {
-            const mock = hoek.clone(step);
-
-            mock.toJson = sinon.stub().returns(step);
-
-            return mock;
-        });
 
         it('should list builds without step models', () => {
-            getStepsStub.resolves([]);
-            datastore.scan.resolves([buildData, buildData]);
+            datastore.scan.resolves([]);
 
             return factory.list({})
                 .then((builds) => {
-                    builds.map(build => assert.deepEqual(build.steps, steps));
                     assert.calledWithMatch(datastore.scan, { sortBy: 'createTime' });
                 });
-        });
-
-        it('should list builds with merged step data if config.fetchSteps is true', () => {
-            getStepsStub.resolves(stepsMock);
-            datastore.scan.resolves([buildData, buildData]);
-
-            return factory.list({ fetchSteps: true })
-                .then(builds => builds.map(build => assert.deepEqual(build.steps, stepsData)));
-        });
-
-        it('should not list builds with merged step data by default', () => {
-            getStepsStub.resolves(stepsMock);
-            datastore.scan.resolves([buildData, buildData]);
-
-            return factory.list({})
-                .then(builds => builds.map(build => assert.deepEqual(build.steps, steps)));
         });
     });
 
