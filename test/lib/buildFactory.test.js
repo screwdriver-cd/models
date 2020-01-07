@@ -2,7 +2,6 @@
 
 const assert = require('chai').assert;
 const mockery = require('mockery');
-const hoek = require('hoek');
 const schema = require('screwdriver-data-schema');
 const sinon = require('sinon');
 let startStub;
@@ -845,12 +844,11 @@ describe('Build Factory', () => {
     });
 
     describe('list', () => {
-
         it('should list builds without step models', () => {
             datastore.scan.resolves([]);
 
             return factory.list({})
-                .then((builds) => {
+                .then(() => {
                     assert.calledWithMatch(datastore.scan, { sortBy: 'createTime' });
                 });
         });

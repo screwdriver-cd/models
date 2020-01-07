@@ -1165,8 +1165,8 @@ describe('Event Factory', () => {
             config.creator = {
                 name: 'St John',
                 username: 'stjohn',
-                avatar: "https://avatars.githubusercontent.com/u/2042?v=3",
-                url: "https://github.com/stjohn"
+                avatar: 'https://avatars.githubusercontent.com/u/2042?v=3',
+                url: 'https://github.com/stjohn'
             };
 
             return eventFactory.create(config).then((model) => {
