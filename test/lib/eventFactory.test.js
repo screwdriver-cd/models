@@ -1136,7 +1136,7 @@ describe('Event Factory', () => {
             config.creator = creatorTest;
             expected.creator = creatorTest;
 
-            eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
                 assert.notCalled(scm.decorateAuthor);
                 assert.calledWith(scm.decorateCommit, {
@@ -1162,8 +1162,14 @@ describe('Event Factory', () => {
 
             config.baseBranch = baseBranchTest;
             expected.baseBranch = baseBranchTest;
+            config.creator = {
+                name: 'St John',
+                username: 'stjohn',
+                avatar: "https://avatars.githubusercontent.com/u/2042?v=3",
+                url: "https://github.com/stjohn"
+            };
 
-            eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
                 assert.notCalled(scm.decorateAuthor);
                 assert.calledWith(scm.decorateCommit, {
