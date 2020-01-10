@@ -302,7 +302,6 @@ describe('Build Factory', () => {
                     status: 'QUEUED',
                     container,
                     environment,
-                    steps,
                     jobId,
                     sha,
                     meta,
@@ -697,7 +696,12 @@ describe('Build Factory', () => {
 
             return factory.create({ username, jobId, eventId, prRef }).then((model) => {
                 assert.instanceOf(model, Build);
-                assert.deepEqual(model.steps, expectedSteps);
+                sinon.assert.callOrder(...expectedSteps.map(step =>
+                    stepFactoryMock.create.withArgs(Object.assign(
+                        { buildId: model.id },
+                        step
+                    ))
+                ));
             });
         });
 
