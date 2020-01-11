@@ -82,12 +82,14 @@
             { "name": "~pr" },
             { "name": "~commit" },
             { "name": "main" },
-            { "name": "publish" }
+            { "name": "publish" },
+            { "name": "sd@123:main" }
         ],
         "edges": [
             { "src": "~pr", "dest": "main" },
             { "src": "~commit", "dest": "main" },
-            { "src": "main", "dest": "publish" }
+            { "src": "main", "dest": "publish" },
+            { "src": "publish", "dest": "sd@123:main" }
         ]
     },
     "annotations": {
