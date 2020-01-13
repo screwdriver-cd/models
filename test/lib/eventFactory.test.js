@@ -1546,6 +1546,22 @@ describe('Event Factory', () => {
                 assert.equal(model.meta.parameters.user.value, 'adong');
             });
         });
+
+        it('should have default parameters if parameter enabled', () => {
+            const pipelineWithParameter = Object.assign({
+                parameters: {
+                    user: 'adong'
+                }
+            }, syncedPipelineMock);
+
+            pipelineMock.sync = sinon.stub().resolves(pipelineWithParameter);
+            config.startFrom = 'main';
+
+            return eventFactory.create(config).then((model) => {
+                assert.equal(model.meta.parameters.user.value, 'adong');
+                assert.equal(config.meta.parameters.user.value, 'adong');
+            });
+        });
     });
 
     describe('getInstance', () => {
