@@ -387,8 +387,10 @@ describe('Pipeline Model', () => {
     describe('sync', () => {
         let publishMock;
         let mainMock;
+        let externalMock;
         let mainModelMock;
         let publishModelMock;
+        let externalModelMock;
 
         beforeEach(() => {
             datastore.update.resolves(null);
@@ -414,12 +416,18 @@ describe('Pipeline Model', () => {
                 name: 'main',
                 state: 'ENABLED'
             };
-
             publishModelMock = {
                 isPR: sinon.stub().returns(false),
                 update: sinon.stub(),
                 id: 2,
                 name: 'publish',
+                state: 'ENABLED'
+            };
+            externalModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 3,
+                name: 'main',
                 state: 'ENABLED'
             };
 
@@ -460,6 +468,19 @@ describe('Pipeline Model', () => {
                     ],
                     environment: { NODE_ENV: 'test', NODE_VERSION: '6' },
                     image: 'node:6'
+                }]
+            };
+            externalMock = {
+                pipelineId: 123,
+                name: 'main',
+                permutations: [{
+                    commands: [
+                        { command: 'npm run bump', name: 'bump' },
+                        { command: 'npm publish --tag $NODE_TAG', name: 'publish' },
+                        { command: 'git push origin --tags', name: 'tag' }
+                    ],
+                    environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
+                    image: 'node:4'
                 }]
             };
         });
@@ -529,6 +550,17 @@ describe('Pipeline Model', () => {
             jobFactoryMock.list.resolves(jobs);
             jobFactoryMock.create.withArgs(mainMock).resolves(mainModelMock);
             jobFactoryMock.create.withArgs(publishMock).resolves(publishModelMock);
+            jobFactoryMock.create.withArgs(externalMock).resolves(externalModelMock);
+            pipelineFactoryMock.get.resolves({
+                id: 123,
+                update: sinon.stub().resolves(null),
+                remove: sinon.stub().resolves(null),
+                workflowGraph: { nodes: [
+                    { name: '~pr' },
+                    { name: '~commit' },
+                    { name: 'main', id: 3 }
+                ] }
+            });
 
             return pipeline.sync().then(() => {
                 assert.deepEqual(pipeline.workflowGraph, {
@@ -536,12 +568,14 @@ describe('Pipeline Model', () => {
                         { name: '~pr' },
                         { name: '~commit' },
                         { name: 'main', id: 1 },
-                        { name: 'publish', id: 2 }
+                        { name: 'publish', id: 2 },
+                        { name: 'sd@123:main', id: 3 }
                     ],
                     edges: [
                         { src: '~pr', dest: 'main' },
                         { src: '~commit', dest: 'main' },
-                        { src: 'main', dest: 'publish' }
+                        { src: 'main', dest: 'publish' },
+                        { src: 'publish', dest: 'sd@123:main' }
                     ]
                 });
             });
