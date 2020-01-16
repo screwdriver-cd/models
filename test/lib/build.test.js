@@ -73,7 +73,9 @@ describe('Build Model', () => {
         };
         executorMock = {
             start: sinon.stub(),
-            stop: sinon.stub()
+            stop: sinon.stub(),
+            startTimer: sinon.stub(),
+            stopTimer: sinon.stub()
         };
         userFactoryMock = {
             get: sinon.stub()
@@ -279,10 +281,10 @@ describe('Build Model', () => {
                         scmContext,
                         scmUri,
                         comment: '### SD Build [#9876](https://display.com/some/' +
-                        'endpoint/pipelines/1234/builds/9876)\n_node:4_\n- - - -\n' +
-                        '__coverage__ - Coverage increased by 15%\n' +
-                        '__markdown__ - this markdown comment is **bold** and *italic*\n\n' +
-                        '###### ~ Screwdriver automated build summary',
+                            'endpoint/pipelines/1234/builds/9876)\n_node:4_\n- - - -\n' +
+                            '__coverage__ - Coverage increased by 15%\n' +
+                            '__markdown__ - this markdown comment is **bold** and *italic*\n\n' +
+                            '###### ~ Screwdriver automated build summary',
                         prNum: 5
                     });
                 });
@@ -392,9 +394,9 @@ describe('Build Model', () => {
             build.meta.meta.summary = {};
             build.meta.meta.status = {
                 findbugs: '{"status":"SUCCESS","message":"923 issues found. ' +
-                    'Previous count: 914 issues.","url":"http://findbugs.com"}',
+                        'Previous count: 914 issues.","url":"http://findbugs.com"}',
                 snyk: '{"status":"FAILURE","message":"23 package vulnerabilities found. ' +
-                    'Previous count: 0 vulnerabilities."}'
+                        'Previous count: 0 vulnerabilities."}'
             };
 
             return build.update()
@@ -447,7 +449,7 @@ describe('Build Model', () => {
                         pipelineId,
                         context: 'snyk',
                         description: '23 package vulnerabilities found. ' +
-                            'Previous count: 0 vulnerabilities.'
+                                'Previous count: 0 vulnerabilities.'
                     });
                 });
         });
@@ -579,6 +581,7 @@ describe('Build Model', () => {
                         pipelineId
                     });
                     assert.notCalled(executorMock.stop);
+                    assert.notCalled(executorMock.startTimer);
                 });
         });
 
@@ -593,6 +596,7 @@ describe('Build Model', () => {
             return build.update()
                 .then(() => {
                     assert.notCalled(scmMock.updateCommitStatus);
+                    assert.notCalled(executorMock.startTimer);
                     assert.calledWith(executorMock.stop, {
                         buildId,
                         jobId,
@@ -600,6 +604,38 @@ describe('Build Model', () => {
                         freezeWindows,
                         blockedBy: [jobId]
                     });
+                });
+        });
+
+        it('starts timer in executor when status is changing to RUNNING', () => {
+            // QUEUED -> RUNNING, status will change, field is dirty
+            config.status = 'QUEUED';
+            build = new BuildModel(config);
+
+            build.steps = [step0, step1, step2];
+            build.status = 'RUNNING';
+            build.startTime = new Date().toISOString();
+
+            return build.update()
+                .then(() => {
+                    assert.calledWith(scmMock.updateCommitStatus, {
+                        token: 'foo',
+                        scmUri,
+                        scmContext,
+                        sha,
+                        jobName: 'main',
+                        url,
+                        pipelineId,
+                        buildStatus: build.status
+                    });
+                    assert.calledWith(executorMock.startTimer, {
+                        buildId,
+                        jobId,
+                        annotations,
+                        startTime: build.startTime,
+                        buildStatus: build.status
+                    });
+                    assert.notCalled(executorMock.stop);
                 });
         });
 
@@ -779,6 +815,28 @@ describe('Build Model', () => {
                     });
                 })
         );
+
+        it('stops timer in executor when build is stopped', () => {
+            build.status = 'SUCCESS';
+
+            build.stop()
+                .then(() => {
+                    assert.calledWith(executorMock.stop, {
+                        buildId,
+                        jobId,
+                        annotations,
+                        freezeWindows,
+                        blockedBy: [jobId]
+                    });
+                    assert.calledWith(executorMock.stopTimer, {
+                        buildId,
+                        jobId,
+                        annotations,
+                        freezeWindows,
+                        blockedBy: [jobId]
+                    });
+                });
+        });
 
         it('passes buildClusterName to executor when it exists', () => {
             build.buildClusterName = 'sd';
