@@ -565,7 +565,7 @@ describe('Build Model', () => {
             config.status = 'RUNNING';
             build = new BuildModel(config);
 
-            // RUNNING -> UNSTABLE
+            // Status = RUNNING -> UNSTABLE
             build.status = 'UNSTABLE';
 
             return build.update()
