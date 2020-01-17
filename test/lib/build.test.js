@@ -1538,4 +1538,53 @@ describe('Build Model', () => {
             });
         });
     });
+
+    describe('get JSON with steps', () => {
+        const step1 = {
+            id: 11,
+            buildId,
+            name: 'install',
+            startTime: '2019-01-22T21:31:00.000Z',
+            endTime: '2019-01-22T22:35:00.000Z',
+            code: 0
+        };
+        const step2 = {
+            id: 12,
+            buildId,
+            name: 'sd-setup-init',
+            startTime: '2019-01-22T21:08:00.000Z',
+            endTime: '2019-01-22T21:30:00.000Z',
+            code: 127
+        };
+        const step3 = {
+            name: 'sd-setup-scm',
+            startTime: '2019-01-22T21:21:00.000Z',
+            endTime: '2019-01-22T22:30:00.000Z',
+            code: 127
+        };
+        let stepsMock;
+
+        beforeEach(() => {
+            stepsMock = [step2, step3, step1];
+            stepFactoryMock.list.resolves(stepsMock);
+        });
+
+        it('returns the JSON with steps', () => {
+            build.toJsonWithSteps()
+                .then(json => {
+                    assert.deepEqual(json, Object.assign(build.toJson(), { stepsMock }));
+                })
+        });
+        it('throws error if steps missing ', () => {
+            stepFactoryMock.list.resolves(null);
+
+            return build.toJsonWithSteps()
+            .then(() => {
+                assert.fail('nope');
+            }).catch(err => {
+                assert.equal('Steps do not exist', err.message);
+            });
+        });
+
+    });
 });
