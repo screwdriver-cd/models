@@ -1571,20 +1571,19 @@ describe('Build Model', () => {
 
         it('returns the JSON with steps', () => {
             build.toJsonWithSteps()
-                .then(json => {
+                .then((json) => {
                     assert.deepEqual(json, Object.assign(build.toJson(), { stepsMock }));
-                })
+                });
         });
         it('throws error if steps missing ', () => {
-            stepFactoryMock.list.resolves(null);
+            stepFactoryMock.list.resolves([]);
 
             return build.toJsonWithSteps()
-            .then(() => {
-                assert.fail('nope');
-            }).catch(err => {
-                assert.equal('Steps do not exist', err.message);
-            });
+                .then(() => {
+                    assert.fail('nope');
+                }).catch((err) => {
+                    assert.equal('Steps do not exist', err.message);
+                });
         });
-
     });
 });

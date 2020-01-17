@@ -848,7 +848,7 @@ describe('Build Factory', () => {
     });
 
     describe('list', () => {
-        it('should list builds without step models', () => {
+        it('should list builds sorted by createTime', () => {
             datastore.scan.resolves([]);
 
             return factory.list({})
