@@ -371,10 +371,70 @@ describe('Job Model', () => {
                 sort: 'descending'
             };
 
-            return job.getLatestBuild()
+            return job.getLatestBuild({ position: 'latestBuild' })
                 .then((latestBuild) => {
                     assert.calledWith(buildFactoryMock.list, expected);
                     assert.equal(latestBuild, build3);
+                });
+        });
+
+        it('gets second to latest build', () => {
+            buildFactoryMock.list.resolves([build3, build2]);
+
+            const expected = {
+                paginate: {
+                    count: 10
+                },
+                params: {
+                    jobId: 1234
+                },
+                sort: 'descending'
+            };
+
+            return job.getLatestBuild({ position: '1' })
+                .then((latestBuild) => {
+                    assert.calledWith(buildFactoryMock.list, expected);
+                    assert.equal(latestBuild, build2);
+                });
+        });
+
+        it('return empty object on invalid position', () => {
+            buildFactoryMock.list.resolves([build3, build2]);
+
+            const expected = {
+                paginate: {
+                    count: 10
+                },
+                params: {
+                    jobId: 1234
+                },
+                sort: 'descending'
+            };
+
+            return job.getLatestBuild({ position: '13' })
+                .then((latestBuild) => {
+                    assert.calledWith(buildFactoryMock.list, expected);
+                    assert.isEmpty(latestBuild);
+                });
+        });
+
+        it('return empty object on invalid position', () => {
+            buildFactoryMock.list.resolves([build3, build2]);
+
+            const expected = {
+                paginate: {
+                    count: 10
+                },
+                params: {
+                    jobId: 1234
+                },
+                sort: 'descending'
+            };
+
+            return job.getLatestBuild({ position: 'hello' })
+                .then((latestBuild) => {
+                    assert.calledWith(buildFactoryMock.list, expected);
+                    assert.isEmpty(latestBuild);
                 });
         });
 
@@ -392,7 +452,7 @@ describe('Job Model', () => {
                 sort: 'descending'
             };
 
-            return job.getLatestBuild({ status: 'QUEUED' })
+            return job.getLatestBuild({ position: 'latestBuild', status: 'QUEUED' })
                 .then((queueBuild) => {
                     assert.calledWith(buildFactoryMock.list, expected);
                     assert.equal(queueBuild, build2);
@@ -413,7 +473,7 @@ describe('Job Model', () => {
                 sort: 'descending'
             };
 
-            return job.getLatestBuild({ status: 'FAILURE' })
+            return job.getLatestBuild({ position: 'latestBuild', status: 'FAILURE' })
                 .then((failureBuild) => {
                     assert.calledWith(buildFactoryMock.list, expected);
                     assert.isEmpty(failureBuild);
