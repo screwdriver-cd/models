@@ -1623,25 +1623,44 @@ describe('Build Model', () => {
         let stepsMock;
 
         beforeEach(() => {
-            stepsMock = [step2, step3, step1];
+            stepsMock = [step1, step2, step3];
             stepFactoryMock.list.resolves(stepsMock);
         });
 
-        it('returns the JSON with steps', () => {
+        it('returns the JSON with steps sorted by step.id', () =>
             build.toJsonWithSteps()
                 .then((json) => {
-                    assert.deepEqual(json, Object.assign(build.toJson(), { stepsMock }));
+                    const expected = Object.assign({}, build.toJson(),
+                        { steps: [step1, step2, step3] });
+
+                    assert.deepStrictEqual(json, expected);
+                })
+        );
+
+        it('returns the JSON with steps sorted by step.createTime', () => {
+            const configWithEndTime = Object.assign({}, config);
+
+            configWithEndTime.endTime = '2019-01-22T22:30: 00.000Z';
+            build = new BuildModel(configWithEndTime);
+
+            return build.toJsonWithSteps()
+                .then((json) => {
+                    const expected = Object.assign({}, build.toJson(),
+                        { steps: [step2, step3, step1] });
+
+                    assert.deepStrictEqual(json, expected);
                 });
         });
+
         it('throws error if steps missing ', () => {
             stepFactoryMock.list.resolves([]);
 
             return build.toJsonWithSteps()
-                .then(() => {
-                    assert.fail('nope');
-                }).catch((err) => {
-                    assert.equal('Steps do not exist', err.message);
-                });
+                .then(() =>
+                    assert.fail('nope')
+                ).catch(err =>
+                    assert.equal('Steps do not exist', err.message)
+                );
         });
     });
 });
