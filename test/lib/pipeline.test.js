@@ -487,6 +487,7 @@ describe('Pipeline Model', () => {
 
         it('create external trigger in datastore for new jobs', () => {
             jobs = [];
+            sinon.spy(pipeline, 'update');
             parserMock.withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock)
                 .resolves(PARSED_YAML_WITH_REQUIRES);
             mainMock.permutations.forEach((p) => {
@@ -498,6 +499,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.create.withArgs(publishMock).resolves(publishModelMock);
 
             return pipeline.sync().then(() => {
+                assert.calledOnce(pipeline.update);
                 assert.calledOnce(triggerFactoryMock.create); // only create for external trigger
                 assert.calledWith(triggerFactoryMock.create, {
                     src: '~sd@12345:test',
@@ -547,6 +549,7 @@ describe('Pipeline Model', () => {
 
         it('stores workflowGraph to pipeline', () => {
             jobs = [];
+            sinon.spy(pipeline, 'update');
             jobFactoryMock.list.resolves(jobs);
             jobFactoryMock.create.withArgs(mainMock).resolves(mainModelMock);
             jobFactoryMock.create.withArgs(publishMock).resolves(publishModelMock);
@@ -563,6 +566,7 @@ describe('Pipeline Model', () => {
             });
 
             return pipeline.sync().then(() => {
+                assert.calledOnce(pipeline.update);
                 assert.deepEqual(pipeline.workflowGraph, {
                     nodes: [
                         { name: '~pr' },
