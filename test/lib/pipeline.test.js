@@ -384,7 +384,7 @@ describe('Pipeline Model', () => {
         });
     });
 
-    describe('sync', () => {
+    describe.only('sync', () => {
         let publishMock;
         let mainMock;
         let externalMock;
