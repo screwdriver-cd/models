@@ -1358,7 +1358,7 @@ describe('Pipeline Model', () => {
         });
     });
 
-    describe.only('getFirstAdmin', () => {
+    describe('getFirstAdmin', () => {
         beforeEach(() => {
             getUserPermissionMocks({ username: 'batman', push: false });
             getUserPermissionMocks({ username: 'robin', push: true });
@@ -1386,9 +1386,10 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('handle get permission error', () => {
+        it('catch 401 from get permission', () => {
             const error = new Error('fails to get permissions');
 
+            error.status = 401;
             userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
                 unsealToken: sinon.stub().resolves('foo'),
                 getPermissions: sinon.stub().throws(error),
@@ -1397,6 +1398,24 @@ describe('Pipeline Model', () => {
 
             return pipeline.getFirstAdmin().then((realAdmin) => {
                 assert.equal(realAdmin.username, 'robin');
+            });
+        });
+
+        it('does not catch other error', () => {
+            const error = new Error('fails to get permissions');
+
+            error.status = 403;
+            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
+                unsealToken: sinon.stub().resolves('foo'),
+                getPermissions: sinon.stub().throws(error),
+                username: 'batman'
+            });
+
+            return pipeline.getFirstAdmin().then(() => {
+                assert.fail('should not get here');
+            }).catch((e) => {
+                assert.isOk(e);
+                assert.equal(e.message, 'fails to get permissions');
             });
         });
     });
