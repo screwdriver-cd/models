@@ -1358,7 +1358,7 @@ describe('Pipeline Model', () => {
         });
     });
 
-    describe('getFirstAdmin', () => {
+    describe.only('getFirstAdmin', () => {
         beforeEach(() => {
             getUserPermissionMocks({ username: 'batman', push: false });
             getUserPermissionMocks({ username: 'robin', push: true });
@@ -1383,6 +1383,20 @@ describe('Pipeline Model', () => {
             }).catch((e) => {
                 assert.isOk(e);
                 assert.equal(e.message, 'Pipeline has no admin');
+            });
+        });
+
+        it('handle get permission error', () => {
+            const error = new Error('fails to get permissions');
+
+            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
+                unsealToken: sinon.stub().resolves('foo'),
+                getPermissions: sinon.stub().throws(error),
+                username: 'batman'
+            });
+
+            return pipeline.getFirstAdmin().then((realAdmin) => {
+                assert.equal(realAdmin.username, 'robin');
             });
         });
     });
