@@ -29,6 +29,8 @@ describe('Template Factory', () => {
     let templateTagFactoryMock;
     let factory;
     let Template;
+    let jobFactoryMock;
+    let buildFactoryMock;
 
     before(() => {
         mockery.enable({
@@ -46,9 +48,21 @@ describe('Template Factory', () => {
         templateTagFactoryMock = {
             get: sinon.stub()
         };
+        jobFactoryMock = {
+            list: sinon.stub()
+        };
+        buildFactoryMock = {
+            list: sinon.stub()
+        };
 
         mockery.registerMock('./templateTagFactory', {
             getInstance: sinon.stub().returns(templateTagFactoryMock)
+        });
+        mockery.registerMock('./jobFactory', {
+            getInstance: sinon.stub().returns(jobFactoryMock)
+        });
+        mockery.registerMock('./buildFactory', {
+            getInstance: sinon.stub().returns(buildFactoryMock)
         });
 
         /* eslint-disable global-require */
@@ -441,6 +455,234 @@ describe('Template Factory', () => {
 
             return factory.list(config).then((model) => {
                 assert.instanceOf(model[0], Template);
+            });
+        });
+    });
+
+    describe('listWithMetrics', () => {
+        let config;
+        let expected;
+        let returnValue;
+        let jobsMock;
+        let buildsMock;
+
+        beforeEach(() => {
+            config = {
+                params: {
+                    name,
+                    namespace,
+                    version: '1.0.2'
+                }
+            };
+
+            jobsMock = [
+                {
+                    name: 'job1',
+                    pipelineId: 7,
+                    state: 'ENABLED',
+                    archived: false,
+                    id: 1,
+                    permutations: {},
+                    templateId: 1
+                },
+                {
+                    name: 'job2',
+                    pipelineId: 7,
+                    state: 'ENABLED',
+                    archived: false,
+                    id: 2,
+                    permutations: {},
+                    templateId: 1
+                },
+                {
+                    name: 'job3',
+                    pipelineId: 7,
+                    state: 'ENABLED',
+                    archived: false,
+                    id: 3,
+                    permutations: {},
+                    templateId: 4
+                },
+                {
+                    name: 'job4',
+                    pipelineId: 7,
+                    state: 'ENABLED',
+                    archived: false,
+                    id: 4,
+                    permutations: {},
+                    templateId: undefined
+                },
+                {
+                    name: 'job5',
+                    pipelineId: 7,
+                    state: 'ENABLED',
+                    archived: false,
+                    id: 5,
+                    permutations: {}
+                },
+                {
+                    name: 'job6',
+                    pipelineId: 7,
+                    state: 'ENABLED',
+                    archived: false,
+                    id: 6,
+                    permutations: {},
+                    templateId: 1
+                },
+                {
+                    name: 'job7',
+                    pipelineId: 7,
+                    state: 'ENABLED',
+                    archived: false,
+                    id: 7,
+                    permutations: {},
+                    templateId: 4
+                },
+                {
+                    name: 'job8',
+                    pipelineId: 8,
+                    state: 'ENABLED',
+                    archived: false,
+                    id: 7,
+                    permutations: {},
+                    templateId: 10
+                }
+            ];
+
+            buildsMock = [
+                {
+                    id: 1,
+                    templateId: 1
+                },
+                {
+                    id: 2,
+                    templateId: 1
+                },
+                {
+                    id: 3,
+                    templateId: 4
+                },
+                {
+                    id: 4,
+                    templateId: undefined
+                },
+                {
+                    id: 5
+                },
+                {
+                    id: 6,
+                    templateId: 1
+                },
+                {
+                    id: 7,
+                    templateId: 4
+                },
+                {
+                    id: 8,
+                    templateId: 10
+                },
+                {
+                    id: 9,
+                    templateId: 1
+                },
+                {
+                    id: 10,
+                    templateId: 4
+                }
+            ];
+
+            returnValue = [
+                {
+                    id: 1,
+                    name,
+                    namespace,
+                    version: '1.0.1',
+                    metrics: {
+                        jobs: {
+                            count: 3
+                        },
+                        builds: {
+                            count: 4
+                        }
+                    }
+                },
+                {
+                    id: 3,
+                    name,
+                    namespace,
+                    version: '1.0.3',
+                    metrics: {
+                        jobs: {
+                            count: 0
+                        },
+                        builds: {
+                            count: 0
+                        }
+                    }
+                },
+                {
+                    id: 2,
+                    name,
+                    namespace,
+                    version: '1.0.2',
+                    metrics: {
+                        jobs: {
+                            count: 0
+                        },
+                        builds: {
+                            count: 0
+                        }
+                    }
+                },
+                {
+                    id: 4,
+                    name: `${namespace}/${name}`,
+                    version: '1.0.2',
+                    metrics: {
+                        jobs: {
+                            count: 2
+                        },
+                        builds: {
+                            count: 3
+                        }
+                    }
+                }
+            ];
+        });
+
+        /* it('should list templates with metrics when namespace is passed in', () => {
+            expected = [returnValue[0], returnValue[1], returnValue[2]];
+            datastore.scan.resolves(expected);
+            buildFactoryMock.list.resolves(buildsMock);
+            jobFactoryMock.list.resolves(jobsMock);
+
+            return factory.listWithMetrics(config).then((templates) => {
+                let i = 0;
+
+                templates.forEach((t) => {
+                    assert.deepEqual(t.id, expected[i].id);
+                    assert.deepEqual(t.metrics.jobs.count, expected[i].metrics.jobs.count);
+                    assert.deepEqual(t.metrics.builds.count, expected[i].metrics.builds.count);
+                    i += 1;
+                });
+            });
+        }); */
+
+        it('should list templates with metrics when no namespace is passed in', () => {
+            expected = [returnValue[3]];
+            datastore.scan.resolves(expected);
+            buildFactoryMock.list.resolves(buildsMock);
+            jobFactoryMock.list.resolves(jobsMock);
+
+            delete config.namespace;
+
+            return factory.listWithMetrics(config).then((templates) => {
+                assert.deepEqual(templates.length, 1);
+                assert.deepEqual(templates[0].metrics.jobs.count, expected[0].metrics.jobs.count);
+                assert.deepEqual(
+                    templates[0].metrics.builds.count,
+                    expected[0].metrics.builds.count
+                );
             });
         });
     });
