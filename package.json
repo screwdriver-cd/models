@@ -54,7 +54,6 @@
     "hoek": "^5.0.4",
     "iron": "^5.0.6",
     "lodash": "^4.17.15",
-    "mocha": "^7.0.0",
     "screwdriver-config-parser": "^5.1.0",
     "screwdriver-data-schema": "^19.1.1",
     "screwdriver-logger": "^1.0.0",
