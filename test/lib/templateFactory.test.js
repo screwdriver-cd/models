@@ -650,7 +650,7 @@ describe('Template Factory', () => {
             ];
         });
 
-        /* it('should list templates with metrics when namespace is passed in', () => {
+        it('should list templates with metrics when namespace is passed in', () => {
             expected = [returnValue[0], returnValue[1], returnValue[2]];
             datastore.scan.resolves(expected);
             buildFactoryMock.list.resolves(buildsMock);
@@ -666,7 +666,7 @@ describe('Template Factory', () => {
                     i += 1;
                 });
             });
-        }); */
+        });
 
         it('should list templates with metrics when no namespace is passed in', () => {
             expected = [returnValue[3]];
