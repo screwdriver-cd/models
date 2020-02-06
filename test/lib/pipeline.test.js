@@ -900,7 +900,7 @@ describe('Pipeline Model', () => {
             pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
                 checkoutUrl: 'bar.git'
             })).resolves('bar');
-            childPipelineMock.configPipelineId = 456;
+            childPipelineMock.configPipelineId = 123;
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipeline.childPipelines = {
                 scmUrls: [
