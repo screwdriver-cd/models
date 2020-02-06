@@ -870,6 +870,29 @@ describe('Pipeline Model', () => {
                 });
         });
 
+        it('does not remove child pipelines if does not belong to this parent', () => {
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true });
+            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
+                checkoutUrl: 'bar.git'
+            })).resolves('bar');
+            childPipelineMock.configPipelineId = 789;
+            pipelineFactoryMock.get.resolves(childPipelineMock);
+            pipeline.childPipelines = {
+                scmUrls: [
+                    'bar.git'
+                ]
+            };
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+
+            return pipeline.sync()
+                .then((p) => {
+                    assert.equal(p.id, testId);
+                    assert.notCalled(childPipelineMock.remove);
+                });
+        });
+
         it('removes child pipeline and resets scmUrls if it is removed from new yaml', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
