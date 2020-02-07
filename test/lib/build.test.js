@@ -218,17 +218,23 @@ describe('Build Model', () => {
         let step0;
         let step1;
         let step2;
+        let stepsMock;
 
         beforeEach(() => {
             step0 = { name: 'task0', startTime: 'now', endTime: 'then', code: 0 };
             step1 = { name: 'task1', startTime: 'now' };
             step2 = { name: 'task2' };
 
-            build.steps = [step0, step1, step2];
+            const step0Mock = Object.assign({ update: sinon.stub().resolves({}) }, step0);
+            const step1Mock = Object.assign({ update: sinon.stub().resolves({}) }, step1);
+            const step2Mock = Object.assign({ update: sinon.stub().resolves({}) }, step2);
+
+            stepsMock = [step0Mock, step1Mock, step2Mock];
 
             executorMock.stop.resolves(null);
             datastore.update.resolves({});
             jobFactoryMock.get.resolves(jobMock);
+            stepFactoryMock.list.resolves(stepsMock);
         });
 
         it('promises to update a build, stop the executor, and update status to failure', () => {
@@ -257,14 +263,16 @@ describe('Build Model', () => {
                         freezeWindows,
                         blockedBy: [jobId]
                     });
-
+                    delete stepsMock[0].update;
+                    delete stepsMock[1].update;
+                    delete stepsMock[2].update;
                     // Completed step is not modified
-                    assert.deepEqual(build.steps[0], step0);
+                    assert.deepEqual(stepsMock[0], step0);
                     // In progress step is aborted
-                    assert.ok(build.steps[1].endTime);
-                    assert.equal(build.steps[1].code, 130);
+                    assert.ok(stepsMock[1].endTime);
+                    assert.equal(stepsMock[1].code, 130);
                     // Unstarted step is not modified
-                    assert.deepEqual(build.steps[2], step2);
+                    assert.deepEqual(stepsMock[2], step2);
 
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
@@ -328,14 +336,16 @@ describe('Build Model', () => {
                         freezeWindows,
                         blockedBy: [jobId]
                     });
-
+                    delete stepsMock[0].update;
+                    delete stepsMock[1].update;
+                    delete stepsMock[2].update;
                     // Completed step is not modified
-                    assert.deepEqual(build.steps[0], step0);
+                    assert.deepEqual(stepsMock[0], step0);
                     // In progress step is aborted
-                    assert.ok(build.steps[1].endTime);
-                    assert.equal(build.steps[1].code, 130);
+                    assert.ok(stepsMock[1].endTime);
+                    assert.equal(stepsMock[1].code, 130);
                     // Unstarted step is not modified
-                    assert.deepEqual(build.steps[2], step2);
+                    assert.deepEqual(stepsMock[2], step2);
                     assert.calledWith(scmMock.updateCommitStatus.firstCall, {
                         token: 'foo',
                         scmUri,
@@ -409,13 +419,16 @@ describe('Build Model', () => {
                         blockedBy: [jobId]
                     });
 
+                    delete stepsMock[0].update;
+                    delete stepsMock[1].update;
+                    delete stepsMock[2].update;
                     // Completed step is not modified
-                    assert.deepEqual(build.steps[0], step0);
+                    assert.deepEqual(stepsMock[0], step0);
                     // In progress step is aborted
-                    assert.ok(build.steps[1].endTime);
-                    assert.equal(build.steps[1].code, 130);
+                    assert.ok(stepsMock[1].endTime);
+                    assert.equal(stepsMock[1].code, 130);
                     // Unstarted step is not modified
-                    assert.deepEqual(build.steps[2], step2);
+                    assert.deepEqual(stepsMock[2], step2);
                     assert.calledWith(scmMock.updateCommitStatus.firstCall, {
                         token: 'foo',
                         scmUri,
@@ -467,13 +480,16 @@ describe('Build Model', () => {
                         blockedBy: [jobId]
                     });
 
+                    delete stepsMock[0].update;
+                    delete stepsMock[1].update;
+                    delete stepsMock[2].update;
                     // Completed step is not modified
-                    assert.deepEqual(build.steps[0], step0);
+                    assert.deepEqual(stepsMock[0], step0);
                     // In progress step is aborted
-                    assert.ok(build.steps[1].endTime);
-                    assert.equal(build.steps[1].code, 130);
+                    assert.ok(stepsMock[1].endTime);
+                    assert.equal(stepsMock[1].code, 130);
                     // Unstarted step is not modified
-                    assert.deepEqual(build.steps[2], step2);
+                    assert.deepEqual(stepsMock[2], step2);
 
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
@@ -489,19 +505,13 @@ describe('Build Model', () => {
         });
 
         it('aborts running steps, and sets an endTime with step models', () => {
-            const step0Mock = Object.assign({ update: sinon.stub().resolves({}) }, step0);
-            const step1Mock = Object.assign({ update: sinon.stub().resolves({}) }, step1);
-            const step2Mock = Object.assign({ update: sinon.stub().resolves({}) }, step2);
-            const stepsMock = [step0Mock, step1Mock, step2Mock];
-
             build.status = 'ABORTED';
-            stepFactoryMock.list.resolves(stepsMock);
 
             return build.update()
                 .then(() => {
-                    assert.calledOnce(step0Mock.update);
-                    assert.calledOnce(step1Mock.update);
-                    assert.calledOnce(step2Mock.update);
+                    assert.calledOnce(stepsMock[0].update);
+                    assert.calledOnce(stepsMock[1].update);
+                    assert.calledOnce(stepsMock[2].update);
                     assert.calledWith(executorMock.stop, {
                         buildId,
                         jobId,
@@ -510,16 +520,16 @@ describe('Build Model', () => {
                         blockedBy: [jobId]
                     });
 
+                    delete stepsMock[0].update;
+                    delete stepsMock[1].update;
+                    delete stepsMock[2].update;
                     // Completed step is not modified
-                    delete step0Mock.update;
-                    delete step1Mock.update;
-                    delete step2Mock.update;
-                    assert.deepEqual(step0Mock, step0);
+                    assert.deepEqual(stepsMock[0], step0);
                     // In progress step is aborted
-                    assert.ok(step1Mock.endTime);
-                    assert.equal(step1Mock.code, 130);
+                    assert.ok(stepsMock[1].endTime);
+                    assert.equal(stepsMock[1].code, 130);
                     // Unstarted step is not modified
-                    assert.deepEqual(step2Mock, step2);
+                    assert.deepEqual(stepsMock[2], step2);
 
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
@@ -590,7 +600,6 @@ describe('Build Model', () => {
             config.status = 'UNSTABLE';
             build = new BuildModel(config);
 
-            build.steps = [step0, step1, step2];
             build.endTime = '2018-06-27T18:22:20.153Z';
 
             return build.update()
@@ -670,12 +679,15 @@ describe('Build Model', () => {
                     });
 
                     // Completed step is not modified
-                    assert.deepEqual(build.steps[0], step0);
+                    delete stepsMock[0].update;
+                    delete stepsMock[1].update;
+                    delete stepsMock[2].update;
+                    assert.deepEqual(stepsMock[0], step0);
                     // In progress step is aborted
-                    assert.ok(build.steps[1].endTime);
-                    assert.equal(build.steps[1].code, 130);
+                    assert.ok(stepsMock[1].endTime);
+                    assert.equal(stepsMock[1].code, 130);
                     // Unstarted step is not modified
-                    assert.deepEqual(build.steps[2], step2);
+                    assert.deepEqual(stepsMock[2], step2);
                     assert.calledWith(scmMock.updateCommitStatus, {
                         token: 'foo',
                         scmUri,
@@ -1539,8 +1551,12 @@ describe('Build Model', () => {
         const duration2 = (new Date(step2.endTime) - new Date(step2.startTime)) / 1000;
         const duration3 = (new Date(step3.endTime) - new Date(step3.startTime)) / 1000;
         let metrics;
+        let stepsMock;
 
         beforeEach(() => {
+            stepsMock = [step1, step2, step3];
+            stepFactoryMock.list.resolves(stepsMock);
+
             metrics = [{
                 id: step1.id,
                 name: step1.name,
@@ -1562,25 +1578,89 @@ describe('Build Model', () => {
             }];
         });
 
-        it('generates metrics', () => {
-            build.steps = [step1, step2, step3];
-
-            assert.deepEqual(build.getMetrics(), metrics);
-        });
+        it('generates metrics', () => build.getMetrics().then(m => assert.deepEqual(m, metrics)));
 
         it('does not fail if empty steps', () => {
-            build.steps = [];
+            stepFactoryMock.list.resolves([]);
 
-            assert.deepEqual(build.getMetrics(), []);
+            return build.getMetrics().then(m => assert.deepEqual(m, []));
         });
 
         it('works with no startTime or endTime params passed in', () => {
             const stepName = 'sd-setup-scm';
 
-            build.steps = [step1, step2];
             metrics = metrics.filter(m => m.name === stepName);
 
-            assert.deepEqual(build.getMetrics({ stepName }), metrics);
+            return build.getMetrics({ stepName }).then((m) => {
+                assert.deepEqual(m, metrics);
+            });
+        });
+    });
+
+    describe('get JSON with steps', () => {
+        const step1 = {
+            id: 11,
+            buildId,
+            name: 'install',
+            startTime: '2019-01-22T21:31:00.000Z',
+            endTime: '2019-01-22T22:35:00.000Z',
+            code: 0
+        };
+        const step2 = {
+            id: 12,
+            buildId,
+            name: 'sd-setup-init',
+            startTime: '2019-01-22T21:08:00.000Z',
+            endTime: '2019-01-22T21:30:00.000Z',
+            code: 127
+        };
+        const step3 = {
+            name: 'sd-setup-scm',
+            startTime: '2019-01-22T21:21:00.000Z',
+            endTime: '2019-01-22T22:30:00.000Z',
+            code: 127
+        };
+        let stepsMock;
+
+        beforeEach(() => {
+            stepsMock = [step1, step2, step3];
+            stepFactoryMock.list.resolves(stepsMock);
+        });
+
+        it('returns the JSON with steps sorted by step.id', () =>
+            build.toJsonWithSteps()
+                .then((json) => {
+                    const expected = Object.assign({}, build.toJson(),
+                        { steps: [step1, step2, step3] });
+
+                    assert.deepStrictEqual(json, expected);
+                })
+        );
+
+        it('returns the JSON with steps sorted by step.createTime', () => {
+            const configWithEndTime = Object.assign({}, config);
+
+            configWithEndTime.endTime = '2019-01-22T22:30: 00.000Z';
+            build = new BuildModel(configWithEndTime);
+
+            return build.toJsonWithSteps()
+                .then((json) => {
+                    const expected = Object.assign({}, build.toJson(),
+                        { steps: [step2, step3, step1] });
+
+                    assert.deepStrictEqual(json, expected);
+                });
+        });
+
+        it('throws error if steps missing ', () => {
+            stepFactoryMock.list.resolves([]);
+
+            return build.toJsonWithSteps()
+                .then(() =>
+                    assert.fail('nope')
+                ).catch(err =>
+                    assert.equal('Steps do not exist', err.message)
+                );
         });
     });
 });
