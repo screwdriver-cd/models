@@ -49,13 +49,14 @@
     "base64url": "^3.0.1",
     "compare-versions": "^3.5.1",
     "dayjs": "^1.8.16",
+    "deepcopy": "^2.0.0",
     "docker-parse-image": "^3.0.1",
     "hoek": "^5.0.4",
     "iron": "^5.0.6",
     "lodash": "^4.17.15",
     "screwdriver-config-parser": "^5.1.0",
     "screwdriver-data-schema": "^19.1.1",
-    "screwdriver-workflow-parser": "^2.0.0",
-    "screwdriver-logger": "^1.0.0"
+    "screwdriver-logger": "^1.0.0",
+    "screwdriver-workflow-parser": "^2.0.0"
   }
 }

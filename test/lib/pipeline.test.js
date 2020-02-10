@@ -870,6 +870,29 @@ describe('Pipeline Model', () => {
                 });
         });
 
+        it('does not remove child pipelines if does not belong to this parent', () => {
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true });
+            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
+                checkoutUrl: 'bar.git'
+            })).resolves('bar');
+            childPipelineMock.configPipelineId = 789;
+            pipelineFactoryMock.get.resolves(childPipelineMock);
+            pipeline.childPipelines = {
+                scmUrls: [
+                    'bar.git'
+                ]
+            };
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+
+            return pipeline.sync()
+                .then((p) => {
+                    assert.equal(p.id, testId);
+                    assert.notCalled(childPipelineMock.remove);
+                });
+        });
+
         it('removes child pipeline and resets scmUrls if it is removed from new yaml', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
@@ -877,7 +900,7 @@ describe('Pipeline Model', () => {
             pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
                 checkoutUrl: 'bar.git'
             })).resolves('bar');
-            childPipelineMock.configPipelineId = 456;
+            childPipelineMock.configPipelineId = 123;
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipeline.childPipelines = {
                 scmUrls: [
@@ -1383,6 +1406,39 @@ describe('Pipeline Model', () => {
             }).catch((e) => {
                 assert.isOk(e);
                 assert.equal(e.message, 'Pipeline has no admin');
+            });
+        });
+
+        it('catch 401 from get permission', () => {
+            const error = new Error('fails to get permissions');
+
+            error.status = 401;
+            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
+                unsealToken: sinon.stub().resolves('foo'),
+                getPermissions: sinon.stub().throws(error),
+                username: 'batman'
+            });
+
+            return pipeline.getFirstAdmin().then((realAdmin) => {
+                assert.equal(realAdmin.username, 'robin');
+            });
+        });
+
+        it('does not catch other error', () => {
+            const error = new Error('fails to get permissions');
+
+            error.status = 403;
+            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
+                unsealToken: sinon.stub().resolves('foo'),
+                getPermissions: sinon.stub().throws(error),
+                username: 'batman'
+            });
+
+            return pipeline.getFirstAdmin().then(() => {
+                assert.fail('should not get here');
+            }).catch((e) => {
+                assert.isOk(e);
+                assert.equal(e.message, 'fails to get permissions');
             });
         });
     });
