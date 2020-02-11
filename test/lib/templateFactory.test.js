@@ -463,8 +463,8 @@ describe('Template Factory', () => {
         let config;
         let expected;
         let returnValue;
-        let jobsMock;
-        let buildsMock;
+        let jobsCount;
+        let buildsCount;
 
         beforeEach(() => {
             config = {
@@ -475,119 +475,49 @@ describe('Template Factory', () => {
                 }
             };
 
-            jobsMock = [
+            jobsCount = [
                 {
-                    name: 'job1',
-                    pipelineId: 7,
-                    state: 'ENABLED',
-                    archived: false,
-                    id: 1,
-                    permutations: {},
-                    templateId: 1
+                    templateId: 1,
+                    count: 3
                 },
                 {
-                    name: 'job2',
-                    pipelineId: 7,
-                    state: 'ENABLED',
-                    archived: false,
-                    id: 2,
-                    permutations: {},
-                    templateId: 1
+                    templateId: 2,
+                    count: 0
                 },
                 {
-                    name: 'job3',
-                    pipelineId: 7,
-                    state: 'ENABLED',
-                    archived: false,
-                    id: 3,
-                    permutations: {},
-                    templateId: 4
+                    templateId: 3,
+                    count: 0
                 },
                 {
-                    name: 'job4',
-                    pipelineId: 7,
-                    state: 'ENABLED',
-                    archived: false,
-                    id: 4,
-                    permutations: {},
-                    templateId: undefined
+                    templateId: 4,
+                    count: 2
                 },
                 {
-                    name: 'job5',
-                    pipelineId: 7,
-                    state: 'ENABLED',
-                    archived: false,
-                    id: 5,
-                    permutations: {}
-                },
-                {
-                    name: 'job6',
-                    pipelineId: 7,
-                    state: 'ENABLED',
-                    archived: false,
-                    id: 6,
-                    permutations: {},
-                    templateId: 1
-                },
-                {
-                    name: 'job7',
-                    pipelineId: 7,
-                    state: 'ENABLED',
-                    archived: false,
-                    id: 7,
-                    permutations: {},
-                    templateId: 4
-                },
-                {
-                    name: 'job8',
-                    pipelineId: 8,
-                    state: 'ENABLED',
-                    archived: false,
-                    id: 7,
-                    permutations: {},
-                    templateId: 10
+                    templateId: 5,
+                    count: 7
                 }
             ];
 
-            buildsMock = [
+            buildsCount = [
                 {
-                    id: 1,
-                    templateId: 1
+                    templateId: 1,
+                    count: 4
                 },
                 {
-                    id: 2,
-                    templateId: 1
+                    templateId: 2,
+                    count: 0
                 },
                 {
-                    id: 3,
-                    templateId: 4
+                    templateId: 3,
+                    count: 0
                 },
                 {
-                    id: 4,
-                    templateId: undefined
+                    templateId: 4,
+                    count: 3
                 },
                 {
-                    id: 5
-                },
-                {
-                    id: 6,
-                    templateId: 1
-                },
-                {
-                    id: 7,
-                    templateId: 4
-                },
-                {
-                    id: 8,
-                    templateId: 10
-                },
-                {
-                    id: 9,
-                    templateId: 1
-                },
-                {
-                    id: 10,
-                    templateId: 4
+                    templateId: 9,
+                    count: 100
                 }
             ];
 
@@ -653,8 +583,8 @@ describe('Template Factory', () => {
         it('should list templates with metrics when namespace is passed in', () => {
             expected = [returnValue[0], returnValue[1], returnValue[2]];
             datastore.scan.resolves(expected);
-            buildFactoryMock.list.resolves(buildsMock);
-            jobFactoryMock.list.resolves(jobsMock);
+            buildFactoryMock.list.resolves(buildsCount);
+            jobFactoryMock.list.resolves(jobsCount);
 
             return factory.listWithMetrics(config).then((templates) => {
                 let i = 0;
@@ -671,8 +601,8 @@ describe('Template Factory', () => {
         it('should list templates with metrics when no namespace is passed in', () => {
             expected = [returnValue[3]];
             datastore.scan.resolves(expected);
-            buildFactoryMock.list.resolves(buildsMock);
-            jobFactoryMock.list.resolves(jobsMock);
+            buildFactoryMock.list.resolves(buildsCount);
+            jobFactoryMock.list.resolves(jobsCount);
 
             delete config.namespace;
 
