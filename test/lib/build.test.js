@@ -1599,31 +1599,78 @@ describe('Build Model', () => {
 
     describe('get JSON with steps', () => {
         const step1 = {
-            id: 11,
-            buildId,
-            name: 'install',
-            startTime: '2019-01-22T21:31:00.000Z',
-            endTime: '2019-01-22T22:35:00.000Z',
-            code: 0
-        };
-        const step2 = {
-            id: 12,
+            id: 10,
             buildId,
             name: 'sd-setup-init',
             startTime: '2019-01-22T21:08:00.000Z',
-            endTime: '2019-01-22T21:30:00.000Z',
-            code: 127
+            endTime: '2019-01-22T21:21:00.000Z',
+            code: 0
         };
-        const step3 = {
+        const step2 = {
+            id: 11,
             name: 'sd-setup-scm',
             startTime: '2019-01-22T21:21:00.000Z',
-            endTime: '2019-01-22T22:30:00.000Z',
+            endTime: '2019-01-22T21:30:00.000Z',
+            code: 0
+        };
+        const step21 = {
+            id: 12,
+            name: 'sd-setup-scm',
+            startTime: '2019-01-22T21:30:01.000Z',
+            endTime: '2019-01-22T21:30:02.000Z',
+            code: 0
+        };
+        const step3 = {
+            id: 13,
+            buildId,
+            name: 'install',
+            startTime: '2019-01-22T21:31:00.000Z',
+            endTime: '2019-01-22T21:35:00.000Z',
+            code: 0
+        };
+        const step31 = {
+            id: 14,
+            buildId,
+            name: 'test',
+            startTime: '2019-01-22T21:35:01.000Z',
+            endTime: '2019-01-22T21:36:00.000Z',
             code: 127
         };
+        const step4 = {
+            id: 15,
+            buildId,
+            name: 'deploy'
+        };
+        const step5 = {
+            id: 16,
+            buildId,
+            name: 'teardown-coverage',
+            startTime: '2019-01-22T21:41:00.000Z',
+            endTime: '2019-01-22T21:45:00.000Z',
+            code: 0
+        };
+        const step6 = {
+            id: 17,
+            buildId,
+            name: 'teardown-artifact',
+            startTime: '2019-01-22T21:45:00.000Z',
+            endTime: '2019-01-22T21:50:00.000Z',
+            code: 0
+        };
+
+        const step7 = {
+            id: 18,
+            buildId,
+            name: 'teardown-cache',
+            startTime: '2019-01-22T21:51:00.000Z',
+            endTime: '2019-01-22T21:52:00.000Z',
+            code: 0
+        };
+
         let stepsMock;
 
         beforeEach(() => {
-            stepsMock = [step1, step2, step3];
+            stepsMock = [step1, step2, step3, step4, step5];
             stepFactoryMock.list.resolves(stepsMock);
         });
 
@@ -1631,13 +1678,16 @@ describe('Build Model', () => {
             build.toJsonWithSteps()
                 .then((json) => {
                     const expected = Object.assign({}, build.toJson(),
-                        { steps: [step1, step2, step3] });
+                        { steps: [step1, step2, step3, step4, step5] });
 
                     assert.deepStrictEqual(json, expected);
                 })
         );
 
         it('returns the JSON with steps sorted by step.createTime', () => {
+            stepsMock = [step1, step2, step21, step3, step31, step4, step5, step6, step7];
+            stepFactoryMock.list.resolves(stepsMock);
+
             const configWithEndTime = Object.assign({}, config);
 
             configWithEndTime.endTime = '2019-01-22T22:30: 00.000Z';
@@ -1646,7 +1696,9 @@ describe('Build Model', () => {
             return build.toJsonWithSteps()
                 .then((json) => {
                     const expected = Object.assign({}, build.toJson(),
-                        { steps: [step2, step3, step1] });
+                        { steps: [
+                            step1, step2, step21, step3, step31, step4, step5, step6, step7
+                        ] });
 
                     assert.deepStrictEqual(json, expected);
                 });
