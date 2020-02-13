@@ -29,6 +29,8 @@ describe('Template Factory', () => {
     let templateTagFactoryMock;
     let factory;
     let Template;
+    let jobFactoryMock;
+    let buildFactoryMock;
 
     before(() => {
         mockery.enable({
@@ -46,9 +48,21 @@ describe('Template Factory', () => {
         templateTagFactoryMock = {
             get: sinon.stub()
         };
+        jobFactoryMock = {
+            list: sinon.stub()
+        };
+        buildFactoryMock = {
+            list: sinon.stub()
+        };
 
         mockery.registerMock('./templateTagFactory', {
             getInstance: sinon.stub().returns(templateTagFactoryMock)
+        });
+        mockery.registerMock('./jobFactory', {
+            getInstance: sinon.stub().returns(jobFactoryMock)
+        });
+        mockery.registerMock('./buildFactory', {
+            getInstance: sinon.stub().returns(buildFactoryMock)
         });
 
         /* eslint-disable global-require */
@@ -441,6 +455,164 @@ describe('Template Factory', () => {
 
             return factory.list(config).then((model) => {
                 assert.instanceOf(model[0], Template);
+            });
+        });
+    });
+
+    describe('listWithMetrics', () => {
+        let config;
+        let expected;
+        let returnValue;
+        let jobsCount;
+        let buildsCount;
+
+        beforeEach(() => {
+            config = {
+                params: {
+                    name,
+                    namespace,
+                    version: '1.0.2'
+                }
+            };
+
+            jobsCount = [
+                {
+                    templateId: 1,
+                    count: 3
+                },
+                {
+                    templateId: 2,
+                    count: 0
+                },
+                {
+                    templateId: 3,
+                    count: 0
+                },
+                {
+                    templateId: 4,
+                    count: 2
+                },
+                {
+                    templateId: 5,
+                    count: 7
+                }
+            ];
+
+            buildsCount = [
+                {
+                    templateId: 1,
+                    count: 4
+                },
+                {
+                    templateId: 2,
+                    count: 0
+                },
+                {
+                    templateId: 3,
+                    count: 0
+                },
+                {
+                    templateId: 4,
+                    count: 3
+                },
+                {
+                    templateId: 9,
+                    count: 100
+                }
+            ];
+
+            returnValue = [
+                {
+                    id: 1,
+                    name,
+                    namespace,
+                    version: '1.0.1',
+                    metrics: {
+                        jobs: {
+                            count: 3
+                        },
+                        builds: {
+                            count: 4
+                        }
+                    }
+                },
+                {
+                    id: 3,
+                    name,
+                    namespace,
+                    version: '1.0.3',
+                    metrics: {
+                        jobs: {
+                            count: 0
+                        },
+                        builds: {
+                            count: 0
+                        }
+                    }
+                },
+                {
+                    id: 2,
+                    name,
+                    namespace,
+                    version: '1.0.2',
+                    metrics: {
+                        jobs: {
+                            count: 0
+                        },
+                        builds: {
+                            count: 0
+                        }
+                    }
+                },
+                {
+                    id: 4,
+                    name: `${namespace}/${name}`,
+                    version: '1.0.2',
+                    metrics: {
+                        jobs: {
+                            count: 2
+                        },
+                        builds: {
+                            count: 3
+                        }
+                    }
+                }
+            ];
+        });
+
+        it('should list templates with metrics when namespace is passed in', () => {
+            expected = [returnValue[0], returnValue[1], returnValue[2]];
+            datastore.scan.resolves(expected);
+            buildFactoryMock.list.resolves(buildsCount);
+            jobFactoryMock.list.resolves(jobsCount);
+
+            return factory.listWithMetrics(config).then((templates) => {
+                let i = 0;
+
+                templates.forEach((t) => {
+                    assert.deepEqual(t.id, expected[i].id);
+                    assert.deepEqual(t.metrics.jobs.count, expected[i].metrics.jobs.count);
+                    assert.deepEqual(t.metrics.builds.count, expected[i].metrics.builds.count);
+                    i += 1;
+                });
+            });
+        });
+
+        it('should list templates with metrics when no namespace is passed in', () => {
+            expected = [returnValue[3]];
+            datastore.scan.resolves(expected);
+            buildFactoryMock.list.resolves(buildsCount);
+            jobFactoryMock.list.resolves(jobsCount);
+
+            delete config.namespace;
+
+            return factory.listWithMetrics(config).then((templates) => {
+                assert.deepEqual(templates.length, 1);
+                assert.deepEqual(templates[0].metrics.jobs.count, expected[0].metrics.jobs.count);
+                assert.deepEqual(
+                    templates[0].metrics.builds.count,
+                    expected[0].metrics.builds.count
+                );
             });
         });
     });

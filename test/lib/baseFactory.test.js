@@ -286,6 +286,17 @@ describe('Base Factory', () => {
                 })
         );
 
+        it('sets aggregationField if it is passed in', () =>
+            factory.list({ aggregationField: 'templateId' })
+                .then(() => {
+                    assert.calledWith(datastore.scan, {
+                        table: 'base',
+                        params: {},
+                        aggregationField: 'templateId'
+                    });
+                })
+        );
+
         it('sets default paginate values if undefined is passed in', () =>
             factory.list({ paginate: { page: undefined, count: undefined } })
                 .then(() => {
