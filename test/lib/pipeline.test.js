@@ -1424,6 +1424,21 @@ describe('Pipeline Model', () => {
             });
         });
 
+        it('catch 404 from get permission', () => {
+            const error = new Error('Not found');
+
+            error.status = 404;
+            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
+                unsealToken: sinon.stub().resolves('foo'),
+                getPermissions: sinon.stub().throws(error),
+                username: 'batman'
+            });
+
+            return pipeline.getFirstAdmin().then((realAdmin) => {
+                assert.equal(realAdmin.username, 'robin');
+            });
+        });
+
         it('does not catch other error', () => {
             const error = new Error('fails to get permissions');
 
