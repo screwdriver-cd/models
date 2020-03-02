@@ -143,9 +143,11 @@ describe('Event Factory', () => {
                 username: 'stjohn',
                 parentBuildId: 12345,
                 scmContext,
+                prSource: 'branch',
                 prInfo: {
                     url: 'https://github.com/screwdriver-cd/screwdriver/pull/1063',
-                    ref: 'branch'
+                    ref: 'branch',
+                    prBranchName: 'prBranchName'
                 }
             };
             expected = {
@@ -1222,7 +1224,9 @@ describe('Event Factory', () => {
 
             return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
-                assert.deepEqual(model.pr, config.prInfo);
+                assert.deepEqual(model.pr.prBranchName, config.prInfo.prBranchName);
+                assert.deepEqual(model.pr.prSource, config.prSource);
+                assert.deepEqual(model.pr.ref, config.prInfo.ref);
                 assert.deepEqual(model.prNum, config.prNum);
             });
         });
@@ -1238,7 +1242,9 @@ describe('Event Factory', () => {
                 assert.instanceOf(model, Event);
                 assert.neverCalledWith(pipelineMock.sync, config.configPipelineSha);
                 assert.neverCalledWith(pipelineMock.sync, config.sha);
-                assert.deepEqual(model.pr, config.prInfo);
+                assert.deepEqual(model.pr.prBranchName, config.prInfo.prBranchName);
+                assert.deepEqual(model.pr.prSource, config.prSource);
+                assert.deepEqual(model.pr.ref, config.prInfo.ref);
                 assert.deepEqual(model.prNum, config.prNum);
             });
         });
