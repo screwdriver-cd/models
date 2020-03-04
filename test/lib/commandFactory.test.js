@@ -242,6 +242,12 @@ describe('Command Factory', () => {
                     namespace: 'testCommandNS',
                     name: 'testCommand',
                     version: '2.0.1'
+                },
+                {
+                    id: '5',
+                    namespace: 'testCommandNS',
+                    name: 'testCommand',
+                    version: '1.0.20'
                 }
             ];
         });
@@ -260,7 +266,7 @@ describe('Command Factory', () => {
         });
 
         it('should get the correct command for a given namespace/name@version 1.0', () => {
-            expected = Object.assign({}, returnValue[1]);
+            expected = Object.assign({}, returnValue[4]);
             datastore.scan.resolves(returnValue);
 
             return factory.getCommand(fullCommandName).then((model) => {
