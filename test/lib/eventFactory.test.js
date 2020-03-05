@@ -1129,6 +1129,35 @@ describe('Event Factory', () => {
             });
         });
 
+        it('should create an Event with groupEventId', () => {
+            config.groupEventId = 12345;
+            expected.groupEventId = 12345;
+
+            return eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.calledWith(scm.decorateAuthor, {
+                    username: 'stjohn',
+                    scmContext,
+                    token: 'foo'
+                });
+                assert.calledWith(scm.decorateCommit, {
+                    scmUri: 'github.com:1234:branch',
+                    scmContext,
+                    sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
+                    token: 'foo'
+                });
+                assert.strictEqual(syncedPipelineMock.lastEventId, model.id);
+                assert.strictEqual(config.prInfo.url, model.pr.url);
+                Object.keys(expected).forEach((key) => {
+                    if (key === 'workflowGraph' || key === 'meta') {
+                        assert.deepEqual(model[key], expected[key]);
+                    } else {
+                        assert.strictEqual(model[key], expected[key]);
+                    }
+                });
+            });
+        });
+
         it('should create an Event with creator', () => {
             const creatorTest = {
                 name: 'sd:scheduler',
