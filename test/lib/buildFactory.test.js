@@ -99,7 +99,8 @@ describe('Build Factory', () => {
         datastore = {
             get: sinon.stub(),
             save: sinon.stub(),
-            scan: sinon.stub()
+            scan: sinon.stub(),
+            query: sinon.stub()
         };
         jobFactoryMock = {
             get: sinon.stub()
@@ -894,6 +895,193 @@ describe('Build Factory', () => {
             assert.throw(() => {
                 BuildFactory.getInstance({ executor, scm: {}, datastore, uiUri });
             }, Error, 'No bookend plugin provided to BuildFactory');
+        });
+    });
+
+    describe('getBuildStatuses', () => {
+        let config;
+        let expected;
+        let returnValue;
+        let queryConfig;
+        let query;
+        let mysqlQuery;
+
+        beforeEach(() => {
+            sinon.stub(BuildFactory.prototype, 'query').returns();
+
+            config = {
+                jobIds: [1, 2, 3, 4],
+                offset: 1,
+                numBuilds: 5
+            };
+
+            returnValue = [
+                [
+                    {
+                        jobId: 1,
+                        jobName: 'name',
+                        Status: 'SUCCESS',
+                        id: 1
+                    },
+                    {
+                        jobId: 1,
+                        jobName: 'name',
+                        Status: 'ABORTED',
+                        id: 2
+                    },
+                    {
+                        jobId: 2,
+                        jobName: 'name',
+                        Status: 'SUCCESS',
+                        id: 3
+                    },
+                    {
+                        jobId: 3,
+                        jobName: 'name',
+                        Status: 'SUCCESS',
+                        id: 4
+                    },
+                    {
+                        jobId: 2,
+                        jobName: 'name',
+                        Status: 'SUCCESS',
+                        id: 5
+                    },
+                    {
+                        jobId: 1,
+                        jobName: 'name',
+                        Status: 'SUCCESS',
+                        id: 6
+                    }
+                ],
+                []];
+
+            expected = [
+                {
+                    jobId: 1,
+                    builds: [
+                        {
+                            jobId: 1,
+                            jobName: 'name',
+                            Status: 'SUCCESS',
+                            id: 1
+                        },
+                        {
+                            jobId: 1,
+                            jobName: 'name',
+                            Status: 'ABORTED',
+                            id: 2
+                        },
+                        {
+                            jobId: 1,
+                            jobName: 'name',
+                            Status: 'SUCCESS',
+                            id: 6
+                        }
+                    ]
+                },
+                {
+                    jobId: 2,
+                    builds: [
+                        {
+                            jobId: 2,
+                            jobName: 'name',
+                            Status: 'SUCCESS',
+                            id: 3
+                        },
+                        {
+                            jobId: 2,
+                            jobName: 'name',
+                            Status: 'SUCCESS',
+                            id: 5
+                        }
+                    ]
+                },
+                {
+                    jobId: 3,
+                    builds: [
+                        {
+                            jobId: 3,
+                            jobName: 'name',
+                            Status: 'SUCCESS',
+                            id: 4
+                        }
+                    ]
+                }
+            ];
+
+            query =
+            'SELECT r."id", r."jobId", j."name" as "jobName", r."status", r."startTime", '
+            + 'r."endTime" '
+            + 'FROM (SELECT "id", "jobId", "status", "startTime", "endTime", '
+            + 'RANK() OVER ( PARTITION BY "jobId" ORDER BY "id" DESC ) AS rank '
+            + 'FROM builds WHERE "jobId" in (:jobIds)) r '
+            + 'INNER JOIN jobs as j ON j."id" = r."jobId" '
+            + 'WHERE rank > :offset AND rank <= :maxRank '
+            + 'ORDER BY r."jobId", r."id" DESC';
+
+            mysqlQuery =
+            'SELECT r.id, r.jobId, j.name as `jobName`, r.status, r.startTime, r.endTime FROM '
+            + '(SELECT id, jobId, status, startTime, endTime, '
+            + 'RANK() OVER ( PARTITION BY jobId ORDER BY id DESC ) AS `rank` '
+            + 'FROM builds WHERE jobId in (:jobIds)) r '
+            + 'INNER JOIN jobs as j ON j.id = r.jobId '
+            + 'WHERE `rank` > :offset AND `rank` <= :maxRank '
+            + 'ORDER BY r.jobId, r.id DESC';
+
+            queryConfig = {
+                queries: [
+                    { dbType: 'postgres', query },
+                    { dbType: 'sqlite', query },
+                    { dbType: 'mysql', query: mysqlQuery }
+                ],
+                replacements: {
+                    jobIds: config.jobIds,
+                    offset: 1,
+                    maxRank: 6
+                },
+                rawResponse: true,
+                table: 'builds'
+            };
+        });
+
+        it('return build statuses for jobs', () => {
+            datastore.query.resolves(returnValue);
+
+            return factory.getBuildStatuses(config).then((buildStatuses) => {
+                assert.calledWith(datastore.query, queryConfig);
+
+                let i = 0;
+
+                buildStatuses.forEach((b) => {
+                    let j = 0;
+
+                    assert.deepEqual(b.jobId, expected[i].jobId);
+                    assert.deepEqual(b.builds.length, expected[i].builds.length);
+
+                    b.builds.forEach((s) => {
+                        assert.deepEqual(s, expected[i].builds[j]);
+
+                        j += 1;
+                    });
+
+                    i += 1;
+                });
+            });
+        });
+
+        it('Query with default config params', () => {
+            datastore.query.resolves([[], []]);
+
+            delete config.numBuilds;
+            delete config.offset;
+
+            queryConfig.replacements.offset = 0;
+            queryConfig.replacements.maxRank = 1;
+
+            return factory.getBuildStatuses(config).then(() => {
+                assert.calledWith(datastore.query, queryConfig);
+            });
         });
     });
 });
