@@ -647,6 +647,11 @@ describe('Template Factory', () => {
                     id: '4',
                     name: 'testTemplateName',
                     version: '2.0.1'
+                },
+                {
+                    id: '5',
+                    name: 'testTemplateName',
+                    version: '1.0.20'
                 }
             ];
         });
@@ -687,7 +692,7 @@ describe('Template Factory', () => {
         });
 
         it('should get the correct template for a given name@version 1.0', () => {
-            expected = Object.assign({}, returnValue[1]);
+            expected = Object.assign({}, returnValue[4]);
             datastore.scan.onCall(0).resolves([]);
             datastore.scan.onCall(1).resolves(returnValue);
 
@@ -700,9 +705,9 @@ describe('Template Factory', () => {
         });
 
         it('should get the correct template for a given namespace/name@version 1.0', () => {
-            expected = Object.assign({ namespace: 'namespace' }, returnValue[1]);
-            returnValue[1].namespace = 'namespace';
-            datastore.scan.onCall(0).resolves([returnValue[1]]);
+            expected = Object.assign({ namespace: 'namespace' }, returnValue[4]);
+            returnValue[4].namespace = 'namespace';
+            datastore.scan.onCall(0).resolves([returnValue[4]]);
             datastore.scan.onCall(1).resolves(returnValue);
 
             return factory.getTemplate(fullTemplateName).then((model) => {
