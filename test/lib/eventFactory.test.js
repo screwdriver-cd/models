@@ -2,11 +2,35 @@
 
 const assert = require('chai').assert;
 const sinon = require('sinon');
+const schema = require('screwdriver-data-schema');
 const mockery = require('mockery');
 const rewire = require('rewire');
 const PARSED_YAML = require('../data/parserWithWorkflowGraph');
+let updateStub;
 
 sinon.assert.expose(assert, { prefix: '' });
+
+class Event {
+    constructor(config) {
+        this.id = config.id;
+        this.groupEventId = config.groupEventId;
+        this.commit = config.commit;
+        this.createTime = config.createTime;
+        this.creator = config.creator;
+        this.baseBranch = config.baseBranch;
+        this.pipelineId = config.pipelineId;
+        this.configPipelineSha = config.configPipelineSha;
+        this.pr = config.pr;
+        this.prNum = config.prNum;
+        this.workflowGraph = config.workflowGraph;
+        this.causeMessage = config.causeMessage;
+        this.parentEventId = config.parentEventId;
+        this.meta = config.meta;
+        this.sha = config.sha;
+        this.type = config.type;
+        this.update = updateStub.resolves(this);
+    }
+}
 
 describe('Event Factory', () => {
     const dateNow = 1234567;
@@ -19,7 +43,6 @@ describe('Event Factory', () => {
     let jobFactoryMock;
     let pipelineMock;
     let scm;
-    let Event;
 
     before(() => {
         mockery.enable({
@@ -45,11 +68,16 @@ describe('Event Factory', () => {
             create: sinon.stub(),
             list: sinon.stub()
         };
+        updateStub = sinon.stub();
         scm = {
             decorateAuthor: sinon.stub(),
             decorateCommit: sinon.stub(),
             getDisplayName: sinon.stub()
         };
+
+        // Fixing mockery issue with duplicate file names
+        // by re-registering data-schema with its own implementation
+        mockery.registerMock('screwdriver-data-schema', schema);
 
         mockery.registerMock('./pipelineFactory', {
             getInstance: sinon.stub().returns(pipelineFactoryMock)
@@ -60,9 +88,8 @@ describe('Event Factory', () => {
         mockery.registerMock('./buildFactory', {
             getInstance: sinon.stub().returns(buildFactoryMock)
         });
+        mockery.registerMock('./event', Event);
 
-        // eslint-disable-next-line global-require
-        Event = require('../../lib/event');
         // eslint-disable-next-line global-require
         EventFactory = require('../../lib/eventFactory');
 
