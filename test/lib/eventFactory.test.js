@@ -2,11 +2,35 @@
 
 const assert = require('chai').assert;
 const sinon = require('sinon');
+const schema = require('screwdriver-data-schema');
 const mockery = require('mockery');
 const rewire = require('rewire');
 const PARSED_YAML = require('../data/parserWithWorkflowGraph');
+let updateStub;
 
 sinon.assert.expose(assert, { prefix: '' });
+
+class Event {
+    constructor(config) {
+        this.id = config.id;
+        this.groupEventId = config.groupEventId;
+        this.commit = config.commit;
+        this.createTime = config.createTime;
+        this.creator = config.creator;
+        this.baseBranch = config.baseBranch;
+        this.pipelineId = config.pipelineId;
+        this.configPipelineSha = config.configPipelineSha;
+        this.pr = config.pr;
+        this.prNum = config.prNum;
+        this.workflowGraph = config.workflowGraph;
+        this.causeMessage = config.causeMessage;
+        this.parentEventId = config.parentEventId;
+        this.meta = config.meta;
+        this.sha = config.sha;
+        this.type = config.type;
+        this.update = updateStub.resolves(this);
+    }
+}
 
 describe('Event Factory', () => {
     const dateNow = 1234567;
@@ -19,7 +43,6 @@ describe('Event Factory', () => {
     let jobFactoryMock;
     let pipelineMock;
     let scm;
-    let Event;
 
     before(() => {
         mockery.enable({
@@ -45,11 +68,16 @@ describe('Event Factory', () => {
             create: sinon.stub(),
             list: sinon.stub()
         };
+        updateStub = sinon.stub();
         scm = {
             decorateAuthor: sinon.stub(),
             decorateCommit: sinon.stub(),
             getDisplayName: sinon.stub()
         };
+
+        // Fixing mockery issue with duplicate file names
+        // by re-registering data-schema with its own implementation
+        mockery.registerMock('screwdriver-data-schema', schema);
 
         mockery.registerMock('./pipelineFactory', {
             getInstance: sinon.stub().returns(pipelineFactoryMock)
@@ -60,9 +88,8 @@ describe('Event Factory', () => {
         mockery.registerMock('./buildFactory', {
             getInstance: sinon.stub().returns(buildFactoryMock)
         });
+        mockery.registerMock('./event', Event);
 
-        // eslint-disable-next-line global-require
-        Event = require('../../lib/event');
         // eslint-disable-next-line global-require
         EventFactory = require('../../lib/eventFactory');
 
@@ -143,9 +170,11 @@ describe('Event Factory', () => {
                 username: 'stjohn',
                 parentBuildId: 12345,
                 scmContext,
+                prSource: 'branch',
                 prInfo: {
                     url: 'https://github.com/screwdriver-cd/screwdriver/pull/1063',
-                    ref: 'branch'
+                    ref: 'branch',
+                    prBranchName: 'prBranchName'
                 }
             };
             expected = {
@@ -1127,6 +1156,35 @@ describe('Event Factory', () => {
             });
         });
 
+        it('should create an Event with groupEventId', () => {
+            config.groupEventId = 12345;
+            expected.groupEventId = 12345;
+
+            return eventFactory.create(config).then((model) => {
+                assert.instanceOf(model, Event);
+                assert.calledWith(scm.decorateAuthor, {
+                    username: 'stjohn',
+                    scmContext,
+                    token: 'foo'
+                });
+                assert.calledWith(scm.decorateCommit, {
+                    scmUri: 'github.com:1234:branch',
+                    scmContext,
+                    sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
+                    token: 'foo'
+                });
+                assert.strictEqual(syncedPipelineMock.lastEventId, model.id);
+                assert.strictEqual(config.prInfo.url, model.pr.url);
+                Object.keys(expected).forEach((key) => {
+                    if (key === 'workflowGraph' || key === 'meta') {
+                        assert.deepEqual(model[key], expected[key]);
+                    } else {
+                        assert.strictEqual(model[key], expected[key]);
+                    }
+                });
+            });
+        });
+
         it('should create an Event with creator', () => {
             const creatorTest = {
                 name: 'sd:scheduler',
@@ -1222,7 +1280,9 @@ describe('Event Factory', () => {
 
             return eventFactory.create(config).then((model) => {
                 assert.instanceOf(model, Event);
-                assert.deepEqual(model.pr, config.prInfo);
+                assert.deepEqual(model.pr.prBranchName, config.prInfo.prBranchName);
+                assert.deepEqual(model.pr.prSource, config.prSource);
+                assert.deepEqual(model.pr.ref, config.prInfo.ref);
                 assert.deepEqual(model.prNum, config.prNum);
             });
         });
@@ -1238,7 +1298,9 @@ describe('Event Factory', () => {
                 assert.instanceOf(model, Event);
                 assert.neverCalledWith(pipelineMock.sync, config.configPipelineSha);
                 assert.neverCalledWith(pipelineMock.sync, config.sha);
-                assert.deepEqual(model.pr, config.prInfo);
+                assert.deepEqual(model.pr.prBranchName, config.prInfo.prBranchName);
+                assert.deepEqual(model.pr.prSource, config.prSource);
+                assert.deepEqual(model.pr.ref, config.prInfo.ref);
                 assert.deepEqual(model.prNum, config.prNum);
             });
         });
