@@ -261,7 +261,8 @@ describe('Build Model', () => {
                         jobId,
                         annotations,
                         freezeWindows,
-                        blockedBy: [jobId]
+                        blockedBy: [jobId],
+                        pipelineId
                     });
                     delete stepsMock[0].update;
                     delete stepsMock[1].update;
@@ -334,7 +335,8 @@ describe('Build Model', () => {
                         jobId,
                         annotations,
                         freezeWindows,
-                        blockedBy: [jobId]
+                        blockedBy: [jobId],
+                        pipelineId
                     });
                     delete stepsMock[0].update;
                     delete stepsMock[1].update;
@@ -416,7 +418,8 @@ describe('Build Model', () => {
                         jobId,
                         annotations,
                         freezeWindows,
-                        blockedBy: [jobId]
+                        blockedBy: [jobId],
+                        pipelineId
                     });
 
                     delete stepsMock[0].update;
@@ -477,7 +480,8 @@ describe('Build Model', () => {
                         jobId,
                         annotations,
                         freezeWindows,
-                        blockedBy: [jobId]
+                        blockedBy: [jobId],
+                        pipelineId
                     });
 
                     delete stepsMock[0].update;
@@ -517,7 +521,8 @@ describe('Build Model', () => {
                         jobId,
                         annotations,
                         freezeWindows,
-                        blockedBy: [jobId]
+                        blockedBy: [jobId],
+                        pipelineId
                     });
 
                     delete stepsMock[0].update;
@@ -611,7 +616,8 @@ describe('Build Model', () => {
                         jobId,
                         annotations,
                         freezeWindows,
-                        blockedBy: [jobId]
+                        blockedBy: [jobId],
+                        pipelineId
                     });
                 });
         });
@@ -642,7 +648,8 @@ describe('Build Model', () => {
                         jobId,
                         annotations,
                         startTime: build.startTime,
-                        buildStatus: build.status
+                        buildStatus: build.status,
+                        pipelineId
                     });
                     assert.notCalled(executorMock.stop);
                 });
@@ -675,7 +682,8 @@ describe('Build Model', () => {
                         jobId,
                         annotations,
                         freezeWindows,
-                        blockedBy: [jobId]
+                        blockedBy: [jobId],
+                        pipelineId
                     });
 
                     // Completed step is not modified
@@ -823,7 +831,8 @@ describe('Build Model', () => {
                         jobId,
                         annotations,
                         freezeWindows,
-                        blockedBy: [jobId]
+                        blockedBy: [jobId],
+                        pipelineId
                     });
                 })
         );
@@ -838,14 +847,16 @@ describe('Build Model', () => {
                         jobId,
                         annotations,
                         freezeWindows,
-                        blockedBy: [jobId]
+                        blockedBy: [jobId],
+                        pipelineId
                     });
                     assert.calledWith(executorMock.stopTimer, {
                         buildId,
                         jobId,
                         annotations,
                         freezeWindows,
-                        blockedBy: [jobId]
+                        blockedBy: [jobId],
+                        pipelineId
                     });
                 });
         });
@@ -861,7 +872,8 @@ describe('Build Model', () => {
                         jobId,
                         annotations,
                         freezeWindows,
-                        blockedBy: [jobId]
+                        blockedBy: [jobId],
+                        pipelineId
                     });
                 });
         });
@@ -961,7 +973,8 @@ describe('Build Model', () => {
                             id: pipelineMockB.id,
                             scmContext: pipelineMockB.scmContext
                         },
-                        tokenGen
+                        tokenGen,
+                        pipelineId
                     });
 
                     assert.calledWith(tokenGen, buildId, {
@@ -1011,7 +1024,8 @@ describe('Build Model', () => {
                         pipeline: {
                             id: pipelineMockB.id,
                             scmContext: pipelineMockB.scmContext
-                        }
+                        },
+                        pipelineId
                     });
 
                     assert.calledWith(tokenGen, buildId, {
@@ -1059,7 +1073,8 @@ describe('Build Model', () => {
                     pipeline: {
                         id: pipelineMockB.id,
                         scmContext: pipelineMockB.scmContext
-                    }
+                    },
+                    pipelineId
                 });
 
                 assert.calledWith(tokenGen, buildId, {
@@ -1152,7 +1167,8 @@ describe('Build Model', () => {
                         pipeline: {
                             id: pipelineMockB.id,
                             scmContext: pipelineMockB.scmContext
-                        }
+                        },
+                        pipelineId
                     });
                 });
         });
@@ -1244,7 +1260,8 @@ describe('Build Model', () => {
                         pipeline: {
                             id: pipelineMockB.id,
                             scmContext: pipelineMockB.scmContext
-                        }
+                        },
+                        pipelineId: pipelineMockB.id
                     });
                 });
         });
@@ -1325,7 +1342,8 @@ describe('Build Model', () => {
                         pipeline: {
                             id: pipelineMockB.id,
                             scmContext: pipelineMockB.scmContext
-                        }
+                        },
+                        pipelineId: pipelineMockB.id
                     });
                 });
         });
@@ -1371,7 +1389,8 @@ describe('Build Model', () => {
                         pipeline: {
                             id: pipelineMockB.id,
                             scmContext: pipelineMockB.scmContext
-                        }
+                        },
+                        pipelineId: pipelineMockB.id
                     });
 
                     assert.calledWith(tokenGen, buildId, {
