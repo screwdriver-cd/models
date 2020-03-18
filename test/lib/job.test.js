@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
@@ -25,7 +25,7 @@ describe('Job Model', () => {
     let executorMock;
     let tokenGen;
 
-    const decorateBuildMock = (build) => {
+    const decorateBuildMock = build => {
         const decorated = hoek.clone(build);
 
         decorated.remove = sinon.stub().returns(null);
@@ -33,7 +33,7 @@ describe('Job Model', () => {
         return decorated;
     };
 
-    const getBuildMocks = (b) => {
+    const getBuildMocks = b => {
         if (Array.isArray(b)) {
             return b.map(decorateBuildMock);
         }
@@ -43,25 +43,29 @@ describe('Job Model', () => {
 
     const sha = 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f';
 
-    const stepMetrics = [{
-        id: 1,
-        name: 'sd-setup',
-        code: 0,
-        duration: 5,
-        createTime: '2019-01-22T21:10:00.000Z'
-    }, {
-        id: 2,
-        name: 'test',
-        code: 0,
-        duration: 10,
-        createTime: '2019-01-22T21:11:00.000Z'
-    }, {
-        id: 3,
-        name: 'sd-teardown',
-        code: 0,
-        duration: 2,
-        createTime: '2019-01-22T21:12:00.000Z'
-    }];
+    const stepMetrics = [
+        {
+            id: 1,
+            name: 'sd-setup',
+            code: 0,
+            duration: 5,
+            createTime: '2019-01-22T21:10:00.000Z'
+        },
+        {
+            id: 2,
+            name: 'test',
+            code: 0,
+            duration: 10,
+            createTime: '2019-01-22T21:11:00.000Z'
+        },
+        {
+            id: 3,
+            name: 'sd-teardown',
+            code: 0,
+            duration: 2,
+            createTime: '2019-01-22T21:12:00.000Z'
+        }
+    ];
     const build1 = getBuildMocks({
         id: 1,
         jobId: 1234,
@@ -77,7 +81,6 @@ describe('Job Model', () => {
         sha,
         status: 'QUEUED',
         getMetrics: sinon.stub().returns([])
-
     });
     const build3 = getBuildMocks({
         id: 3,
@@ -160,10 +163,7 @@ describe('Job Model', () => {
             pipelineId: 9876,
             permutations: [
                 {
-                    secrets: [
-                        'NORMAL',
-                        'NOPR'
-                    ]
+                    secrets: ['NORMAL', 'NOPR']
                 }
             ],
             apiUri,
@@ -189,7 +189,7 @@ describe('Job Model', () => {
         assert.isUndefined(job.apiUri);
         assert.isUndefined(job.tokenGen);
 
-        schema.models.job.allKeys.forEach((key) => {
+        schema.models.job.allKeys.forEach(key => {
             assert.strictEqual(job[key], config[key]);
         });
     });
@@ -207,21 +207,22 @@ describe('Job Model', () => {
         assert.calledOnce(pipelineFactoryMock.get);
     });
 
-    it('can get secrets', () => (
-        job.secrets.then((secrets) => {
+    it('can get secrets', () =>
+        job.secrets.then(secrets => {
             assert.isArray(secrets);
             assert.equal(secrets.length, 2);
-        })
-    ));
+        }));
 
     it('throws error if pipeline missing', () => {
         pipelineFactoryMock.get.resolves(null);
 
-        return job.secrets.then(() => {
-            assert.fail('nope');
-        }).catch((err) => {
-            assert.equal('Pipeline does not exist', err.message);
-        });
+        return job.secrets
+            .then(() => {
+                assert.fail('nope');
+            })
+            .catch(err => {
+                assert.equal('Pipeline does not exist', err.message);
+            });
     });
 
     it('can get PR secrets', () => {
@@ -233,16 +234,13 @@ describe('Job Model', () => {
             state: 'ENABLED',
             permutations: [
                 {
-                    secrets: [
-                        'NORMAL',
-                        'NOPR'
-                    ]
+                    secrets: ['NORMAL', 'NOPR']
                 }
             ]
         };
         const prJob = new JobModel(prConfig);
 
-        return prJob.secrets.then((secrets) => {
+        return prJob.secrets.then(secrets => {
             assert.isArray(secrets);
             assert.equal(secrets.length, 1);
         });
@@ -317,17 +315,19 @@ describe('Job Model', () => {
                 }
             };
 
-            return job.getBuilds({
-                sort: 'Ascending',
-                paginate: {
-                    page: 1,
-                    count: 100,
-                    startTime: '2019-01-22T21:00:00.000Z',
-                    status: 'SUCCESS'
-                }
-            }).then(() => {
-                assert.calledWith(buildFactoryMock.list, expected);
-            });
+            return job
+                .getBuilds({
+                    sort: 'Ascending',
+                    paginate: {
+                        page: 1,
+                        count: 100,
+                        startTime: '2019-01-22T21:00:00.000Z',
+                        status: 'SUCCESS'
+                    }
+                })
+                .then(() => {
+                    assert.calledWith(buildFactoryMock.list, expected);
+                });
         });
     });
 
@@ -343,13 +343,12 @@ describe('Job Model', () => {
                 },
                 sort: 'descending'
             };
-            const expectedSecondCall = Object.assign({}, expectedFirstCall, {
-                params: { jobId: 1234, status: 'QUEUED' } });
+            const expectedSecondCall = { ...expectedFirstCall, params: { jobId: 1234, status: 'QUEUED' } };
 
             buildFactoryMock.list.onCall(0).resolves([build1]);
             buildFactoryMock.list.onCall(1).resolves([build2]);
 
-            return job.getRunningBuilds().then((builds) => {
+            return job.getRunningBuilds().then(builds => {
                 assert.calledWith(buildFactoryMock.list.firstCall, expectedFirstCall);
                 assert.calledWith(buildFactoryMock.list.secondCall, expectedSecondCall);
                 assert.deepEqual(builds, [build1, build2]);
@@ -371,11 +370,10 @@ describe('Job Model', () => {
                 sort: 'descending'
             };
 
-            return job.getLatestBuild()
-                .then((latestBuild) => {
-                    assert.calledWith(buildFactoryMock.list, expected);
-                    assert.equal(latestBuild, build3);
-                });
+            return job.getLatestBuild().then(latestBuild => {
+                assert.calledWith(buildFactoryMock.list, expected);
+                assert.equal(latestBuild, build3);
+            });
         });
 
         it('gets last queued build', () => {
@@ -392,11 +390,10 @@ describe('Job Model', () => {
                 sort: 'descending'
             };
 
-            return job.getLatestBuild({ status: 'QUEUED' })
-                .then((queueBuild) => {
-                    assert.calledWith(buildFactoryMock.list, expected);
-                    assert.equal(queueBuild, build2);
-                });
+            return job.getLatestBuild({ status: 'QUEUED' }).then(queueBuild => {
+                assert.calledWith(buildFactoryMock.list, expected);
+                assert.equal(queueBuild, build2);
+            });
         });
 
         it('gets last failure build that does not exists', () => {
@@ -413,11 +410,10 @@ describe('Job Model', () => {
                 sort: 'descending'
             };
 
-            return job.getLatestBuild({ status: 'FAILURE' })
-                .then((failureBuild) => {
-                    assert.calledWith(buildFactoryMock.list, expected);
-                    assert.isEmpty(failureBuild);
-                });
+            return job.getLatestBuild({ status: 'FAILURE' }).then(failureBuild => {
+                assert.calledWith(buildFactoryMock.list, expected);
+                assert.isEmpty(failureBuild);
+            });
         });
     });
 
@@ -427,17 +423,16 @@ describe('Job Model', () => {
 
             datastore.update.resolves(null);
 
-            return job.update()
-                .then(() => {
-                    assert.calledWith(executorMock.startPeriodic, {
-                        pipeline: pipelineMock,
-                        job,
-                        tokenGen,
-                        apiUri,
-                        isUpdate: true
-                    });
-                    assert.calledOnce(datastore.update);
+            return job.update().then(() => {
+                assert.calledWith(executorMock.startPeriodic, {
+                    pipeline: pipelineMock,
+                    job,
+                    tokenGen,
+                    apiUri,
+                    isUpdate: true
                 });
+                assert.calledOnce(datastore.update);
+            });
         });
     });
 
@@ -469,11 +464,13 @@ describe('Job Model', () => {
 
         it('remove periodic job', () => {
             buildFactoryMock.list.resolves([]);
-            job.permutations = [{
-                annotations: {
-                    'screwdriver.cd/buildPeriodically': 'H * * * *'
+            job.permutations = [
+                {
+                    annotations: {
+                        'screwdriver.cd/buildPeriodically': 'H * * * *'
+                    }
                 }
-            }];
+            ];
 
             return job.remove().then(() => {
                 assert.calledOnce(datastore.remove); // remove the job
@@ -484,24 +481,30 @@ describe('Job Model', () => {
         it('fail if getBuilds returns error', () => {
             buildFactoryMock.list.rejects(new Error('error'));
 
-            return job.remove().then(() => {
-                assert.fail('should not get here');
-            }).catch((err) => {
-                assert.isOk(err);
-                assert.equal(err.message, 'error');
-            });
+            return job
+                .remove()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'error');
+                });
         });
 
         it('fail if build.remove returns error', () => {
             build1.remove.rejects(new Error('error removing build'));
             buildFactoryMock.list.resolves([build1, build2]);
 
-            return job.remove().then(() => {
-                assert.fail('should not get here');
-            }).catch((err) => {
-                assert.isOk(err);
-                assert.equal(err.message, 'error removing build');
-            });
+            return job
+                .remove()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'error removing build');
+                });
         });
     });
 
@@ -512,34 +515,38 @@ describe('Job Model', () => {
         let metrics;
 
         beforeEach(() => {
-            metrics = [{
-                id: build1.id,
-                eventId: build1.eventId,
-                jobId: build1.jobId,
-                createTime: build1.createTime,
-                sha: build1.sha,
-                status: build1.status,
-                duration: null,
-                steps: stepMetrics
-            }, {
-                id: build2.id,
-                eventId: build2.eventId,
-                jobId: build2.jobId,
-                createTime: build2.createTime,
-                sha: build2.sha,
-                status: build2.status,
-                duration: null,
-                steps: []
-            }, {
-                id: build3.id,
-                eventId: build3.eventId,
-                jobId: build3.jobId,
-                createTime: build3.createTime,
-                sha: build3.sha,
-                status: build3.status,
-                duration: duration3,
-                steps: stepMetrics
-            }];
+            metrics = [
+                {
+                    id: build1.id,
+                    eventId: build1.eventId,
+                    jobId: build1.jobId,
+                    createTime: build1.createTime,
+                    sha: build1.sha,
+                    status: build1.status,
+                    duration: null,
+                    steps: stepMetrics
+                },
+                {
+                    id: build2.id,
+                    eventId: build2.eventId,
+                    jobId: build2.jobId,
+                    createTime: build2.createTime,
+                    sha: build2.sha,
+                    status: build2.status,
+                    duration: null,
+                    steps: []
+                },
+                {
+                    id: build3.id,
+                    eventId: build3.eventId,
+                    jobId: build3.jobId,
+                    createTime: build3.createTime,
+                    sha: build3.sha,
+                    status: build3.status,
+                    duration: duration3,
+                    steps: stepMetrics
+                }
+            ];
         });
 
         it('generates metrics', () => {
@@ -559,7 +566,7 @@ describe('Job Model', () => {
 
             buildFactoryMock.list.resolves([build1, build2, build3]);
 
-            return job.getMetrics({ startTime, endTime }).then((result) => {
+            return job.getMetrics({ startTime, endTime }).then(result => {
                 assert.calledWith(buildFactoryMock.list, buildListConfig);
                 assert.deepEqual(result, metrics);
             });
@@ -594,7 +601,7 @@ describe('Job Model', () => {
 
                 // generate 8 mock builds
                 for (let i = 0; i < 8; i += 1) {
-                    testBuilds.push(Object.assign({}, build3));
+                    testBuilds.push({ ...build3 });
                     testBuilds[i].id = i;
 
                     if (i % 3 === 0) {
@@ -604,8 +611,12 @@ describe('Job Model', () => {
                     testBuilds[i].createTime = currentDay.toISOString();
 
                     // testBuilds' durations are 10, 11, 12, 13 ... 17
-                    testBuilds[i].startTime = dayjs(currentDay).add(10, 'minute').toISOString();
-                    testBuilds[i].endTime = dayjs(currentDay).add(20 + i, 'minute').toISOString();
+                    testBuilds[i].startTime = dayjs(currentDay)
+                        .add(10, 'minute')
+                        .toISOString();
+                    testBuilds[i].endTime = dayjs(currentDay)
+                        .add(20 + i, 'minute')
+                        .toISOString();
                 }
 
                 buildFactoryMock.list.onCall(0).resolves(testBuilds.slice(0, 5));
@@ -613,65 +624,77 @@ describe('Job Model', () => {
             });
 
             it('generates daily aggregated metrics', () => {
-                metrics = [{
-                    createTime: '2019-01-24T21:00:00.000Z', duration: 660 }, {
-                    createTime: '2019-01-26T21:00:00.000Z', duration: 840 }, {
-                    createTime: '2019-01-28T21:00:00.000Z', duration: 990
-                }];
+                metrics = [
+                    {
+                        createTime: '2019-01-24T21:00:00.000Z',
+                        duration: 660
+                    },
+                    {
+                        createTime: '2019-01-26T21:00:00.000Z',
+                        duration: 840
+                    },
+                    {
+                        createTime: '2019-01-28T21:00:00.000Z',
+                        duration: 990
+                    }
+                ];
 
-                return job.getMetrics({ startTime, endTime, aggregateInterval: 'day' })
-                    .then((result) => {
-                        assert.calledTwice(buildFactoryMock.list);
-                        assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig);
+                return job.getMetrics({ startTime, endTime, aggregateInterval: 'day' }).then(result => {
+                    assert.calledTwice(buildFactoryMock.list);
+                    assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig);
 
-                        buildListConfig.paginate.page = 2;
-                        assert.calledWith(buildFactoryMock.list.secondCall, buildListConfig);
+                    buildListConfig.paginate.page = 2;
+                    assert.calledWith(buildFactoryMock.list.secondCall, buildListConfig);
 
-                        assert.deepEqual(result, metrics);
-                    });
+                    assert.deepEqual(result, metrics);
+                });
             });
 
             it('generates monthly aggregated metrics', () => {
-                metrics = [{
-                    createTime: '2019-01-24T21:00:00.000Z', duration: 810
-                }];
+                metrics = [
+                    {
+                        createTime: '2019-01-24T21:00:00.000Z',
+                        duration: 810
+                    }
+                ];
 
-                return job.getMetrics({ startTime, endTime, aggregateInterval: 'month' })
-                    .then((result) => {
-                        assert.calledTwice(buildFactoryMock.list);
-                        assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig);
+                return job.getMetrics({ startTime, endTime, aggregateInterval: 'month' }).then(result => {
+                    assert.calledTwice(buildFactoryMock.list);
+                    assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig);
 
-                        buildListConfig.paginate.page = 2;
-                        assert.calledWith(buildFactoryMock.list.secondCall, buildListConfig);
+                    buildListConfig.paginate.page = 2;
+                    assert.calledWith(buildFactoryMock.list.secondCall, buildListConfig);
 
-                        assert.deepEqual(result, metrics);
-                    });
+                    assert.deepEqual(result, metrics);
+                });
             });
 
             it('filters out bad values', () => {
-                const badBuild = Object.assign({}, build3);
+                const badBuild = { ...build3 };
 
                 delete badBuild.endTime;
 
                 buildFactoryMock.list.onCall(0).resolves([build3, badBuild]);
 
-                metrics = [{
-                    createTime: '2019-01-22T21:00:00.000Z', duration: 4140
-                }];
+                metrics = [
+                    {
+                        createTime: '2019-01-22T21:00:00.000Z',
+                        duration: 4140
+                    }
+                ];
 
-                return job.getMetrics({ startTime, endTime, aggregateInterval: 'month' })
-                    .then((result) => {
-                        assert.calledOnce(buildFactoryMock.list);
-                        assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig);
-                        assert.deepEqual(result, metrics);
-                    });
+                return job.getMetrics({ startTime, endTime, aggregateInterval: 'month' }).then(result => {
+                    assert.calledOnce(buildFactoryMock.list);
+                    assert.calledWith(buildFactoryMock.list.firstCall, buildListConfig);
+                    assert.deepEqual(result, metrics);
+                });
             });
         });
 
         it('does not fail if empty builds', () => {
             buildFactoryMock.list.resolves([]);
 
-            return job.getMetrics({ startTime, endTime }).then((result) => {
+            return job.getMetrics({ startTime, endTime }).then(result => {
                 assert.deepEqual(result, []);
             });
         });
@@ -691,7 +714,7 @@ describe('Job Model', () => {
 
             buildFactoryMock.list.resolves([build1, build2, build3]);
 
-            return job.getMetrics().then((result) => {
+            return job.getMetrics().then(result => {
                 assert.calledWith(buildFactoryMock.list, buildListConfig);
                 assert.deepEqual(result, metrics);
             });
@@ -700,10 +723,12 @@ describe('Job Model', () => {
         it('rejects with errors', () => {
             buildFactoryMock.list.rejects(new Error('cannotgetit'));
 
-            return job.getMetrics({ startTime, endTime })
+            return job
+                .getMetrics({ startTime, endTime })
                 .then(() => {
                     assert.fail('Should not get here');
-                }).catch((err) => {
+                })
+                .catch(err => {
                     assert.instanceOf(err, Error);
                     assert.equal(err.message, 'cannotgetit');
                 });

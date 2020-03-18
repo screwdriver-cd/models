@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const sinon = require('sinon');
 const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
@@ -52,7 +52,7 @@ describe('Collection Model', () => {
     it('is constructed properly', () => {
         assert.instanceOf(collection, CollectionModel);
         assert.instanceOf(collection, BaseModel);
-        schema.models.collection.allKeys.forEach((key) => {
+        schema.models.collection.allKeys.forEach(key => {
             assert.strictEqual(collection[key], createConfig[key]);
         });
     });
@@ -63,29 +63,27 @@ describe('Collection Model', () => {
 
             collection.pipelineIds = newPipelineIds;
 
-            return collection.update()
-                .then(() => {
-                    assert.calledWith(datastore.update, {
-                        table: 'collections',
-                        params: {
-                            id: 654,
-                            pipelineIds: [12, 34, 56, 78]
-                        }
-                    });
+            return collection.update().then(() => {
+                assert.calledWith(datastore.update, {
+                    table: 'collections',
+                    params: {
+                        id: 654,
+                        pipelineIds: [12, 34, 56, 78]
+                    }
                 });
+            });
         });
     });
 
     describe('remove', () => {
         it('removes a collection', () =>
-            collection.remove()
-                .then(() => {
-                    assert.calledWith(datastore.remove, {
-                        table: 'collections',
-                        params: {
-                            id: 654
-                        }
-                    });
-                }));
+            collection.remove().then(() => {
+                assert.calledWith(datastore.remove, {
+                    table: 'collections',
+                    params: {
+                        id: 654
+                    }
+                });
+            }));
     });
 });

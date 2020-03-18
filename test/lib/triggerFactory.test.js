@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 
@@ -21,31 +21,41 @@ describe('Trigger Factory', () => {
     let Trigger;
     let pipelineFactoryMock;
     let pipelineMock;
-    const jobsMock = [{
-        id: 1,
-        pipelineId,
-        name: 'main',
-        permutations: [{
-            requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch', '~pr:branch']
-        }],
-        state: 'ENABLED'
-    }, {
-        id: 2,
-        pipelineId,
-        name: 'disabledjob',
-        permutations: [{
-            requires: ['main']
-        }],
-        state: 'DISABLED'
-    }, {
-        id: 4,
-        pipelineId,
-        name: 'publish',
-        permutations: [{
-            requires: ['~pr']
-        }],
-        state: 'ENABLED'
-    }];
+    const jobsMock = [
+        {
+            id: 1,
+            pipelineId,
+            name: 'main',
+            permutations: [
+                {
+                    requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch', '~pr:branch']
+                }
+            ],
+            state: 'ENABLED'
+        },
+        {
+            id: 2,
+            pipelineId,
+            name: 'disabledjob',
+            permutations: [
+                {
+                    requires: ['main']
+                }
+            ],
+            state: 'DISABLED'
+        },
+        {
+            id: 4,
+            pipelineId,
+            name: 'publish',
+            permutations: [
+                {
+                    requires: ['~pr']
+                }
+            ],
+            state: 'ENABLED'
+        }
+    ];
 
     before(() => {
         mockery.enable({
@@ -146,15 +156,17 @@ describe('Trigger Factory', () => {
         it('creates a Trigger given pipelineId, jobName, and trigger', () => {
             datastore.save.resolves(expected);
 
-            return factory.create({
-                src,
-                dest
-            }).then((model) => {
-                assert.instanceOf(model, Trigger);
-                Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+            return factory
+                .create({
+                    src,
+                    dest
+                })
+                .then(model => {
+                    assert.instanceOf(model, Trigger);
+                    Object.keys(expected).forEach(key => {
+                        assert.strictEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
     });
 
@@ -162,25 +174,29 @@ describe('Trigger Factory', () => {
         let expected;
 
         beforeEach(() => {
-            expected = [{
-                id: generatedId,
-                src,
-                dest
-            }, {
-                id: 111,
-                src,
-                dest: '~sd@1234:main'
-            }, {
-                id: 222,
-                src,
-                dest: '~sd@2222:main'
-            }];
+            expected = [
+                {
+                    id: generatedId,
+                    src,
+                    dest
+                },
+                {
+                    id: 111,
+                    src,
+                    dest: '~sd@1234:main'
+                },
+                {
+                    id: 222,
+                    src,
+                    dest: '~sd@2222:main'
+                }
+            ];
         });
 
         it('gets destination based on source', () => {
             datastore.scan.resolves(expected);
 
-            return factory.getDestFromSrc(src).then((result) => {
+            return factory.getDestFromSrc(src).then(result => {
                 assert.deepEqual(result, [dest, '~sd@1234:main', '~sd@2222:main']);
             });
         });
@@ -188,7 +204,7 @@ describe('Trigger Factory', () => {
         it('returns empty array if source is not found in trigger table', () => {
             datastore.scan.resolves([]);
 
-            return factory.getDestFromSrc(src).then((result) => {
+            return factory.getDestFromSrc(src).then(result => {
                 assert.deepEqual(result, []);
             });
         });
@@ -198,69 +214,84 @@ describe('Trigger Factory', () => {
         let expected;
 
         beforeEach(() => {
-            expected = [{
-                id: generatedId,
-                src,
-                dest
-            }, {
-                id: 1234567,
-                src,
-                dest: '~sd@12345:main'
-            }, {
-                id: 1234568,
-                src: '~sd@8765:disabledjob',
-                dest: '~sd@58967:main'
-            }, {
-                id: 1234569,
-                src: '~sd@8765:publish',
-                dest: '~sd@58967:publish'
-            }];
+            expected = [
+                {
+                    id: generatedId,
+                    src,
+                    dest
+                },
+                {
+                    id: 1234567,
+                    src,
+                    dest: '~sd@12345:main'
+                },
+                {
+                    id: 1234568,
+                    src: '~sd@8765:disabledjob',
+                    dest: '~sd@58967:main'
+                },
+                {
+                    id: 1234569,
+                    src: '~sd@8765:publish',
+                    dest: '~sd@58967:publish'
+                }
+            ];
         });
 
         it('gets all pipeline Triggers given a pipelineId', () => {
             datastore.scan.resolves(expected);
 
-            return factory.getTriggers({
-                pipelineId
-            }).then((model) => {
-                model.forEach((m) => {
-                    assert.instanceOf(m.triggers, Array);
-                    assert.calledWith(pipelineMock.getJobs, { type: 'pipeline' });
+            return factory
+                .getTriggers({
+                    pipelineId
+                })
+                .then(model => {
+                    model.forEach(m => {
+                        assert.instanceOf(m.triggers, Array);
+                        assert.calledWith(pipelineMock.getJobs, { type: 'pipeline' });
+                    });
                 });
-            });
         });
 
         it('gets all PR Triggers given a pipelineId and type', () => {
             datastore.scan.resolves(expected);
-            pipelineMock.getJobs.withArgs({ type: 'pr' }).resolves([{
-                id: 1,
-                pipelineId,
-                name: 'PR-1:main',
-                permutations: [{
-                    requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch', '~pr:branch']
-                }],
-                state: 'ENABLED'
-            }]);
+            pipelineMock.getJobs.withArgs({ type: 'pr' }).resolves([
+                {
+                    id: 1,
+                    pipelineId,
+                    name: 'PR-1:main',
+                    permutations: [
+                        {
+                            requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch', '~pr:branch']
+                        }
+                    ],
+                    state: 'ENABLED'
+                }
+            ]);
 
-            return factory.getTriggers({
-                pipelineId,
-                type: 'pr'
-            }).then((model) => {
-                model.forEach((m) => {
-                    assert.instanceOf(m.triggers, Array);
-                    assert.calledWith(pipelineMock.getJobs, { type: 'pr' });
+            return factory
+                .getTriggers({
+                    pipelineId,
+                    type: 'pr'
+                })
+                .then(model => {
+                    model.forEach(m => {
+                        assert.instanceOf(m.triggers, Array);
+                        assert.calledWith(pipelineMock.getJobs, { type: 'pr' });
+                    });
                 });
-            });
         });
 
         it('returns empty array if pipeline does not exist', () => {
             pipelineFactoryMock.get.resolves(null);
 
-            return factory.getTriggers({
-                pipelineId
-            }).then((model) => {
-                assert.instanceOf(model, Array);
-            });
+            return factory
+                .getTriggers({
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Array);
+                });
         });
     });
 
@@ -282,8 +313,7 @@ describe('Trigger Factory', () => {
         });
 
         it('should throw when config not supplied', () => {
-            assert.throw(TriggerFactory.getInstance,
-                Error, 'No datastore provided to TriggerFactory');
+            assert.throw(TriggerFactory.getInstance, Error, 'No datastore provided to TriggerFactory');
         });
     });
 });

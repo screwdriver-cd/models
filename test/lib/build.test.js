@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
@@ -172,7 +172,7 @@ describe('Build Model', () => {
         assert.isFunction(build.stop);
         assert.isFunction(build.getSteps);
 
-        schema.models.build.allKeys.forEach((key) => {
+        schema.models.build.allKeys.forEach(key => {
             assert.strictEqual(build[key], config[key]);
         });
 
@@ -189,28 +189,25 @@ describe('Build Model', () => {
         });
 
         it('should update the commit status with url', () =>
-            build.updateCommitStatus(pipelineMock, apiUri)
-                .then(() => {
-                    assert.calledWith(scmMock.updateCommitStatus, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'main',
-                        buildStatus: 'QUEUED',
-                        url,
-                        pipelineId
-                    });
-                })
-        );
+            build.updateCommitStatus(pipelineMock, apiUri).then(() => {
+                assert.calledWith(scmMock.updateCommitStatus, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'main',
+                    buildStatus: 'QUEUED',
+                    url,
+                    pipelineId
+                });
+            }));
 
         it('resolve on error', () => {
             scmMock.updateCommitStatus.rejects(new Error('nevergonnagiveyouup'));
 
-            return build.updateCommitStatus(pipelineMock)
-                .catch(() => {
-                    throw new Error('Should not get here');
-                });
+            return build.updateCommitStatus(pipelineMock).catch(() => {
+                throw new Error('Should not get here');
+            });
         });
     });
 
@@ -225,9 +222,9 @@ describe('Build Model', () => {
             step1 = { name: 'task1', startTime: 'now' };
             step2 = { name: 'task2' };
 
-            const step0Mock = Object.assign({ update: sinon.stub().resolves({}) }, step0);
-            const step1Mock = Object.assign({ update: sinon.stub().resolves({}) }, step1);
-            const step2Mock = Object.assign({ update: sinon.stub().resolves({}) }, step2);
+            const step0Mock = { update: sinon.stub().resolves({}), ...step0 };
+            const step1Mock = { update: sinon.stub().resolves({}), ...step1 };
+            const step2Mock = { update: sinon.stub().resolves({}), ...step2 };
 
             stepsMock = [step0Mock, step1Mock, step2Mock];
 
@@ -254,49 +251,49 @@ describe('Build Model', () => {
             });
             build.status = 'FAILURE';
 
-            return build.update()
-                .then(() => {
-                    assert.calledWith(executorMock.stop, {
-                        buildId,
-                        jobId,
-                        annotations,
-                        freezeWindows,
-                        blockedBy: [jobId],
-                        pipelineId
-                    });
-                    delete stepsMock[0].update;
-                    delete stepsMock[1].update;
-                    delete stepsMock[2].update;
-                    // Completed step is not modified
-                    assert.deepEqual(stepsMock[0], step0);
-                    // In progress step is aborted
-                    assert.ok(stepsMock[1].endTime);
-                    assert.equal(stepsMock[1].code, 130);
-                    // Unstarted step is not modified
-                    assert.deepEqual(stepsMock[2], step2);
-
-                    assert.calledWith(scmMock.updateCommitStatus, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'PR-5:main',
-                        buildStatus: 'FAILURE',
-                        url,
-                        pipelineId
-                    });
-                    assert.calledWith(scmMock.addPrComment, {
-                        token: 'foo',
-                        scmContext,
-                        scmUri,
-                        comment: '### SD Build [#9876](https://display.com/some/' +
-                            'endpoint/pipelines/1234/builds/9876)\n_node:4_\n- - - -\n' +
-                            '__coverage__ - Coverage increased by 15%\n' +
-                            '__markdown__ - this markdown comment is **bold** and *italic*\n\n' +
-                            '###### ~ Screwdriver automated build summary',
-                        prNum: 5
-                    });
+            return build.update().then(() => {
+                assert.calledWith(executorMock.stop, {
+                    buildId,
+                    jobId,
+                    annotations,
+                    freezeWindows,
+                    blockedBy: [jobId],
+                    pipelineId
                 });
+                delete stepsMock[0].update;
+                delete stepsMock[1].update;
+                delete stepsMock[2].update;
+                // Completed step is not modified
+                assert.deepEqual(stepsMock[0], step0);
+                // In progress step is aborted
+                assert.ok(stepsMock[1].endTime);
+                assert.equal(stepsMock[1].code, 130);
+                // Unstarted step is not modified
+                assert.deepEqual(stepsMock[2], step2);
+
+                assert.calledWith(scmMock.updateCommitStatus, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'PR-5:main',
+                    buildStatus: 'FAILURE',
+                    url,
+                    pipelineId
+                });
+                assert.calledWith(scmMock.addPrComment, {
+                    token: 'foo',
+                    scmContext,
+                    scmUri,
+                    comment:
+                        '### SD Build [#9876](https://display.com/some/' +
+                        'endpoint/pipelines/1234/builds/9876)\n_node:4_\n- - - -\n' +
+                        '__coverage__ - Coverage increased by 15%\n' +
+                        '__markdown__ - this markdown comment is **bold** and *italic*\n\n' +
+                        '###### ~ Screwdriver automated build summary',
+                    prNum: 5
+                });
+            });
         });
 
         it('promises to update a build, stop the executor, and update statuses', () => {
@@ -328,66 +325,63 @@ describe('Build Model', () => {
                 }
             };
 
-            return build.update()
-                .then(() => {
-                    assert.calledWith(executorMock.stop, {
-                        buildId,
-                        jobId,
-                        annotations,
-                        freezeWindows,
-                        blockedBy: [jobId],
-                        pipelineId
-                    });
-                    delete stepsMock[0].update;
-                    delete stepsMock[1].update;
-                    delete stepsMock[2].update;
-                    // Completed step is not modified
-                    assert.deepEqual(stepsMock[0], step0);
-                    // In progress step is aborted
-                    assert.ok(stepsMock[1].endTime);
-                    assert.equal(stepsMock[1].code, 130);
-                    // Unstarted step is not modified
-                    assert.deepEqual(stepsMock[2], step2);
-                    assert.calledWith(scmMock.updateCommitStatus.firstCall, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'PR-5:main',
-                        buildStatus: 'FAILURE',
-                        url,
-                        pipelineId
-                    });
-                    assert.calledWith(scmMock.updateCommitStatus.secondCall, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'PR-5:main',
-                        buildStatus: 'SUCCESS',
-                        url: 'http://findbugs.com',
-                        pipelineId,
-                        context: 'findbugs',
-                        description: '923 issues found. Previous count: 914 issues.'
-                    });
-                    assert.calledWith(scmMock.updateCommitStatus.thirdCall, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'PR-5:main',
-                        buildStatus: 'FAILURE',
-                        url: 'https://display.com/some/endpoint/pipelines/1234/builds/9876',
-                        pipelineId,
-                        context: 'snyk',
-                        description: '23 package vulnerabilities found. ' +
-                            'Previous count: 0 vulnerabilities.'
-                    });
+            return build.update().then(() => {
+                assert.calledWith(executorMock.stop, {
+                    buildId,
+                    jobId,
+                    annotations,
+                    freezeWindows,
+                    blockedBy: [jobId],
+                    pipelineId
                 });
+                delete stepsMock[0].update;
+                delete stepsMock[1].update;
+                delete stepsMock[2].update;
+                // Completed step is not modified
+                assert.deepEqual(stepsMock[0], step0);
+                // In progress step is aborted
+                assert.ok(stepsMock[1].endTime);
+                assert.equal(stepsMock[1].code, 130);
+                // Unstarted step is not modified
+                assert.deepEqual(stepsMock[2], step2);
+                assert.calledWith(scmMock.updateCommitStatus.firstCall, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'PR-5:main',
+                    buildStatus: 'FAILURE',
+                    url,
+                    pipelineId
+                });
+                assert.calledWith(scmMock.updateCommitStatus.secondCall, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'PR-5:main',
+                    buildStatus: 'SUCCESS',
+                    url: 'http://findbugs.com',
+                    pipelineId,
+                    context: 'findbugs',
+                    description: '923 issues found. Previous count: 914 issues.'
+                });
+                assert.calledWith(scmMock.updateCommitStatus.thirdCall, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'PR-5:main',
+                    buildStatus: 'FAILURE',
+                    url: 'https://display.com/some/endpoint/pipelines/1234/builds/9876',
+                    pipelineId,
+                    context: 'snyk',
+                    description: '23 package vulnerabilities found. Previous count: 0 vulnerabilities.'
+                });
+            });
         });
 
-        it('promises to update a build, stop the executor, and ' +
-            'update statuses when statuses are JSON string', () => {
+        it('promises to update a build, stop the executor, and update statuses when statuses are JSON string', () => {
             jobFactoryMock.get.resolves({
                 id: jobId,
                 name: 'PR-5:main',
@@ -405,175 +399,170 @@ describe('Build Model', () => {
             build.status = 'FAILURE';
             build.meta.meta.summary = {};
             build.meta.meta.status = {
-                findbugs: '{"status":"SUCCESS","message":"923 issues found. ' +
-                        'Previous count: 914 issues.","url":"http://findbugs.com"}',
-                snyk: '{"status":"FAILURE","message":"23 package vulnerabilities found. ' +
-                        'Previous count: 0 vulnerabilities."}'
+                findbugs:
+                    '{"status":"SUCCESS","message":"923 issues found. ' +
+                    'Previous count: 914 issues.","url":"http://findbugs.com"}',
+                snyk:
+                    '{"status":"FAILURE","message":"23 package vulnerabilities found. ' +
+                    'Previous count: 0 vulnerabilities."}'
             };
 
-            return build.update()
-                .then(() => {
-                    assert.calledWith(executorMock.stop, {
-                        buildId,
-                        jobId,
-                        annotations,
-                        freezeWindows,
-                        blockedBy: [jobId],
-                        pipelineId
-                    });
-
-                    delete stepsMock[0].update;
-                    delete stepsMock[1].update;
-                    delete stepsMock[2].update;
-                    // Completed step is not modified
-                    assert.deepEqual(stepsMock[0], step0);
-                    // In progress step is aborted
-                    assert.ok(stepsMock[1].endTime);
-                    assert.equal(stepsMock[1].code, 130);
-                    // Unstarted step is not modified
-                    assert.deepEqual(stepsMock[2], step2);
-                    assert.calledWith(scmMock.updateCommitStatus.firstCall, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'PR-5:main',
-                        buildStatus: 'FAILURE',
-                        url,
-                        pipelineId
-                    });
-                    assert.calledWith(scmMock.updateCommitStatus.secondCall, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'PR-5:main',
-                        buildStatus: 'SUCCESS',
-                        url: 'http://findbugs.com',
-                        pipelineId,
-                        context: 'findbugs',
-                        description: '923 issues found. Previous count: 914 issues.'
-                    });
-                    assert.calledWith(scmMock.updateCommitStatus.thirdCall, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'PR-5:main',
-                        buildStatus: 'FAILURE',
-                        url: 'https://display.com/some/endpoint/pipelines/1234/builds/9876',
-                        pipelineId,
-                        context: 'snyk',
-                        description: '23 package vulnerabilities found. ' +
-                                'Previous count: 0 vulnerabilities.'
-                    });
+            return build.update().then(() => {
+                assert.calledWith(executorMock.stop, {
+                    buildId,
+                    jobId,
+                    annotations,
+                    freezeWindows,
+                    blockedBy: [jobId],
+                    pipelineId
                 });
+
+                delete stepsMock[0].update;
+                delete stepsMock[1].update;
+                delete stepsMock[2].update;
+                // Completed step is not modified
+                assert.deepEqual(stepsMock[0], step0);
+                // In progress step is aborted
+                assert.ok(stepsMock[1].endTime);
+                assert.equal(stepsMock[1].code, 130);
+                // Unstarted step is not modified
+                assert.deepEqual(stepsMock[2], step2);
+                assert.calledWith(scmMock.updateCommitStatus.firstCall, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'PR-5:main',
+                    buildStatus: 'FAILURE',
+                    url,
+                    pipelineId
+                });
+                assert.calledWith(scmMock.updateCommitStatus.secondCall, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'PR-5:main',
+                    buildStatus: 'SUCCESS',
+                    url: 'http://findbugs.com',
+                    pipelineId,
+                    context: 'findbugs',
+                    description: '923 issues found. Previous count: 914 issues.'
+                });
+                assert.calledWith(scmMock.updateCommitStatus.thirdCall, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'PR-5:main',
+                    buildStatus: 'FAILURE',
+                    url: 'https://display.com/some/endpoint/pipelines/1234/builds/9876',
+                    pipelineId,
+                    context: 'snyk',
+                    description: '23 package vulnerabilities found. Previous count: 0 vulnerabilities.'
+                });
+            });
         });
 
         it('aborts running steps, and sets an endTime', () => {
             build.status = 'ABORTED';
 
-            return build.update()
-                .then(() => {
-                    assert.calledWith(executorMock.stop, {
-                        buildId,
-                        jobId,
-                        annotations,
-                        freezeWindows,
-                        blockedBy: [jobId],
-                        pipelineId
-                    });
-
-                    delete stepsMock[0].update;
-                    delete stepsMock[1].update;
-                    delete stepsMock[2].update;
-                    // Completed step is not modified
-                    assert.deepEqual(stepsMock[0], step0);
-                    // In progress step is aborted
-                    assert.ok(stepsMock[1].endTime);
-                    assert.equal(stepsMock[1].code, 130);
-                    // Unstarted step is not modified
-                    assert.deepEqual(stepsMock[2], step2);
-
-                    assert.calledWith(scmMock.updateCommitStatus, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'main',
-                        buildStatus: 'ABORTED',
-                        url,
-                        pipelineId
-                    });
+            return build.update().then(() => {
+                assert.calledWith(executorMock.stop, {
+                    buildId,
+                    jobId,
+                    annotations,
+                    freezeWindows,
+                    blockedBy: [jobId],
+                    pipelineId
                 });
+
+                delete stepsMock[0].update;
+                delete stepsMock[1].update;
+                delete stepsMock[2].update;
+                // Completed step is not modified
+                assert.deepEqual(stepsMock[0], step0);
+                // In progress step is aborted
+                assert.ok(stepsMock[1].endTime);
+                assert.equal(stepsMock[1].code, 130);
+                // Unstarted step is not modified
+                assert.deepEqual(stepsMock[2], step2);
+
+                assert.calledWith(scmMock.updateCommitStatus, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'main',
+                    buildStatus: 'ABORTED',
+                    url,
+                    pipelineId
+                });
+            });
         });
 
         it('aborts running steps, and sets an endTime with step models', () => {
             build.status = 'ABORTED';
 
-            return build.update()
-                .then(() => {
-                    assert.calledOnce(stepsMock[0].update);
-                    assert.calledOnce(stepsMock[1].update);
-                    assert.calledOnce(stepsMock[2].update);
-                    assert.calledWith(executorMock.stop, {
-                        buildId,
-                        jobId,
-                        annotations,
-                        freezeWindows,
-                        blockedBy: [jobId],
-                        pipelineId
-                    });
-
-                    delete stepsMock[0].update;
-                    delete stepsMock[1].update;
-                    delete stepsMock[2].update;
-                    // Completed step is not modified
-                    assert.deepEqual(stepsMock[0], step0);
-                    // In progress step is aborted
-                    assert.ok(stepsMock[1].endTime);
-                    assert.equal(stepsMock[1].code, 130);
-                    // Unstarted step is not modified
-                    assert.deepEqual(stepsMock[2], step2);
-
-                    assert.calledWith(scmMock.updateCommitStatus, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'main',
-                        buildStatus: 'ABORTED',
-                        url,
-                        pipelineId
-                    });
+            return build.update().then(() => {
+                assert.calledOnce(stepsMock[0].update);
+                assert.calledOnce(stepsMock[1].update);
+                assert.calledOnce(stepsMock[2].update);
+                assert.calledWith(executorMock.stop, {
+                    buildId,
+                    jobId,
+                    annotations,
+                    freezeWindows,
+                    blockedBy: [jobId],
+                    pipelineId
                 });
+
+                delete stepsMock[0].update;
+                delete stepsMock[1].update;
+                delete stepsMock[2].update;
+                // Completed step is not modified
+                assert.deepEqual(stepsMock[0], step0);
+                // In progress step is aborted
+                assert.ok(stepsMock[1].endTime);
+                assert.equal(stepsMock[1].code, 130);
+                // Unstarted step is not modified
+                assert.deepEqual(stepsMock[2], step2);
+
+                assert.calledWith(scmMock.updateCommitStatus, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'main',
+                    buildStatus: 'ABORTED',
+                    url,
+                    pipelineId
+                });
+            });
         });
 
-        it('promises to update a build, but not status or executor when untouched status', () => (
-            build.update()
-                .then(() => {
-                    assert.notCalled(scmMock.updateCommitStatus);
-                    assert.notCalled(executorMock.stop);
-                })
-        ));
+        it('promises to update a build, but not status or executor when untouched status', () =>
+            build.update().then(() => {
+                assert.notCalled(scmMock.updateCommitStatus);
+                assert.notCalled(executorMock.stop);
+            }));
 
         it('promises to update a build, but not executor when status is running', () => {
             build.status = 'RUNNING';
 
-            return build.update()
-                .then(() => {
-                    assert.calledWith(scmMock.updateCommitStatus, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'main',
-                        buildStatus: 'RUNNING',
-                        url,
-                        pipelineId
-                    });
-                    assert.notCalled(executorMock.stop);
+            return build.update().then(() => {
+                assert.calledWith(scmMock.updateCommitStatus, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'main',
+                    buildStatus: 'RUNNING',
+                    url,
+                    pipelineId
                 });
+                assert.notCalled(executorMock.stop);
+            });
         });
 
         it('promises to update, but not executor when status is unstable & not done', () => {
@@ -583,21 +572,20 @@ describe('Build Model', () => {
             // Status = RUNNING -> UNSTABLE
             build.status = 'UNSTABLE';
 
-            return build.update()
-                .then(() => {
-                    assert.calledWith(scmMock.updateCommitStatus, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'main',
-                        buildStatus: 'UNSTABLE',
-                        url,
-                        pipelineId
-                    });
-                    assert.notCalled(executorMock.stop);
-                    assert.notCalled(executorMock.startTimer);
+            return build.update().then(() => {
+                assert.calledWith(scmMock.updateCommitStatus, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'main',
+                    buildStatus: 'UNSTABLE',
+                    url,
+                    pipelineId
                 });
+                assert.notCalled(executorMock.stop);
+                assert.notCalled(executorMock.startTimer);
+            });
         });
 
         it('promises to update, and stop executor when status is unstable & done', () => {
@@ -607,19 +595,18 @@ describe('Build Model', () => {
 
             build.endTime = '2018-06-27T18:22:20.153Z';
 
-            return build.update()
-                .then(() => {
-                    assert.notCalled(scmMock.updateCommitStatus);
-                    assert.notCalled(executorMock.startTimer);
-                    assert.calledWith(executorMock.stop, {
-                        buildId,
-                        jobId,
-                        annotations,
-                        freezeWindows,
-                        blockedBy: [jobId],
-                        pipelineId
-                    });
+            return build.update().then(() => {
+                assert.notCalled(scmMock.updateCommitStatus);
+                assert.notCalled(executorMock.startTimer);
+                assert.calledWith(executorMock.stop, {
+                    buildId,
+                    jobId,
+                    annotations,
+                    freezeWindows,
+                    blockedBy: [jobId],
+                    pipelineId
                 });
+            });
         });
 
         it('starts timer in executor when status is changing to RUNNING', () => {
@@ -631,28 +618,27 @@ describe('Build Model', () => {
             build.status = 'RUNNING';
             build.startTime = new Date().toISOString();
 
-            return build.update()
-                .then(() => {
-                    assert.calledWith(scmMock.updateCommitStatus, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'main',
-                        url,
-                        pipelineId,
-                        buildStatus: build.status
-                    });
-                    assert.calledWith(executorMock.startTimer, {
-                        buildId,
-                        jobId,
-                        annotations,
-                        startTime: build.startTime,
-                        buildStatus: build.status,
-                        pipelineId
-                    });
-                    assert.notCalled(executorMock.stop);
+            return build.update().then(() => {
+                assert.calledWith(scmMock.updateCommitStatus, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'main',
+                    url,
+                    pipelineId,
+                    buildStatus: build.status
                 });
+                assert.calledWith(executorMock.startTimer, {
+                    buildId,
+                    jobId,
+                    annotations,
+                    startTime: build.startTime,
+                    buildStatus: build.status,
+                    pipelineId
+                });
+                assert.notCalled(executorMock.stop);
+            });
         });
 
         it('skips pr commenting if meta summary key is not a string', () => {
@@ -675,39 +661,38 @@ describe('Build Model', () => {
                 1: 3
             };
 
-            return build.update()
-                .then(() => {
-                    assert.calledWith(executorMock.stop, {
-                        buildId,
-                        jobId,
-                        annotations,
-                        freezeWindows,
-                        blockedBy: [jobId],
-                        pipelineId
-                    });
-
-                    // Completed step is not modified
-                    delete stepsMock[0].update;
-                    delete stepsMock[1].update;
-                    delete stepsMock[2].update;
-                    assert.deepEqual(stepsMock[0], step0);
-                    // In progress step is aborted
-                    assert.ok(stepsMock[1].endTime);
-                    assert.equal(stepsMock[1].code, 130);
-                    // Unstarted step is not modified
-                    assert.deepEqual(stepsMock[2], step2);
-                    assert.calledWith(scmMock.updateCommitStatus, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'PR-5:main',
-                        buildStatus: 'FAILURE',
-                        url,
-                        pipelineId
-                    });
-                    assert.notCalled(scmMock.addPrComment);
+            return build.update().then(() => {
+                assert.calledWith(executorMock.stop, {
+                    buildId,
+                    jobId,
+                    annotations,
+                    freezeWindows,
+                    blockedBy: [jobId],
+                    pipelineId
                 });
+
+                // Completed step is not modified
+                delete stepsMock[0].update;
+                delete stepsMock[1].update;
+                delete stepsMock[2].update;
+                assert.deepEqual(stepsMock[0], step0);
+                // In progress step is aborted
+                assert.ok(stepsMock[1].endTime);
+                assert.equal(stepsMock[1].code, 130);
+                // Unstarted step is not modified
+                assert.deepEqual(stepsMock[2], step2);
+                assert.calledWith(scmMock.updateCommitStatus, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'PR-5:main',
+                    buildStatus: 'FAILURE',
+                    url,
+                    pipelineId
+                });
+                assert.notCalled(scmMock.addPrComment);
+            });
         });
 
         it('skips custom status update if meta status field is not a JSON parseable string', () => {
@@ -728,39 +713,38 @@ describe('Build Model', () => {
             build.status = 'FAILURE';
             build.meta.meta.status = {
                 findbugs: 'hello',
-                snyk: '{"status":"FAILURE","message":"23 package vulnerabilities found. ' +
+                snyk:
+                    '{"status":"FAILURE","message":"23 package vulnerabilities found. ' +
                     'Previous count: 0 vulnerabilities."}'
             };
             delete build.meta.meta.summary;
 
-            return build.update()
-                .then(() => {
-                    assert.calledWith(scmMock.updateCommitStatus.firstCall, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'PR-5:main',
-                        buildStatus: 'FAILURE',
-                        url,
-                        pipelineId
-                    });
-                    assert.calledWith(scmMock.updateCommitStatus.secondCall, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'PR-5:main',
-                        buildStatus: 'FAILURE',
-                        url: 'https://display.com/some/endpoint/pipelines/1234/builds/9876',
-                        pipelineId,
-                        context: 'snyk',
-                        description: '23 package vulnerabilities found. ' +
-                            'Previous count: 0 vulnerabilities.'
-                    });
-                    assert.notOk(scmMock.updateCommitStatus.thirdCall);
-                    assert.notCalled(scmMock.addPrComment);
+            return build.update().then(() => {
+                assert.calledWith(scmMock.updateCommitStatus.firstCall, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'PR-5:main',
+                    buildStatus: 'FAILURE',
+                    url,
+                    pipelineId
                 });
+                assert.calledWith(scmMock.updateCommitStatus.secondCall, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'PR-5:main',
+                    buildStatus: 'FAILURE',
+                    url: 'https://display.com/some/endpoint/pipelines/1234/builds/9876',
+                    pipelineId,
+                    context: 'snyk',
+                    description: '23 package vulnerabilities found. Previous count: 0 vulnerabilities.'
+                });
+                assert.notOk(scmMock.updateCommitStatus.thirdCall);
+                assert.notCalled(scmMock.addPrComment);
+            });
         });
 
         it('skips custom status update if meta status field is not an object or string', () => {
@@ -781,39 +765,38 @@ describe('Build Model', () => {
             build.status = 'FAILURE';
             build.meta.meta.status = {
                 findbugs: 12345,
-                snyk: '{"status":"FAILURE","message":"23 package vulnerabilities found. ' +
+                snyk:
+                    '{"status":"FAILURE","message":"23 package vulnerabilities found. ' +
                     'Previous count: 0 vulnerabilities."}'
             };
             delete build.meta.meta.summary;
 
-            return build.update()
-                .then(() => {
-                    assert.calledWith(scmMock.updateCommitStatus.firstCall, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'PR-5:main',
-                        buildStatus: 'FAILURE',
-                        url,
-                        pipelineId
-                    });
-                    assert.calledWith(scmMock.updateCommitStatus.secondCall, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'PR-5:main',
-                        buildStatus: 'FAILURE',
-                        url: 'https://display.com/some/endpoint/pipelines/1234/builds/9876',
-                        pipelineId,
-                        context: 'snyk',
-                        description: '23 package vulnerabilities found. ' +
-                            'Previous count: 0 vulnerabilities.'
-                    });
-                    assert.notOk(scmMock.updateCommitStatus.thirdCall);
-                    assert.notCalled(scmMock.addPrComment);
+            return build.update().then(() => {
+                assert.calledWith(scmMock.updateCommitStatus.firstCall, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'PR-5:main',
+                    buildStatus: 'FAILURE',
+                    url,
+                    pipelineId
                 });
+                assert.calledWith(scmMock.updateCommitStatus.secondCall, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'PR-5:main',
+                    buildStatus: 'FAILURE',
+                    url: 'https://display.com/some/endpoint/pipelines/1234/builds/9876',
+                    pipelineId,
+                    context: 'snyk',
+                    description: '23 package vulnerabilities found. Previous count: 0 vulnerabilities.'
+                });
+                assert.notOk(scmMock.updateCommitStatus.thirdCall);
+                assert.notCalled(scmMock.addPrComment);
+            });
         });
     });
 
@@ -824,58 +807,54 @@ describe('Build Model', () => {
         });
 
         it('promises to stop a build', () =>
-            build.stop()
-                .then(() => {
-                    assert.calledWith(executorMock.stop, {
-                        buildId,
-                        jobId,
-                        annotations,
-                        freezeWindows,
-                        blockedBy: [jobId],
-                        pipelineId
-                    });
-                })
-        );
+            build.stop().then(() => {
+                assert.calledWith(executorMock.stop, {
+                    buildId,
+                    jobId,
+                    annotations,
+                    freezeWindows,
+                    blockedBy: [jobId],
+                    pipelineId
+                });
+            }));
 
         it('stops timer in executor when build is stopped', () => {
             build.status = 'SUCCESS';
 
-            build.stop()
-                .then(() => {
-                    assert.calledWith(executorMock.stop, {
-                        buildId,
-                        jobId,
-                        annotations,
-                        freezeWindows,
-                        blockedBy: [jobId],
-                        pipelineId
-                    });
-                    assert.calledWith(executorMock.stopTimer, {
-                        buildId,
-                        jobId,
-                        annotations,
-                        freezeWindows,
-                        blockedBy: [jobId],
-                        pipelineId
-                    });
+            build.stop().then(() => {
+                assert.calledWith(executorMock.stop, {
+                    buildId,
+                    jobId,
+                    annotations,
+                    freezeWindows,
+                    blockedBy: [jobId],
+                    pipelineId
                 });
+                assert.calledWith(executorMock.stopTimer, {
+                    buildId,
+                    jobId,
+                    annotations,
+                    freezeWindows,
+                    blockedBy: [jobId],
+                    pipelineId
+                });
+            });
         });
 
         it('passes buildClusterName to executor when it exists', () => {
             build.buildClusterName = 'sd';
 
-            return build.stop()
-                .then(() => {
-                    assert.calledWith(executorMock.stop, {
-                        buildId,
-                        buildClusterName: 'sd',
-                        jobId,
-                        annotations,
-                        freezeWindows,
-                        blockedBy: [jobId],
-                        pipelineId
-                    });
+            return build.stop().then(() => {
+                assert.calledWith(executorMock.stop, {
+                    buildId,
+                    buildClusterName: 'sd',
+                    jobId,
+                    annotations,
+                    freezeWindows,
+                    blockedBy: [jobId],
+                    pipelineId
                 });
+            });
         });
 
         it('rejects on executor failure', () => {
@@ -883,11 +862,12 @@ describe('Build Model', () => {
 
             executorMock.stop.rejects(expectedError);
 
-            return build.stop()
+            return build
+                .stop()
                 .then(() => {
                     assert.fail('This should not fail the test');
                 })
-                .catch((err) => {
+                .catch(err => {
                     assert.deepEqual(err, expectedError);
                 });
         });
@@ -952,116 +932,15 @@ describe('Build Model', () => {
         });
 
         it('promises to start a build', () =>
-            build.start()
-                .then(() => {
-                    assert.calledWith(executorMock.start, {
-                        build,
-                        causeMessage,
-                        eventId,
-                        jobId,
-                        jobName,
-                        jobState,
-                        jobArchived,
-                        annotations,
-                        freezeWindows,
-                        blockedBy: [jobId],
-                        apiUri,
-                        buildId,
-                        container,
-                        token,
-                        pipeline: {
-                            id: pipelineMockB.id,
-                            scmContext: pipelineMockB.scmContext
-                        },
-                        tokenGen,
-                        pipelineId
-                    });
-
-                    assert.calledWith(tokenGen, buildId, {
-                        isPR: false,
-                        jobId,
-                        pipelineId,
-                        configPipelineId,
-                        eventId,
-                        prParentJobId
-                    }, scmContext, TEMPORAL_JWT_TIMEOUT);
-
-                    assert.calledWith(scmMock.updateCommitStatus, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'main',
-                        buildStatus: 'QUEUED',
-                        url,
-                        pipelineId
-                    });
-                })
-        );
-
-        it('passes buildClusterName to executor if it exists', () => {
-            build.buildClusterName = 'sd';
-
-            return build.start()
-                .then(() => {
-                    assert.calledWith(executorMock.start, {
-                        build,
-                        causeMessage,
-                        jobId,
-                        jobName,
-                        jobState,
-                        jobArchived,
-                        eventId,
-                        annotations,
-                        freezeWindows,
-                        blockedBy: [jobId],
-                        apiUri,
-                        buildId,
-                        buildClusterName: 'sd',
-                        container,
-                        token,
-                        tokenGen,
-                        pipeline: {
-                            id: pipelineMockB.id,
-                            scmContext: pipelineMockB.scmContext
-                        },
-                        pipelineId
-                    });
-
-                    assert.calledWith(tokenGen, buildId, {
-                        isPR: false,
-                        jobId,
-                        pipelineId,
-                        configPipelineId,
-                        eventId,
-                        prParentJobId
-                    }, scmContext, TEMPORAL_JWT_TIMEOUT);
-
-                    assert.calledWith(scmMock.updateCommitStatus, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'main',
-                        buildStatus: 'QUEUED',
-                        url,
-                        pipelineId
-                    });
-                });
-        });
-
-        it('passes causeMessage to executor if it exists', () => build.start({
-            causeMessage: '[force start] Push out hotfix'
-        })
-            .then(() => {
+            build.start().then(() => {
                 assert.calledWith(executorMock.start, {
                     build,
-                    causeMessage: '[force start] Push out hotfix',
+                    causeMessage,
+                    eventId,
                     jobId,
                     jobName,
                     jobState,
                     jobArchived,
-                    eventId,
                     annotations,
                     freezeWindows,
                     blockedBy: [jobId],
@@ -1069,22 +948,28 @@ describe('Build Model', () => {
                     buildId,
                     container,
                     token,
-                    tokenGen,
                     pipeline: {
                         id: pipelineMockB.id,
                         scmContext: pipelineMockB.scmContext
                     },
+                    tokenGen,
                     pipelineId
                 });
 
-                assert.calledWith(tokenGen, buildId, {
-                    isPR: false,
-                    jobId,
-                    pipelineId,
-                    configPipelineId,
-                    eventId,
-                    prParentJobId
-                }, scmContext, TEMPORAL_JWT_TIMEOUT);
+                assert.calledWith(
+                    tokenGen,
+                    buildId,
+                    {
+                        isPR: false,
+                        jobId,
+                        pipelineId,
+                        configPipelineId,
+                        eventId,
+                        prParentJobId
+                    },
+                    scmContext,
+                    TEMPORAL_JWT_TIMEOUT
+                );
 
                 assert.calledWith(scmMock.updateCommitStatus, {
                     token: 'foo',
@@ -1096,8 +981,119 @@ describe('Build Model', () => {
                     url,
                     pipelineId
                 });
-            })
-        );
+            }));
+
+        it('passes buildClusterName to executor if it exists', () => {
+            build.buildClusterName = 'sd';
+
+            return build.start().then(() => {
+                assert.calledWith(executorMock.start, {
+                    build,
+                    causeMessage,
+                    jobId,
+                    jobName,
+                    jobState,
+                    jobArchived,
+                    eventId,
+                    annotations,
+                    freezeWindows,
+                    blockedBy: [jobId],
+                    apiUri,
+                    buildId,
+                    buildClusterName: 'sd',
+                    container,
+                    token,
+                    tokenGen,
+                    pipeline: {
+                        id: pipelineMockB.id,
+                        scmContext: pipelineMockB.scmContext
+                    },
+                    pipelineId
+                });
+
+                assert.calledWith(
+                    tokenGen,
+                    buildId,
+                    {
+                        isPR: false,
+                        jobId,
+                        pipelineId,
+                        configPipelineId,
+                        eventId,
+                        prParentJobId
+                    },
+                    scmContext,
+                    TEMPORAL_JWT_TIMEOUT
+                );
+
+                assert.calledWith(scmMock.updateCommitStatus, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'main',
+                    buildStatus: 'QUEUED',
+                    url,
+                    pipelineId
+                });
+            });
+        });
+
+        it('passes causeMessage to executor if it exists', () =>
+            build
+                .start({
+                    causeMessage: '[force start] Push out hotfix'
+                })
+                .then(() => {
+                    assert.calledWith(executorMock.start, {
+                        build,
+                        causeMessage: '[force start] Push out hotfix',
+                        jobId,
+                        jobName,
+                        jobState,
+                        jobArchived,
+                        eventId,
+                        annotations,
+                        freezeWindows,
+                        blockedBy: [jobId],
+                        apiUri,
+                        buildId,
+                        container,
+                        token,
+                        tokenGen,
+                        pipeline: {
+                            id: pipelineMockB.id,
+                            scmContext: pipelineMockB.scmContext
+                        },
+                        pipelineId
+                    });
+
+                    assert.calledWith(
+                        tokenGen,
+                        buildId,
+                        {
+                            isPR: false,
+                            jobId,
+                            pipelineId,
+                            configPipelineId,
+                            eventId,
+                            prParentJobId
+                        },
+                        scmContext,
+                        TEMPORAL_JWT_TIMEOUT
+                    );
+
+                    assert.calledWith(scmMock.updateCommitStatus, {
+                        token: 'foo',
+                        scmUri,
+                        scmContext,
+                        sha,
+                        jobName: 'main',
+                        buildStatus: 'QUEUED',
+                        url,
+                        pipelineId
+                    });
+                }));
 
         it('get internal blockedby job Ids and pass to executor start', () => {
             const blocking1 = {
@@ -1122,14 +1118,16 @@ describe('Build Model', () => {
                 scmContext,
                 admin: Promise.resolve(adminUser),
                 token: Promise.resolve('foo'),
-                getJobs: sinon.stub().resolves([
-                    { id: jobId, name: 'main', isPR: () => false },
-                    blocking1,
-                    { id: 123, name: 'somejob', isPR: () => false },
-                    blocking2,
-                    { id: 456, name: 'someotherjob', isPR: () => false },
-                    prJob
-                ])
+                getJobs: sinon
+                    .stub()
+                    .resolves([
+                        { id: jobId, name: 'main', isPR: () => false },
+                        blocking1,
+                        { id: 123, name: 'somejob', isPR: () => false },
+                        blocking2,
+                        { id: 456, name: 'someotherjob', isPR: () => false },
+                        prJob
+                    ])
             };
 
             jobFactoryMock.get.resolves({
@@ -1138,39 +1136,40 @@ describe('Build Model', () => {
                 state: 'ENABLED',
                 archived: false,
                 pipeline: Promise.resolve(pipelineMockB),
-                permutations: [{
-                    annotations,
-                    freezeWindows,
-                    blockedBy: [blocking1.name, blocking2.name]
-                }],
+                permutations: [
+                    {
+                        annotations,
+                        freezeWindows,
+                        blockedBy: [blocking1.name, blocking2.name]
+                    }
+                ],
                 isPR: () => false
             });
 
-            return build.start()
-                .then(() => {
-                    assert.calledWith(executorMock.start, {
-                        build,
-                        causeMessage,
-                        jobId,
-                        jobName,
-                        jobState,
-                        jobArchived,
-                        eventId,
-                        blockedBy: [jobId, blocking1.id, blocking2.id, prJob.id],
-                        annotations,
-                        freezeWindows,
-                        apiUri,
-                        buildId,
-                        container,
-                        token,
-                        tokenGen,
-                        pipeline: {
-                            id: pipelineMockB.id,
-                            scmContext: pipelineMockB.scmContext
-                        },
-                        pipelineId
-                    });
+            return build.start().then(() => {
+                assert.calledWith(executorMock.start, {
+                    build,
+                    causeMessage,
+                    jobId,
+                    jobName,
+                    jobState,
+                    jobArchived,
+                    eventId,
+                    blockedBy: [jobId, blocking1.id, blocking2.id, prJob.id],
+                    annotations,
+                    freezeWindows,
+                    apiUri,
+                    buildId,
+                    container,
+                    token,
+                    tokenGen,
+                    pipeline: {
+                        id: pipelineMockB.id,
+                        scmContext: pipelineMockB.scmContext
+                    },
+                    pipelineId
                 });
+            });
         });
 
         it('get external blockedby job Ids and pass to executor start', () => {
@@ -1188,17 +1187,11 @@ describe('Build Model', () => {
             };
             const pipeline1 = {
                 id: externalPid1,
-                getJobs: sinon.stub().resolves([
-                    { id: 999, name: 'somejob', isPR: () => false },
-                    externalJob1
-                ])
+                getJobs: sinon.stub().resolves([{ id: 999, name: 'somejob', isPR: () => false }, externalJob1])
             };
             const pipeline2 = {
                 id: externalPid2,
-                getJobs: sinon.stub().resolves([
-                    { id: 888, name: 'somerandomjob', isPR: () => false },
-                    externalJob2
-                ])
+                getJobs: sinon.stub().resolves([{ id: 888, name: 'somerandomjob', isPR: () => false }, externalJob2])
             };
             const internalJob = {
                 name: 'internalJob',
@@ -1218,7 +1211,8 @@ describe('Build Model', () => {
                 getJobs: sinon.stub().resolves([
                     { id: jobId, name: 'main', isPR: () => false },
                     { id: 123, name: 'somejob', isPR: () => false },
-                    { id: internalJob.id, name: internalJob.name, isPR: () => false }])
+                    { id: internalJob.id, name: internalJob.name, isPR: () => false }
+                ])
             };
 
             jobFactoryMock.get.resolves({
@@ -1227,47 +1221,47 @@ describe('Build Model', () => {
                 state: 'ENABLED',
                 archived: false,
                 pipeline: Promise.resolve(pipelineMockB),
-                permutations: [{
-                    annotations,
-                    freezeWindows,
-                    blockedBy: [
-                        `~sd@${externalPid1}:externalJob1`,
-                        `~${internalJob.name}`,
-                        `~sd@${externalPid2}:externalJob2`
-                    ]
-                }],
+                permutations: [
+                    {
+                        annotations,
+                        freezeWindows,
+                        blockedBy: [
+                            `~sd@${externalPid1}:externalJob1`,
+                            `~${internalJob.name}`,
+                            `~sd@${externalPid2}:externalJob2`
+                        ]
+                    }
+                ],
                 isPR: () => false
             });
 
-            return build.start()
-                .then(() => {
-                    assert.calledWith(executorMock.start, {
-                        build,
-                        causeMessage,
-                        jobId,
-                        jobName,
-                        jobState,
-                        jobArchived,
-                        eventId,
-                        blockedBy: [jobId, internalJob.id, externalJob1.id, externalJob2.id],
-                        annotations,
-                        freezeWindows,
-                        apiUri,
-                        buildId,
-                        container,
-                        token,
-                        tokenGen,
-                        pipeline: {
-                            id: pipelineMockB.id,
-                            scmContext: pipelineMockB.scmContext
-                        },
-                        pipelineId: pipelineMockB.id
-                    });
+            return build.start().then(() => {
+                assert.calledWith(executorMock.start, {
+                    build,
+                    causeMessage,
+                    jobId,
+                    jobName,
+                    jobState,
+                    jobArchived,
+                    eventId,
+                    blockedBy: [jobId, internalJob.id, externalJob1.id, externalJob2.id],
+                    annotations,
+                    freezeWindows,
+                    apiUri,
+                    buildId,
+                    container,
+                    token,
+                    tokenGen,
+                    pipeline: {
+                        id: pipelineMockB.id,
+                        scmContext: pipelineMockB.scmContext
+                    },
+                    pipelineId: pipelineMockB.id
                 });
+            });
         });
 
-        it('gets external blockedby job Ids and pass to executor start ' +
-            'even if pipeline does not exist', () => {
+        it('gets external blockedby job Ids and pass to executor start even if pipeline does not exist', () => {
             const externalPid1 = 101;
             const externalPid2 = 202;
             const externalJob1 = {
@@ -1277,10 +1271,7 @@ describe('Build Model', () => {
             };
             const pipeline1 = {
                 id: externalPid1,
-                getJobs: sinon.stub().resolves([
-                    { id: 999, name: 'somejob', isPR: () => false },
-                    externalJob1
-                ])
+                getJobs: sinon.stub().resolves([{ id: 999, name: 'somejob', isPR: () => false }, externalJob1])
             };
             const internalJob = {
                 name: 'internalJob',
@@ -1300,7 +1291,8 @@ describe('Build Model', () => {
                 getJobs: sinon.stub().resolves([
                     { id: jobId, name: 'main', isPR: () => false },
                     { id: 123, name: 'somejob', isPR: () => false },
-                    { id: internalJob.id, name: internalJob.name, isPR: () => false }])
+                    { id: internalJob.id, name: internalJob.name, isPR: () => false }
+                ])
             };
 
             jobFactoryMock.get.resolves({
@@ -1309,43 +1301,44 @@ describe('Build Model', () => {
                 state: 'ENABLED',
                 archived: false,
                 pipeline: Promise.resolve(pipelineMockB),
-                permutations: [{
-                    annotations,
-                    freezeWindows,
-                    blockedBy: [
-                        `~sd@${externalPid1}:externalJob1`,
-                        `~${internalJob.name}`,
-                        `~sd@${externalPid2}:externalJob2`
-                    ]
-                }],
+                permutations: [
+                    {
+                        annotations,
+                        freezeWindows,
+                        blockedBy: [
+                            `~sd@${externalPid1}:externalJob1`,
+                            `~${internalJob.name}`,
+                            `~sd@${externalPid2}:externalJob2`
+                        ]
+                    }
+                ],
                 isPR: () => false
             });
 
-            return build.start()
-                .then(() => {
-                    assert.calledWith(executorMock.start, {
-                        build,
-                        causeMessage,
-                        jobId,
-                        jobName,
-                        jobState,
-                        jobArchived,
-                        eventId,
-                        blockedBy: [jobId, internalJob.id, externalJob1.id],
-                        annotations,
-                        freezeWindows,
-                        apiUri,
-                        buildId,
-                        container,
-                        token,
-                        tokenGen,
-                        pipeline: {
-                            id: pipelineMockB.id,
-                            scmContext: pipelineMockB.scmContext
-                        },
-                        pipelineId: pipelineMockB.id
-                    });
+            return build.start().then(() => {
+                assert.calledWith(executorMock.start, {
+                    build,
+                    causeMessage,
+                    jobId,
+                    jobName,
+                    jobState,
+                    jobArchived,
+                    eventId,
+                    blockedBy: [jobId, internalJob.id, externalJob1.id],
+                    annotations,
+                    freezeWindows,
+                    apiUri,
+                    buildId,
+                    container,
+                    token,
+                    tokenGen,
+                    pipeline: {
+                        id: pipelineMockB.id,
+                        scmContext: pipelineMockB.scmContext
+                    },
+                    pipelineId: pipelineMockB.id
                 });
+            });
         });
 
         it('promises to start a build with the executor specified in job annotations', () => {
@@ -1368,50 +1361,55 @@ describe('Build Model', () => {
                 isPR: () => false
             });
 
-            return build.start()
-                .then(() => {
-                    assert.calledWith(executorMock.start, {
-                        build,
-                        causeMessage,
-                        jobId,
-                        jobName,
-                        jobState,
-                        jobArchived,
-                        eventId,
-                        annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' },
-                        freezeWindows: [],
-                        blockedBy: [jobId],
-                        apiUri,
-                        buildId,
-                        container,
-                        token,
-                        tokenGen,
-                        pipeline: {
-                            id: pipelineMockB.id,
-                            scmContext: pipelineMockB.scmContext
-                        },
-                        pipelineId: pipelineMockB.id
-                    });
+            return build.start().then(() => {
+                assert.calledWith(executorMock.start, {
+                    build,
+                    causeMessage,
+                    jobId,
+                    jobName,
+                    jobState,
+                    jobArchived,
+                    eventId,
+                    annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' },
+                    freezeWindows: [],
+                    blockedBy: [jobId],
+                    apiUri,
+                    buildId,
+                    container,
+                    token,
+                    tokenGen,
+                    pipeline: {
+                        id: pipelineMockB.id,
+                        scmContext: pipelineMockB.scmContext
+                    },
+                    pipelineId: pipelineMockB.id
+                });
 
-                    assert.calledWith(tokenGen, buildId, {
+                assert.calledWith(
+                    tokenGen,
+                    buildId,
+                    {
                         isPR: false,
                         jobId,
                         pipelineId,
                         eventId,
                         configPipelineId
-                    }, scmContext, TEMPORAL_JWT_TIMEOUT);
+                    },
+                    scmContext,
+                    TEMPORAL_JWT_TIMEOUT
+                );
 
-                    assert.calledWith(scmMock.updateCommitStatus, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'main',
-                        buildStatus: 'QUEUED',
-                        url,
-                        pipelineId
-                    });
+                assert.calledWith(scmMock.updateCommitStatus, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'main',
+                    buildStatus: 'QUEUED',
+                    url,
+                    pipelineId
                 });
+            });
         });
 
         it('rejects when the executor fails', () => {
@@ -1419,11 +1417,12 @@ describe('Build Model', () => {
 
             executorMock.start.rejects(expectedError);
 
-            return build.start()
+            return build
+                .start()
                 .then(() => {
                     assert.fail('This should not fail the test');
                 })
-                .catch((err) => {
+                .catch(err => {
                     assert.deepEqual(err, expectedError);
                 });
         });
@@ -1446,20 +1445,21 @@ describe('Build Model', () => {
         });
 
         it('returns the list of secrets', () =>
-            build.secrets.then((secrets) => {
+            build.secrets.then(secrets => {
                 assert.isArray(secrets);
                 assert.equal(secrets.length, 1);
-            })
-        );
+            }));
 
         it('throws error if job missing', () => {
             jobFactoryMock.get.resolves(null);
 
-            return build.secrets.then(() => {
-                assert.fail('nope');
-            }).catch((err) => {
-                assert.equal('Job does not exist', err.message);
-            });
+            return build.secrets
+                .then(() => {
+                    assert.fail('nope');
+                })
+                .catch(err => {
+                    assert.equal('Job does not exist', err.message);
+                });
         });
     });
 
@@ -1509,7 +1509,7 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.fail('should not get here');
                 })
-                .catch((err) => {
+                .catch(err => {
                     assert.instanceOf(err, Error);
                     assert.strictEqual(err.message, 'Pipeline does not exist');
                 });
@@ -1522,7 +1522,7 @@ describe('Build Model', () => {
                 .then(() => {
                     assert.fail('should not get here');
                 })
-                .catch((err) => {
+                .catch(err => {
                     assert.instanceOf(err, Error);
                     assert.strictEqual(err.message, 'Job does not exist');
                 });
@@ -1576,25 +1576,29 @@ describe('Build Model', () => {
             stepsMock = [step1, step2, step3];
             stepFactoryMock.list.resolves(stepsMock);
 
-            metrics = [{
-                id: step1.id,
-                name: step1.name,
-                code: step1.code,
-                duration: duration1,
-                createTime: build.createTime
-            }, {
-                id: step2.id,
-                name: step2.name,
-                code: step2.code,
-                duration: duration2,
-                createTime: build.createTime
-            }, {
-                id: undefined,
-                name: step3.name,
-                code: step3.code,
-                duration: duration3,
-                createTime: build.createTime
-            }];
+            metrics = [
+                {
+                    id: step1.id,
+                    name: step1.name,
+                    code: step1.code,
+                    duration: duration1,
+                    createTime: build.createTime
+                },
+                {
+                    id: step2.id,
+                    name: step2.name,
+                    code: step2.code,
+                    duration: duration2,
+                    createTime: build.createTime
+                },
+                {
+                    id: undefined,
+                    name: step3.name,
+                    code: step3.code,
+                    duration: duration3,
+                    createTime: build.createTime
+                }
+            ];
         });
 
         it('generates metrics', () => build.getMetrics().then(m => assert.deepEqual(m, metrics)));
@@ -1610,7 +1614,7 @@ describe('Build Model', () => {
 
             metrics = metrics.filter(m => m.name === stepName);
 
-            return build.getMetrics({ stepName }).then((m) => {
+            return build.getMetrics({ stepName }).then(m => {
                 assert.deepEqual(m, metrics);
             });
         });
@@ -1647,39 +1651,32 @@ describe('Build Model', () => {
         });
 
         it('returns the JSON with steps sorted by step.id', () =>
-            build.toJsonWithSteps()
-                .then((json) => {
-                    const expected = Object.assign({}, build.toJson(),
-                        { steps: [step1, step2, step3] });
+            build.toJsonWithSteps().then(json => {
+                const expected = { ...build.toJson(), steps: [step1, step2, step3] };
 
-                    assert.deepStrictEqual(json, expected);
-                })
-        );
+                assert.deepStrictEqual(json, expected);
+            }));
 
         it('returns the JSON with steps sorted by step.createTime', () => {
-            const configWithEndTime = Object.assign({}, config);
+            const configWithEndTime = { ...config };
 
             configWithEndTime.endTime = '2019-01-22T22:30: 00.000Z';
             build = new BuildModel(configWithEndTime);
 
-            return build.toJsonWithSteps()
-                .then((json) => {
-                    const expected = Object.assign({}, build.toJson(),
-                        { steps: [step2, step3, step1] });
+            return build.toJsonWithSteps().then(json => {
+                const expected = { ...build.toJson(), steps: [step2, step3, step1] };
 
-                    assert.deepStrictEqual(json, expected);
-                });
+                assert.deepStrictEqual(json, expected);
+            });
         });
 
         it('throws error if steps missing ', () => {
             stepFactoryMock.list.resolves([]);
 
-            return build.toJsonWithSteps()
-                .then(() =>
-                    assert.fail('nope')
-                ).catch(err =>
-                    assert.equal('Steps do not exist', err.message)
-                );
+            return build
+                .toJsonWithSteps()
+                .then(() => assert.fail('nope'))
+                .catch(err => assert.equal('Steps do not exist', err.message));
         });
     });
 });

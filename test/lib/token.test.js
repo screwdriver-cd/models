@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const sinon = require('sinon');
 const mockery = require('mockery');
 const hoek = require('hoek');
@@ -62,7 +62,7 @@ describe('Token Model', () => {
     it('is constructed properly for user token', () => {
         assert.instanceOf(token, TokenModel);
         assert.instanceOf(token, BaseModel);
-        schema.models.token.allKeys.forEach((key) => {
+        schema.models.token.allKeys.forEach(key => {
             assert.strictEqual(token[key], createConfig[key]);
         });
     });
@@ -76,7 +76,7 @@ describe('Token Model', () => {
 
         assert.instanceOf(token, TokenModel);
         assert.instanceOf(token, BaseModel);
-        schema.models.token.allKeys.forEach((key) => {
+        schema.models.token.allKeys.forEach(key => {
             assert.strictEqual(token[key], pipelineConfig[key]);
         });
     });
@@ -87,16 +87,15 @@ describe('Token Model', () => {
 
             token.lastUsed = newTimestamp;
 
-            return token.update()
-                .then(() => {
-                    assert.calledWith(datastore.update, {
-                        table: 'tokens',
-                        params: {
-                            id: 6789,
-                            lastUsed: newTimestamp
-                        }
-                    });
+            return token.update().then(() => {
+                assert.calledWith(datastore.update, {
+                    table: 'tokens',
+                    params: {
+                        id: 6789,
+                        lastUsed: newTimestamp
+                    }
                 });
+            });
         });
     });
 
@@ -108,13 +107,12 @@ describe('Token Model', () => {
             generateTokenMock.generateValue.resolves(newValue);
             generateTokenMock.hashValue.resolves(newHash);
 
-            return token.refresh()
-                .then((model) => {
-                    assert.calledOnce(generateTokenMock.generateValue);
-                    assert.calledWith(generateTokenMock.hashValue, newValue, password);
-                    assert.strictEqual(model.value, newValue);
-                    assert.strictEqual(model.hash, newHash);
-                });
+            return token.refresh().then(model => {
+                assert.calledOnce(generateTokenMock.generateValue);
+                assert.calledWith(generateTokenMock.hashValue, newValue, password);
+                assert.strictEqual(model.value, newValue);
+                assert.strictEqual(model.hash, newHash);
+            });
         });
     });
 
@@ -138,7 +136,7 @@ describe('Token Model', () => {
         it('adds the value field if present', () => {
             token.value = value;
 
-            assert.deepEqual(token.toJson(), Object.assign({}, expected, { value }));
+            assert.deepEqual(token.toJson(), { ...expected, value });
         });
     });
 });

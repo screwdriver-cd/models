@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 
@@ -73,45 +73,49 @@ describe('BuildCluster Factory', () => {
         it('should create a BuildCluster', () => {
             datastore.save.resolves(buildClusterData);
 
-            return factory.create({
-                name,
-                scmContext,
-                scmOrganizations,
-                managedByScrewdriver,
-                maintainer,
-                isActive,
-                weightage
-            }).then((model) => {
-                assert.isTrue(datastore.save.calledOnce);
-                assert.instanceOf(model, BuildCluster);
+            return factory
+                .create({
+                    name,
+                    scmContext,
+                    scmOrganizations,
+                    managedByScrewdriver,
+                    maintainer,
+                    isActive,
+                    weightage
+                })
+                .then(model => {
+                    assert.isTrue(datastore.save.calledOnce);
+                    assert.instanceOf(model, BuildCluster);
 
-                Object.keys(buildClusterData).forEach((key) => {
-                    assert.strictEqual(model[key], buildClusterData[key]);
+                    Object.keys(buildClusterData).forEach(key => {
+                        assert.strictEqual(model[key], buildClusterData[key]);
+                    });
                 });
-            });
         });
 
         it('should create a BuildCluster without isActive ans weightage defined', () => {
-            const dataWithDefaultStatus = Object.assign({}, buildClusterData);
+            const dataWithDefaultStatus = { ...buildClusterData };
 
             dataWithDefaultStatus.isActive = true;
             dataWithDefaultStatus.weightage = 100;
             datastore.save.resolves(dataWithDefaultStatus);
 
-            return factory.create({
-                name,
-                scmContext,
-                scmOrganizations,
-                managedByScrewdriver,
-                maintainer
-            }).then((model) => {
-                assert.isTrue(datastore.save.calledOnce);
-                assert.instanceOf(model, BuildCluster);
+            return factory
+                .create({
+                    name,
+                    scmContext,
+                    scmOrganizations,
+                    managedByScrewdriver,
+                    maintainer
+                })
+                .then(model => {
+                    assert.isTrue(datastore.save.calledOnce);
+                    assert.instanceOf(model, BuildCluster);
 
-                Object.keys(buildClusterData).forEach((key) => {
-                    assert.strictEqual(model[key], dataWithDefaultStatus[key]);
+                    Object.keys(buildClusterData).forEach(key => {
+                        assert.strictEqual(model[key], dataWithDefaultStatus[key]);
+                    });
                 });
-            });
         });
     });
 
@@ -119,13 +123,14 @@ describe('BuildCluster Factory', () => {
         it('should get a buildCluster by ID', () => {
             datastore.get.resolves(buildClusterData);
 
-            Promise.all([factory.get(buildClusterId), factory.get({ id: buildClusterId })])
-                .then(([buildCluster1, buildCluster2]) => {
-                    Object.keys(buildCluster1).forEach((key) => {
+            Promise.all([factory.get(buildClusterId), factory.get({ id: buildClusterId })]).then(
+                ([buildCluster1, buildCluster2]) => {
+                    Object.keys(buildCluster1).forEach(key => {
                         assert.strictEqual(buildCluster1[key], buildClusterData[key]);
                         assert.strictEqual(buildCluster2[key], buildClusterData[key]);
                     });
-                });
+                }
+            );
         });
     });
 
@@ -151,8 +156,7 @@ describe('BuildCluster Factory', () => {
         });
 
         it('should throw an error when config not supplied', () => {
-            assert.throw(BuildClusterFactory.getInstance,
-                Error, 'No datastore provided to BuildClusterFactory');
+            assert.throw(BuildClusterFactory.getInstance, Error, 'No datastore provided to BuildClusterFactory');
         });
     });
 });
