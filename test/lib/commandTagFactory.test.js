@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 
@@ -79,17 +79,19 @@ describe('CommandTag Factory', () => {
         it('creates a CommandTag given namespace, name, tag, and version', () => {
             datastore.save.resolves(expected);
 
-            return factory.create({
-                namespace,
-                name,
-                tag,
-                version
-            }).then((model) => {
-                assert.instanceOf(model, CommandTag);
-                Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+            return factory
+                .create({
+                    namespace,
+                    name,
+                    tag,
+                    version
+                })
+                .then(model => {
+                    assert.instanceOf(model, CommandTag);
+                    Object.keys(expected).forEach(key => {
+                        assert.strictEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
     });
 
@@ -111,8 +113,7 @@ describe('CommandTag Factory', () => {
         });
 
         it('should throw when config not supplied', () => {
-            assert.throw(CommandTagFactory.getInstance,
-                Error, 'No datastore provided to CommandTagFactory');
+            assert.throw(CommandTagFactory.getInstance, Error, 'No datastore provided to CommandTagFactory');
         });
     });
 });

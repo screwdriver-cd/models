@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
@@ -68,7 +68,7 @@ describe('Command Model', () => {
     it('is constructed properly', () => {
         assert.instanceOf(command, CommandModel);
         assert.instanceOf(command, BaseModel);
-        schema.models.command.allKeys.forEach((key) => {
+        schema.models.command.allKeys.forEach(key => {
             assert.strictEqual(command[key], createConfig[key]);
         });
     });

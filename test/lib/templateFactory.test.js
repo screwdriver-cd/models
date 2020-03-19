@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 
@@ -117,22 +117,24 @@ describe('Template Factory', () => {
             datastore.save.resolves(expected);
             datastore.scan.resolves([]);
 
-            return factory.create({
-                name,
-                namespace,
-                version,
-                maintainer,
-                description,
-                labels,
-                config: templateConfig,
-                pipelineId
-            }).then((model) => {
-                assert.instanceOf(model, Template);
+            return factory
+                .create({
+                    name,
+                    namespace,
+                    version,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Template);
 
-                Object.keys(expected).forEach((key) => {
-                    assert.deepEqual(model[key], expected[key]);
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
 
         // name: namespace/testTemplate
@@ -142,20 +144,22 @@ describe('Template Factory', () => {
             datastore.save.resolves(expected);
             datastore.scan.resolves([]);
 
-            return factory.create({
-                name: 'namespace/testTemplate',
-                version,
-                maintainer,
-                description,
-                labels,
-                config: templateConfig,
-                pipelineId
-            }).then((model) => {
-                assert.instanceOf(model, Template);
-                Object.keys(expected).forEach((key) => {
-                    assert.deepEqual(model[key], expected[key]);
+            return factory
+                .create({
+                    name: 'namespace/testTemplate',
+                    version,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Template);
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
 
         // name: testTemplate
@@ -165,20 +169,22 @@ describe('Template Factory', () => {
             datastore.save.resolves(expected);
             datastore.scan.resolves([]);
 
-            return factory.create({
-                name,
-                version,
-                maintainer,
-                description,
-                labels,
-                config: templateConfig,
-                pipelineId
-            }).then((model) => {
-                assert.instanceOf(model, Template);
-                Object.keys(expected).forEach((key) => {
-                    assert.deepEqual(model[key], expected[key]);
+            return factory
+                .create({
+                    name,
+                    version,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Template);
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
 
         it('creates a Template given major/minor version and no latest templates', () => {
@@ -187,20 +193,22 @@ describe('Template Factory', () => {
             datastore.save.resolves(expected);
             datastore.scan.resolves([]);
 
-            return factory.create({
-                name,
-                version,
-                maintainer,
-                description,
-                labels,
-                config: templateConfig,
-                pipelineId
-            }).then((model) => {
-                assert.instanceOf(model, Template);
-                Object.keys(expected).forEach((key) => {
-                    assert.deepEqual(model[key], expected[key]);
+            return factory
+                .create({
+                    name,
+                    version,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Template);
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
 
         it('creates a Template given major version and no latest templates', () => {
@@ -209,20 +217,22 @@ describe('Template Factory', () => {
             datastore.save.resolves(expected);
             datastore.scan.resolves([]);
 
-            return factory.create({
-                name,
-                version: 1,
-                maintainer,
-                description,
-                labels,
-                config: templateConfig,
-                pipelineId
-            }).then((model) => {
-                assert.instanceOf(model, Template);
-                Object.keys(expected).forEach((key) => {
-                    assert.deepEqual(model[key], expected[key]);
+            return factory
+                .create({
+                    name,
+                    version: 1,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Template);
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
 
         it('creates a Template and auto-bumps version when latest returns something', () => {
@@ -242,20 +252,22 @@ describe('Template Factory', () => {
             datastore.save.resolves(expected);
             datastore.scan.resolves([latest]);
 
-            return factory.create({
-                name,
-                version,
-                maintainer,
-                description,
-                labels,
-                config: templateConfig,
-                pipelineId
-            }).then((model) => {
-                assert.instanceOf(model, Template);
-                Object.keys(expected).forEach((key) => {
-                    assert.deepEqual(model[key], expected[key]);
+            return factory
+                .create({
+                    name,
+                    version,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Template);
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
     });
 
@@ -277,8 +289,7 @@ describe('Template Factory', () => {
         });
 
         it('should throw when config not supplied', () => {
-            assert.throw(TemplateFactory.getInstance,
-                Error, 'No datastore provided to TemplateFactory');
+            assert.throw(TemplateFactory.getInstance, Error, 'No datastore provided to TemplateFactory');
         });
     });
 
@@ -325,14 +336,17 @@ describe('Template Factory', () => {
         // name: testTemplate
         it('should get a template when namespace is passed in', () => {
             datastore.get.resolves(returnValue[2]);
-            expected = Object.assign({}, returnValue[2]);
+            expected = { ...returnValue[2] };
 
-            return factory.get(config).then((model) => {
-                assert.calledWith(datastore.get, sinon.match({
-                    params: { name, namespace, version: '1.0.2' }
-                }));
+            return factory.get(config).then(model => {
+                assert.calledWith(
+                    datastore.get,
+                    sinon.match({
+                        params: { name, namespace, version: '1.0.2' }
+                    })
+                );
                 assert.instanceOf(model, Template);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -343,15 +357,18 @@ describe('Template Factory', () => {
         it('should get template when default namespace does not exist', () => {
             datastore.get.resolves(returnValue[3]);
             datastore.scan.resolves([]);
-            expected = Object.assign({}, returnValue[3]);
+            expected = { ...returnValue[3] };
             delete config.namespace;
 
-            return factory.get(config).then((model) => {
-                assert.calledWith(datastore.get, sinon.match({
-                    params: { name: 'testTemplate', namespace: null, version: '1.0.2' }
-                }));
+            return factory.get(config).then(model => {
+                assert.calledWith(
+                    datastore.get,
+                    sinon.match({
+                        params: { name: 'testTemplate', namespace: null, version: '1.0.2' }
+                    })
+                );
                 assert.instanceOf(model, Template);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -362,15 +379,18 @@ describe('Template Factory', () => {
         it('should get template when default namespace does not exist', () => {
             datastore.get.resolves(returnValue[3]);
             datastore.scan.resolves([returnValue[3]]);
-            expected = Object.assign({}, returnValue[3]);
+            expected = { ...returnValue[3] };
             delete config.namespace;
 
-            return factory.get(config).then((model) => {
-                assert.calledWith(datastore.get, sinon.match({
-                    params: { name: 'testTemplate', namespace: 'default', version: '1.0.2' }
-                }));
+            return factory.get(config).then(model => {
+                assert.calledWith(
+                    datastore.get,
+                    sinon.match({
+                        params: { name: 'testTemplate', namespace: 'default', version: '1.0.2' }
+                    })
+                );
                 assert.instanceOf(model, Template);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -380,16 +400,19 @@ describe('Template Factory', () => {
         it('should get a template with implicit namespace in name', () => {
             datastore.get.resolves(returnValue[3]);
             datastore.scan.resolves([]);
-            expected = Object.assign({}, returnValue[3]);
+            expected = { ...returnValue[3] };
             delete config.namespace;
             config.name = 'namespace/testTemplate';
 
-            return factory.get(config).then((model) => {
-                assert.calledWith(datastore.get, sinon.match({
-                    params: { name: 'namespace/testTemplate', namespace: null, version: '1.0.2' }
-                }));
+            return factory.get(config).then(model => {
+                assert.calledWith(
+                    datastore.get,
+                    sinon.match({
+                        params: { name: 'namespace/testTemplate', namespace: null, version: '1.0.2' }
+                    })
+                );
                 assert.instanceOf(model, Template);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -442,7 +465,7 @@ describe('Template Factory', () => {
 
             datastore.scan.resolves(expected);
 
-            return factory.list(config).then((model) => {
+            return factory.list(config).then(model => {
                 assert.instanceOf(model[0], Template);
             });
         });
@@ -453,7 +476,7 @@ describe('Template Factory', () => {
 
             delete config.namespace;
 
-            return factory.list(config).then((model) => {
+            return factory.list(config).then(model => {
                 assert.instanceOf(model[0], Template);
             });
         });
@@ -586,10 +609,10 @@ describe('Template Factory', () => {
             buildFactoryMock.list.resolves(buildsCount);
             jobFactoryMock.list.resolves(jobsCount);
 
-            return factory.listWithMetrics(config).then((templates) => {
+            return factory.listWithMetrics(config).then(templates => {
                 let i = 0;
 
-                templates.forEach((t) => {
+                templates.forEach(t => {
                     assert.deepEqual(t.id, expected[i].id);
                     assert.deepEqual(t.metrics.jobs.count, expected[i].metrics.jobs.count);
                     assert.deepEqual(t.metrics.builds.count, expected[i].metrics.builds.count);
@@ -606,13 +629,10 @@ describe('Template Factory', () => {
 
             delete config.namespace;
 
-            return factory.listWithMetrics(config).then((templates) => {
+            return factory.listWithMetrics(config).then(templates => {
                 assert.deepEqual(templates.length, 1);
                 assert.deepEqual(templates[0].metrics.jobs.count, expected[0].metrics.jobs.count);
-                assert.deepEqual(
-                    templates[0].metrics.builds.count,
-                    expected[0].metrics.builds.count
-                );
+                assert.deepEqual(templates[0].metrics.builds.count, expected[0].metrics.builds.count);
             });
         });
     });
@@ -658,13 +678,13 @@ describe('Template Factory', () => {
 
         it('should get the correct template for a given name@exactVersion 1.0.2', () => {
             fullTemplateName = `${templateName}@1.0.2`;
-            expected = Object.assign({}, returnValue[2]);
+            expected = { ...returnValue[2] };
             datastore.scan.onCall(0).resolves([]);
             datastore.get.resolves(returnValue[2]);
 
-            return factory.getTemplate(fullTemplateName).then((model) => {
+            return factory.getTemplate(fullTemplateName).then(model => {
                 assert.instanceOf(model, Template);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -672,47 +692,49 @@ describe('Template Factory', () => {
 
         it('should get the correct template for a given namespace/name@exactVersion 1.0.2', () => {
             fullTemplateName = `${templateName}@1.0.2`;
-            expected = Object.assign({ namespace: 'namespace' }, returnValue[2]);
+            expected = { namespace: 'namespace', ...returnValue[2] };
             returnValue[2].namespace = 'namespace';
             datastore.scan.onCall(0).resolves([returnValue[2]]);
             datastore.get.resolves(returnValue[2]);
 
-            return factory.getTemplate(fullTemplateName).then((model) => {
-                assert.calledWith(datastore.get, { params: {
-                    namespace: 'namespace',
-                    name: 'testTemplateName',
-                    version: '1.0.2'
-                },
-                table: 'templates' });
+            return factory.getTemplate(fullTemplateName).then(model => {
+                assert.calledWith(datastore.get, {
+                    params: {
+                        namespace: 'namespace',
+                        name: 'testTemplateName',
+                        version: '1.0.2'
+                    },
+                    table: 'templates'
+                });
                 assert.instanceOf(model, Template);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
         });
 
         it('should get the correct template for a given name@version 1.0', () => {
-            expected = Object.assign({}, returnValue[4]);
+            expected = { ...returnValue[4] };
             datastore.scan.onCall(0).resolves([]);
             datastore.scan.onCall(1).resolves(returnValue);
 
-            return factory.getTemplate(fullTemplateName).then((model) => {
+            return factory.getTemplate(fullTemplateName).then(model => {
                 assert.instanceOf(model, Template);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
         });
 
         it('should get the correct template for a given namespace/name@version 1.0', () => {
-            expected = Object.assign({ namespace: 'namespace' }, returnValue[4]);
+            expected = { namespace: 'namespace', ...returnValue[4] };
             returnValue[4].namespace = 'namespace';
             datastore.scan.onCall(0).resolves([returnValue[4]]);
             datastore.scan.onCall(1).resolves(returnValue);
 
-            return factory.getTemplate(fullTemplateName).then((model) => {
+            return factory.getTemplate(fullTemplateName).then(model => {
                 assert.instanceOf(model, Template);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -720,14 +742,14 @@ describe('Template Factory', () => {
 
         it('should get the correct template for a given name@tag', () => {
             fullTemplateName = `${templateName}@latest`;
-            expected = Object.assign({}, returnValue[2]);
+            expected = { ...returnValue[2] };
             templateTagFactoryMock.get.resolves({ version: '1.0.2' });
             datastore.get.resolves(returnValue[2]);
             datastore.scan.onCall(0).resolves([]);
 
-            return factory.getTemplate(fullTemplateName).then((model) => {
+            return factory.getTemplate(fullTemplateName).then(model => {
                 assert.instanceOf(model, Template);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -735,21 +757,23 @@ describe('Template Factory', () => {
 
         it('should get the correct template for a given namespace/name@tag', () => {
             fullTemplateName = `${templateName}@latest`;
-            expected = Object.assign({ namespace: 'namespace' }, returnValue[2]);
+            expected = { namespace: 'namespace', ...returnValue[2] };
             returnValue[2].namespace = 'namespace';
             templateTagFactoryMock.get.resolves({ version: '1.0.2' });
             datastore.get.resolves(returnValue[2]);
             datastore.scan.onCall(0).resolves([returnValue[1]]);
 
-            return factory.getTemplate(fullTemplateName).then((model) => {
+            return factory.getTemplate(fullTemplateName).then(model => {
                 assert.instanceOf(model, Template);
-                assert.calledWith(datastore.get, { params: {
-                    namespace: 'namespace',
-                    name: 'testTemplateName',
-                    version: '1.0.2'
-                },
-                table: 'templates' });
-                Object.keys(expected).forEach((key) => {
+                assert.calledWith(datastore.get, {
+                    params: {
+                        namespace: 'namespace',
+                        name: 'testTemplateName',
+                        version: '1.0.2'
+                    },
+                    table: 'templates'
+                });
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -760,20 +784,20 @@ describe('Template Factory', () => {
             templateTagFactoryMock.get.resolves(null);
             datastore.scan.onCall(0).resolves([]);
 
-            return factory.getTemplate(fullTemplateName).then((model) => {
+            return factory.getTemplate(fullTemplateName).then(model => {
                 assert.isNull(model);
             });
         });
 
         it('should get correct template for a given name with no version or tag', () => {
             fullTemplateName = templateName;
-            expected = Object.assign({}, returnValue[0]);
+            expected = { ...returnValue[0] };
             datastore.scan.onCall(0).resolves([]);
             datastore.scan.onCall(1).resolves(returnValue);
 
-            return factory.getTemplate(fullTemplateName).then((model) => {
+            return factory.getTemplate(fullTemplateName).then(model => {
                 assert.instanceOf(model, Template);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -782,7 +806,7 @@ describe('Template Factory', () => {
         it('should return null if no template returned by list', () => {
             datastore.scan.resolves([]);
 
-            return factory.getTemplate(fullTemplateName).then((model) => {
+            return factory.getTemplate(fullTemplateName).then(model => {
                 assert.strictEqual(model, null);
             });
         });

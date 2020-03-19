@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 
@@ -90,16 +90,18 @@ describe('User Factory', () => {
             hashaMock.sha1.returns(generatedId);
             datastore.save.resolves(expected);
 
-            return factory.create({
-                username: 'batman',
-                token: 'hero'
-            }).then((model) => {
-                assert.calledWith(ironMock.seal, 'hero', password, 'defaults');
-                assert.instanceOf(model, User);
-                Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+            return factory
+                .create({
+                    username: 'batman',
+                    token: 'hero'
+                })
+                .then(model => {
+                    assert.calledWith(ironMock.seal, 'hero', password, 'defaults');
+                    assert.instanceOf(model, User);
+                    Object.keys(expected).forEach(key => {
+                        assert.strictEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
     });
 
@@ -132,27 +134,24 @@ describe('User Factory', () => {
 
             datastore.get.resolves(expected);
 
-            return factory.get({ accessToken })
-                .then((user) => {
-                    assert.isOk(user);
-                    assert.calledWith(tokenFactoryMock.get, { value: accessToken });
-                    assert.calledOnce(tokenMock.update);
-                    assert.equal(tokenMock.lastUsed, (new Date(now)).toISOString());
-                });
+            return factory.get({ accessToken }).then(user => {
+                assert.isOk(user);
+                assert.calledWith(tokenFactoryMock.get, { value: accessToken });
+                assert.calledOnce(tokenMock.update);
+                assert.equal(tokenMock.lastUsed, new Date(now).toISOString());
+            });
         });
 
-        it('should return null if the user doesn\'t exist', () => {
+        it("should return null if the user doesn't exist", () => {
             datastore.get.resolves(null);
 
-            return factory.get({ accessToken })
-                .then(user => assert.isNull(user));
+            return factory.get({ accessToken }).then(user => assert.isNull(user));
         });
 
-        it('should return null if the token doesn\'t exist', () => {
+        it("should return null if the token doesn't exist", () => {
             tokenFactoryMock.get.resolves(null);
 
-            return factory.get({ accessToken })
-                .then(user => assert.isNull(user));
+            return factory.get({ accessToken }).then(user => assert.isNull(user));
         });
     });
 
@@ -174,16 +173,23 @@ describe('User Factory', () => {
         });
 
         it('should throw when config does not have everything necessary', () => {
-            assert.throw(UserFactory.getInstance,
-                Error, 'No scm plugin provided to UserFactory');
+            assert.throw(UserFactory.getInstance, Error, 'No scm plugin provided to UserFactory');
 
-            assert.throw(() => {
-                UserFactory.getInstance({ datastore });
-            }, Error, 'No scm plugin provided to UserFactory');
+            assert.throw(
+                () => {
+                    UserFactory.getInstance({ datastore });
+                },
+                Error,
+                'No scm plugin provided to UserFactory'
+            );
 
-            assert.throw(() => {
-                UserFactory.getInstance({ scm: {} });
-            }, Error, 'No datastore provided to UserFactory');
+            assert.throw(
+                () => {
+                    UserFactory.getInstance({ scm: {} });
+                },
+                Error,
+                'No datastore provided to UserFactory'
+            );
         });
     });
 });

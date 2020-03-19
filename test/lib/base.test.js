@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 
@@ -72,7 +72,7 @@ describe('Base Model', () => {
     describe('constructor', () => {
         it('constructs properly', () => {
             assert.instanceOf(base, BaseModel);
-            schemaMock.models.base.allKeys.forEach((key) => {
+            schemaMock.models.base.allKeys.forEach(key => {
                 assert.strictEqual(base[key], config[key]);
             });
             // datastore is private
@@ -88,7 +88,7 @@ describe('Base Model', () => {
         it('is a noop if no fields changed', () => {
             assert.isFalse(base.isDirty());
 
-            return base.update().then((model) => {
+            return base.update().then(model => {
                 assert.isFalse(model.isDirty());
                 assert.notCalled(datastore.update);
             });
@@ -100,18 +100,19 @@ describe('Base Model', () => {
             base.foo = 'banana';
             assert.isTrue(base.isDirty());
 
-            return base.update(config)
-                .then((model) => {
-                    assert.deepEqual(model, base);
-                    assert.isFalse(model.isDirty());
-                    assert.isTrue(datastore.update.calledWith({
+            return base.update(config).then(model => {
+                assert.deepEqual(model, base);
+                assert.isFalse(model.isDirty());
+                assert.isTrue(
+                    datastore.update.calledWith({
                         table: 'base',
                         params: {
                             id: 12345,
                             foo: 'banana'
                         }
-                    }));
-                });
+                    })
+                );
+            });
         });
 
         it('rejects with a failure from the datastore update', () => {
@@ -121,11 +122,12 @@ describe('Base Model', () => {
             // update won't call datastore unless values have changed
             base.foo = 'banana';
 
-            return base.update(config)
+            return base
+                .update(config)
                 .then(() => {
                     assert.fail('this should not fail the test case');
                 })
-                .catch((err) => {
+                .catch(err => {
                     assert.strictEqual(err.message, errorMessage);
                 });
         });
@@ -142,21 +144,21 @@ describe('Base Model', () => {
         it('calls datastore remove with id and returns null', () => {
             datastore.remove.resolves(null);
 
-            return base.remove()
-                .then((data) => {
-                    assert.calledWith(datastore.remove, params);
-                    assert.isNull(data);
-                });
+            return base.remove().then(data => {
+                assert.calledWith(datastore.remove, params);
+                assert.isNull(data);
+            });
         });
 
         it('rejects with a failure from the datastore remove', () => {
             datastore.remove.rejects(new Error('teehee'));
 
-            return base.remove()
+            return base
+                .remove()
                 .then(() => {
                     assert.fail('this shall not pass');
                 })
-                .catch((err) => {
+                .catch(err => {
                     assert.strictEqual(err.message, 'teehee');
                 });
         });

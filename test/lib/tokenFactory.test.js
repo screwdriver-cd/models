@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 
@@ -76,7 +76,7 @@ describe('Token Factory', () => {
 
     describe('createClass', () => {
         it('should return a Token', () => {
-            const model = factory.createClass(Object.assign({}, tokenData));
+            const model = factory.createClass({ ...tokenData });
 
             assert.instanceOf(model, Token);
         });
@@ -86,25 +86,27 @@ describe('Token Factory', () => {
         it('should create a Token', () => {
             datastore.save.resolves(tokenData);
 
-            return factory.create({
-                userId,
-                name,
-                description,
-                hash
-            }).then((model) => {
-                assert.isTrue(datastore.save.calledOnce);
-                assert.calledOnce(generateTokenMock.generateValue);
-                assert.calledWith(generateTokenMock.hashValue, randomBytes, password);
-                assert.calledWith(datastore.save, {
-                    params: expected,
-                    table: 'tokens'
+            return factory
+                .create({
+                    userId,
+                    name,
+                    description,
+                    hash
+                })
+                .then(model => {
+                    assert.isTrue(datastore.save.calledOnce);
+                    assert.calledOnce(generateTokenMock.generateValue);
+                    assert.calledWith(generateTokenMock.hashValue, randomBytes, password);
+                    assert.calledWith(datastore.save, {
+                        params: expected,
+                        table: 'tokens'
+                    });
+                    assert.instanceOf(model, Token);
+                    Object.keys(tokenData).forEach(key => {
+                        assert.strictEqual(model[key], tokenData[key]);
+                    });
+                    assert.strictEqual(model.value, randomBytes);
                 });
-                assert.instanceOf(model, Token);
-                Object.keys(tokenData).forEach((key) => {
-                    assert.strictEqual(model[key], tokenData[key]);
-                });
-                assert.strictEqual(model.value, randomBytes);
-            });
         });
     });
 
@@ -114,41 +116,38 @@ describe('Token Factory', () => {
         });
 
         it('should get a token by ID', () =>
-            Promise.all([factory.get(tokenId), factory.get({ id: tokenId })])
-                .then(([token1, token2]) => {
-                    Object.keys(token1).forEach((key) => {
-                        assert.strictEqual(token1[key], tokenData[key]);
-                        assert.strictEqual(token2[key], tokenData[key]);
-                    });
-                }));
+            Promise.all([factory.get(tokenId), factory.get({ id: tokenId })]).then(([token1, token2]) => {
+                Object.keys(token1).forEach(key => {
+                    assert.strictEqual(token1[key], tokenData[key]);
+                    assert.strictEqual(token2[key], tokenData[key]);
+                });
+            }));
 
         it('should get a token by value', () =>
-            factory.get({ value: randomBytes })
-                .then((token) => {
-                    Object.keys(token).forEach((key) => {
-                        assert.strictEqual(token[key], tokenData[key]);
-                    });
-                    assert.calledWith(datastore.get, {
-                        params: {
-                            hash
-                        },
-                        table: 'tokens'
-                    });
-                }));
+            factory.get({ value: randomBytes }).then(token => {
+                Object.keys(token).forEach(key => {
+                    assert.strictEqual(token[key], tokenData[key]);
+                });
+                assert.calledWith(datastore.get, {
+                    params: {
+                        hash
+                    },
+                    table: 'tokens'
+                });
+            }));
 
         it('should return null when trying to get a token by value', () => {
             datastore.get.resolves(null);
 
-            return factory.get({ value: randomBytes })
-                .then((token) => {
-                    assert.isNull(token);
-                    assert.calledWith(datastore.get, {
-                        params: {
-                            hash
-                        },
-                        table: 'tokens'
-                    });
+            return factory.get({ value: randomBytes }).then(token => {
+                assert.isNull(token);
+                assert.calledWith(datastore.get, {
+                    params: {
+                        hash
+                    },
+                    table: 'tokens'
                 });
+            });
         });
     });
 
@@ -174,8 +173,7 @@ describe('Token Factory', () => {
         });
 
         it('should throw an error when config not supplied', () => {
-            assert.throw(TokenFactory.getInstance,
-                Error, 'No datastore provided to TokenFactory');
+            assert.throw(TokenFactory.getInstance, Error, 'No datastore provided to TokenFactory');
         });
     });
 });

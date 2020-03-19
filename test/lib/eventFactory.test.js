@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
 const mockery = require('mockery');
@@ -34,7 +34,7 @@ class Event {
 
 describe('Event Factory', () => {
     const dateNow = 1234567;
-    const nowTime = (new Date(dateNow)).toISOString();
+    const nowTime = new Date(dateNow).toISOString();
     let EventFactory;
     let datastore;
     let eventFactory;
@@ -258,7 +258,7 @@ describe('Event Factory', () => {
                 branch: Promise.resolve('branch')
             };
 
-            afterSyncedPRPipelineMock = Object.assign({}, syncedPipelineMock);
+            afterSyncedPRPipelineMock = { ...syncedPipelineMock };
             syncedPipelineMock.syncPR = sinon.stub().resolves(afterSyncedPRPipelineMock);
 
             pipelineMock = {
@@ -277,79 +277,107 @@ describe('Event Factory', () => {
 
         describe('with new workflow', () => {
             beforeEach(() => {
-                jobsMock = [{
-                    id: 1,
-                    pipelineId: 8765,
-                    name: 'main',
-                    permutations: [{
-                        requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch', '~pr:branch']
-                    }],
-                    state: 'ENABLED'
-                }, {
-                    id: 2,
-                    pipelineId: 8765,
-                    name: 'disabledjob',
-                    permutations: [{
-                        requires: ['main']
-                    }],
-                    state: 'DISABLED'
-                }, {
-                    id: 4,
-                    pipelineId: 8765,
-                    name: 'publish',
-                    permutations: [{
-                        requires: ['~pr']
-                    }],
-                    state: 'ENABLED'
-                }, {
-                    id: 5,
-                    pipelineId: 8765,
-                    name: 'commit-branch',
-                    permutations: [{
-                        requires: ['~commit:branch']
-                    }],
-                    state: 'ENABLED'
-                }, {
-                    id: 6,
-                    pipelineId: 8765,
-                    name: 'only-commit',
-                    permutations: [{
-                        requires: ['~commit']
-                    }],
-                    state: 'ENABLED'
-                }, {
-                    id: 7,
-                    pipelineId: 8765,
-                    name: 'commit-wild',
-                    permutations: [{
-                        requires: ['~commit:/^.*$/']
-                    }],
-                    state: 'ENABLED'
-                }, {
-                    id: 8,
-                    pipelineId: 8765,
-                    name: 'pr-branch',
-                    permutations: [{
-                        requires: ['~pr:branch']
-                    }],
-                    state: 'ENABLED'
-                }, {
-                    id: 9,
-                    pipelineId: 8765,
-                    name: 'pr-wild',
-                    permutations: [{
-                        requires: ['~pr:/^.*$/']
-                    }],
-                    state: 'ENABLED'
-                }, {
-                    id: 10,
-                    pipelineId: 8765,
-                    name: 'PR-1:main',
-                    permutations: [{
-                        requires: ['~pr']
-                    }],
-                    state: 'ENABLED'
-                }];
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'main',
+                        permutations: [
+                            {
+                                requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch', '~pr:branch']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 2,
+                        pipelineId: 8765,
+                        name: 'disabledjob',
+                        permutations: [
+                            {
+                                requires: ['main']
+                            }
+                        ],
+                        state: 'DISABLED'
+                    },
+                    {
+                        id: 4,
+                        pipelineId: 8765,
+                        name: 'publish',
+                        permutations: [
+                            {
+                                requires: ['~pr']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 5,
+                        pipelineId: 8765,
+                        name: 'commit-branch',
+                        permutations: [
+                            {
+                                requires: ['~commit:branch']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 6,
+                        pipelineId: 8765,
+                        name: 'only-commit',
+                        permutations: [
+                            {
+                                requires: ['~commit']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 7,
+                        pipelineId: 8765,
+                        name: 'commit-wild',
+                        permutations: [
+                            {
+                                requires: ['~commit:/^.*$/']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 8,
+                        pipelineId: 8765,
+                        name: 'pr-branch',
+                        permutations: [
+                            {
+                                requires: ['~pr:branch']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 9,
+                        pipelineId: 8765,
+                        name: 'pr-wild',
+                        permutations: [
+                            {
+                                requires: ['~pr:/^.*$/']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 10,
+                        pipelineId: 8765,
+                        name: 'PR-1:main',
+                        permutations: [
+                            {
+                                requires: ['~pr']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    }
+                ];
 
                 syncedPipelineMock.getJobs = sinon.stub().resolves(jobsMock);
                 buildFactoryMock.create.resolves('a build object');
@@ -385,57 +413,73 @@ describe('Event Factory', () => {
             });
 
             it('should start existing unarchived pr jobs without creating duplicates', () => {
-                jobsMock = [{
-                    id: 1,
-                    pipelineId: 8765,
-                    name: 'main',
-                    permutations: [{
-                        requires: ['~pr']
-                    }],
-                    state: 'ENABLED'
-                }, {
-                    id: 5,
-                    pipelineId: 8765,
-                    name: 'PR-1:main',
-                    permutations: [{
-                        requires: ['~pr']
-                    }],
-                    state: 'ENABLED'
-                }, {
-                    id: 6,
-                    pipelineId: 8765,
-                    name: 'PR-1:outdated',
-                    permutations: [{
-                        requires: ['~pr']
-                    }],
-                    state: 'ENABLED',
-                    archived: true
-                },
-                {
-                    id: 7,
-                    pipelineId: 8765,
-                    name: 'PR-2:main',
-                    permutations: [{
-                        requires: ['~pr']
-                    }],
-                    state: 'ENABLED'
-                },
-                {
-                    id: 3,
-                    name: 'publish',
-                    permutations: [{
-                        requires: ['~pr']
-                    }],
-                    state: 'ENABLED'
-                },
-                {
-                    id: 6,
-                    name: 'PR-1:publish',
-                    permutations: [{
-                        requires: ['~pr']
-                    }],
-                    state: 'DISABLED'
-                }];
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'main',
+                        permutations: [
+                            {
+                                requires: ['~pr']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 5,
+                        pipelineId: 8765,
+                        name: 'PR-1:main',
+                        permutations: [
+                            {
+                                requires: ['~pr']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 6,
+                        pipelineId: 8765,
+                        name: 'PR-1:outdated',
+                        permutations: [
+                            {
+                                requires: ['~pr']
+                            }
+                        ],
+                        state: 'ENABLED',
+                        archived: true
+                    },
+                    {
+                        id: 7,
+                        pipelineId: 8765,
+                        name: 'PR-2:main',
+                        permutations: [
+                            {
+                                requires: ['~pr']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 3,
+                        name: 'publish',
+                        permutations: [
+                            {
+                                requires: ['~pr']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 6,
+                        name: 'PR-1:publish',
+                        permutations: [
+                            {
+                                requires: ['~pr']
+                            }
+                        ],
+                        state: 'DISABLED'
+                    }
+                ];
 
                 afterSyncedPRPipelineMock.getJobs.resolves(jobsMock);
                 afterSyncedPRPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
@@ -447,23 +491,26 @@ describe('Event Factory', () => {
                 config.prTitle = 'Update the README with new information';
                 config.webhooks = true;
 
-                return eventFactory.create(config).then((model) => {
+                return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.calledOnce(buildFactoryMock.create);
-                    assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 5,
-                        prRef: 'branch',
-                        prTitle: 'Update the README with new information',
-                        meta: {
-                            commit: {
-                                ...commit,
-                                changedFiles: ''
+                    assert.calledWith(
+                        buildFactoryMock.create.firstCall,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 5,
+                            prRef: 'branch',
+                            prTitle: 'Update the README with new information',
+                            meta: {
+                                commit: {
+                                    ...commit,
+                                    changedFiles: ''
+                                }
                             }
-                        }
-                    }));
+                        })
+                    );
                     assert.calledOnce(syncedPipelineMock.syncPR);
                     assert.calledWith(syncedPipelineMock.syncPR.firstCall, 1);
                 });
@@ -471,59 +518,74 @@ describe('Event Factory', () => {
 
             // eslint-disable-next-line max-len
             it('should start existing unarchived branch pr jobs without creating duplicates', () => {
-                jobsMock = [{
-                    id: 1,
-                    pipelineId: 8765,
-                    name: 'main',
-                    permutations: [{
-                        requires: ['~pr:branch']
-                    }],
-                    state: 'ENABLED'
-                }, {
-                    id: 5,
-                    pipelineId: 8765,
-                    name: 'PR-1:main',
-                    permutations: [{
-                        requires: ['~pr:branch']
-                    }],
-                    state: 'ENABLED'
-                }, {
-                    id: 6,
-                    pipelineId: 8765,
-                    name: 'PR-1:outdated',
-                    permutations: [{
-                        requires: ['~pr:branch']
-                    }],
-                    state: 'ENABLED',
-                    archived: true
-                },
-                {
-                    id: 7,
-                    pipelineId: 8765,
-                    name: 'PR-2:main',
-                    permutations: [{
-                        requires: ['~pr:branch']
-                    }],
-                    state: 'ENABLED'
-                },
-                {
-                    id: 8,
-                    pipelineId: 8765,
-                    name: 'pr-branch',
-                    permutations: [{
-                        requires: ['~pr:branch']
-                    }],
-                    state: 'ENABLED'
-                },
-                {
-                    id: 9,
-                    pipelineId: 8765,
-                    name: 'PR-1:pr-branch',
-                    permutations: [{
-                        requires: ['~pr:branch']
-                    }],
-                    state: 'DISABLED'
-                }
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'main',
+                        permutations: [
+                            {
+                                requires: ['~pr:branch']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 5,
+                        pipelineId: 8765,
+                        name: 'PR-1:main',
+                        permutations: [
+                            {
+                                requires: ['~pr:branch']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 6,
+                        pipelineId: 8765,
+                        name: 'PR-1:outdated',
+                        permutations: [
+                            {
+                                requires: ['~pr:branch']
+                            }
+                        ],
+                        state: 'ENABLED',
+                        archived: true
+                    },
+                    {
+                        id: 7,
+                        pipelineId: 8765,
+                        name: 'PR-2:main',
+                        permutations: [
+                            {
+                                requires: ['~pr:branch']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 8,
+                        pipelineId: 8765,
+                        name: 'pr-branch',
+                        permutations: [
+                            {
+                                requires: ['~pr:branch']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 9,
+                        pipelineId: 8765,
+                        name: 'PR-1:pr-branch',
+                        permutations: [
+                            {
+                                requires: ['~pr:branch']
+                            }
+                        ],
+                        state: 'DISABLED'
+                    }
                 ];
 
                 afterSyncedPRPipelineMock.getJobs.resolves(jobsMock);
@@ -541,47 +603,56 @@ describe('Event Factory', () => {
                 config.prTitle = 'Update the README with new information';
                 config.webhooks = true;
 
-                return eventFactory.create(config).then((model) => {
+                return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.calledOnce(buildFactoryMock.create);
-                    assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 5,
-                        prRef: 'branch-pr',
-                        prTitle: 'Update the README with new information',
-                        meta: {
-                            commit: {
-                                ...commit,
-                                changedFiles: ''
+                    assert.calledWith(
+                        buildFactoryMock.create.firstCall,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 5,
+                            prRef: 'branch-pr',
+                            prTitle: 'Update the README with new information',
+                            meta: {
+                                commit: {
+                                    ...commit,
+                                    changedFiles: ''
+                                }
                             }
-                        }
-                    }));
+                        })
+                    );
                     assert.calledOnce(syncedPipelineMock.syncPR);
                     assert.calledWith(syncedPipelineMock.syncPR.firstCall, 1);
                 });
             });
 
             // eslint-disable-next-line max-len
-            it('should start existing pipeline\'s branch pr jobs without creating duplicates', () => {
-                jobsMock = [{
-                    id: 1,
-                    pipelineId: 8765,
-                    name: 'PR-1:main',
-                    permutations: [{
-                        requires: ['~pr', '~pr:branch']
-                    }],
-                    state: 'ENABLED'
-                }, {
-                    id: 2,
-                    pipelineId: 8765,
-                    name: 'PR-1:pr-branch',
-                    permutations: [{
-                        requires: ['~pr:branch']
-                    }],
-                    state: 'ENABLED'
-                }
+            it("should start existing pipeline's branch pr jobs without creating duplicates", () => {
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'PR-1:main',
+                        permutations: [
+                            {
+                                requires: ['~pr', '~pr:branch']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 2,
+                        pipelineId: 8765,
+                        name: 'PR-1:pr-branch',
+                        permutations: [
+                            {
+                                requires: ['~pr:branch']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    }
                 ];
 
                 afterSyncedPRPipelineMock.getJobs.resolves(jobsMock);
@@ -599,36 +670,42 @@ describe('Event Factory', () => {
                 config.prTitle = 'Update the README with new information';
                 config.webhooks = true;
 
-                return eventFactory.create(config).then((model) => {
+                return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.calledTwice(buildFactoryMock.create);
-                    assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 1,
-                        prRef: 'branch-pr',
-                        prTitle: 'Update the README with new information',
-                        meta: {
-                            commit: {
-                                ...commit,
-                                changedFiles: ''
+                    assert.calledWith(
+                        buildFactoryMock.create.firstCall,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 1,
+                            prRef: 'branch-pr',
+                            prTitle: 'Update the README with new information',
+                            meta: {
+                                commit: {
+                                    ...commit,
+                                    changedFiles: ''
+                                }
                             }
-                        }
-                    }));
-                    assert.calledWith(buildFactoryMock.create.secondCall, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 2,
-                        prRef: 'branch-pr',
-                        prTitle: 'Update the README with new information',
-                        meta: {
-                            commit: {
-                                ...commit,
-                                changedFiles: ''
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create.secondCall,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 2,
+                            prRef: 'branch-pr',
+                            prTitle: 'Update the README with new information',
+                            meta: {
+                                commit: {
+                                    ...commit,
+                                    changedFiles: ''
+                                }
                             }
-                        }
-                    }));
+                        })
+                    );
                     assert.calledOnce(syncedPipelineMock.syncPR);
                     assert.calledWith(syncedPipelineMock.syncPR.firstCall, 1);
                 });
@@ -639,7 +716,7 @@ describe('Event Factory', () => {
                 config.webhooks = true;
                 config.skipMessage = 'Skipping due to the commit message: [skip ci]';
 
-                return eventFactory.create(config).then((model) => {
+                return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.notCalled(buildFactoryMock.create);
@@ -654,14 +731,17 @@ describe('Event Factory', () => {
                 config.webhooks = true;
                 syncedPipelineMock.id = 123566;
 
-                return eventFactory.create(config).then((model) => {
+                return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 1
-                    }));
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 1
+                        })
+                    );
                     assert.calledOnce(pipelineMock.sync);
                     assert.notCalled(syncedPipelineMock.syncPR);
                 });
@@ -670,14 +750,17 @@ describe('Event Factory', () => {
             it('should create triggered builds', () => {
                 config.startFrom = '~sd@123:main';
 
-                return eventFactory.create(config).then((model) => {
+                return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 1
-                    }));
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 1
+                        })
+                    );
                     assert.calledOnce(pipelineMock.sync);
                     assert.notCalled(syncedPipelineMock.syncPR);
                 });
@@ -686,96 +769,120 @@ describe('Event Factory', () => {
             it('should create ~commit and ~commit:branch triggered builds', () => {
                 config.startFrom = '~commit';
 
-                return eventFactory.create(config).then((model) => {
+                return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 1
-                    }));
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 5
-                    }));
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 6
-                    }));
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 7
-                    }));
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 1
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 5
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 6
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 7
+                        })
+                    );
                 });
             });
 
             it('should create ~commit:branch triggered builds', () => {
                 config.startFrom = '~commit:branch';
 
-                return eventFactory.create(config).then((model) => {
+                return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 1
-                    }));
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 5
-                    }));
-                    assert.neverCalledWith(buildFactoryMock.create, sinon.match({
-                        jobId: 6
-                    }));
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 7
-                    }));
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 1
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 5
+                        })
+                    );
+                    assert.neverCalledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            jobId: 6
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 7
+                        })
+                    );
                 });
             });
 
             it('should create build if startFrom is a jobName', () => {
                 config.startFrom = 'main';
 
-                return eventFactory.create(config).then((model) => {
+                return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.notCalled(syncedPipelineMock.syncPR);
                     assert.calledOnce(pipelineMock.sync);
                     assert.calledOnce(buildFactoryMock.create);
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 1
-                    }));
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 1
+                        })
+                    );
                 });
             });
 
             it('should create build if startFrom is ~release', () => {
                 const releaseWorkflow = {
-                    nodes: [
-                        { name: '~pr' },
-                        { name: '~commit' },
-                        { name: '~release' },
-                        { name: 'release' }
-                    ],
-                    edges: [
-                        { src: '~release', dest: 'release' }
-                    ]
+                    nodes: [{ name: '~pr' }, { name: '~commit' }, { name: '~release' }, { name: 'release' }],
+                    edges: [{ src: '~release', dest: 'release' }]
                 };
 
-                jobsMock = [{
-                    id: 1,
-                    pipelineId: 8765,
-                    name: 'release',
-                    permutations: [{
-                        requires: ['~release']
-                    }],
-                    state: 'ENABLED'
-                }];
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'release',
+                        permutations: [
+                            {
+                                requires: ['~release']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    }
+                ];
 
                 syncedPipelineMock.workflowGraph = releaseWorkflow;
                 syncedPipelineMock.getJobs = sinon.stub().resolves(jobsMock);
@@ -785,42 +892,42 @@ describe('Event Factory', () => {
                 });
                 config.startFrom = '~release';
 
-                return eventFactory.create(config).then((model) => {
+                return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.notCalled(syncedPipelineMock.syncPR);
                     assert.calledOnce(pipelineMock.sync);
                     assert.calledOnce(buildFactoryMock.create);
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 1
-                    }));
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 1
+                        })
+                    );
                 });
             });
 
             it('should create build if startFrom is ~tag', () => {
                 const tagWorkflow = {
-                    nodes: [
-                        { name: '~pr' },
-                        { name: '~commit' },
-                        { name: '~tag' },
-                        { name: 'tag' }
-                    ],
-                    edges: [
-                        { src: '~tag', dest: 'tag' }
-                    ]
+                    nodes: [{ name: '~pr' }, { name: '~commit' }, { name: '~tag' }, { name: 'tag' }],
+                    edges: [{ src: '~tag', dest: 'tag' }]
                 };
 
-                jobsMock = [{
-                    id: 1,
-                    pipelineId: 8765,
-                    name: 'tag',
-                    permutations: [{
-                        requires: ['~tag']
-                    }],
-                    state: 'ENABLED'
-                }];
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'tag',
+                        permutations: [
+                            {
+                                requires: ['~tag']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    }
+                ];
 
                 syncedPipelineMock.workflowGraph = tagWorkflow;
                 syncedPipelineMock.getJobs = sinon.stub().resolves(jobsMock);
@@ -830,24 +937,27 @@ describe('Event Factory', () => {
                 });
                 config.startFrom = '~tag';
 
-                return eventFactory.create(config).then((model) => {
+                return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.notCalled(syncedPipelineMock.syncPR);
                     assert.calledOnce(pipelineMock.sync);
                     assert.calledOnce(buildFactoryMock.create);
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 1
-                    }));
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 1
+                        })
+                    );
                 });
             });
 
             it('should throw error if startFrom job does not exist', () => {
                 config.startFrom = 'doesnnotexist';
 
-                return eventFactory.create(config).then((event) => {
+                return eventFactory.create(config).then(event => {
                     assert.equal(event.builds, null);
                 });
             });
@@ -855,7 +965,7 @@ describe('Event Factory', () => {
             it('should throw error if startFrom job is disabled', () => {
                 config.startFrom = 'disabledjob';
 
-                return eventFactory.create(config).then((event) => {
+                return eventFactory.create(config).then(event => {
                     assert.equal(event.builds, null);
                 });
             });
@@ -868,13 +978,16 @@ describe('Event Factory', () => {
                 });
                 config.startFrom = 'main';
 
-                return eventFactory.create(config).then((model) => {
+                return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
                     assert.deepEqual(model.configPipelineSha, 'configpipelinesha');
                     assert.calledWith(pipelineMock.sync, 'configpipelinesha');
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        configPipelineSha: 'configpipelinesha'
-                    }));
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            configPipelineSha: 'configpipelinesha'
+                        })
+                    );
                 });
             });
 
@@ -886,12 +999,7 @@ describe('Event Factory', () => {
                 const pipeline = { id: 1234, chainPR: true };
                 const eventConfig = {}; // non pr event
                 const inWorkflowGraph = {
-                    nodes: [
-                        { name: '~pr' },
-                        { name: '~commit' },
-                        { name: 'job-A' },
-                        { name: 'job-B' }
-                    ],
+                    nodes: [{ name: '~pr' }, { name: '~commit' }, { name: 'job-A' }, { name: 'job-B' }],
                     edges: [
                         { src: '~pr', dest: 'job-A' },
                         { src: '~commit', dest: 'job-A' },
@@ -904,7 +1012,7 @@ describe('Event Factory', () => {
                     pipeline,
                     eventConfig,
                     workflowGraph: inWorkflowGraph
-                }).then((actualWorkflowGraph) => {
+                }).then(actualWorkflowGraph => {
                     assert.notCalled(jobFactoryMock.list);
                     assert.deepEqual(expectedWorkflowGraph, actualWorkflowGraph);
                 });
@@ -917,12 +1025,7 @@ describe('Event Factory', () => {
                 const pipeline = { id: 1234, chainPR: false };
                 const eventConfig = { prRef: 'branch', prNum: 1 };
                 const inWorkflowGraph = {
-                    nodes: [
-                        { name: '~pr' },
-                        { name: '~commit' },
-                        { name: 'job-A' },
-                        { name: 'job-B' }
-                    ],
+                    nodes: [{ name: '~pr' }, { name: '~commit' }, { name: 'job-A' }, { name: 'job-B' }],
                     edges: [
                         { src: '~pr', dest: 'job-A' },
                         { src: '~commit', dest: 'job-A' },
@@ -935,7 +1038,7 @@ describe('Event Factory', () => {
                     pipeline,
                     eventConfig,
                     workflowGraph: inWorkflowGraph
-                }).then((actualWorkflowGraph) => {
+                }).then(actualWorkflowGraph => {
                     assert.notCalled(jobFactoryMock.list);
                     assert.deepEqual(expectedWorkflowGraph, actualWorkflowGraph);
                 });
@@ -948,12 +1051,7 @@ describe('Event Factory', () => {
                 const pipeline = { id: 1234, chainPR: true };
                 const eventConfig = { prRef: 'branch', prNum: 1 };
                 const inWorkflowGraph = {
-                    nodes: [
-                        { name: '~pr' },
-                        { name: '~commit' },
-                        { name: 'job-A' },
-                        { name: 'job-B' }
-                    ],
+                    nodes: [{ name: '~pr' }, { name: '~commit' }, { name: 'job-A' }, { name: 'job-B' }],
                     edges: [
                         { src: '~pr', dest: 'job-A' },
                         { src: '~commit', dest: 'job-A' },
@@ -985,12 +1083,15 @@ describe('Event Factory', () => {
                     pipeline,
                     eventConfig,
                     workflowGraph: inWorkflowGraph
-                }).then((actualWorkflowGraph) => {
+                }).then(actualWorkflowGraph => {
                     assert.calledOnce(jobFactoryMock.list);
-                    assert.calledWith(jobFactoryMock.list, sinon.match({
-                        params: { pipelineId: pipeline.id, archived: false },
-                        search: { field: 'name', keyword: `PR-${eventConfig.prNum}:%` }
-                    }));
+                    assert.calledWith(
+                        jobFactoryMock.list,
+                        sinon.match({
+                            params: { pipelineId: pipeline.id, archived: false },
+                            search: { field: 'name', keyword: `PR-${eventConfig.prNum}:%` }
+                        })
+                    );
                     assert.deepEqual(expectedWorkflowGraph, actualWorkflowGraph);
                 });
             });
@@ -1002,12 +1103,7 @@ describe('Event Factory', () => {
                 const updateWorkflowGraph = RewiredEventFactory.__get__('updateWorkflowGraph');
                 const eventConfig = { startFrom: '~release' };
                 const inWorkflowGraph = {
-                    nodes: [
-                        { name: '~pr' },
-                        { name: '~commit' },
-                        { name: 'job-A', id: 22 },
-                        { name: 'job-B', id: 23 }
-                    ],
+                    nodes: [{ name: '~pr' }, { name: '~commit' }, { name: 'job-A', id: 22 }, { name: 'job-B', id: 23 }],
                     edges: [
                         { src: '~pr', dest: 'job-A' },
                         { src: '~commit', dest: 'job-A' },
@@ -1034,7 +1130,7 @@ describe('Event Factory', () => {
                     pipelineConfig: {},
                     eventConfig,
                     workflowGraph: inWorkflowGraph
-                }).then((actualWorkflowGraph) => {
+                }).then(actualWorkflowGraph => {
                     assert.deepEqual(expectedWorkflowGraph, actualWorkflowGraph);
                 });
             });
@@ -1045,12 +1141,7 @@ describe('Event Factory', () => {
                 const updateWorkflowGraph = RewiredEventFactory.__get__('updateWorkflowGraph');
                 const eventConfig = { startFrom: 'PR-1:test' };
                 const inWorkflowGraph = {
-                    nodes: [
-                        { name: '~pr' },
-                        { name: '~commit' },
-                        { name: 'job-A', id: 22 },
-                        { name: 'job-B', id: 23 }
-                    ],
+                    nodes: [{ name: '~pr' }, { name: '~commit' }, { name: 'job-A', id: 22 }, { name: 'job-B', id: 23 }],
                     edges: [
                         { src: '~pr', dest: 'job-A' },
                         { src: '~commit', dest: 'job-A' },
@@ -1063,7 +1154,7 @@ describe('Event Factory', () => {
                     pipelineConfig: {},
                     eventConfig,
                     workflowGraph: inWorkflowGraph
-                }).then((actualWorkflowGraph) => {
+                }).then(actualWorkflowGraph => {
                     assert.deepEqual(expectedWorkflowGraph, actualWorkflowGraph);
                 });
             });
@@ -1081,23 +1172,26 @@ describe('Event Factory', () => {
                 // This function is called in updateWorkflowGraph() which is tested in another unit test.
                 jobFactoryMock.list.resolves([]);
 
-                return eventFactory.create(config).then((model) => {
+                return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
                     assert.called(jobFactoryMock.list);
-                    assert.calledWith(buildFactoryMock.create, sinon.match({
-                        parentBuildId: 12345,
-                        eventId: model.id,
-                        jobId: 10,
-                        prRef: 'branch',
-                        prTitle: 'Update the README with new information'
-                    }));
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 10,
+                            prRef: 'branch',
+                            prTitle: 'Update the README with new information'
+                        })
+                    );
                 });
             });
         });
 
         it('should create an Event', () =>
-            eventFactory.create(config).then((model) => {
+            eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
                 assert.calledWith(scm.decorateAuthor, {
                     username: 'stjohn',
@@ -1112,15 +1206,14 @@ describe('Event Factory', () => {
                 });
                 assert.strictEqual(syncedPipelineMock.lastEventId, model.id);
                 assert.strictEqual(config.prInfo.url, model.pr.url);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     if (key === 'workflowGraph' || key === 'meta') {
                         assert.deepEqual(model[key], expected[key]);
                     } else {
                         assert.strictEqual(model[key], expected[key]);
                     }
                 });
-            })
-        );
+            }));
 
         it('should create an Event with meta', () => {
             const meta = {
@@ -1131,7 +1224,7 @@ describe('Event Factory', () => {
             config.meta = meta;
             expected.meta = meta;
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
                 assert.calledWith(scm.decorateAuthor, {
                     username: 'stjohn',
@@ -1146,7 +1239,7 @@ describe('Event Factory', () => {
                 });
                 assert.strictEqual(syncedPipelineMock.lastEventId, model.id);
                 assert.strictEqual(config.prInfo.url, model.pr.url);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     if (key === 'workflowGraph' || key === 'meta') {
                         assert.deepEqual(model[key], expected[key]);
                     } else {
@@ -1160,7 +1253,7 @@ describe('Event Factory', () => {
             config.groupEventId = 12345;
             expected.groupEventId = 12345;
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
                 assert.calledWith(scm.decorateAuthor, {
                     username: 'stjohn',
@@ -1175,7 +1268,7 @@ describe('Event Factory', () => {
                 });
                 assert.strictEqual(syncedPipelineMock.lastEventId, model.id);
                 assert.strictEqual(config.prInfo.url, model.pr.url);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     if (key === 'workflowGraph' || key === 'meta') {
                         assert.deepEqual(model[key], expected[key]);
                     } else {
@@ -1194,7 +1287,7 @@ describe('Event Factory', () => {
             config.creator = creatorTest;
             expected.creator = creatorTest;
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
                 assert.notCalled(scm.decorateAuthor);
                 assert.calledWith(scm.decorateCommit, {
@@ -1205,7 +1298,7 @@ describe('Event Factory', () => {
                 });
                 assert.strictEqual(syncedPipelineMock.lastEventId, model.id);
                 assert.strictEqual(config.prInfo.url, model.pr.url);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     if (key === 'workflowGraph' || key === 'meta' || key === 'creator') {
                         assert.deepEqual(model[key], expected[key]);
                     } else {
@@ -1227,7 +1320,7 @@ describe('Event Factory', () => {
                 url: 'https://github.com/stjohn'
             };
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
                 assert.notCalled(scm.decorateAuthor);
                 assert.calledWith(scm.decorateCommit, {
@@ -1238,7 +1331,7 @@ describe('Event Factory', () => {
                 });
                 assert.strictEqual(syncedPipelineMock.lastEventId, model.id);
                 assert.strictEqual(config.prInfo.url, model.pr.url);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     if (key === 'workflowGraph' || key === 'meta' || key === 'creator') {
                         assert.deepEqual(model[key], expected[key]);
                     } else {
@@ -1252,7 +1345,7 @@ describe('Event Factory', () => {
             config.parentEventId = 222;
             config.configPipelineSha = 'configpipelinesha';
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
                 assert.deepEqual(model.configPipelineSha, config.configPipelineSha);
                 assert.calledWith(pipelineMock.sync, config.configPipelineSha);
@@ -1267,7 +1360,7 @@ describe('Event Factory', () => {
                 token: Promise.resolve('token')
             });
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
                 assert.deepEqual(model.configPipelineSha, 'configpipelinesha');
                 assert.calledWith(pipelineMock.sync, 'configpipelinesha');
@@ -1278,7 +1371,7 @@ describe('Event Factory', () => {
             config.prNum = 20;
             config.prRef = 'branch';
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
                 assert.deepEqual(model.pr.prBranchName, config.prInfo.prBranchName);
                 assert.deepEqual(model.pr.prSource, config.prSource);
@@ -1294,7 +1387,7 @@ describe('Event Factory', () => {
             config.prRef = 'branch';
             config.prNum = 20;
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
                 assert.neverCalledWith(pipelineMock.sync, config.configPipelineSha);
                 assert.neverCalledWith(pipelineMock.sync, config.sha);
@@ -1306,16 +1399,20 @@ describe('Event Factory', () => {
         });
 
         it('throw error if sourcepaths is not supported', () => {
-            jobsMock = [{
-                id: 1,
-                pipelineId: 8765,
-                name: 'main',
-                permutations: [{
-                    requires: ['~pr'],
-                    sourcePaths: ['src/test/']
-                }],
-                state: 'ENABLED'
-            }];
+            jobsMock = [
+                {
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [
+                        {
+                            requires: ['~pr'],
+                            sourcePaths: ['src/test/']
+                        }
+                    ],
+                    state: 'ENABLED'
+                }
+            ];
             syncedPipelineMock.update = sinon.stub().resolves({
                 getJobs: sinon.stub().resolves(jobsMock),
                 branch: Promise.resolve('branch')
@@ -1324,26 +1421,33 @@ describe('Event Factory', () => {
             config.startFrom = 'main';
             config.webhooks = true;
 
-            return eventFactory.create(config).then(() => {
-                throw new Error('Should not get here');
-            }, (err) => {
-                assert.isOk(err, 'Error should be returned');
-                assert.equal(err.message, 'Your SCM does not support Source Paths');
-                assert.notCalled(buildFactoryMock.create);
-            });
+            return eventFactory.create(config).then(
+                () => {
+                    throw new Error('Should not get here');
+                },
+                err => {
+                    assert.isOk(err, 'Error should be returned');
+                    assert.equal(err.message, 'Your SCM does not support Source Paths');
+                    assert.notCalled(buildFactoryMock.create);
+                }
+            );
         });
 
         it('should not start build if changed file is not in sourcePaths', () => {
-            jobsMock = [{
-                id: 1,
-                pipelineId: 8765,
-                name: 'main',
-                permutations: [{
-                    requires: ['~pr'],
-                    sourcePaths: ['src/test/']
-                }],
-                state: 'ENABLED'
-            }];
+            jobsMock = [
+                {
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [
+                        {
+                            requires: ['~pr'],
+                            sourcePaths: ['src/test/']
+                        }
+                    ],
+                    state: 'ENABLED'
+                }
+            ];
             syncedPipelineMock.update = sinon.stub().resolves({
                 getJobs: sinon.stub().resolves(jobsMock),
                 branch: Promise.resolve('branch')
@@ -1353,22 +1457,26 @@ describe('Event Factory', () => {
             config.webhooks = true;
             config.changedFiles = ['README.md', 'root/src/test/file'];
 
-            return eventFactory.create(config).then((event) => {
+            return eventFactory.create(config).then(event => {
                 assert.notCalled(buildFactoryMock.create);
                 assert.equal(event.builds, null);
             });
         });
 
         it('should start build if changed file is in rootDir', () => {
-            jobsMock = [{
-                id: 1,
-                pipelineId: 8765,
-                name: 'main',
-                permutations: [{
-                    requires: ['~pr']
-                }],
-                state: 'ENABLED'
-            }];
+            jobsMock = [
+                {
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [
+                        {
+                            requires: ['~pr']
+                        }
+                    ],
+                    state: 'ENABLED'
+                }
+            ];
             syncedPipelineMock.update = sinon.stub().resolves({
                 getJobs: sinon.stub().resolves(jobsMock),
                 branch: Promise.resolve('branch'),
@@ -1379,35 +1487,39 @@ describe('Event Factory', () => {
             config.webhooks = true;
             config.changedFiles = ['README.md', 'root/src/test/file'];
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
                 assert.calledOnce(buildFactoryMock.create);
-                assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
-                    meta: {
-                        commit: {
-                            ...commit,
-                            changedFiles: 'README.md,root/src/test/file'
+                assert.calledWith(
+                    buildFactoryMock.create.firstCall,
+                    sinon.match({
+                        meta: {
+                            commit: {
+                                ...commit,
+                                changedFiles: 'README.md,root/src/test/file'
+                            }
                         }
-                    }
-                }));
-                assert.deepEqual(
-                    buildFactoryMock.create.args[0][0].environment,
-                    { SD_SOURCE_PATH: 'root/src/test/' }
+                    })
                 );
+                assert.deepEqual(buildFactoryMock.create.args[0][0].environment, { SD_SOURCE_PATH: 'root/src/test/' });
             });
         });
 
         it('should start build if changed file is in rootDir and sourcePaths exist', () => {
-            jobsMock = [{
-                id: 1,
-                pipelineId: 8765,
-                name: 'main',
-                permutations: [{
-                    requires: ['~pr'],
-                    sourcePaths: ['screwdriver.yaml', 'test.js']
-                }],
-                state: 'ENABLED'
-            }];
+            jobsMock = [
+                {
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [
+                        {
+                            requires: ['~pr'],
+                            sourcePaths: ['screwdriver.yaml', 'test.js']
+                        }
+                    ],
+                    state: 'ENABLED'
+                }
+            ];
             syncedPipelineMock.update = sinon.stub().resolves({
                 getJobs: sinon.stub().resolves(jobsMock),
                 branch: Promise.resolve('branch'),
@@ -1418,7 +1530,7 @@ describe('Event Factory', () => {
             config.webhooks = true;
             config.changedFiles = ['README.md', 'root/src/test/file'];
 
-            return eventFactory.create(config).then((event) => {
+            return eventFactory.create(config).then(event => {
                 assert.notCalled(buildFactoryMock.create);
                 assert.equal(event.builds, null);
             });
@@ -1426,16 +1538,20 @@ describe('Event Factory', () => {
 
         // eslint-disable-next-line max-len
         it('should start build from event if changed file is not in sourcePaths and build not triggered by webhooks', () => {
-            jobsMock = [{
-                id: 1,
-                pipelineId: 8765,
-                name: 'main',
-                permutations: [{
-                    requires: ['~pr'],
-                    sourcePaths: ['src/test/']
-                }],
-                state: 'ENABLED'
-            }];
+            jobsMock = [
+                {
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [
+                        {
+                            requires: ['~pr'],
+                            sourcePaths: ['src/test/']
+                        }
+                    ],
+                    state: 'ENABLED'
+                }
+            ];
             syncedPipelineMock.update = sinon.stub().resolves({
                 getJobs: sinon.stub().resolves(jobsMock),
                 branch: Promise.resolve('branch')
@@ -1446,44 +1562,51 @@ describe('Event Factory', () => {
             config.webhooks = false;
             config.changedFiles = ['README.md', 'root/src/test/file'];
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
                 assert.calledOnce(buildFactoryMock.create);
-                assert.calledWith(buildFactoryMock.create.firstCall, sinon.match({
-                    meta: {
-                        commit: {
-                            ...commit,
-                            changedFiles: 'README.md,root/src/test/file'
+                assert.calledWith(
+                    buildFactoryMock.create.firstCall,
+                    sinon.match({
+                        meta: {
+                            commit: {
+                                ...commit,
+                                changedFiles: 'README.md,root/src/test/file'
+                            }
                         }
-                    }
-                }));
-                assert.deepEqual(
-                    buildFactoryMock.create.args[0][0].environment,
-                    {}
+                    })
                 );
+                assert.deepEqual(buildFactoryMock.create.args[0][0].environment, {});
             });
         });
 
         it('should start builds if changed file is in sourcePaths', () => {
-            jobsMock = [{
-                id: 1,
-                pipelineId: 8765,
-                name: 'PR-1:main',
-                permutations: [{
-                    requires: ['~pr'],
-                    sourcePaths: ['src/test/']
-                }],
-                state: 'ENABLED'
-            }, {
-                id: 2,
-                pipelineId: 8765,
-                name: 'PR-1:publish',
-                permutations: [{
-                    requires: ['~pr'],
-                    sourcePaths: ['src/test/']
-                }],
-                state: 'ENABLED'
-            }];
+            jobsMock = [
+                {
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'PR-1:main',
+                    permutations: [
+                        {
+                            requires: ['~pr'],
+                            sourcePaths: ['src/test/']
+                        }
+                    ],
+                    state: 'ENABLED'
+                },
+                {
+                    id: 2,
+                    pipelineId: 8765,
+                    name: 'PR-1:publish',
+                    permutations: [
+                        {
+                            requires: ['~pr'],
+                            sourcePaths: ['src/test/']
+                        }
+                    ],
+                    state: 'ENABLED'
+                }
+            ];
             afterSyncedPRPipelineMock.update = sinon.stub().resolves({
                 getJobs: sinon.stub().resolves(jobsMock),
                 branch: Promise.resolve('branch')
@@ -1496,31 +1619,29 @@ describe('Event Factory', () => {
             config.prTitle = 'Update the README with new information';
             config.changedFiles = ['src/test/README.md', 'NOTINSOURCEPATH.md'];
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
                 assert.calledTwice(buildFactoryMock.create);
-                assert.deepEqual(
-                    buildFactoryMock.create.args[0][0].environment,
-                    { SD_SOURCE_PATH: 'src/test/' }
-                );
-                assert.deepEqual(
-                    buildFactoryMock.create.args[1][0].environment,
-                    { SD_SOURCE_PATH: 'src/test/' }
-                );
+                assert.deepEqual(buildFactoryMock.create.args[0][0].environment, { SD_SOURCE_PATH: 'src/test/' });
+                assert.deepEqual(buildFactoryMock.create.args[1][0].environment, { SD_SOURCE_PATH: 'src/test/' });
             });
         });
 
         it('should start build when sourcePath is a file, and is the same as changedFile', () => {
-            jobsMock = [{
-                id: 1,
-                pipelineId: 8765,
-                name: 'PR-1:main',
-                permutations: [{
-                    requires: ['~pr'],
-                    sourcePaths: ['src/test']
-                }],
-                state: 'ENABLED'
-            }];
+            jobsMock = [
+                {
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'PR-1:main',
+                    permutations: [
+                        {
+                            requires: ['~pr'],
+                            sourcePaths: ['src/test']
+                        }
+                    ],
+                    state: 'ENABLED'
+                }
+            ];
             afterSyncedPRPipelineMock.update = sinon.stub().resolves({
                 getJobs: sinon.stub().resolves(jobsMock),
                 branch: Promise.resolve('branch')
@@ -1533,7 +1654,7 @@ describe('Event Factory', () => {
             config.prTitle = 'Update the README with new information';
             config.changedFiles = ['src/test', 'NOTINSOURCEPATH.md'];
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
                 assert.calledOnce(buildFactoryMock.create);
             });
@@ -1542,7 +1663,7 @@ describe('Event Factory', () => {
         it('use username as displayName if displayLabel is not set', () => {
             scm.getDisplayName.returns(null);
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.equal(model.causeMessage, 'Started by stjohn');
             });
         });
@@ -1550,22 +1671,17 @@ describe('Event Factory', () => {
         it('should create using parentEvent workflowGraph and job configs', () => {
             config.parentEventId = 222;
             config.workflowGraph = {
-                nodes: [
-                    { name: '~commit' },
-                    { name: 'testJob' }
-                ],
-                edges: [
-                    { src: '~commit', dest: 'testJob' }
-                ]
+                nodes: [{ name: '~commit' }, { name: 'testJob' }],
+                edges: [{ src: '~commit', dest: 'testJob' }]
             };
             expected.workflowGraph = config.workflowGraph;
             expected.parentEventId = config.parentEventId;
             syncedPipelineMock.workflowGraph = config.workflowGraph;
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.calledWith(pipelineMock.sync, config.sha);
                 assert.instanceOf(model, Event);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     if (key === 'workflowGraph') {
                         assert.deepEqual(model[key], expected[key]);
                     } else if (key === 'parentEventId') {
@@ -1576,11 +1692,12 @@ describe('Event Factory', () => {
         });
 
         it('should have parameters if create with parameters', () => {
-            const pipelineWithParameter = Object.assign({
+            const pipelineWithParameter = {
                 parameters: {
                     user: 'adong'
-                }
-            }, syncedPipelineMock);
+                },
+                ...syncedPipelineMock
+            };
 
             config.startFrom = 'main';
             config.meta = {
@@ -1590,17 +1707,18 @@ describe('Event Factory', () => {
             };
             pipelineMock.sync = sinon.stub().resolves(pipelineWithParameter);
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.equal(model.meta.parameters.user.value, 'batman');
             });
         });
 
         it('should not have parameters if create without parameters', () => {
-            const pipelineWithParameter = Object.assign({
+            const pipelineWithParameter = {
                 parameters: {
                     user: 'adong'
-                }
-            }, syncedPipelineMock);
+                },
+                ...syncedPipelineMock
+            };
 
             config.startFrom = 'main';
             config.meta = {
@@ -1610,22 +1728,23 @@ describe('Event Factory', () => {
             };
             pipelineMock.sync = sinon.stub().resolves(pipelineWithParameter);
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.equal(model.meta.parameters.user.value, 'adong');
             });
         });
 
         it('should have default parameters if parameter enabled', () => {
-            const pipelineWithParameter = Object.assign({
+            const pipelineWithParameter = {
                 parameters: {
                     user: 'adong'
-                }
-            }, syncedPipelineMock);
+                },
+                ...syncedPipelineMock
+            };
 
             pipelineMock.sync = sinon.stub().resolves(pipelineWithParameter);
             config.startFrom = 'main';
 
-            return eventFactory.create(config).then((model) => {
+            return eventFactory.create(config).then(model => {
                 assert.equal(model.meta.parameters.user.value, 'adong');
                 assert.equal(config.meta.parameters.user.value, 'adong');
             });
@@ -1650,16 +1769,23 @@ describe('Event Factory', () => {
         });
 
         it('should throw when config does not have everything necessary', () => {
-            assert.throw(EventFactory.getInstance,
-                Error, 'No scm plugin provided to EventFactory');
+            assert.throw(EventFactory.getInstance, Error, 'No scm plugin provided to EventFactory');
 
-            assert.throw(() => {
-                EventFactory.getInstance({ datastore });
-            }, Error, 'No scm plugin provided to EventFactory');
+            assert.throw(
+                () => {
+                    EventFactory.getInstance({ datastore });
+                },
+                Error,
+                'No scm plugin provided to EventFactory'
+            );
 
-            assert.throw(() => {
-                EventFactory.getInstance({ scm: {} });
-            }, Error, 'No datastore provided to EventFactory');
+            assert.throw(
+                () => {
+                    EventFactory.getInstance({ scm: {} });
+                },
+                Error,
+                'No datastore provided to EventFactory'
+            );
         });
     });
 });

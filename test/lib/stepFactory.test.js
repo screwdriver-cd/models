@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 
@@ -65,18 +65,20 @@ describe('Step Factory', () => {
         it('should create a Step', () => {
             datastore.save.resolves(stepData);
 
-            return factory.create({
-                buildId,
-                name,
-                command
-            }).then((model) => {
-                assert.isTrue(datastore.save.calledOnce);
-                assert.instanceOf(model, Step);
+            return factory
+                .create({
+                    buildId,
+                    name,
+                    command
+                })
+                .then(model => {
+                    assert.isTrue(datastore.save.calledOnce);
+                    assert.instanceOf(model, Step);
 
-                Object.keys(stepData).forEach((key) => {
-                    assert.strictEqual(model[key], stepData[key]);
+                    Object.keys(stepData).forEach(key => {
+                        assert.strictEqual(model[key], stepData[key]);
+                    });
                 });
-            });
         });
     });
 
@@ -84,13 +86,12 @@ describe('Step Factory', () => {
         it('should get a step by ID', () => {
             datastore.get.resolves(stepData);
 
-            Promise.all([factory.get(stepId), factory.get({ id: stepId })])
-                .then(([step1, step2]) => {
-                    Object.keys(step1).forEach((key) => {
-                        assert.strictEqual(step1[key], stepData[key]);
-                        assert.strictEqual(step2[key], stepData[key]);
-                    });
+            Promise.all([factory.get(stepId), factory.get({ id: stepId })]).then(([step1, step2]) => {
+                Object.keys(step1).forEach(key => {
+                    assert.strictEqual(step1[key], stepData[key]);
+                    assert.strictEqual(step2[key], stepData[key]);
                 });
+            });
         });
     });
 
@@ -116,8 +117,7 @@ describe('Step Factory', () => {
         });
 
         it('should throw an error when config not supplied', () => {
-            assert.throw(StepFactory.getInstance,
-                Error, 'No datastore provided to StepFactory');
+            assert.throw(StepFactory.getInstance, Error, 'No datastore provided to StepFactory');
         });
     });
 });

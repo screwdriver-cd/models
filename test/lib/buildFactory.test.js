@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
 const sinon = require('sinon');
@@ -50,30 +50,31 @@ describe('Build Factory', () => {
         { command: 'npm test', name: 'test' }
     ];
     const scmContext = 'github:github.com';
-    const sdBuildClusters = [{
-        name: 'sd1',
-        managedByScrewdriver: true,
-        isActive: true,
-        scmContext,
-        scmOrganizations: [],
-        weightage: 100
-    },
-    {
-        name: 'sd2',
-        managedByScrewdriver: true,
-        isActive: false,
-        scmContext,
-        scmOrganizations: [],
-        weightage: 0
-    },
-    {
-        name: 'iOS',
-        managedByScrewdriver: false,
-        isActive: true,
-        scmContext,
-        scmOrganizations: ['screwdriver'],
-        weightage: 0
-    }
+    const sdBuildClusters = [
+        {
+            name: 'sd1',
+            managedByScrewdriver: true,
+            isActive: true,
+            scmContext,
+            scmOrganizations: [],
+            weightage: 100
+        },
+        {
+            name: 'sd2',
+            managedByScrewdriver: true,
+            isActive: false,
+            scmContext,
+            scmOrganizations: [],
+            weightage: 0
+        },
+        {
+            name: 'iOS',
+            managedByScrewdriver: false,
+            isActive: true,
+            scmContext,
+            scmOrganizations: ['screwdriver'],
+            weightage: 0
+        }
     ];
     const externalBuildCluster = {
         name: 'iOS',
@@ -213,42 +214,48 @@ describe('Build Factory', () => {
         const prRef = 'pull/3/merge';
         const username = 'i_made_the_request';
         const dateNow = Date.now();
-        const isoTime = (new Date(dateNow)).toISOString();
+        const isoTime = new Date(dateNow).toISOString();
         const container = 'node:4';
         const environment = { CLUSTER_FOO: 'bar', NODE_ENV: 'test', NODE_VERSION: '4' };
-        const permutations = [{
-            commands: [
-                { command: 'npm install', name: 'init' },
-                { command: 'npm test', name: 'test' }
-            ],
-            environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
-            image: 'node:4'
-        }, {
-            commands: [
-                { command: 'npm install', name: 'init' },
-                { command: 'npm test', name: 'test' }
-            ],
-            environment: { NODE_ENV: 'test', NODE_VERSION: '5' },
-            image: 'node:5'
-        }, {
-            commands: [
-                { command: 'npm install', name: 'init' },
-                { command: 'npm test', name: 'test' }
-            ],
-            environment: { NODE_ENV: 'test', NODE_VERSION: '6' },
-            image: 'node:6'
-        }];
-        const permutationsWithAnnotations = [{
-            annotations: {
-                'screwdriver.cd/buildCluster': 'iOS'
+        const permutations = [
+            {
+                commands: [
+                    { command: 'npm install', name: 'init' },
+                    { command: 'npm test', name: 'test' }
+                ],
+                environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
+                image: 'node:4'
             },
-            commands: [
-                { command: 'npm install', name: 'init' },
-                { command: 'npm test', name: 'test' }
-            ],
-            environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
-            image: 'node:4'
-        }];
+            {
+                commands: [
+                    { command: 'npm install', name: 'init' },
+                    { command: 'npm test', name: 'test' }
+                ],
+                environment: { NODE_ENV: 'test', NODE_VERSION: '5' },
+                image: 'node:5'
+            },
+            {
+                commands: [
+                    { command: 'npm install', name: 'init' },
+                    { command: 'npm test', name: 'test' }
+                ],
+                environment: { NODE_ENV: 'test', NODE_VERSION: '6' },
+                image: 'node:6'
+            }
+        ];
+        const permutationsWithAnnotations = [
+            {
+                annotations: {
+                    'screwdriver.cd/buildCluster': 'iOS'
+                },
+                commands: [
+                    { command: 'npm install', name: 'init' },
+                    { command: 'npm test', name: 'test' }
+                ],
+                environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
+                image: 'node:4'
+            }
+        ];
 
         const commit = {
             url: 'foo',
@@ -326,12 +333,20 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves(user);
             delete saveConfig.params.commit;
 
-            return factory.create({
-                garbage, username, jobId, eventId, sha, parentBuildId: 12345, meta
-            }).then(() => {
-                assert.callCount(stepFactoryMock.create, steps.length);
-                assert.calledWith(datastore.save, saveConfig);
-            });
+            return factory
+                .create({
+                    garbage,
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    parentBuildId: 12345,
+                    meta
+                })
+                .then(() => {
+                    assert.callCount(stepFactoryMock.create, steps.length);
+                    assert.calledWith(datastore.save, saveConfig);
+                });
         });
 
         it('do not set buildClusterName if multiBuildClusterEnabled is false', () => {
@@ -346,12 +361,19 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves(user);
             delete saveConfig.params.commit;
 
-            return factory.create({
-                username, jobId, eventId, sha, parentBuildId: 12345, meta
-            }).then(() => {
-                assert.callCount(stepFactoryMock.create, steps.length);
-                assert.calledWith(datastore.save, saveConfig);
-            });
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    parentBuildId: 12345,
+                    meta
+                })
+                .then(() => {
+                    assert.callCount(stepFactoryMock.create, steps.length);
+                    assert.calledWith(datastore.save, saveConfig);
+                });
         });
 
         it('pick from screwdriver build cluster if no annotation passed in', () => {
@@ -367,12 +389,19 @@ describe('Build Factory', () => {
             delete saveConfig.params.commit;
             saveConfig.params.buildClusterName = 'sd1';
 
-            return factory.create({
-                username, jobId, eventId, sha, parentBuildId: 12345, meta
-            }).then(() => {
-                assert.callCount(stepFactoryMock.create, steps.length);
-                assert.calledWith(datastore.save, saveConfig);
-            });
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    parentBuildId: 12345,
+                    meta
+                })
+                .then(() => {
+                    assert.callCount(stepFactoryMock.create, steps.length);
+                    assert.calledWith(datastore.save, saveConfig);
+                });
         });
 
         it('pick build cluster based on annotations passed in', () => {
@@ -388,29 +417,37 @@ describe('Build Factory', () => {
             delete saveConfig.params.commit;
             saveConfig.params.buildClusterName = 'iOS';
 
-            return factory.create({
-                username, jobId, eventId, sha, parentBuildId: 12345, meta
-            }).then(() => {
-                assert.callCount(stepFactoryMock.create, steps.length);
-                assert.calledWith(datastore.save, saveConfig);
-            });
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    parentBuildId: 12345,
+                    meta
+                })
+                .then(() => {
+                    assert.callCount(stepFactoryMock.create, steps.length);
+                    assert.calledWith(datastore.save, saveConfig);
+                });
         });
 
-        it('pick random screwdriver build cluster if ' +
-            'annotation passed in is inactive', () => {
+        it('pick random screwdriver build cluster if annotation passed in is inactive', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
             const jobMock = {
-                permutations: [{
-                    annotations: {
-                        'screwdriver.cd/buildCluster': 'sd2'
-                    },
-                    commands: [
-                        { command: 'npm install', name: 'init' },
-                        { command: 'npm test', name: 'test' }
-                    ],
-                    environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
-                    image: 'node:4'
-                }],
+                permutations: [
+                    {
+                        annotations: {
+                            'screwdriver.cd/buildCluster': 'sd2'
+                        },
+                        commands: [
+                            { command: 'npm install', name: 'init' },
+                            { command: 'npm test', name: 'test' }
+                        ],
+                        environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
+                        image: 'node:4'
+                    }
+                ],
                 pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext })
             };
 
@@ -420,29 +457,37 @@ describe('Build Factory', () => {
             delete saveConfig.params.commit;
             saveConfig.params.buildClusterName = 'sd1';
 
-            return factory.create({
-                username, jobId, eventId, sha, parentBuildId: 12345, meta
-            }).then(() => {
-                assert.callCount(stepFactoryMock.create, steps.length);
-                assert.calledWith(datastore.save, saveConfig);
-            });
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    parentBuildId: 12345,
+                    meta
+                })
+                .then(() => {
+                    assert.callCount(stepFactoryMock.create, steps.length);
+                    assert.calledWith(datastore.save, saveConfig);
+                });
         });
 
-        it('pick job build cluster even if ' +
-            'pipeline level cluster annotations is passed in', () => {
+        it('pick job build cluster even if pipeline level cluster annotations is passed in', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
             const jobMock = {
-                permutations: [{
-                    annotations: {
-                        'screwdriver.cd/buildCluster': 'iOS'
-                    },
-                    commands: [
-                        { command: 'npm install', name: 'init' },
-                        { command: 'npm test', name: 'test' }
-                    ],
-                    environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
-                    image: 'node:4'
-                }],
+                permutations: [
+                    {
+                        annotations: {
+                            'screwdriver.cd/buildCluster': 'iOS'
+                        },
+                        commands: [
+                            { command: 'npm install', name: 'init' },
+                            { command: 'npm test', name: 'test' }
+                        ],
+                        environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
+                        image: 'node:4'
+                    }
+                ],
                 pipeline: Promise.resolve({
                     name: 'screwdriver/ui',
                     scmUri,
@@ -461,12 +506,19 @@ describe('Build Factory', () => {
             delete saveConfig.params.commit;
             saveConfig.params.buildClusterName = 'iOS';
 
-            return factory.create({
-                username, jobId, eventId, sha, parentBuildId: 12345, meta
-            }).then(() => {
-                assert.callCount(stepFactoryMock.create, steps.length);
-                assert.calledWith(datastore.save, saveConfig);
-            });
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    parentBuildId: 12345,
+                    meta
+                })
+                .then(() => {
+                    assert.callCount(stepFactoryMock.create, steps.length);
+                    assert.calledWith(datastore.save, saveConfig);
+                });
         });
 
         it('throws err if the pipeline is unauthorized to use the build cluster', () => {
@@ -482,13 +534,19 @@ describe('Build Factory', () => {
             delete saveConfig.params.commit;
             saveConfig.params.buildClusterName = 'iOS';
 
-            return factory.create({
-                username, jobId, eventId, sha, parentBuildId: 12345, meta
-            }).catch((err) => {
-                assert.instanceOf(err, Error);
-                assert.strictEqual(err.message,
-                    'This pipeline is not authorized to use this build cluster.');
-            });
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    parentBuildId: 12345,
+                    meta
+                })
+                .catch(err => {
+                    assert.instanceOf(err, Error);
+                    assert.strictEqual(err.message, 'This pipeline is not authorized to use this build cluster.');
+                });
         });
 
         it('pick build cluster based on annotations passed in', () => {
@@ -504,12 +562,19 @@ describe('Build Factory', () => {
             delete saveConfig.params.commit;
             saveConfig.params.buildClusterName = 'iOS';
 
-            return factory.create({
-                username, jobId, eventId, sha, parentBuildId: 12345, meta
-            }).then(() => {
-                assert.callCount(stepFactoryMock.create, steps.length);
-                assert.calledWith(datastore.save, saveConfig);
-            });
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    parentBuildId: 12345,
+                    meta
+                })
+                .then(() => {
+                    assert.callCount(stepFactoryMock.create, steps.length);
+                    assert.calledWith(datastore.save, saveConfig);
+                });
         });
 
         it('throws err if the build cluster specified does not exist', () => {
@@ -524,14 +589,23 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves(user);
             delete saveConfig.params.commit;
 
-            return factory.create({
-                username, jobId, eventId, sha, parentBuildId: 12345, meta
-            }).catch((err) => {
-                assert.instanceOf(err, Error);
-                assert.strictEqual(err.message,
-                    'Cluster specified in screwdriver.cd/buildCluster iOS ' +
-                        `for scmContext ${scmContext} does not exist.`);
-            });
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    parentBuildId: 12345,
+                    meta
+                })
+                .catch(err => {
+                    assert.instanceOf(err, Error);
+                    assert.strictEqual(
+                        err.message,
+                        'Cluster specified in screwdriver.cd/buildCluster iOS ' +
+                            `for scmContext ${scmContext} does not exist.`
+                    );
+                });
         });
 
         it('use username as displayName if displayLabel is not set', () => {
@@ -546,9 +620,15 @@ describe('Build Factory', () => {
             delete saveConfig.params.commit;
             delete saveConfig.params.parentBuildId;
 
-            return factory.create({
-                username, jobId, eventId, sha, meta
-            }).then(() => assert.calledWith(datastore.save, saveConfig));
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    meta
+                })
+                .then(() => assert.calledWith(datastore.save, saveConfig));
         });
 
         it('creates a new build in the datastore, looking up sha', () => {
@@ -562,45 +642,47 @@ describe('Build Factory', () => {
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
 
-            return factory.create({
-                username,
-                causeMessage,
-                scmContext,
-                jobId,
-                eventId,
-                prRef,
-                parentBuildId: 12345,
-                meta
-            }).then((model) => {
-                assert.instanceOf(model, Build);
-                assert.calledOnce(jobFactory.getInstance);
-                assert.calledWith(jobFactoryMock.get, jobId);
-                assert.calledWith(userFactoryMock.get, { username, scmContext });
-                assert.calledWith(scmMock.getCommitSha, {
-                    token: 'foo',
-                    scmUri,
-                    scmContext
+            return factory
+                .create({
+                    username,
+                    causeMessage,
+                    scmContext,
+                    jobId,
+                    eventId,
+                    prRef,
+                    parentBuildId: 12345,
+                    meta
+                })
+                .then(model => {
+                    assert.instanceOf(model, Build);
+                    assert.calledOnce(jobFactory.getInstance);
+                    assert.calledWith(jobFactoryMock.get, jobId);
+                    assert.calledWith(userFactoryMock.get, { username, scmContext });
+                    assert.calledWith(scmMock.getCommitSha, {
+                        token: 'foo',
+                        scmUri,
+                        scmContext
+                    });
+                    assert.calledWith(scmMock.decorateCommit, {
+                        token: 'foo',
+                        sha,
+                        scmUri,
+                        scmContext
+                    });
+                    assert.calledWith(bookendMock.getSetupCommands, {
+                        pipeline: { scmUri, scmRepo, scmContext },
+                        job: jobMock,
+                        build: sinon.match.object
+                    });
+                    assert.calledWith(bookendMock.getTeardownCommands, {
+                        pipeline: { scmUri, scmRepo, scmContext },
+                        job: jobMock,
+                        build: sinon.match.object
+                    });
+                    assert.calledOnce(startStub);
+                    assert.calledWith(startStub, { causeMessage: 'Started by github' });
+                    assert.calledWith(datastore.save, saveConfig);
                 });
-                assert.calledWith(scmMock.decorateCommit, {
-                    token: 'foo',
-                    sha,
-                    scmUri,
-                    scmContext
-                });
-                assert.calledWith(bookendMock.getSetupCommands, {
-                    pipeline: { scmUri, scmRepo, scmContext },
-                    job: jobMock,
-                    build: sinon.match.object
-                });
-                assert.calledWith(bookendMock.getTeardownCommands, {
-                    pipeline: { scmUri, scmRepo, scmContext },
-                    job: jobMock,
-                    build: sinon.match.object
-                });
-                assert.calledOnce(startStub);
-                assert.calledWith(startStub, { causeMessage: 'Started by github' });
-                assert.calledWith(datastore.save, saveConfig);
-            });
         });
 
         it('creates a new build in the datastore with causeMessage', () => {
@@ -614,45 +696,47 @@ describe('Build Factory', () => {
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
 
-            return factory.create({
-                username,
-                causeMessage,
-                scmContext,
-                jobId,
-                eventId,
-                prRef,
-                parentBuildId: 12345,
-                meta
-            }).then((model) => {
-                assert.instanceOf(model, Build);
-                assert.calledOnce(jobFactory.getInstance);
-                assert.calledWith(jobFactoryMock.get, jobId);
-                assert.calledWith(userFactoryMock.get, { username, scmContext });
-                assert.calledWith(scmMock.getCommitSha, {
-                    token: 'foo',
-                    scmUri,
-                    scmContext
+            return factory
+                .create({
+                    username,
+                    causeMessage,
+                    scmContext,
+                    jobId,
+                    eventId,
+                    prRef,
+                    parentBuildId: 12345,
+                    meta
+                })
+                .then(model => {
+                    assert.instanceOf(model, Build);
+                    assert.calledOnce(jobFactory.getInstance);
+                    assert.calledWith(jobFactoryMock.get, jobId);
+                    assert.calledWith(userFactoryMock.get, { username, scmContext });
+                    assert.calledWith(scmMock.getCommitSha, {
+                        token: 'foo',
+                        scmUri,
+                        scmContext
+                    });
+                    assert.calledWith(scmMock.decorateCommit, {
+                        token: 'foo',
+                        sha,
+                        scmUri,
+                        scmContext
+                    });
+                    assert.calledWith(bookendMock.getSetupCommands, {
+                        pipeline: { scmUri, scmRepo, scmContext },
+                        job: jobMock,
+                        build: sinon.match.object
+                    });
+                    assert.calledWith(bookendMock.getTeardownCommands, {
+                        pipeline: { scmUri, scmRepo, scmContext },
+                        job: jobMock,
+                        build: sinon.match.object
+                    });
+                    assert.calledOnce(startStub);
+                    assert.calledWith(startStub, { causeMessage });
+                    assert.calledWith(datastore.save, saveConfig);
                 });
-                assert.calledWith(scmMock.decorateCommit, {
-                    token: 'foo',
-                    sha,
-                    scmUri,
-                    scmContext
-                });
-                assert.calledWith(bookendMock.getSetupCommands, {
-                    pipeline: { scmUri, scmRepo, scmContext },
-                    job: jobMock,
-                    build: sinon.match.object
-                });
-                assert.calledWith(bookendMock.getTeardownCommands, {
-                    pipeline: { scmUri, scmRepo, scmContext },
-                    job: jobMock,
-                    build: sinon.match.object
-                });
-                assert.calledOnce(startStub);
-                assert.calledWith(startStub, { causeMessage });
-                assert.calledWith(datastore.save, saveConfig);
-            });
         });
 
         it('creates a new build without starting', () => {
@@ -666,12 +750,19 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves(user);
             saveConfig.params.status = 'CREATED';
 
-            return factory.create({
-                username, jobId, eventId, parentBuildId: 12345, start: false, meta
-            }).then(() => {
-                assert.notCalled(startStub);
-                assert.calledWith(datastore.save, saveConfig);
-            });
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    parentBuildId: 12345,
+                    start: false,
+                    meta
+                })
+                .then(() => {
+                    assert.notCalled(startStub);
+                    assert.calledWith(datastore.save, saveConfig);
+                });
         });
 
         it('adds a teardown command if one exists', () => {
@@ -694,14 +785,11 @@ describe('Build Factory', () => {
 
             expectedSteps.push(teardown);
 
-            return factory.create({ username, jobId, eventId, prRef }).then((model) => {
+            return factory.create({ username, jobId, eventId, prRef }).then(model => {
                 assert.instanceOf(model, Build);
-                sinon.assert.callOrder(...expectedSteps.map(step =>
-                    stepFactoryMock.create.withArgs(Object.assign(
-                        { buildId: model.id },
-                        step
-                    ))
-                ));
+                sinon.assert.callOrder(
+                    ...expectedSteps.map(step => stepFactoryMock.create.withArgs({ buildId: model.id, ...step }))
+                );
             });
         });
 
@@ -715,7 +803,7 @@ describe('Build Factory', () => {
             delete saveConfig.params.commit;
             delete saveConfig.params.parentBuildId;
 
-            return factory.create({ username, jobId, eventId, sha, meta }).then((model) => {
+            return factory.create({ username, jobId, eventId, sha, meta }).then(model => {
                 assert.calledWith(datastore.save, saveConfig);
                 assert.instanceOf(model, Build);
                 assert.calledOnce(jobFactory.getInstance);
@@ -727,7 +815,7 @@ describe('Build Factory', () => {
         it('properly handles rejection due to missing job model', () => {
             jobFactoryMock.get.resolves(null);
 
-            return factory.create({ username, jobId, eventId }).catch((err) => {
+            return factory.create({ username, jobId, eventId }).catch(err => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message, 'Job does not exist');
             });
@@ -736,7 +824,7 @@ describe('Build Factory', () => {
         it('properly handles rejection due to missing user model', () => {
             userFactoryMock.get.resolves(null);
 
-            return factory.create({ username, jobId, eventId }).catch((err) => {
+            return factory.create({ username, jobId, eventId }).catch(err => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message, 'User does not exist');
             });
@@ -751,7 +839,7 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves({});
             jobFactoryMock.get.resolves(jobMock);
 
-            return factory.create({ username, jobId, eventId }).catch((err) => {
+            return factory.create({ username, jobId, eventId }).catch(err => {
                 assert.instanceOf(err, Error);
                 assert.strictEqual(err.message, 'Pipeline does not exist');
             });
@@ -774,7 +862,7 @@ describe('Build Factory', () => {
 
             jobFactoryMock.get.resolves(jobMock);
 
-            return factory.create({ username, jobId, eventId, sha }).then((model) => {
+            return factory.create({ username, jobId, eventId, sha }).then(model => {
                 assert.strictEqual(model.container, 'registry.com:1234/library/node:4');
             });
         });
@@ -790,22 +878,27 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves(user);
             saveConfig.params.status = 'CREATED';
 
-            return factory.create({
-                username,
-                jobId,
-                eventId,
-                parentBuildId: 12345,
-                start: false,
-                environment: { EXTRA: true },
-                meta
-            }).then(() => {
-                assert.notCalled(startStub);
-                saveConfig.params.environment = {
-                    CLUSTER_FOO: 'bar', EXTRA: true, NODE_ENV: 'test', NODE_VERSION: '4'
-                };
-                assert.calledWith(datastore.save, saveConfig);
-                delete saveConfig.params.environment.EXTRA;
-            });
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    parentBuildId: 12345,
+                    start: false,
+                    environment: { EXTRA: true },
+                    meta
+                })
+                .then(() => {
+                    assert.notCalled(startStub);
+                    saveConfig.params.environment = {
+                        CLUSTER_FOO: 'bar',
+                        EXTRA: true,
+                        NODE_ENV: 'test',
+                        NODE_VERSION: '4'
+                    };
+                    assert.calledWith(datastore.save, saveConfig);
+                    delete saveConfig.params.environment.EXTRA;
+                });
         });
 
         it('passes in config pipeline to the bookend config', () => {
@@ -821,29 +914,31 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves({});
             jobFactoryMock.get.resolves(jobMock);
 
-            return factory.create({
-                username,
-                jobId,
-                eventId,
-                sha,
-                configPipelineSha,
-                meta
-            }).then(() => {
-                assert.calledWith(bookendMock.getSetupCommands, {
-                    pipeline: pipelineMock,
-                    job: jobMock,
-                    build: sinon.match.object,
-                    configPipeline: { spooky: 'ghost' },
-                    configPipelineSha
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    configPipelineSha,
+                    meta
+                })
+                .then(() => {
+                    assert.calledWith(bookendMock.getSetupCommands, {
+                        pipeline: pipelineMock,
+                        job: jobMock,
+                        build: sinon.match.object,
+                        configPipeline: { spooky: 'ghost' },
+                        configPipelineSha
+                    });
+                    assert.calledWith(bookendMock.getTeardownCommands, {
+                        pipeline: pipelineMock,
+                        job: jobMock,
+                        build: sinon.match.object,
+                        configPipeline: { spooky: 'ghost' },
+                        configPipelineSha
+                    });
                 });
-                assert.calledWith(bookendMock.getTeardownCommands, {
-                    pipeline: pipelineMock,
-                    job: jobMock,
-                    build: sinon.match.object,
-                    configPipeline: { spooky: 'ghost' },
-                    configPipelineSha
-                });
-            });
         });
     });
 
@@ -851,10 +946,9 @@ describe('Build Factory', () => {
         it('should list builds sorted by createTime', () => {
             datastore.scan.resolves([]);
 
-            return factory.list({})
-                .then(() => {
-                    assert.calledWithMatch(datastore.scan, { sortBy: 'createTime' });
-                });
+            return factory.list({}).then(() => {
+                assert.calledWithMatch(datastore.scan, { sortBy: 'createTime' });
+            });
         });
     });
 
@@ -876,24 +970,39 @@ describe('Build Factory', () => {
         });
 
         it('should throw when config does not have everything necessary', () => {
-            assert.throw(BuildFactory.getInstance,
-                Error, 'No executor provided to BuildFactory');
+            assert.throw(BuildFactory.getInstance, Error, 'No executor provided to BuildFactory');
 
-            assert.throw(() => {
-                BuildFactory.getInstance({ executor, scm: {}, uiUri, bookend: bookendMock });
-            }, Error, 'No datastore provided to BuildFactory');
+            assert.throw(
+                () => {
+                    BuildFactory.getInstance({ executor, scm: {}, uiUri, bookend: bookendMock });
+                },
+                Error,
+                'No datastore provided to BuildFactory'
+            );
 
-            assert.throw(() => {
-                BuildFactory.getInstance({ executor, datastore, uiUri, bookend: bookendMock });
-            }, Error, 'No scm plugin provided to BuildFactory');
+            assert.throw(
+                () => {
+                    BuildFactory.getInstance({ executor, datastore, uiUri, bookend: bookendMock });
+                },
+                Error,
+                'No scm plugin provided to BuildFactory'
+            );
 
-            assert.throw(() => {
-                BuildFactory.getInstance({ executor, scm: {}, datastore, bookend: bookendMock });
-            }, Error, 'No uiUri provided to BuildFactory');
+            assert.throw(
+                () => {
+                    BuildFactory.getInstance({ executor, scm: {}, datastore, bookend: bookendMock });
+                },
+                Error,
+                'No uiUri provided to BuildFactory'
+            );
 
-            assert.throw(() => {
-                BuildFactory.getInstance({ executor, scm: {}, datastore, uiUri });
-            }, Error, 'No bookend plugin provided to BuildFactory');
+            assert.throw(
+                () => {
+                    BuildFactory.getInstance({ executor, scm: {}, datastore, uiUri });
+                },
+                Error,
+                'No bookend plugin provided to BuildFactory'
+            );
         });
     });
 });
