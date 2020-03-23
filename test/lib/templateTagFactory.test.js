@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 
@@ -74,12 +74,14 @@ describe('TemplateTag Factory', () => {
                 tag,
                 version
             };
-            returnValue = [{
-                id: generatedId,
-                name,
-                tag,
-                version
-            }];
+            returnValue = [
+                {
+                    id: generatedId,
+                    name,
+                    tag,
+                    version
+                }
+            ];
         });
 
         // namespace should be default since a template exists with that name and namespace
@@ -89,16 +91,18 @@ describe('TemplateTag Factory', () => {
             datastore.scan.resolves(returnValue);
             datastore.save.resolves(expected);
 
-            return factory.create({
-                name,
-                tag,
-                version
-            }).then((model) => {
-                assert.instanceOf(model, TemplateTag);
-                Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+            return factory
+                .create({
+                    name,
+                    tag,
+                    version
+                })
+                .then(model => {
+                    assert.instanceOf(model, TemplateTag);
+                    Object.keys(expected).forEach(key => {
+                        assert.strictEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
 
         // namespace should not be default since a template does not exist with that name and namespace
@@ -107,16 +111,18 @@ describe('TemplateTag Factory', () => {
             datastore.scan.resolves([]);
             datastore.save.resolves(expected);
 
-            return factory.create({
-                name,
-                tag,
-                version
-            }).then((model) => {
-                assert.instanceOf(model, TemplateTag);
-                Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+            return factory
+                .create({
+                    name,
+                    tag,
+                    version
+                })
+                .then(model => {
+                    assert.instanceOf(model, TemplateTag);
+                    Object.keys(expected).forEach(key => {
+                        assert.strictEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
 
         // name: namespace/testTemplateTag
@@ -127,53 +133,61 @@ describe('TemplateTag Factory', () => {
             expected.name = name;
             expected.namespace = namespace;
 
-            return factory.create({
-                name: fullTemplateName,
-                tag,
-                version
-            }).then((model) => {
-                assert.instanceOf(model, TemplateTag);
-                Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+            return factory
+                .create({
+                    name: fullTemplateName,
+                    tag,
+                    version
+                })
+                .then(model => {
+                    assert.instanceOf(model, TemplateTag);
+                    Object.keys(expected).forEach(key => {
+                        assert.strictEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
 
         // eslint-disable-next-line max-len
         it('creates a Template Tag given name with namespace, tag, and version and namespace exists', () => {
             datastore.save.resolves(expected);
-            datastore.scan.resolves([{
-                name,
-                namespace
-            }]);
+            datastore.scan.resolves([
+                {
+                    name,
+                    namespace
+                }
+            ]);
             expected.namespace = namespace;
 
-            return factory.create({
-                name: fullTemplateName,
-                tag,
-                version
-            }).then((model) => {
-                assert.instanceOf(model, TemplateTag);
-                Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+            return factory
+                .create({
+                    name: fullTemplateName,
+                    tag,
+                    version
+                })
+                .then(model => {
+                    assert.instanceOf(model, TemplateTag);
+                    Object.keys(expected).forEach(key => {
+                        assert.strictEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
 
         it('creates a Template Tag given namespace, name, tag, and version', () => {
             datastore.save.resolves(expected);
 
-            return factory.create({
-                name,
-                namespace,
-                tag,
-                version
-            }).then((model) => {
-                assert.instanceOf(model, TemplateTag);
-                Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+            return factory
+                .create({
+                    name,
+                    namespace,
+                    tag,
+                    version
+                })
+                .then(model => {
+                    assert.instanceOf(model, TemplateTag);
+                    Object.keys(expected).forEach(key => {
+                        assert.strictEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
     });
 
@@ -183,12 +197,14 @@ describe('TemplateTag Factory', () => {
         let returnValue;
 
         beforeEach(() => {
-            returnValue = [{
-                id: 123,
-                name,
-                tag,
-                version
-            }];
+            returnValue = [
+                {
+                    id: 123,
+                    name,
+                    tag,
+                    version
+                }
+            ];
             config = {
                 name,
                 tag
@@ -198,14 +214,17 @@ describe('TemplateTag Factory', () => {
         it('gets a Template Tag given tag and name without implicit namespace', () => {
             datastore.scan.resolves(returnValue);
             datastore.get.resolves(returnValue);
-            expected = Object.assign({}, expected);
+            expected = { ...expected };
 
-            return factory.get(config).then((model) => {
-                assert.calledWith(datastore.get, sinon.match({
-                    params: { name, namespace: 'default', tag }
-                }));
+            return factory.get(config).then(model => {
+                assert.calledWith(
+                    datastore.get,
+                    sinon.match({
+                        params: { name, namespace: 'default', tag }
+                    })
+                );
                 assert.instanceOf(model, TemplateTag);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -214,15 +233,18 @@ describe('TemplateTag Factory', () => {
         it('gets a Template Tag given name and tag with non-existent implicit namespace', () => {
             datastore.scan.resolves([]);
             datastore.get.resolves(returnValue);
-            expected = Object.assign({}, expected);
+            expected = { ...expected };
             config.name = fullTemplateName;
 
-            return factory.get(config).then((model) => {
-                assert.calledWith(datastore.get, sinon.match({
-                    params: { name: fullTemplateName, namespace: null, tag }
-                }));
+            return factory.get(config).then(model => {
+                assert.calledWith(
+                    datastore.get,
+                    sinon.match({
+                        params: { name: fullTemplateName, namespace: null, tag }
+                    })
+                );
                 assert.instanceOf(model, TemplateTag);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -231,15 +253,18 @@ describe('TemplateTag Factory', () => {
         it('gets a Template Tag given tag and name with existent implicit namespace', () => {
             datastore.scan.resolves(returnValue);
             datastore.get.resolves(returnValue);
-            expected = Object.assign({}, expected);
+            expected = { ...expected };
             config.name = fullTemplateName;
 
-            return factory.get(config).then((model) => {
-                assert.calledWith(datastore.get, sinon.match({
-                    params: { name, namespace, tag }
-                }));
+            return factory.get(config).then(model => {
+                assert.calledWith(
+                    datastore.get,
+                    sinon.match({
+                        params: { name, namespace, tag }
+                    })
+                );
                 assert.instanceOf(model, TemplateTag);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -248,15 +273,18 @@ describe('TemplateTag Factory', () => {
         it('gets a Template Tag given a name and namespace', () => {
             datastore.scan.resolves(returnValue);
             datastore.get.resolves(returnValue);
-            expected = Object.assign({}, expected);
+            expected = { ...expected };
             config.namespace = namespace;
 
-            return factory.get(config).then((model) => {
-                assert.calledWith(datastore.get, sinon.match({
-                    params: { name, namespace, tag }
-                }));
+            return factory.get(config).then(model => {
+                assert.calledWith(
+                    datastore.get,
+                    sinon.match({
+                        params: { name, namespace, tag }
+                    })
+                );
                 assert.instanceOf(model, TemplateTag);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -268,12 +296,14 @@ describe('TemplateTag Factory', () => {
         let expected;
 
         beforeEach(() => {
-            expected = [{
-                id: 123,
-                name,
-                tag,
-                version
-            }];
+            expected = [
+                {
+                    id: 123,
+                    name,
+                    tag,
+                    version
+                }
+            ];
             config = {
                 params: {
                     name
@@ -286,7 +316,7 @@ describe('TemplateTag Factory', () => {
         it('lists a Template Tag given a name when namespace is default', () => {
             datastore.scan.resolves(expected);
 
-            return factory.list(config).then((model) => {
+            return factory.list(config).then(model => {
                 assert.instanceOf(model[0], TemplateTag);
             });
         });
@@ -297,7 +327,7 @@ describe('TemplateTag Factory', () => {
             datastore.scan.onCall(0).resolves([]);
             datastore.scan.onCall(1).resolves(expected);
 
-            return factory.list(config).then((model) => {
+            return factory.list(config).then(model => {
                 assert.instanceOf(model[0], TemplateTag);
             });
         });
@@ -307,7 +337,7 @@ describe('TemplateTag Factory', () => {
             datastore.scan.resolves(expected);
             config.params.name = fullTemplateName;
 
-            return factory.list(config).then((model) => {
+            return factory.list(config).then(model => {
                 assert.instanceOf(model[0], TemplateTag);
             });
         });
@@ -316,7 +346,7 @@ describe('TemplateTag Factory', () => {
             datastore.scan.resolves(expected);
             config.params.namespace = namespace;
 
-            return factory.list(config).then((model) => {
+            return factory.list(config).then(model => {
                 assert.instanceOf(model[0], TemplateTag);
             });
         });
@@ -340,8 +370,7 @@ describe('TemplateTag Factory', () => {
         });
 
         it('should throw when config not supplied', () => {
-            assert.throw(TemplateTagFactory.getInstance,
-                Error, 'No datastore provided to TemplateTagFactory');
+            assert.throw(TemplateTagFactory.getInstance, Error, 'No datastore provided to TemplateTagFactory');
         });
     });
 });

@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const sinon = require('sinon');
 const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
@@ -49,7 +49,7 @@ describe('Banner Model', () => {
     it('is constructed properly', () => {
         assert.instanceOf(banner, BannerModel);
         assert.instanceOf(banner, BaseModel);
-        schema.models.collection.allKeys.forEach((key) => {
+        schema.models.collection.allKeys.forEach(key => {
             assert.strictEqual(banner[key], createConfig[key]);
         });
     });
@@ -60,29 +60,27 @@ describe('Banner Model', () => {
 
             banner.message = newMessage;
 
-            return banner.update()
-                .then(() => {
-                    assert.calledWith(datastore.update, {
-                        table: 'banners',
-                        params: {
-                            id: 51,
-                            message: 'test banner message'
-                        }
-                    });
+            return banner.update().then(() => {
+                assert.calledWith(datastore.update, {
+                    table: 'banners',
+                    params: {
+                        id: 51,
+                        message: 'test banner message'
+                    }
                 });
+            });
         });
     });
 
     describe('remove', () => {
         it('removes a banner', () =>
-            banner.remove()
-                .then(() => {
-                    assert.calledWith(datastore.remove, {
-                        table: 'banners',
-                        params: {
-                            id: 51
-                        }
-                    });
-                }));
+            banner.remove().then(() => {
+                assert.calledWith(datastore.remove, {
+                    table: 'banners',
+                    params: {
+                        id: 51
+                    }
+                });
+            }));
     });
 });

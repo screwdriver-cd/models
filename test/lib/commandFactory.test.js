@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 
@@ -108,21 +108,23 @@ describe('Command Factory', () => {
             datastore.save.resolves(expected);
             datastore.scan.resolves([]);
 
-            return factory.create({
-                namespace,
-                name,
-                version,
-                maintainer,
-                description,
-                format,
-                habitat,
-                pipelineId
-            }).then((model) => {
-                assert.instanceOf(model, Command);
-                Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+            return factory
+                .create({
+                    namespace,
+                    name,
+                    version,
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Command);
+                    Object.keys(expected).forEach(key => {
+                        assert.strictEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
 
         it('creates a Command given major version and no latest commands', () => {
@@ -131,21 +133,23 @@ describe('Command Factory', () => {
             datastore.save.resolves(expected);
             datastore.scan.resolves([]);
 
-            return factory.create({
-                namespace,
-                name,
-                version: 1,
-                maintainer,
-                description,
-                format,
-                habitat,
-                pipelineId
-            }).then((model) => {
-                assert.instanceOf(model, Command);
-                Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+            return factory
+                .create({
+                    namespace,
+                    name,
+                    version: 1,
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Command);
+                    Object.keys(expected).forEach(key => {
+                        assert.strictEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
 
         it('creates a Command and auto-bumps version when latest returns something', () => {
@@ -166,21 +170,23 @@ describe('Command Factory', () => {
             datastore.save.resolves(expected);
             datastore.scan.resolves([latest]);
 
-            return factory.create({
-                namespace,
-                name,
-                version,
-                maintainer,
-                description,
-                format,
-                habitat,
-                pipelineId
-            }).then((model) => {
-                assert.instanceOf(model, Command);
-                Object.keys(expected).forEach((key) => {
-                    assert.strictEqual(model[key], expected[key]);
+            return factory
+                .create({
+                    namespace,
+                    name,
+                    version,
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Command);
+                    Object.keys(expected).forEach(key => {
+                        assert.strictEqual(model[key], expected[key]);
+                    });
                 });
-            });
         });
     });
 
@@ -202,8 +208,7 @@ describe('Command Factory', () => {
         });
 
         it('should throw when config not supplied', () => {
-            assert.throw(CommandFactory.getInstance,
-                Error, 'No datastore provided to CommandFactory');
+            assert.throw(CommandFactory.getInstance, Error, 'No datastore provided to CommandFactory');
         });
     });
 
@@ -254,24 +259,24 @@ describe('Command Factory', () => {
 
         it('should get the correct command for a given namespace/name@exactVersion 1.0.2', () => {
             fullCommandName = `${commandNamespace}/${commandName}@1.0.2`;
-            expected = Object.assign({}, returnValue[2]);
+            expected = { ...returnValue[2] };
             datastore.get.resolves(returnValue[2]);
 
-            return factory.getCommand(fullCommandName).then((model) => {
+            return factory.getCommand(fullCommandName).then(model => {
                 assert.instanceOf(model, Command);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
         });
 
         it('should get the correct command for a given namespace/name@version 1.0', () => {
-            expected = Object.assign({}, returnValue[4]);
+            expected = { ...returnValue[4] };
             datastore.scan.resolves(returnValue);
 
-            return factory.getCommand(fullCommandName).then((model) => {
+            return factory.getCommand(fullCommandName).then(model => {
                 assert.instanceOf(model, Command);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -279,13 +284,13 @@ describe('Command Factory', () => {
 
         it('should get the correct command for a given namespace/name@tag', () => {
             fullCommandName = `${commandNamespace}/${commandName}@latest`;
-            expected = Object.assign({}, returnValue[2]);
+            expected = { ...returnValue[2] };
             commandTagFactoryMock.get.resolves({ version: '1.0.2' });
             datastore.get.resolves(returnValue[2]);
 
-            return factory.getCommand(fullCommandName).then((model) => {
+            return factory.getCommand(fullCommandName).then(model => {
                 assert.instanceOf(model, Command);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -295,19 +300,19 @@ describe('Command Factory', () => {
             fullCommandName = `${commandNamespace}/${commandName}@latest`;
             commandTagFactoryMock.get.resolves(null);
 
-            return factory.getCommand(fullCommandName).then((model) => {
+            return factory.getCommand(fullCommandName).then(model => {
                 assert.isNull(model);
             });
         });
 
         it('should get the correct command for a given namespace with no version or tag', () => {
             fullCommandName = `${commandNamespace}/${commandName}`;
-            expected = Object.assign({}, returnValue[0]);
+            expected = { ...returnValue[0] };
             datastore.scan.resolves(returnValue);
 
-            return factory.getCommand(fullCommandName).then((model) => {
+            return factory.getCommand(fullCommandName).then(model => {
                 assert.instanceOf(model, Command);
-                Object.keys(expected).forEach((key) => {
+                Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
                 });
             });
@@ -316,7 +321,7 @@ describe('Command Factory', () => {
         it('should return null if no command returned by list', () => {
             datastore.scan.resolves([]);
 
-            return factory.getCommand(fullCommandName).then((model) => {
+            return factory.getCommand(fullCommandName).then(model => {
                 assert.strictEqual(model, null);
             });
         });

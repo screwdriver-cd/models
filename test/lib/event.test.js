@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
@@ -58,7 +58,7 @@ describe('Event Model', () => {
     it('is constructed properly', () => {
         assert.instanceOf(event, EventModel);
         assert.instanceOf(event, BaseModel);
-        schema.models.event.allKeys.forEach((key) => {
+        schema.models.event.allKeys.forEach(key => {
             assert.strictEqual(event[key], createConfig[key]);
         });
     });
@@ -87,21 +87,25 @@ describe('Event Model', () => {
                 endTime
             };
 
-            return event.getBuilds({
-                startTime,
-                endTime
-            }).then(() => {
-                assert.calledWith(buildFactoryMock.list, expected);
-            });
+            return event
+                .getBuilds({
+                    startTime,
+                    endTime
+                })
+                .then(() => {
+                    assert.calledWith(buildFactoryMock.list, expected);
+                });
         });
 
         it('rejects with errors', () => {
             buildFactoryMock.list.rejects(new Error('cannotgetit'));
 
-            return event.getBuilds()
+            return event
+                .getBuilds()
                 .then(() => {
                     assert.fail('Should not get here');
-                }).catch((err) => {
+                })
+                .catch(err => {
                     assert.instanceOf(err, Error);
                     assert.equal(err.message, 'cannotgetit');
                 });
@@ -138,29 +142,32 @@ describe('Event Model', () => {
         let metrics;
 
         beforeEach(() => {
-            metrics = [{
-                id: build1.id,
-                jobId: build2.jobId,
-                eventId: build1.eventId,
-                createTime: build1.createTime,
-                startTime: build1.startTime,
-                endTime: build1.endTime,
-                status: build1.status,
-                duration: duration1,
-                imagePullTime: undefined,
-                queuedTime: undefined
-            }, {
-                id: build2.id,
-                jobId: build2.jobId,
-                eventId: build2.eventId,
-                createTime: build2.createTime,
-                startTime: build2.startTime,
-                endTime: build2.endTime,
-                status: build2.status,
-                duration: duration2,
-                imagePullTime: 600,
-                queuedTime: 480
-            }];
+            metrics = [
+                {
+                    id: build1.id,
+                    jobId: build2.jobId,
+                    eventId: build1.eventId,
+                    createTime: build1.createTime,
+                    startTime: build1.startTime,
+                    endTime: build1.endTime,
+                    status: build1.status,
+                    duration: duration1,
+                    imagePullTime: undefined,
+                    queuedTime: undefined
+                },
+                {
+                    id: build2.id,
+                    jobId: build2.jobId,
+                    eventId: build2.eventId,
+                    createTime: build2.createTime,
+                    startTime: build2.startTime,
+                    endTime: build2.endTime,
+                    status: build2.status,
+                    duration: duration2,
+                    imagePullTime: 600,
+                    queuedTime: 480
+                }
+            ];
         });
 
         it('generates metrics', () => {
@@ -177,7 +184,7 @@ describe('Event Model', () => {
 
             buildFactoryMock.list.resolves([build1, build2]);
 
-            return event.getMetrics({ startTime, endTime }).then((result) => {
+            return event.getMetrics({ startTime, endTime }).then(result => {
                 assert.calledWith(buildFactoryMock.list, buildListConfig);
                 assert.deepEqual(result, metrics);
             });
@@ -186,7 +193,7 @@ describe('Event Model', () => {
         it('does not fail if empty builds', () => {
             buildFactoryMock.list.resolves([]);
 
-            return event.getMetrics({ startTime, endTime }).then((result) => {
+            return event.getMetrics({ startTime, endTime }).then(result => {
                 assert.deepEqual(result, []);
             });
         });
@@ -203,7 +210,7 @@ describe('Event Model', () => {
 
             buildFactoryMock.list.resolves([build1, build2]);
 
-            return event.getMetrics().then((result) => {
+            return event.getMetrics().then(result => {
                 assert.calledWith(buildFactoryMock.list, buildListConfig);
                 assert.deepEqual(result, metrics);
             });
@@ -212,10 +219,12 @@ describe('Event Model', () => {
         it('rejects with errors', () => {
             buildFactoryMock.list.rejects(new Error('cannotgetit'));
 
-            return event.getMetrics({ startTime, endTime })
+            return event
+                .getMetrics({ startTime, endTime })
                 .then(() => {
                     assert.fail('Should not get here');
-                }).catch((err) => {
+                })
+                .catch(err => {
                     assert.instanceOf(err, Error);
                     assert.equal(err.message, 'cannotgetit');
                 });

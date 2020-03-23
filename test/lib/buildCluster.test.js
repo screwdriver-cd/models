@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const sinon = require('sinon');
 const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
@@ -52,7 +52,7 @@ describe('BuildCluster Model', () => {
     it('is constructed properly', () => {
         assert.instanceOf(buildCluster, BuildClusterModel);
         assert.instanceOf(buildCluster, BaseModel);
-        schema.models.collection.allKeys.forEach((key) => {
+        schema.models.collection.allKeys.forEach(key => {
             assert.strictEqual(buildCluster[key], createConfig[key]);
         });
     });
@@ -63,29 +63,27 @@ describe('BuildCluster Model', () => {
 
             buildCluster.scmOrganizations = scmOrganizations;
 
-            return buildCluster.update({ })
-                .then(() => {
-                    assert.calledWith(datastore.update, {
-                        table: 'buildClusters',
-                        params: {
-                            id: 51,
-                            scmOrganizations
-                        }
-                    });
+            return buildCluster.update({}).then(() => {
+                assert.calledWith(datastore.update, {
+                    table: 'buildClusters',
+                    params: {
+                        id: 51,
+                        scmOrganizations
+                    }
                 });
+            });
         });
     });
 
     describe('remove', () => {
         it('removes a buildCluster', () =>
-            buildCluster.remove()
-                .then(() => {
-                    assert.calledWith(datastore.remove, {
-                        table: 'buildClusters',
-                        params: {
-                            id: 51
-                        }
-                    });
-                }));
+            buildCluster.remove().then(() => {
+                assert.calledWith(datastore.remove, {
+                    table: 'buildClusters',
+                    params: {
+                        id: 51
+                    }
+                });
+            }));
     });
 });

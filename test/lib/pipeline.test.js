@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 const hoek = require('hoek');
@@ -13,9 +13,7 @@ const PARSED_YAML = require('../data/parser');
 const PARSED_YAML_WITH_REQUIRES = require('../data/parserWithRequires');
 const PARSED_YAML_PR = require('../data/parserWithWorkflowGraphPR');
 const PARSED_YAML_WITH_ERRORS = require('../data/parserWithErrors');
-const SCM_URLS = [
-    'foo.git'
-];
+const SCM_URLS = ['foo.git'];
 const EXTERNAL_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML, {
     annotations: { 'beta.screwdriver.cd/executor': 'screwdriver-executor-k8s' },
     childPipelines: {
@@ -73,22 +71,23 @@ describe('Pipeline Model', () => {
     let pr3Info;
     let pr10Info;
 
-    const sdBuildClusters = [{
-        name: 'sd1',
-        managedByScrewdriver: true,
-        isActive: true,
-        scmContext,
-        scmOrganizations: [],
-        weightage: 100
-    },
-    {
-        name: 'iOS',
-        managedByScrewdriver: false,
-        isActive: true,
-        scmContext,
-        scmOrganizations: ['screwdriver'],
-        weightage: 0
-    }
+    const sdBuildClusters = [
+        {
+            name: 'sd1',
+            managedByScrewdriver: true,
+            isActive: true,
+            scmContext,
+            scmOrganizations: [],
+            weightage: 100
+        },
+        {
+            name: 'iOS',
+            managedByScrewdriver: false,
+            isActive: true,
+            scmContext,
+            scmOrganizations: ['screwdriver'],
+            weightage: 0
+        }
     ];
 
     const externalBuildCluster = {
@@ -99,7 +98,7 @@ describe('Pipeline Model', () => {
         scmOrganizations: ['screwdriver']
     };
 
-    const decorateJobMock = (job) => {
+    const decorateJobMock = job => {
         const decorated = hoek.clone(job);
 
         decorated.isPR = sinon.stub().returns(false);
@@ -110,7 +109,7 @@ describe('Pipeline Model', () => {
         return decorated;
     };
 
-    const getJobMocks = (j) => {
+    const getJobMocks = j => {
         if (Array.isArray(j)) {
             return j.map(decorateJobMock);
         }
@@ -273,28 +272,37 @@ describe('Pipeline Model', () => {
         };
 
         mockery.registerMock('./jobFactory', {
-            getInstance: sinon.stub().returns(jobFactoryMock) });
+            getInstance: sinon.stub().returns(jobFactoryMock)
+        });
         mockery.registerMock('./eventFactory', {
-            getInstance: sinon.stub().returns(eventFactoryMock) });
+            getInstance: sinon.stub().returns(eventFactoryMock)
+        });
         mockery.registerMock('./buildFactory', {
-            getInstance: sinon.stub().returns(buildFactoryMock) });
+            getInstance: sinon.stub().returns(buildFactoryMock)
+        });
         mockery.registerMock('./userFactory', {
             getInstance: sinon.stub().returns(userFactoryMock)
         });
         mockery.registerMock('./secretFactory', {
-            getInstance: sinon.stub().returns(secretFactoryMock) });
+            getInstance: sinon.stub().returns(secretFactoryMock)
+        });
         mockery.registerMock('./templateFactory', {
-            getInstance: sinon.stub().returns(templateFactoryMock) });
+            getInstance: sinon.stub().returns(templateFactoryMock)
+        });
         mockery.registerMock('./triggerFactory', {
-            getInstance: sinon.stub().returns(triggerFactoryMock) });
+            getInstance: sinon.stub().returns(triggerFactoryMock)
+        });
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('screwdriver-config-parser', parserMock);
         mockery.registerMock('./pipelineFactory', {
-            getInstance: sinon.stub().returns(pipelineFactoryMock) });
+            getInstance: sinon.stub().returns(pipelineFactoryMock)
+        });
         mockery.registerMock('./collectionFactory', {
-            getInstance: sinon.stub().returns(collectionFactoryMock) });
+            getInstance: sinon.stub().returns(collectionFactoryMock)
+        });
         mockery.registerMock('./tokenFactory', {
-            getInstance: sinon.stub().returns(tokenFactoryMock) });
+            getInstance: sinon.stub().returns(tokenFactoryMock)
+        });
         mockery.registerMock('./buildClusterFactory', buildClusterFactory);
 
         // eslint-disable-next-line global-require
@@ -335,12 +343,12 @@ describe('Pipeline Model', () => {
         assert.instanceOf(pipeline, PipelineModel);
         assert.instanceOf(pipeline, BaseModel);
 
-        schema.models.pipeline.allKeys.forEach((key) => {
+        schema.models.pipeline.allKeys.forEach(key => {
             assert.strictEqual(pipeline[key], pipelineConfig[key]);
         });
     });
 
-    const getUserPermissionMocks = (a) => {
+    const getUserPermissionMocks = a => {
         userFactoryMock.get.withArgs({ username: a.username, scmContext }).resolves({
             unsealToken: sinon.stub().resolves('foo'),
             getPermissions: sinon.stub().resolves({
@@ -362,25 +370,26 @@ describe('Pipeline Model', () => {
         it('updates the webhook', () => {
             scmMock.addWebhook.resolves(null);
 
-            return pipeline.addWebhook('https://api.screwdriver.cd/v4/webhooks')
-                .then(() => {
-                    assert.calledWith(scmMock.addWebhook, {
-                        scmUri,
-                        scmContext,
-                        token: 'foo',
-                        webhookUrl: 'https://api.screwdriver.cd/v4/webhooks'
-                    });
+            return pipeline.addWebhook('https://api.screwdriver.cd/v4/webhooks').then(() => {
+                assert.calledWith(scmMock.addWebhook, {
+                    scmUri,
+                    scmContext,
+                    token: 'foo',
+                    webhookUrl: 'https://api.screwdriver.cd/v4/webhooks'
                 });
+            });
         });
 
         it('rejects if there is a failure to update the webhook', () => {
             scmMock.addWebhook.rejects(new Error('error adding webhooks'));
 
-            return pipeline.addWebhook('https://api.screwdriver.cd/v4/webhooks')
-                .then(() => assert.fail('should not get here'), (err) => {
+            return pipeline.addWebhook('https://api.screwdriver.cd/v4/webhooks').then(
+                () => assert.fail('should not get here'),
+                err => {
                     assert.instanceOf(err, Error);
                     assert.equal(err.message, 'error adding webhooks');
-                });
+                }
+            );
         });
     });
 
@@ -396,11 +405,9 @@ describe('Pipeline Model', () => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
             scmMock.addWebhook.resolves();
-            parserMock.withArgs('superyamlcontent',
-                templateFactoryMock, buildClusterFactoryMock)
-                .resolves(PARSED_YAML);
-            parserMock.withArgs('yamlcontentwithscmurls',
-                templateFactoryMock, buildClusterFactoryMock)
+            parserMock.withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock).resolves(PARSED_YAML);
+            parserMock
+                .withArgs('yamlcontentwithscmurls', templateFactoryMock, buildClusterFactoryMock)
                 .resolves(EXTERNAL_PARSED_YAML);
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
@@ -434,63 +441,72 @@ describe('Pipeline Model', () => {
             publishMock = {
                 pipelineId: testId,
                 name: 'publish',
-                permutations: [{
-                    commands: [
-                        { command: 'npm run bump', name: 'bump' },
-                        { command: 'npm publish --tag $NODE_TAG', name: 'publish' },
-                        { command: 'git push origin --tags', name: 'tag' }
-                    ],
-                    environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
-                    image: 'node:4'
-                }]
+                permutations: [
+                    {
+                        commands: [
+                            { command: 'npm run bump', name: 'bump' },
+                            { command: 'npm publish --tag $NODE_TAG', name: 'publish' },
+                            { command: 'git push origin --tags', name: 'tag' }
+                        ],
+                        environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
+                        image: 'node:4'
+                    }
+                ]
             };
             mainMock = {
                 pipelineId: testId,
                 name: 'main',
-                permutations: [{
-                    commands: [
-                        { command: 'npm install', name: 'init' },
-                        { command: 'npm test', name: 'test' }
-                    ],
-                    environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
-                    image: 'node:4'
-                }, {
-                    commands: [
-                        { command: 'npm install', name: 'init' },
-                        { command: 'npm test', name: 'test' }
-                    ],
-                    environment: { NODE_ENV: 'test', NODE_VERSION: '5' },
-                    image: 'node:5'
-                }, {
-                    commands: [
-                        { command: 'npm install', name: 'init' },
-                        { command: 'npm test', name: 'test' }
-                    ],
-                    environment: { NODE_ENV: 'test', NODE_VERSION: '6' },
-                    image: 'node:6'
-                }]
+                permutations: [
+                    {
+                        commands: [
+                            { command: 'npm install', name: 'init' },
+                            { command: 'npm test', name: 'test' }
+                        ],
+                        environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
+                        image: 'node:4'
+                    },
+                    {
+                        commands: [
+                            { command: 'npm install', name: 'init' },
+                            { command: 'npm test', name: 'test' }
+                        ],
+                        environment: { NODE_ENV: 'test', NODE_VERSION: '5' },
+                        image: 'node:5'
+                    },
+                    {
+                        commands: [
+                            { command: 'npm install', name: 'init' },
+                            { command: 'npm test', name: 'test' }
+                        ],
+                        environment: { NODE_ENV: 'test', NODE_VERSION: '6' },
+                        image: 'node:6'
+                    }
+                ]
             };
             externalMock = {
                 pipelineId: 123,
                 name: 'main',
-                permutations: [{
-                    commands: [
-                        { command: 'npm run bump', name: 'bump' },
-                        { command: 'npm publish --tag $NODE_TAG', name: 'publish' },
-                        { command: 'git push origin --tags', name: 'tag' }
-                    ],
-                    environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
-                    image: 'node:4'
-                }]
+                permutations: [
+                    {
+                        commands: [
+                            { command: 'npm run bump', name: 'bump' },
+                            { command: 'npm publish --tag $NODE_TAG', name: 'publish' },
+                            { command: 'git push origin --tags', name: 'tag' }
+                        ],
+                        environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
+                        image: 'node:4'
+                    }
+                ]
             };
         });
 
         it('create external trigger in datastore for new jobs', () => {
             jobs = [];
             sinon.spy(pipeline, 'update');
-            parserMock.withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock)
+            parserMock
+                .withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock)
                 .resolves(PARSED_YAML_WITH_REQUIRES);
-            mainMock.permutations.forEach((p) => {
+            mainMock.permutations.forEach(p => {
                 p.requires = ['~pr', '~commit', '~sd@12345:test'];
             });
             publishMock.permutations[0].requires = ['main'];
@@ -533,7 +549,8 @@ describe('Pipeline Model', () => {
                 remove: sinon.stub().resolves(null)
             };
 
-            parserMock.withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock)
+            parserMock
+                .withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock)
                 .resolves(PARSED_YAML_WITH_REQUIRES);
             jobFactoryMock.list.resolves([mainModelMock, publishModelMock]);
             mainModelMock.update.resolves(mainModelMock);
@@ -558,11 +575,7 @@ describe('Pipeline Model', () => {
                 id: 123,
                 update: sinon.stub().resolves(null),
                 remove: sinon.stub().resolves(null),
-                workflowGraph: { nodes: [
-                    { name: '~pr' },
-                    { name: '~commit' },
-                    { name: 'main', id: 3 }
-                ] }
+                workflowGraph: { nodes: [{ name: '~pr' }, { name: '~commit' }, { name: 'main', id: 3 }] }
             });
 
             return pipeline.sync().then(() => {
@@ -597,7 +610,8 @@ describe('Pipeline Model', () => {
                 }
             ];
             scmMock.getFile.withArgs(sinon.match({ ref })).resolves('yamlcontentfromsha');
-            parserMock.withArgs('yamlcontentfromsha', templateFactoryMock, buildClusterFactoryMock)
+            parserMock
+                .withArgs('yamlcontentfromsha', templateFactoryMock, buildClusterFactoryMock)
                 .resolves(YAML_FROM_SHA);
             publishMock.permutations[0].commands = YAML_FROM_SHA.jobs.publish[0].commands;
             jobs = [];
@@ -645,11 +659,10 @@ describe('Pipeline Model', () => {
         });
 
         it('stores chainPR to pipeline', () => {
-            const configMock = Object.assign({}, PARSED_YAML);
+            const configMock = { ...PARSED_YAML };
             const defatulChainPR = false;
 
-            parserMock.withArgs('superyamlcontent', templateFactoryMock)
-                .resolves(configMock);
+            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(configMock);
             jobs = [];
             jobFactoryMock.list.resolves(jobs);
             jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
@@ -668,24 +681,23 @@ describe('Pipeline Model', () => {
             jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
-            return pipeline.sync()
-                .then((p) => {
-                    assert.equal(p.id, testId);
-                    assert.calledWith(scmMock.getFile, {
-                        scmUri,
-                        scmContext,
-                        path: 'screwdriver.yaml',
-                        token: 'foo',
-                        scmRepo: {
-                            branch: 'branch',
-                            url: 'https://host/owner/repo/tree/branch',
-                            name: 'owner/repo'
-                        }
-                    });
-                    assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock);
-                    assert.calledWith(jobFactoryMock.create, publishMock);
-                    assert.calledWith(jobFactoryMock.create, mainMock);
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.calledWith(scmMock.getFile, {
+                    scmUri,
+                    scmContext,
+                    path: 'screwdriver.yaml',
+                    token: 'foo',
+                    scmRepo: {
+                        branch: 'branch',
+                        url: 'https://host/owner/repo/tree/branch',
+                        name: 'owner/repo'
+                    }
                 });
+                assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock);
+                assert.calledWith(jobFactoryMock.create, publishMock);
+                assert.calledWith(jobFactoryMock.create, mainMock);
+            });
         });
 
         it('updates existing jobs that are in the config', () => {
@@ -695,35 +707,39 @@ describe('Pipeline Model', () => {
             publishModelMock.update.resolves(publishModelMock);
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
-            return pipeline.sync()
-                .then(() => {
-                    assert.calledOnce(jobs[0].update);
-                    assert.deepEqual(jobs[0].archived, false);
-                    assert.deepEqual(jobs[0].permutations, [{
+            return pipeline.sync().then(() => {
+                assert.calledOnce(jobs[0].update);
+                assert.deepEqual(jobs[0].archived, false);
+                assert.deepEqual(jobs[0].permutations, [
+                    {
                         commands: [
                             { command: 'npm install', name: 'init' },
                             { command: 'npm test', name: 'test' }
                         ],
                         environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
                         image: 'node:4'
-                    }, {
+                    },
+                    {
                         commands: [
                             { command: 'npm install', name: 'init' },
                             { command: 'npm test', name: 'test' }
                         ],
                         environment: { NODE_ENV: 'test', NODE_VERSION: '5' },
                         image: 'node:5'
-                    }, {
+                    },
+                    {
                         commands: [
                             { command: 'npm install', name: 'init' },
                             { command: 'npm test', name: 'test' }
                         ],
                         environment: { NODE_ENV: 'test', NODE_VERSION: '6' },
                         image: 'node:6'
-                    }]);
-                    assert.calledOnce(jobs[1].update);
-                    assert.deepEqual(jobs[1].archived, false);
-                    assert.deepEqual(jobs[1].permutations, [{
+                    }
+                ]);
+                assert.calledOnce(jobs[1].update);
+                assert.deepEqual(jobs[1].archived, false);
+                assert.deepEqual(jobs[1].permutations, [
+                    {
                         commands: [
                             { command: 'npm run bump', name: 'bump' },
                             { command: 'npm publish --tag $NODE_TAG', name: 'publish' },
@@ -731,8 +747,9 @@ describe('Pipeline Model', () => {
                         ],
                         environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
                         image: 'node:4'
-                    }]);
-                });
+                    }
+                ]);
+            });
         });
 
         it('disable jobs if they are not in the config', () => {
@@ -750,11 +767,10 @@ describe('Pipeline Model', () => {
             disableJobMock.update.resolves(disableJobMock);
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
-            return pipeline.sync()
-                .then(() => {
-                    assert.calledOnce(disableJobMock.update);
-                    assert.equal(disableJobMock.archived, true);
-                });
+            return pipeline.sync().then(() => {
+                assert.calledOnce(disableJobMock.update);
+                assert.equal(disableJobMock.archived, true);
+            });
         });
 
         it('does nothing if the job is a PR job', () => {
@@ -771,10 +787,9 @@ describe('Pipeline Model', () => {
             jobFactoryMock.list.resolves(jobs);
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
-            return pipeline.sync()
-                .then(() => {
-                    assert.notCalled(prJobMock.update);
-                });
+            return pipeline.sync().then(() => {
+                assert.notCalled(prJobMock.update);
+            });
         });
 
         it('returns error if something explodes', () => {
@@ -782,162 +797,175 @@ describe('Pipeline Model', () => {
 
             jobFactoryMock.list.rejects(error);
 
-            return pipeline.sync()
-                .catch((err) => {
-                    assert.deepEqual(err, error);
-                });
+            return pipeline.sync().catch(err => {
+                assert.deepEqual(err, error);
+            });
         });
 
         it('syncs child pipeline if there are changes in scmUrls', () => {
             const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
 
             parsedYaml.childPipelines = {
-                scmUrls: [
-                    'foo.git',
-                    'bar.git'
-                ]
+                scmUrls: ['foo.git', 'bar.git']
             };
 
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
             scmMock.getFile.resolves('yamlcontentwithscmurls');
-            parserMock.withArgs('yamlcontentwithscmurls',
-                templateFactoryMock, buildClusterFactoryMock)
+            parserMock
+                .withArgs('yamlcontentwithscmurls', templateFactoryMock, buildClusterFactoryMock)
                 .resolves(parsedYaml);
-            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
-                checkoutUrl: 'foo.git'
-            })).resolves('foo');
-            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
-                checkoutUrl: 'bar.git'
-            })).resolves('bar');
-            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
-                checkoutUrl: 'baz.git'
-            })).resolves('baz');
+            pipelineFactoryMock.scm.parseUrl
+                .withArgs(
+                    sinon.match({
+                        checkoutUrl: 'foo.git'
+                    })
+                )
+                .resolves('foo');
+            pipelineFactoryMock.scm.parseUrl
+                .withArgs(
+                    sinon.match({
+                        checkoutUrl: 'bar.git'
+                    })
+                )
+                .resolves('bar');
+            pipelineFactoryMock.scm.parseUrl
+                .withArgs(
+                    sinon.match({
+                        checkoutUrl: 'baz.git'
+                    })
+                )
+                .resolves('baz');
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipelineFactoryMock.get.withArgs({ scmUri: 'bar' }).resolves(null);
             pipeline.childPipelines = {
-                scmUrls: [
-                    'baz.git'
-                ]
+                scmUrls: ['baz.git']
             };
 
-            return pipeline.sync()
-                .then((p) => {
-                    assert.equal(p.id, testId);
-                    assert.deepEqual(p.childPipelines.scmUrls, [
-                        'foo.git',
-                        'bar.git'
-                    ]);
-                    assert.calledWith(parserMock, 'yamlcontentwithscmurls', templateFactoryMock);
-                    assert.calledOnce(pipelineFactoryMock.create);
-                    assert.calledOnce(childPipelineMock.update);
-                    assert.calledOnce(childPipelineMock.remove);
-                });
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.deepEqual(p.childPipelines.scmUrls, ['foo.git', 'bar.git']);
+                assert.calledWith(parserMock, 'yamlcontentwithscmurls', templateFactoryMock);
+                assert.calledOnce(pipelineFactoryMock.create);
+                assert.calledOnce(childPipelineMock.update);
+                assert.calledOnce(childPipelineMock.remove);
+            });
         });
 
         it('does not sync child pipelines if no admin permissions', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
-            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
-                checkoutUrl: 'foo.git'
-            })).resolves('foo');
+            pipelineFactoryMock.scm.parseUrl
+                .withArgs(
+                    sinon.match({
+                        checkoutUrl: 'foo.git'
+                    })
+                )
+                .resolves('foo');
             pipelineFactoryMock.get.resolves(null);
             scmMock.getFile.resolves('yamlcontentwithscmurls');
 
-            return pipeline.sync()
-                .then((p) => {
-                    assert.equal(p.id, testId);
-                    assert.notCalled(pipelineFactoryMock.create);
-                });
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.notCalled(pipelineFactoryMock.create);
+            });
         });
 
         it('does not update child pipelines if does not belong to this parent', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
-            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
-                checkoutUrl: 'bar.git'
-            })).resolves('bar');
+            pipelineFactoryMock.scm.parseUrl
+                .withArgs(
+                    sinon.match({
+                        checkoutUrl: 'bar.git'
+                    })
+                )
+                .resolves('bar');
             childPipelineMock.configPipelineId = 456;
             pipelineFactoryMock.get.resolves(childPipelineMock);
             scmMock.getFile.resolves('yamlcontentwithscmurls');
 
-            return pipeline.sync()
-                .then((p) => {
-                    assert.equal(p.id, testId);
-                    assert.notCalled(pipelineFactoryMock.update);
-                });
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.notCalled(pipelineFactoryMock.update);
+            });
         });
 
         it('does not remove child pipelines if does not belong to this parent', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
-            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
-                checkoutUrl: 'bar.git'
-            })).resolves('bar');
+            pipelineFactoryMock.scm.parseUrl
+                .withArgs(
+                    sinon.match({
+                        checkoutUrl: 'bar.git'
+                    })
+                )
+                .resolves('bar');
             childPipelineMock.configPipelineId = 789;
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipeline.childPipelines = {
-                scmUrls: [
-                    'bar.git'
-                ]
+                scmUrls: ['bar.git']
             };
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
-            return pipeline.sync()
-                .then((p) => {
-                    assert.equal(p.id, testId);
-                    assert.notCalled(childPipelineMock.remove);
-                });
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.notCalled(childPipelineMock.remove);
+            });
         });
 
         it('removes child pipeline and resets scmUrls if it is removed from new yaml', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
-            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
-                checkoutUrl: 'bar.git'
-            })).resolves('bar');
+            pipelineFactoryMock.scm.parseUrl
+                .withArgs(
+                    sinon.match({
+                        checkoutUrl: 'bar.git'
+                    })
+                )
+                .resolves('bar');
             childPipelineMock.configPipelineId = 123;
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipeline.childPipelines = {
-                scmUrls: [
-                    'bar.git'
-                ]
+                scmUrls: ['bar.git']
             };
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
-            return pipeline.sync()
-                .then((p) => {
-                    assert.equal(p.id, testId);
-                    assert.equal(p.childPipelines, null);
-                    assert.calledOnce(childPipelineMock.remove);
-                });
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.equal(p.childPipelines, null);
+                assert.calledOnce(childPipelineMock.remove);
+            });
         });
 
         it('does not sync child pipelines if the YAML has errors', () => {
             scmMock.getFile.resolves('yamlcontentwithscmurls');
-            parserMock.withArgs('yamlcontentwithscmurls',
-                templateFactoryMock, buildClusterFactoryMock)
+            parserMock
+                .withArgs('yamlcontentwithscmurls', templateFactoryMock, buildClusterFactoryMock)
                 .resolves(PARSED_YAML_WITH_ERRORS);
             jobs = [mainJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
-            pipelineFactoryMock.scm.parseUrl.withArgs(sinon.match({
-                checkoutUrl: 'foo.git'
-            })).resolves('foo');
+            pipelineFactoryMock.scm.parseUrl
+                .withArgs(
+                    sinon.match({
+                        checkoutUrl: 'foo.git'
+                    })
+                )
+                .resolves('foo');
             childPipelineMock.configPipelineId = 456;
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipeline.childPipelines = EXTERNAL_PARSED_YAML.childPipelines;
 
-            return pipeline.sync()
-                .then((p) => {
-                    assert.equal(p.id, testId);
-                    assert.deepEqual(p.childPipelines, EXTERNAL_PARSED_YAML.childPipelines);
-                    assert.notCalled(childPipelineMock.remove);
-                });
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.deepEqual(p.childPipelines, EXTERNAL_PARSED_YAML.childPipelines);
+                assert.notCalled(childPipelineMock.remove);
+            });
         });
     });
 
@@ -1014,23 +1042,30 @@ describe('Pipeline Model', () => {
                 assert.calledThrice(jobFactoryMock.create);
                 assert.calledWith(jobFactoryMock.create.firstCall, {
                     name: 'PR-1:test',
-                    permutations: [{
-                        commands: [{ command: 'npm test', name: 'test' }],
-                        image: 'node:10',
-                        requires: ['~pr']
-                    }],
+                    permutations: [
+                        {
+                            commands: [{ command: 'npm test', name: 'test' }],
+                            image: 'node:10',
+                            requires: ['~pr']
+                        }
+                    ],
                     pipelineId: 123,
                     prParentJobId: 100
-
                 });
-                assert.calledWith(jobFactoryMock.create.secondCall, sinon.match({
-                    pipelineId: 123,
-                    name: 'PR-1:new_pr_job'
-                }));
-                assert.calledWith(jobFactoryMock.create.thirdCall, sinon.match({
-                    pipelineId: 123,
-                    name: 'PR-1:pr_specific_branch'
-                }));
+                assert.calledWith(
+                    jobFactoryMock.create.secondCall,
+                    sinon.match({
+                        pipelineId: 123,
+                        name: 'PR-1:new_pr_job'
+                    })
+                );
+                assert.calledWith(
+                    jobFactoryMock.create.thirdCall,
+                    sinon.match({
+                        pipelineId: 123,
+                        name: 'PR-1:pr_specific_branch'
+                    })
+                );
                 assert.deepEqual(firstPRJob.permutations, clonedYAML.jobs.main);
                 assert.isFalse(firstPRJob.archived);
             });
@@ -1070,10 +1105,13 @@ describe('Pipeline Model', () => {
                 });
                 assert.calledOnce(firstPRJob.update);
                 assert.calledOnce(secondPRJob.update);
-                assert.calledWith(jobFactoryMock.create, sinon.match({
-                    pipelineId: 123,
-                    name: 'PR-1:new_pr_job'
-                }));
+                assert.calledWith(
+                    jobFactoryMock.create,
+                    sinon.match({
+                        pipelineId: 123,
+                        name: 'PR-1:new_pr_job'
+                    })
+                );
                 assert.deepEqual(firstPRJob.permutations, PARSED_YAML_PR.jobs.main);
                 assert.isFalse(firstPRJob.archived);
                 assert.isTrue(secondPRJob.archived);
@@ -1086,7 +1124,7 @@ describe('Pipeline Model', () => {
             scmMock.getFile.rejects(error);
             parserMock.rejects(error);
 
-            return pipeline.syncPR(1).catch((err) => {
+            return pipeline.syncPR(1).catch(err => {
                 assert.deepEqual(err, error);
             });
         });
@@ -1096,7 +1134,7 @@ describe('Pipeline Model', () => {
 
             jobFactoryMock.list.rejects(error);
 
-            return pipeline.syncPR(1).catch((err) => {
+            return pipeline.syncPR(1).catch(err => {
                 assert.deepEqual(err, error);
             });
         });
@@ -1134,60 +1172,75 @@ describe('Pipeline Model', () => {
                 assert.callCount(jobFactoryMock.create, 4);
                 assert.calledWith(jobFactoryMock.create.firstCall, {
                     name: 'PR-1:test',
-                    permutations: [{
-                        commands: [{ command: 'npm test', name: 'test' }],
-                        image: 'node:10',
-                        requires: ['~pr']
-                    }],
+                    permutations: [
+                        {
+                            commands: [{ command: 'npm test', name: 'test' }],
+                            image: 'node:10',
+                            requires: ['~pr']
+                        }
+                    ],
                     pipelineId: 123,
                     prParentJobId: 100
-
                 });
-                assert.calledWith(jobFactoryMock.create.secondCall, sinon.match({
-                    name: 'PR-1:new_pr_job',
-                    permutations: [{
-                        commands: [{ command: 'npm install test', name: 'install' }],
-                        image: 'node:8',
-                        requires: ['~pr']
-                    }],
-                    pipelineId: 123
-                }));
-                assert.calledWith(jobFactoryMock.create.lastCall, sinon.match({
-                    name: 'PR-1:publish',
-                    permutations: [{
-                        commands: [{ command: 'npm publish --tag $NODE_TAG', name: 'publish' }],
-                        environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
-                        image: 'node:4',
-                        requires: ['main']
-                    }],
-                    pipelineId: 123,
-                    prParentJobId: 99999
-                }));
+                assert.calledWith(
+                    jobFactoryMock.create.secondCall,
+                    sinon.match({
+                        name: 'PR-1:new_pr_job',
+                        permutations: [
+                            {
+                                commands: [{ command: 'npm install test', name: 'install' }],
+                                image: 'node:8',
+                                requires: ['~pr']
+                            }
+                        ],
+                        pipelineId: 123
+                    })
+                );
+                assert.calledWith(
+                    jobFactoryMock.create.lastCall,
+                    sinon.match({
+                        name: 'PR-1:publish',
+                        permutations: [
+                            {
+                                commands: [{ command: 'npm publish --tag $NODE_TAG', name: 'publish' }],
+                                environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
+                                image: 'node:4',
+                                requires: ['main']
+                            }
+                        ],
+                        pipelineId: 123,
+                        prParentJobId: 99999
+                    })
+                );
                 assert.deepEqual(firstPRJob.permutations, clonedYAML.jobs.main);
                 assert.isFalse(firstPRJob.archived);
             });
         });
 
         it('updates PR config, and it creates PR job which requires specific branch for PR', () => {
-            const prJobs = [{
-                update: sinon.stub().resolves(null),
-                isPR: sinon.stub().returns(true),
-                name: 'PR-1:main',
-                state: 'ENABLED',
-                archived: false
-            }, {
-                update: sinon.stub().resolves(null),
-                isPR: sinon.stub().returns(true),
-                name: 'PR-1:test',
-                state: 'ENABLED',
-                archived: false
-            }, {
-                update: sinon.stub().resolves(null),
-                isPR: sinon.stub().returns(true),
-                name: 'PR-1:new_pr_job',
-                state: 'ENABLED',
-                archived: false
-            }];
+            const prJobs = [
+                {
+                    update: sinon.stub().resolves(null),
+                    isPR: sinon.stub().returns(true),
+                    name: 'PR-1:main',
+                    state: 'ENABLED',
+                    archived: false
+                },
+                {
+                    update: sinon.stub().resolves(null),
+                    isPR: sinon.stub().returns(true),
+                    name: 'PR-1:test',
+                    state: 'ENABLED',
+                    archived: false
+                },
+                {
+                    update: sinon.stub().resolves(null),
+                    isPR: sinon.stub().returns(true),
+                    name: 'PR-1:new_pr_job',
+                    state: 'ENABLED',
+                    archived: false
+                }
+            ];
             const clonedYAML = JSON.parse(JSON.stringify(PARSED_YAML_PR));
 
             jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob, testJob].concat(prJobs));
@@ -1210,37 +1263,46 @@ describe('Pipeline Model', () => {
                 assert.calledOnce(prJobs[1].update);
                 assert.calledOnce(prJobs[2].update);
                 assert.calledOnce(jobFactoryMock.create);
-                assert.calledWith(jobFactoryMock.create, sinon.match({
-                    name: 'PR-1:pr_specific_branch',
-                    permutations: [{
-                        commands: [{ command: 'npm install test', name: 'install' }],
-                        image: 'node:8',
-                        requires: ['~pr:testBranch']
-                    }],
-                    pipelineId: 123
-                }));
+                assert.calledWith(
+                    jobFactoryMock.create,
+                    sinon.match({
+                        name: 'PR-1:pr_specific_branch',
+                        permutations: [
+                            {
+                                commands: [{ command: 'npm install test', name: 'install' }],
+                                image: 'node:8',
+                                requires: ['~pr:testBranch']
+                            }
+                        ],
+                        pipelineId: 123
+                    })
+                );
             });
         });
         it("updates PR config, and it doesn't create duplicated PR jobs", () => {
-            const prJobs = [{
-                update: sinon.stub().resolves(null),
-                isPR: sinon.stub().returns(true),
-                name: 'PR-1:main',
-                state: 'ENABLED',
-                archived: false
-            }, {
-                update: sinon.stub().resolves(null),
-                isPR: sinon.stub().returns(true),
-                name: 'PR-1:new_pr_job',
-                state: 'ENABLED',
-                archived: false
-            }, {
-                update: sinon.stub().resolves(null),
-                isPR: sinon.stub().returns(true),
-                name: 'PR-1:pr_specific_branch',
-                state: 'ENABLED',
-                archived: false
-            }];
+            const prJobs = [
+                {
+                    update: sinon.stub().resolves(null),
+                    isPR: sinon.stub().returns(true),
+                    name: 'PR-1:main',
+                    state: 'ENABLED',
+                    archived: false
+                },
+                {
+                    update: sinon.stub().resolves(null),
+                    isPR: sinon.stub().returns(true),
+                    name: 'PR-1:new_pr_job',
+                    state: 'ENABLED',
+                    archived: false
+                },
+                {
+                    update: sinon.stub().resolves(null),
+                    isPR: sinon.stub().returns(true),
+                    name: 'PR-1:pr_specific_branch',
+                    state: 'ENABLED',
+                    archived: false
+                }
+            ];
             const clonedYAML = JSON.parse(JSON.stringify(PARSED_YAML_PR));
 
             clonedYAML.jobs.test[0].requires = ['~pr', '~pr:testBranch'];
@@ -1268,13 +1330,14 @@ describe('Pipeline Model', () => {
                 assert.calledOnce(jobFactoryMock.create);
                 assert.calledWith(jobFactoryMock.create, {
                     name: 'PR-1:test',
-                    permutations: [{
-                        commands: [{ command: 'npm test', name: 'test' }],
-                        image: 'node:10',
-                        requires: ['~pr', '~pr:testBranch']
-                    }],
+                    permutations: [
+                        {
+                            commands: [{ command: 'npm test', name: 'test' }],
+                            image: 'node:10',
+                            requires: ['~pr', '~pr:testBranch']
+                        }
+                    ],
                     pipelineId: 123
-
                 });
             });
         });
@@ -1286,9 +1349,7 @@ describe('Pipeline Model', () => {
         beforeEach(() => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
-            parserMock.withArgs('superyamlcontent',
-                templateFactoryMock, buildClusterFactoryMock)
-                .resolves(PARSED_YAML);
+            parserMock.withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock).resolves(PARSED_YAML);
             scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge', baseBranch: 'testBranch' });
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
@@ -1307,10 +1368,9 @@ describe('Pipeline Model', () => {
         it('archive PR job if it is closed', () => {
             scmMock.getOpenedPRs.resolves([]);
 
-            return pipeline.syncPRs()
-                .then(() => {
-                    assert.equal(prJob.archived, true);
-                });
+            return pipeline.syncPRs().then(() => {
+                assert.equal(prJob.archived, true);
+            });
         });
 
         it('create PR job if it is opened and not in the existing jobs', () => {
@@ -1324,16 +1384,15 @@ describe('Pipeline Model', () => {
             scmMock.getOpenedPRs.resolves([{ name: 'PR-2', ref: 'abc' }]);
             jobFactoryMock.create.resolves(prJob2);
 
-            return pipeline.syncPRs()
-                .then(() => {
-                    // assert.calledOnce(jobFactoryMock.create);
-                    assert.calledWith(jobFactoryMock.create, {
-                        permutations: PARSED_YAML.jobs.main,
-                        pipelineId: testId,
-                        name: 'PR-2:main',
-                        prParentJobId: 99998
-                    });
+            return pipeline.syncPRs().then(() => {
+                // assert.calledOnce(jobFactoryMock.create);
+                assert.calledWith(jobFactoryMock.create, {
+                    permutations: PARSED_YAML.jobs.main,
+                    pipelineId: testId,
+                    name: 'PR-2:main',
+                    prParentJobId: 99998
                 });
+            });
         });
 
         it('unarchive PR job if it was previously archived and chainPR is false.', () => {
@@ -1341,20 +1400,18 @@ describe('Pipeline Model', () => {
             prJob.archived = true;
             scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
 
-            return pipeline.syncPRs()
-                .then(() => {
-                    assert.calledOnce(prJob.update);
-                    assert.equal(prJob.archived, false);
-                });
+            return pipeline.syncPRs().then(() => {
+                assert.calledOnce(prJob.update);
+                assert.equal(prJob.archived, false);
+            });
         });
 
         it('does nothing if it PR is not archived', () => {
             scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
 
-            return pipeline.syncPRs()
-                .then(() => {
-                    assert.notCalled(jobFactoryMock.create);
-                });
+            return pipeline.syncPRs().then(() => {
+                assert.notCalled(jobFactoryMock.create);
+            });
         });
     });
 
@@ -1392,7 +1449,7 @@ describe('Pipeline Model', () => {
         it('has an admin robin', () => {
             const admin = pipeline.getFirstAdmin();
 
-            return admin.then((realAdmin) => {
+            return admin.then(realAdmin => {
                 assert.equal(realAdmin.username, 'robin');
             });
         });
@@ -1401,12 +1458,15 @@ describe('Pipeline Model', () => {
             getUserPermissionMocks({ username: 'batman', push: false });
             getUserPermissionMocks({ username: 'robin', push: false });
 
-            return pipeline.getFirstAdmin().then(() => {
-                assert.fail('should not get here');
-            }).catch((e) => {
-                assert.isOk(e);
-                assert.equal(e.message, 'Pipeline has no admin');
-            });
+            return pipeline
+                .getFirstAdmin()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(e => {
+                    assert.isOk(e);
+                    assert.equal(e.message, 'Pipeline has no admin');
+                });
         });
 
         it('catch 401 from get permission', () => {
@@ -1419,7 +1479,7 @@ describe('Pipeline Model', () => {
                 username: 'batman'
             });
 
-            return pipeline.getFirstAdmin().then((realAdmin) => {
+            return pipeline.getFirstAdmin().then(realAdmin => {
                 assert.equal(realAdmin.username, 'robin');
             });
         });
@@ -1434,7 +1494,7 @@ describe('Pipeline Model', () => {
                 username: 'batman'
             });
 
-            return pipeline.getFirstAdmin().then((realAdmin) => {
+            return pipeline.getFirstAdmin().then(realAdmin => {
                 assert.equal(realAdmin.username, 'robin');
             });
         });
@@ -1449,12 +1509,15 @@ describe('Pipeline Model', () => {
                 username: 'batman'
             });
 
-            return pipeline.getFirstAdmin().then(() => {
-                assert.fail('should not get here');
-            }).catch((e) => {
-                assert.isOk(e);
-                assert.equal(e.message, 'fails to get permissions');
-            });
+            return pipeline
+                .getFirstAdmin()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(e => {
+                    assert.isOk(e);
+                    assert.equal(e.message, 'fails to get permissions');
+                });
         });
     });
 
@@ -1467,29 +1530,28 @@ describe('Pipeline Model', () => {
         });
 
         it('has an token getter', () =>
-            pipeline.token.then((token) => {
+            pipeline.token.then(token => {
                 assert.equal(token, 'foo');
-            })
-        );
+            }));
     });
 
     describe('get branch', () => {
         it('has an branch getter', () => {
-            pipeline.branch.then((branch) => {
+            pipeline.branch.then(branch => {
                 assert.equal(branch, 'master');
             });
         });
 
         it('return blank if scmUri is blank', () => {
             pipeline.scmUri = '';
-            pipeline.branch.then((branch) => {
+            pipeline.branch.then(branch => {
                 assert.equal(branch, '');
             });
         });
 
         it('return blank if scmUri is invalid', () => {
             pipeline.scmUri = 'github.com:1234';
-            pipeline.branch.then((branch) => {
+            pipeline.branch.then(branch => {
                 assert.equal(branch, '');
             });
         });
@@ -1498,21 +1560,21 @@ describe('Pipeline Model', () => {
     describe('get rootDir', () => {
         it('has an rootDir getter', () => {
             pipeline.scmUri = 'github.com:1234:branch:src/app/component';
-            pipeline.rootDir.then((rootDir) => {
+            pipeline.rootDir.then(rootDir => {
                 assert.equal(rootDir, 'src/app/component');
             });
         });
 
         it('return blank if scmUri is blank', () => {
             pipeline.scmUri = '';
-            pipeline.rootDir.then((rootDir) => {
+            pipeline.rootDir.then(rootDir => {
                 assert.equal(rootDir, '');
             });
         });
 
         it('return blank if scmUri is invalid', () => {
             pipeline.scmUri = 'github.com:1234:branch';
-            pipeline.rootDir.then((rootDir) => {
+            pipeline.rootDir.then(rootDir => {
                 assert.equal(rootDir, '');
             });
         });
@@ -1561,7 +1623,7 @@ describe('Pipeline Model', () => {
             assert.calledOnce(secretFactoryMock.list);
         });
 
-        it('gets config pipeline\'s secrets', () => {
+        it("gets config pipeline's secrets", () => {
             const childPipelineId = 1234;
 
             pipelineConfig.id = childPipelineId;
@@ -1606,7 +1668,7 @@ describe('Pipeline Model', () => {
             secretFactoryMock.list.onCall(0).resolves(childPipelineSecrets);
             secretFactoryMock.list.onCall(1).resolves(configPipelineSecrets);
 
-            return childPipeline.secrets.then((secrets) => {
+            return childPipeline.secrets.then(secrets => {
                 // Both the configPipeline and childPipeline secrets are fetched
                 assert.calledTwice(secretFactoryMock.list);
                 assert.calledWith(secretFactoryMock.list, childPipelineListConfig);
@@ -1630,7 +1692,7 @@ describe('Pipeline Model', () => {
 
             pipelineFactoryMock.get.withArgs(testId).resolves(pipeline);
 
-            childPipeline.configPipeline.then((configPipeline) => {
+            childPipeline.configPipeline.then(configPipeline => {
                 assert.deepEqual(configPipeline, pipeline);
             });
         });
@@ -1657,7 +1719,7 @@ describe('Pipeline Model', () => {
 
             jobFactoryMock.list.resolves(jobList);
 
-            return pipeline.getJobs().then((result) => {
+            return pipeline.getJobs().then(result => {
                 assert.calledWith(jobFactoryMock.list, expected);
                 assert.deepEqual(result, expectedJobs);
                 assert.equal(result[2].title, pr3Info.title);
@@ -1684,7 +1746,7 @@ describe('Pipeline Model', () => {
 
             jobFactoryMock.list.resolves(jobList);
 
-            return pipeline.getJobs(config).then((result) => {
+            return pipeline.getJobs(config).then(result => {
                 assert.calledWith(jobFactoryMock.list, expected);
                 assert.deepEqual(result, expectedJobs);
                 assert.equal(result[0].title, pr3Info.title);
@@ -1712,7 +1774,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.list.resolves(jobList);
             scmMock.getOpenedPRs.rejects(new Error('user account suspened'));
 
-            return pipeline.getJobs(config).then((result) => {
+            return pipeline.getJobs(config).then(result => {
                 assert.calledWith(jobFactoryMock.list, expected);
                 assert.deepEqual(result, expectedJobs);
             });
@@ -1733,7 +1795,7 @@ describe('Pipeline Model', () => {
 
             jobFactoryMock.list.resolves(jobList);
 
-            return pipeline.getJobs(config).then((result) => {
+            return pipeline.getJobs(config).then(result => {
                 assert.calledWith(jobFactoryMock.list, expected);
                 assert.deepEqual(result, expectedJobs);
             });
@@ -1758,7 +1820,7 @@ describe('Pipeline Model', () => {
 
             jobFactoryMock.list.resolves(jobList);
 
-            return pipeline.getJobs(config).then((result) => {
+            return pipeline.getJobs(config).then(result => {
                 assert.calledWith(jobFactoryMock.list, expected);
                 assert.deepEqual(result, [publishJob]);
             });
@@ -1766,11 +1828,14 @@ describe('Pipeline Model', () => {
     });
 
     describe('get events', () => {
-        const events = [{
-            id: '12345f642bbfd1886623964b4cff12db59869e5d'
-        }, {
-            id: '12855123cc7f1b808aac07feff24d7d5362cc215'
-        }];
+        const events = [
+            {
+                id: '12345f642bbfd1886623964b4cff12db59869e5d'
+            },
+            {
+                id: '12855123cc7f1b808aac07feff24d7d5362cc215'
+            }
+        ];
 
         it('gets a list of events', () => {
             const expected = {
@@ -1783,7 +1848,7 @@ describe('Pipeline Model', () => {
 
             eventFactoryMock.list.resolves(events);
 
-            return pipeline.getEvents().then((result) => {
+            return pipeline.getEvents().then(result => {
                 assert.calledWith(eventFactoryMock.list, expected);
                 assert.deepEqual(result, events);
             });
@@ -1800,22 +1865,26 @@ describe('Pipeline Model', () => {
 
             eventFactoryMock.list.resolves(events);
 
-            return pipeline.getEvents({
-                params: {
-                    type: 'pr'
-                }
-            }).then(() => {
-                assert.calledWith(eventFactoryMock.list, expected);
-            });
+            return pipeline
+                .getEvents({
+                    params: {
+                        type: 'pr'
+                    }
+                })
+                .then(() => {
+                    assert.calledWith(eventFactoryMock.list, expected);
+                });
         });
 
         it('rejects with errors', () => {
             eventFactoryMock.list.rejects(new Error('cannotgetit'));
 
-            return pipeline.getEvents()
+            return pipeline
+                .getEvents()
                 .then(() => {
                     assert.fail('Should not get here');
-                }).catch((err) => {
+                })
+                .catch(err => {
                     assert.instanceOf(err, Error);
                     assert.equal(err.message, 'cannotgetit');
                 });
@@ -1825,12 +1894,8 @@ describe('Pipeline Model', () => {
     describe('getConfiguration', () => {
         beforeEach(() => {
             scmMock.getFile.resolves('superyamlcontent');
-            parserMock.withArgs('superyamlcontent',
-                templateFactoryMock, buildClusterFactoryMock)
-                .resolves(PARSED_YAML);
-            parserMock.withArgs('',
-                templateFactoryMock, buildClusterFactoryMock)
-                .resolves('DEFAULT_YAML');
+            parserMock.withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock).resolves(PARSED_YAML);
+            parserMock.withArgs('', templateFactoryMock, buildClusterFactoryMock).resolves('DEFAULT_YAML');
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
             pipeline.admins = { batman: true, robin: true };
@@ -1838,84 +1903,77 @@ describe('Pipeline Model', () => {
         });
 
         it('gets pipeline config', () =>
-            pipeline.getConfiguration()
-                .then((config) => {
-                    assert.equal(config, PARSED_YAML);
-                    assert.calledWith(scmMock.getFile, {
-                        scmUri,
-                        scmContext,
-                        path: 'screwdriver.yaml',
-                        token: 'foo',
-                        scmRepo: {
-                            branch: 'branch',
-                            url: 'https://host/owner/repo/tree/branch',
-                            name: 'owner/repo'
-                        }
-                    });
-                    assert.calledWith(parserMock, 'superyamlcontent',
-                        templateFactoryMock, buildClusterFactoryMock);
-                })
-        );
+            pipeline.getConfiguration().then(config => {
+                assert.equal(config, PARSED_YAML);
+                assert.calledWith(scmMock.getFile, {
+                    scmUri,
+                    scmContext,
+                    path: 'screwdriver.yaml',
+                    token: 'foo',
+                    scmRepo: {
+                        branch: 'branch',
+                        url: 'https://host/owner/repo/tree/branch',
+                        name: 'owner/repo'
+                    }
+                });
+                assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock, buildClusterFactoryMock);
+            }));
 
         it('passes triggerFactoryMock and pipelineId if external join flag is true', () => {
             pipelineFactoryMock.getExternalJoinFlag.returns(true);
 
-            return pipeline.getConfiguration()
-                .then((config) => {
-                    assert.equal(config, PARSED_YAML);
-                    assert.calledWith(scmMock.getFile, {
-                        scmUri,
-                        scmContext,
-                        path: 'screwdriver.yaml',
-                        token: 'foo',
-                        scmRepo: {
-                            branch: 'branch',
-                            url: 'https://host/owner/repo/tree/branch',
-                            name: 'owner/repo'
-                        }
-                    });
-                    assert.calledWith(parserMock, 'superyamlcontent',
-                        templateFactoryMock, buildClusterFactoryMock);
+            return pipeline.getConfiguration().then(config => {
+                assert.equal(config, PARSED_YAML);
+                assert.calledWith(scmMock.getFile, {
+                    scmUri,
+                    scmContext,
+                    path: 'screwdriver.yaml',
+                    token: 'foo',
+                    scmRepo: {
+                        branch: 'branch',
+                        url: 'https://host/owner/repo/tree/branch',
+                        name: 'owner/repo'
+                    }
                 });
+                assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock, buildClusterFactoryMock);
+            });
         });
 
         it('gets pipeline config from an alternate ref', () =>
-            pipeline.getConfiguration({ ref: 'bar' })
-                .then((config) => {
-                    assert.equal(config, PARSED_YAML);
-                    assert.calledWith(scmMock.getFile, {
-                        scmUri,
-                        scmContext,
-                        path: 'screwdriver.yaml',
-                        token: 'foo',
-                        ref: 'bar',
-                        scmRepo: {
-                            branch: 'branch',
-                            url: 'https://host/owner/repo/tree/branch',
-                            name: 'owner/repo'
-                        }
-                    });
-                    assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock);
-                })
-        );
+            pipeline.getConfiguration({ ref: 'bar' }).then(config => {
+                assert.equal(config, PARSED_YAML);
+                assert.calledWith(scmMock.getFile, {
+                    scmUri,
+                    scmContext,
+                    path: 'screwdriver.yaml',
+                    token: 'foo',
+                    ref: 'bar',
+                    scmRepo: {
+                        branch: 'branch',
+                        url: 'https://host/owner/repo/tree/branch',
+                        name: 'owner/repo'
+                    }
+                });
+                assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock);
+            }));
 
         it('gets config from external config pipeline', () => {
             pipeline.configPipelineId = 1;
 
-            return pipeline.getConfiguration()
-                .then((config) => {
-                    assert.calledWith(configPipelineMock.getConfiguration, { ref: undefined });
-                    assert.equal(config, EXTERNAL_PARSED_YAML);
-                });
+            return pipeline.getConfiguration().then(config => {
+                assert.calledWith(configPipelineMock.getConfiguration, { ref: undefined });
+                assert.equal(config, EXTERNAL_PARSED_YAML);
+            });
         });
 
         it('gets config from external config pipeline with an alternate ref', () => {
             pipeline.configPipelineId = 1;
 
-            return pipeline.getConfiguration({
-                ref: 'bar'
-            })
-                .then((config) => {
+            return pipeline
+                .getConfiguration({
+                    ref: 'bar'
+                })
+                .then(config => {
                     assert.calledWith(configPipelineMock.getConfiguration, {
                         ref: 'bar'
                     });
@@ -1926,11 +1984,12 @@ describe('Pipeline Model', () => {
         it('Do not pass PR ref when get config from external pipeline', () => {
             pipeline.configPipelineId = 1;
 
-            return pipeline.getConfiguration({
-                ref: 'pull/1/ref',
-                isPR: true
-            })
-                .then((config) => {
+            return pipeline
+                .getConfiguration({
+                    ref: 'pull/1/ref',
+                    isPR: true
+                })
+                .then(config => {
                     assert.calledWith(configPipelineMock.getConfiguration, {});
                     assert.equal(config, EXTERNAL_PARSED_YAML);
                 });
@@ -1939,29 +1998,27 @@ describe('Pipeline Model', () => {
         it('converts fetch errors to empty file', () => {
             scmMock.getFile.rejects(new Error('cannotgetit'));
 
-            return pipeline.getConfiguration({ ref: 'foobar' })
-                .then((config) => {
-                    assert.equal(config, 'DEFAULT_YAML');
-                    assert.calledWith(scmMock.getFile, {
-                        scmUri,
-                        scmContext,
-                        path: 'screwdriver.yaml',
-                        token: 'foo',
-                        ref: 'foobar',
-                        scmRepo: {
-                            branch: 'branch',
-                            url: 'https://host/owner/repo/tree/branch',
-                            name: 'owner/repo'
-                        }
-                    });
-                    assert.calledWith(parserMock, '', templateFactoryMock);
+            return pipeline.getConfiguration({ ref: 'foobar' }).then(config => {
+                assert.equal(config, 'DEFAULT_YAML');
+                assert.calledWith(scmMock.getFile, {
+                    scmUri,
+                    scmContext,
+                    path: 'screwdriver.yaml',
+                    token: 'foo',
+                    ref: 'foobar',
+                    scmRepo: {
+                        branch: 'branch',
+                        url: 'https://host/owner/repo/tree/branch',
+                        name: 'owner/repo'
+                    }
                 });
+                assert.calledWith(parserMock, '', templateFactoryMock);
+            });
         });
     });
 
     describe('update', () => {
-        it('multipleBuildClusterDisabled without annotations - ' +
-            'updates a pipelines scm repository and branch ', () => {
+        it('multipleBuildClusterDisabled without annotations and updates a pipelines scm repository and branch ', () => {
             const expected = {
                 params: {
                     admins: { d2lam: true },
@@ -1978,15 +2035,17 @@ describe('Pipeline Model', () => {
                 table: 'pipelines'
             };
 
-            userFactoryMock.get.withArgs({
-                username: 'd2lam',
-                scmContext
-            }).resolves({
-                unsealToken: sinon.stub().resolves('foo'),
-                getPermissions: sinon.stub().resolves({
-                    push: true
+            userFactoryMock.get
+                .withArgs({
+                    username: 'd2lam',
+                    scmContext
                 })
-            });
+                .resolves({
+                    unsealToken: sinon.stub().resolves('foo'),
+                    getPermissions: sinon.stub().resolves({
+                        push: true
+                    })
+                });
             datastore.update.resolves({});
 
             pipeline.scmUri = 'github.com:12345:master';
@@ -1995,7 +2054,7 @@ describe('Pipeline Model', () => {
                 d2lam: true
             };
 
-            return pipeline.update().then((p) => {
+            return pipeline.update().then(p => {
                 assert.calledWith(scmMock.decorateUrl, {
                     scmUri,
                     scmContext,
@@ -2006,8 +2065,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('multipleBuildClusterDisabled with annotations - ' +
-            'updates a pipelines scm repository and branch', () => {
+        it('multipleBuildClusterDisabled with annotations and updates a pipelines scm repository and branch', () => {
             const expected = {
                 params: {
                     admins: { d2lam: true },
@@ -2027,15 +2085,17 @@ describe('Pipeline Model', () => {
                 table: 'pipelines'
             };
 
-            userFactoryMock.get.withArgs({
-                username: 'd2lam',
-                scmContext
-            }).resolves({
-                unsealToken: sinon.stub().resolves('foo'),
-                getPermissions: sinon.stub().resolves({
-                    push: true
+            userFactoryMock.get
+                .withArgs({
+                    username: 'd2lam',
+                    scmContext
                 })
-            });
+                .resolves({
+                    unsealToken: sinon.stub().resolves('foo'),
+                    getPermissions: sinon.stub().resolves({
+                        push: true
+                    })
+                });
             datastore.update.resolves({});
 
             pipeline.scmUri = 'github.com:12345:master';
@@ -2047,7 +2107,7 @@ describe('Pipeline Model', () => {
                 'screwdriver.cd/prChain': 'fork'
             };
 
-            return pipeline.update().then((p) => {
+            return pipeline.update().then(p => {
                 assert.calledWith(scmMock.decorateUrl, {
                     scmUri,
                     scmContext,
@@ -2058,178 +2118,195 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('multipleBuildClusterEnabled - without annotation - ' +
-            'updates a pipelines scm repository and branch - ' +
-            'pick screwdriver build cluster', () => {
-            const expected = {
-                params: {
-                    admins: { d2lam: true },
-                    id: 123,
-                    name: 'foo/bar',
-                    scmContext,
-                    scmRepo: {
-                        branch: 'master',
+        it(
+            'multipleBuildClusterEnabled - without annotation - ' +
+                'updates a pipelines scm repository and branch - ' +
+                'pick screwdriver build cluster',
+            () => {
+                const expected = {
+                    params: {
+                        admins: { d2lam: true },
+                        id: 123,
                         name: 'foo/bar',
-                        url: 'https://github.com/foo/bar/tree/master'
+                        scmContext,
+                        scmRepo: {
+                            branch: 'master',
+                            name: 'foo/bar',
+                            url: 'https://github.com/foo/bar/tree/master'
+                        },
+                        scmUri: 'github.com:12345:master',
+                        annotations: {
+                            'screwdriver.cd/buildCluster': 'sd1'
+                        }
                     },
-                    scmUri: 'github.com:12345:master',
-                    annotations: {
-                        'screwdriver.cd/buildCluster': 'sd1'
-                    }
-                },
-                table: 'pipelines'
-            };
+                    table: 'pipelines'
+                };
 
-            userFactoryMock.get.withArgs({
-                username: 'd2lam',
-                scmContext
-            }).resolves({
-                unsealToken: sinon.stub().resolves('foo'),
-                getPermissions: sinon.stub().resolves({
-                    push: true
-                })
-            });
+                userFactoryMock.get
+                    .withArgs({
+                        username: 'd2lam',
+                        scmContext
+                    })
+                    .resolves({
+                        unsealToken: sinon.stub().resolves('foo'),
+                        getPermissions: sinon.stub().resolves({
+                            push: true
+                        })
+                    });
 
-            datastore.update.resolves({});
-            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+                datastore.update.resolves({});
+                buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
-            pipeline.scmUri = 'github.com:12345:master';
-            pipeline.scmContext = scmContext;
-            pipeline.admins = {
-                d2lam: true
-            };
+                pipeline.scmUri = 'github.com:12345:master';
+                pipeline.scmContext = scmContext;
+                pipeline.admins = {
+                    d2lam: true
+                };
 
-            return pipeline.update().then((p) => {
-                assert.calledWith(scmMock.decorateUrl, {
-                    scmUri,
-                    scmContext,
-                    token: 'foo'
+                return pipeline.update().then(p => {
+                    assert.calledWith(scmMock.decorateUrl, {
+                        scmUri,
+                        scmContext,
+                        token: 'foo'
+                    });
+                    assert.calledWith(datastore.update, expected);
+                    assert.ok(p);
                 });
-                assert.calledWith(datastore.update, expected);
-                assert.ok(p);
-            });
-        });
+            }
+        );
 
-        it('multipleBuildClusterEnabled - without cluster annotation - ' +
-            'updates a pipelines scm repository and branch - ' +
-            'pick screwdriver build cluster', () => {
-            const expected = {
-                params: {
-                    admins: { d2lam: true },
-                    id: 123,
-                    name: 'foo/bar',
-                    scmContext,
-                    scmRepo: {
-                        branch: 'master',
+        it(
+            'multipleBuildClusterEnabled - without cluster annotation - ' +
+                'updates a pipelines scm repository and branch - ' +
+                'pick screwdriver build cluster',
+            () => {
+                const expected = {
+                    params: {
+                        admins: { d2lam: true },
+                        id: 123,
                         name: 'foo/bar',
-                        url: 'https://github.com/foo/bar/tree/master'
+                        scmContext,
+                        scmRepo: {
+                            branch: 'master',
+                            name: 'foo/bar',
+                            url: 'https://github.com/foo/bar/tree/master'
+                        },
+                        scmUri: 'github.com:12345:master',
+                        annotations: {
+                            'screwdriver.cd/prChain': 'fork',
+                            'screwdriver.cd/buildCluster': 'sd1'
+                        }
                     },
-                    scmUri: 'github.com:12345:master',
-                    annotations: {
-                        'screwdriver.cd/prChain': 'fork',
-                        'screwdriver.cd/buildCluster': 'sd1'
-                    }
-                },
-                table: 'pipelines'
-            };
+                    table: 'pipelines'
+                };
 
-            userFactoryMock.get.withArgs({
-                username: 'd2lam',
-                scmContext
-            }).resolves({
-                unsealToken: sinon.stub().resolves('foo'),
-                getPermissions: sinon.stub().resolves({
-                    push: true
-                })
-            });
+                userFactoryMock.get
+                    .withArgs({
+                        username: 'd2lam',
+                        scmContext
+                    })
+                    .resolves({
+                        unsealToken: sinon.stub().resolves('foo'),
+                        getPermissions: sinon.stub().resolves({
+                            push: true
+                        })
+                    });
 
-            datastore.update.resolves({});
-            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+                datastore.update.resolves({});
+                buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
-            pipeline.scmUri = 'github.com:12345:master';
-            pipeline.scmContext = scmContext;
-            pipeline.admins = {
-                d2lam: true
-            };
-            pipeline.annotations = {
-                'screwdriver.cd/prChain': 'fork'
-            };
+                pipeline.scmUri = 'github.com:12345:master';
+                pipeline.scmContext = scmContext;
+                pipeline.admins = {
+                    d2lam: true
+                };
+                pipeline.annotations = {
+                    'screwdriver.cd/prChain': 'fork'
+                };
 
-            return pipeline.update().then((p) => {
-                assert.calledWith(scmMock.decorateUrl, {
-                    scmUri,
-                    scmContext,
-                    token: 'foo'
+                return pipeline.update().then(p => {
+                    assert.calledWith(scmMock.decorateUrl, {
+                        scmUri,
+                        scmContext,
+                        token: 'foo'
+                    });
+                    assert.calledWith(datastore.update, expected);
+                    assert.ok(p);
                 });
-                assert.calledWith(datastore.update, expected);
-                assert.ok(p);
-            });
-        });
+            }
+        );
 
-        it('multipleBuildClusterEnabled - with cluster annotation - ' +
-            'updates a pipelines scm repository and branch', () => {
-            const expected = {
-                params: {
-                    admins: { d2lam: true },
-                    id: 123,
-                    name: 'screwdriver/ui',
-                    scmContext,
-                    scmRepo: {
-                        branch: 'master',
+        it(
+            'multipleBuildClusterEnabled - with cluster annotation - ' +
+                'updates a pipelines scm repository and branch',
+            () => {
+                const expected = {
+                    params: {
+                        admins: { d2lam: true },
+                        id: 123,
                         name: 'screwdriver/ui',
-                        url: 'https://github.com/foo/bar/tree/master'
+                        scmContext,
+                        scmRepo: {
+                            branch: 'master',
+                            name: 'screwdriver/ui',
+                            url: 'https://github.com/foo/bar/tree/master'
+                        },
+                        scmUri: 'github.com:12345:master',
+                        annotations: { 'screwdriver.cd/buildCluster': 'iOS' }
                     },
-                    scmUri: 'github.com:12345:master',
-                    annotations: { 'screwdriver.cd/buildCluster': 'iOS' }
-                },
-                table: 'pipelines'
-            };
+                    table: 'pipelines'
+                };
 
-            userFactoryMock.get.withArgs({
-                username: 'd2lam',
-                scmContext
-            }).resolves({
-                unsealToken: sinon.stub().resolves('foo'),
-                getPermissions: sinon.stub().resolves({
-                    push: true
-                })
-            });
+                userFactoryMock.get
+                    .withArgs({
+                        username: 'd2lam',
+                        scmContext
+                    })
+                    .resolves({
+                        unsealToken: sinon.stub().resolves('foo'),
+                        getPermissions: sinon.stub().resolves({
+                            push: true
+                        })
+                    });
 
-            datastore.update.resolves({});
-            buildClusterFactoryMock.list.resolves(sdBuildClusters);
-            scmMock.decorateUrl.resolves({
-                branch: 'master',
-                name: 'screwdriver/ui',
-                url: 'https://github.com/foo/bar/tree/master'
-            });
-            pipeline.scmUri = 'github.com:12345:master';
-            pipeline.scmContext = scmContext;
-            pipeline.admins = {
-                d2lam: true
-            };
-            pipeline.annotations = { 'screwdriver.cd/buildCluster': 'iOS' };
-
-            return pipeline.update().then((p) => {
-                assert.calledWith(scmMock.decorateUrl, {
-                    scmUri,
-                    scmContext,
-                    token: 'foo'
+                datastore.update.resolves({});
+                buildClusterFactoryMock.list.resolves(sdBuildClusters);
+                scmMock.decorateUrl.resolves({
+                    branch: 'master',
+                    name: 'screwdriver/ui',
+                    url: 'https://github.com/foo/bar/tree/master'
                 });
-                assert.calledWith(datastore.update, expected);
-                assert.ok(p);
-            });
-        });
+                pipeline.scmUri = 'github.com:12345:master';
+                pipeline.scmContext = scmContext;
+                pipeline.admins = {
+                    d2lam: true
+                };
+                pipeline.annotations = { 'screwdriver.cd/buildCluster': 'iOS' };
+
+                return pipeline.update().then(p => {
+                    assert.calledWith(scmMock.decorateUrl, {
+                        scmUri,
+                        scmContext,
+                        token: 'foo'
+                    });
+                    assert.calledWith(datastore.update, expected);
+                    assert.ok(p);
+                });
+            }
+        );
 
         it('throws err if the pipeline is unauthorized to use the build cluster', () => {
-            userFactoryMock.get.withArgs({
-                username: 'd2lam',
-                scmContext
-            }).resolves({
-                unsealToken: sinon.stub().resolves('foo'),
-                getPermissions: sinon.stub().resolves({
-                    push: true
+            userFactoryMock.get
+                .withArgs({
+                    username: 'd2lam',
+                    scmContext
                 })
-            });
+                .resolves({
+                    unsealToken: sinon.stub().resolves('foo'),
+                    getPermissions: sinon.stub().resolves({
+                        push: true
+                    })
+                });
             datastore.update.resolves({});
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
             pipeline.scmUri = 'github.com:12345:master';
@@ -2239,23 +2316,24 @@ describe('Pipeline Model', () => {
             };
             pipeline.annotations = { 'screwdriver.cd/buildCluster': 'iOS' };
 
-            return pipeline.update().catch((err) => {
+            return pipeline.update().catch(err => {
                 assert.instanceOf(err, Error);
-                assert.strictEqual(err.message,
-                    'This pipeline is not authorized to use this build cluster.');
+                assert.strictEqual(err.message, 'This pipeline is not authorized to use this build cluster.');
             });
         });
 
         it('throws err if the build cluster specified does not exist', () => {
-            userFactoryMock.get.withArgs({
-                username: 'd2lam',
-                scmContext
-            }).resolves({
-                unsealToken: sinon.stub().resolves('foo'),
-                getPermissions: sinon.stub().resolves({
-                    push: true
+            userFactoryMock.get
+                .withArgs({
+                    username: 'd2lam',
+                    scmContext
                 })
-            });
+                .resolves({
+                    unsealToken: sinon.stub().resolves('foo'),
+                    getPermissions: sinon.stub().resolves({
+                        push: true
+                    })
+                });
             datastore.update.resolves({});
             buildClusterFactoryMock.get.resolves(null);
             pipeline.scmUri = 'github.com:12345:master';
@@ -2265,11 +2343,13 @@ describe('Pipeline Model', () => {
             };
             pipeline.annotations = { 'screwdriver.cd/buildCluster': 'iOS' };
 
-            return pipeline.update().catch((err) => {
+            return pipeline.update().catch(err => {
                 assert.instanceOf(err, Error);
-                assert.strictEqual(err.message,
+                assert.strictEqual(
+                    err.message,
                     'Cluster specified in screwdriver.cd/buildCluster iOS ' +
-                        `for scmContext ${pipeline.scmContext} does not exist.`);
+                        `for scmContext ${pipeline.scmContext} does not exist.`
+                );
             });
         });
 
@@ -2289,21 +2369,23 @@ describe('Pipeline Model', () => {
                 table: 'pipelines'
             };
 
-            userFactoryMock.get.withArgs({
-                username: 'd2lam',
-                scmContext
-            }).resolves({
-                unsealToken: sinon.stub().resolves('foo'),
-                getPermissions: sinon.stub().resolves({
-                    push: true
+            userFactoryMock.get
+                .withArgs({
+                    username: 'd2lam',
+                    scmContext
                 })
-            });
+                .resolves({
+                    unsealToken: sinon.stub().resolves('foo'),
+                    getPermissions: sinon.stub().resolves({
+                        push: true
+                    })
+                });
             datastore.update.resolves({});
             pipeline.admins = {
                 d2lam: true
             };
 
-            return pipeline.update().then((p) => {
+            return pipeline.update().then(p => {
                 assert.calledWith(scmMock.decorateUrl, {
                     scmUri,
                     scmContext,
@@ -2392,15 +2474,13 @@ describe('Pipeline Model', () => {
             pipeline.remove().then(() => {
                 assert.calledOnce(secretFactoryMock.list);
                 assert.calledOnce(secret.remove);
-            })
-        );
+            }));
 
         it('remove tokens', () =>
             pipeline.remove().then(() => {
                 assert.calledOnce(tokenFactoryMock.list);
                 assert.calledOnce(token.remove);
-            })
-        );
+            }));
 
         it('remove triggers', () =>
             pipeline.remove().then(() => {
@@ -2408,8 +2488,7 @@ describe('Pipeline Model', () => {
                 assert.calledThrice(jobFactoryMock.list);
                 assert.calledOnce(triggerFactoryMock.list);
                 assert.calledOnce(trigger.remove);
-            })
-        );
+            }));
 
         it('remove jobs recursively', () => {
             const nonArchived = hoek.clone(archived);
@@ -2418,14 +2497,26 @@ describe('Pipeline Model', () => {
             nonArchived.params.archived = false;
 
             for (i = 0; i < 4; i += 1) {
-                jobFactoryMock.list.withArgs(nonArchived).onCall(i).resolves([publishJob, mainJob]);
+                jobFactoryMock.list
+                    .withArgs(nonArchived)
+                    .onCall(i)
+                    .resolves([publishJob, mainJob]);
             }
-            jobFactoryMock.list.withArgs(nonArchived).onCall(i).resolves([]);
+            jobFactoryMock.list
+                .withArgs(nonArchived)
+                .onCall(i)
+                .resolves([]);
 
             for (i = 0; i < 2; i += 1) {
-                jobFactoryMock.list.withArgs(archived).onCall(i).resolves([blahJob]);
+                jobFactoryMock.list
+                    .withArgs(archived)
+                    .onCall(i)
+                    .resolves([blahJob]);
             }
-            jobFactoryMock.list.withArgs(archived).onCall(i).resolves([]);
+            jobFactoryMock.list
+                .withArgs(archived)
+                .onCall(i)
+                .resolves([]);
 
             return pipeline.remove().then(() => {
                 assert.callCount(jobFactoryMock.list, 8);
@@ -2443,12 +2534,15 @@ describe('Pipeline Model', () => {
         it('fail if getJobs returns error', () => {
             jobFactoryMock.list.rejects(new Error('error'));
 
-            return pipeline.remove().then(() => {
-                assert.fail('should not get here');
-            }).catch((err) => {
-                assert.isOk(err);
-                assert.equal(err.message, 'error');
-            });
+            return pipeline
+                .remove()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'error');
+                });
         });
 
         it('update collection associated with pipeline', () => {
@@ -2468,24 +2562,30 @@ describe('Pipeline Model', () => {
         it('fail if fail to get collections', () => {
             collectionFactoryMock.list.rejects(new Error('error'));
 
-            return pipeline.remove().then(() => {
-                assert.fail('should not get here');
-            }).catch((err) => {
-                assert.isOk(err);
-                assert.equal(err.message, 'error');
-            });
+            return pipeline
+                .remove()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'error');
+                });
         });
 
         it('fail if job.remove returns error', () => {
             publishJob.remove.rejects(new Error('error removing job'));
             jobFactoryMock.list.resolves([publishJob, mainJob]);
 
-            return pipeline.remove().then(() => {
-                assert.fail('should not get here');
-            }).catch((err) => {
-                assert.isOk(err);
-                assert.equal(err.message, 'error removing job');
-            });
+            return pipeline
+                .remove()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'error removing job');
+                });
         });
 
         it('remove events recursively', () => {
@@ -2495,14 +2595,26 @@ describe('Pipeline Model', () => {
             pipelineType.params.type = 'pipeline';
 
             for (i = 0; i < 4; i += 1) {
-                eventFactoryMock.list.withArgs(pipelineType).onCall(i).resolves([testEvent]);
+                eventFactoryMock.list
+                    .withArgs(pipelineType)
+                    .onCall(i)
+                    .resolves([testEvent]);
             }
-            eventFactoryMock.list.withArgs(pipelineType).onCall(i).resolves([]);
+            eventFactoryMock.list
+                .withArgs(pipelineType)
+                .onCall(i)
+                .resolves([]);
 
             for (i = 0; i < 2; i += 1) {
-                eventFactoryMock.list.withArgs(prType).onCall(i).resolves([testEvent]);
+                eventFactoryMock.list
+                    .withArgs(prType)
+                    .onCall(i)
+                    .resolves([testEvent]);
             }
-            eventFactoryMock.list.withArgs(prType).onCall(i).resolves([]);
+            eventFactoryMock.list
+                .withArgs(prType)
+                .onCall(i)
+                .resolves([]);
 
             return pipeline.remove().then(() => {
                 assert.callCount(eventFactoryMock.list, 8);
@@ -2530,50 +2642,62 @@ describe('Pipeline Model', () => {
         it('fail if getEvents returns error', () => {
             eventFactoryMock.list.rejects(new Error('error'));
 
-            return pipeline.remove().then(() => {
-                assert.fail('should not get here');
-            }).catch((err) => {
-                assert.isOk(err);
-                assert.equal(err.message, 'error');
-            });
+            return pipeline
+                .remove()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'error');
+                });
         });
 
         it('fail if event.remove returns error', () => {
             testEvent.remove.rejects(new Error('error removing event'));
             eventFactoryMock.list.resolves([testEvent]);
 
-            return pipeline.remove().then(() => {
-                assert.fail('should not get here');
-            }).catch((err) => {
-                assert.isOk(err);
-                assert.equal(err.message, 'error removing event');
-            });
+            return pipeline
+                .remove()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'error removing event');
+                });
         });
 
         it('fail if secret.remove returns error', () => {
             secret.remove.rejects(new Error('error removing secret'));
 
-            return pipeline.remove().then(() => {
-                assert.fail('should not get here');
-            }).catch((err) => {
-                assert.isOk(err);
-                assert.equal(err.message, 'error removing secret');
-            });
+            return pipeline
+                .remove()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'error removing secret');
+                });
         });
 
         it('fail if token.remove returns error', () => {
             secret.remove.reset();
             token.remove.rejects(new Error('error removing token'));
 
-            return pipeline.remove().then(() => {
-                assert.fail('should not get here');
-            }).catch((err) => {
-                assert.isOk(err);
-                assert.equal(err.message, 'error removing token');
-            });
+            return pipeline
+                .remove()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'error removing token');
+                });
         });
 
-        it('does not remove parent pipeline\'s secrets', () => {
+        it("does not remove parent pipeline's secrets", () => {
             const childPipeline = new PipelineModel(pipelineConfig);
 
             childPipeline.id = 2;
@@ -2694,10 +2818,7 @@ describe('Pipeline Model', () => {
                 startFrom: '~commit',
                 type: 'pipeline',
                 workflowGraph: {
-                    nodes: [{ name: '~pr' },
-                        { name: '~commit' },
-                        { name: 'test', id: 124 }
-                    ],
+                    nodes: [{ name: '~pr' }, { name: '~commit' }, { name: 'test', id: 124 }],
                     edges: [
                         { src: '~pr', dest: 'test' },
                         { src: '~commit', dest: 'test' }
@@ -2707,7 +2828,7 @@ describe('Pipeline Model', () => {
                 duration: 25,
                 getMetrics: sinon.stub().resolves([build11, build12])
             };
-            event2 = Object.assign({}, {
+            event2 = {
                 id: 1234,
                 commit: {
                     author: {
@@ -2721,36 +2842,39 @@ describe('Pipeline Model', () => {
                 createTime: '2019-01-24T11:25:00.610Z',
                 sha: '14b920bef306eb1bde8ec0b6a32372eebecc6d0e',
                 getMetrics: sinon.stub().resolves([build21, build22])
-            });
-            event0 = Object.assign({}, {
+            };
+            event0 = {
                 id: 1235,
                 createTime: '2019-01-24T11:25:00.610Z',
                 sha: '14b920bef306eb1bde8ec0b6a32372eebecc6d0e',
                 getMetrics: sinon.stub().resolves([])
-            });
-            metrics = [{
-                id: event1.id,
-                createTime: event1.createTime,
-                sha: event1.sha,
-                commit: event1.commit,
-                causeMessage: event1.causeMessage,
-                duration: duration1,
-                status: build12.status,
-                imagePullTime: build11.imagePullTime + build12.imagePullTime,
-                queuedTime: build11.queuedTime + build12.queuedTime,
-                builds: [build11, build12]
-            }, {
-                id: event2.id,
-                createTime: event2.createTime,
-                sha: event2.sha,
-                commit: event2.commit,
-                causeMessage: event2.causeMessage,
-                duration: duration2,
-                status: build22.status,
-                imagePullTime: build21.imagePullTime + build22.imagePullTime,
-                queuedTime: build21.queuedTime + build22.queuedTime,
-                builds: [build21, build22]
-            }];
+            };
+            metrics = [
+                {
+                    id: event1.id,
+                    createTime: event1.createTime,
+                    sha: event1.sha,
+                    commit: event1.commit,
+                    causeMessage: event1.causeMessage,
+                    duration: duration1,
+                    status: build12.status,
+                    imagePullTime: build11.imagePullTime + build12.imagePullTime,
+                    queuedTime: build11.queuedTime + build12.queuedTime,
+                    builds: [build11, build12]
+                },
+                {
+                    id: event2.id,
+                    createTime: event2.createTime,
+                    sha: event2.sha,
+                    commit: event2.commit,
+                    causeMessage: event2.causeMessage,
+                    duration: duration2,
+                    status: build22.status,
+                    imagePullTime: build21.imagePullTime + build22.imagePullTime,
+                    queuedTime: build21.queuedTime + build22.queuedTime,
+                    builds: [build21, build22]
+                }
+            ];
         });
 
         it('generates metrics by time', () => {
@@ -2772,7 +2896,7 @@ describe('Pipeline Model', () => {
 
             eventFactoryMock.list.resolves([event1, event0, event2]);
 
-            return pipeline.getMetrics({ startTime, endTime }).then((result) => {
+            return pipeline.getMetrics({ startTime, endTime }).then(result => {
                 assert.calledWith(eventFactoryMock.list, eventListConfig);
                 assert.calledOnce(event1.getMetrics);
                 assert.calledOnce(event2.getMetrics);
@@ -2797,7 +2921,7 @@ describe('Pipeline Model', () => {
 
             eventFactoryMock.list.resolves([event1, event0, event2]);
 
-            return pipeline.getMetrics({ page, count }).then((result) => {
+            return pipeline.getMetrics({ page, count }).then(result => {
                 assert.calledWith(eventFactoryMock.list, eventListConfig);
                 assert.calledOnce(event0.getMetrics);
                 assert.calledOnce(event2.getMetrics);
@@ -2823,7 +2947,7 @@ describe('Pipeline Model', () => {
 
             eventFactoryMock.list.resolves([event1, event0, event2]);
 
-            return pipeline.getMetrics({ page }).then((result) => {
+            return pipeline.getMetrics({ page }).then(result => {
                 assert.calledWith(eventFactoryMock.list, eventListConfig);
                 assert.calledOnce(event0.getMetrics);
                 assert.calledOnce(event2.getMetrics);
@@ -2849,7 +2973,7 @@ describe('Pipeline Model', () => {
 
             eventFactoryMock.list.resolves([event1, event0, event2]);
 
-            return pipeline.getMetrics({ count }).then((result) => {
+            return pipeline.getMetrics({ count }).then(result => {
                 assert.calledWith(eventFactoryMock.list, eventListConfig);
                 assert.calledOnce(event0.getMetrics);
                 assert.calledOnce(event2.getMetrics);
@@ -2887,7 +3011,7 @@ describe('Pipeline Model', () => {
 
                 // generate 8 mock builds
                 for (let i = 0; i < 8; i += 1) {
-                    testEvents.push(Object.assign({}, event1));
+                    testEvents.push({ ...event1 });
                     testEvents[i].id = i;
 
                     if (i % 3 === 0) {
@@ -2901,8 +3025,12 @@ describe('Pipeline Model', () => {
                         imagePullTime: 10 + i,
                         queuedTime: 5 + i,
                         createTime: currentDay.toISOString(),
-                        startTime: dayjs(currentDay).add(10, 'minute').toISOString(),
-                        endTime: dayjs(currentDay).add(20 + i, 'minute').toISOString()
+                        startTime: dayjs(currentDay)
+                            .add(10, 'minute')
+                            .toISOString(),
+                        endTime: dayjs(currentDay)
+                            .add(20 + i, 'minute')
+                            .toISOString()
                     };
 
                     testEvents[i].getMetrics = sinon.stub().resolves([testBuild]);
@@ -2914,53 +3042,57 @@ describe('Pipeline Model', () => {
             });
 
             it('generates daily aggregated metrics', () => {
-                metrics = [{
-                    createTime: '2019-01-24T21:00:00.000Z',
-                    duration: 660,
-                    queuedTime: 6,
-                    imagePullTime: 11
-                }, {
-                    createTime: '2019-01-26T21:00:00.000Z',
-                    duration: 840,
-                    queuedTime: 9,
-                    imagePullTime: 14
-                }, {
-                    createTime: '2019-01-28T21:00:00.000Z',
-                    duration: 990,
-                    queuedTime: 11.5,
-                    imagePullTime: 16.5
-                }];
+                metrics = [
+                    {
+                        createTime: '2019-01-24T21:00:00.000Z',
+                        duration: 660,
+                        queuedTime: 6,
+                        imagePullTime: 11
+                    },
+                    {
+                        createTime: '2019-01-26T21:00:00.000Z',
+                        duration: 840,
+                        queuedTime: 9,
+                        imagePullTime: 14
+                    },
+                    {
+                        createTime: '2019-01-28T21:00:00.000Z',
+                        duration: 990,
+                        queuedTime: 11.5,
+                        imagePullTime: 16.5
+                    }
+                ];
 
-                return pipeline.getMetrics({ startTime, endTime, aggregateInterval: 'day' })
-                    .then((result) => {
-                        assert.calledTwice(eventFactoryMock.list);
-                        assert.calledWith(eventFactoryMock.list.firstCall, eventListConfig);
+                return pipeline.getMetrics({ startTime, endTime, aggregateInterval: 'day' }).then(result => {
+                    assert.calledTwice(eventFactoryMock.list);
+                    assert.calledWith(eventFactoryMock.list.firstCall, eventListConfig);
 
-                        eventListConfig.paginate.page = 2;
-                        assert.calledWith(eventFactoryMock.list.secondCall, eventListConfig);
+                    eventListConfig.paginate.page = 2;
+                    assert.calledWith(eventFactoryMock.list.secondCall, eventListConfig);
 
-                        assert.deepEqual(result, metrics);
-                    });
+                    assert.deepEqual(result, metrics);
+                });
             });
 
             it('generates monthly aggregated metrics', () => {
-                metrics = [{
-                    createTime: '2019-01-24T21:00:00.000Z',
-                    duration: 810, // AVG(SUM(10:17)) * 60 seconds
-                    imagePullTime: 13.5, // AVG(SUM(10:17))
-                    queuedTime: 8.5 // AVG(SUM(5:12))
-                }];
+                metrics = [
+                    {
+                        createTime: '2019-01-24T21:00:00.000Z',
+                        duration: 810, // AVG(SUM(10:17)) * 60 seconds
+                        imagePullTime: 13.5, // AVG(SUM(10:17))
+                        queuedTime: 8.5 // AVG(SUM(5:12))
+                    }
+                ];
 
-                return pipeline.getMetrics({ startTime, endTime, aggregateInterval: 'month' })
-                    .then((result) => {
-                        assert.calledTwice(eventFactoryMock.list);
-                        assert.calledWith(eventFactoryMock.list.firstCall, eventListConfig);
+                return pipeline.getMetrics({ startTime, endTime, aggregateInterval: 'month' }).then(result => {
+                    assert.calledTwice(eventFactoryMock.list);
+                    assert.calledWith(eventFactoryMock.list.firstCall, eventListConfig);
 
-                        eventListConfig.paginate.page = 2;
-                        assert.calledWith(eventFactoryMock.list.secondCall, eventListConfig);
+                    eventListConfig.paginate.page = 2;
+                    assert.calledWith(eventFactoryMock.list.secondCall, eventListConfig);
 
-                        assert.deepEqual(result, metrics);
-                    });
+                    assert.deepEqual(result, metrics);
+                });
             });
 
             it('accounts for empty metrics', () => {
@@ -2972,27 +3104,28 @@ describe('Pipeline Model', () => {
                     queuedTime: 4,
                     duration: 30
                 };
-                const testBuild = Object.assign({}, build21);
+                const testBuild = { ...build21 };
 
                 delete testBuild.startTime;
 
                 event2.getMetrics = sinon.stub().resolves([testBuild, badbuild]);
 
                 eventFactoryMock.list.onCall(0).resolves([event0, event1, event2]);
-                metrics = [{
-                    createTime: '2019-01-24T11:25:00.610Z',
-                    duration: 4920,
-                    imagePullTime: 45,
-                    queuedTime: 5
-                }];
+                metrics = [
+                    {
+                        createTime: '2019-01-24T11:25:00.610Z',
+                        duration: 4920,
+                        imagePullTime: 45,
+                        queuedTime: 5
+                    }
+                ];
 
-                return pipeline.getMetrics({ startTime, endTime, aggregateInterval: 'month' })
-                    .then((result) => {
-                        assert.calledOnce(eventFactoryMock.list);
-                        assert.calledWith(eventFactoryMock.list.firstCall, eventListConfig);
+                return pipeline.getMetrics({ startTime, endTime, aggregateInterval: 'month' }).then(result => {
+                    assert.calledOnce(eventFactoryMock.list);
+                    assert.calledWith(eventFactoryMock.list.firstCall, eventListConfig);
 
-                        assert.deepEqual(result, metrics);
-                    });
+                    assert.deepEqual(result, metrics);
+                });
             });
         });
 
@@ -3010,7 +3143,7 @@ describe('Pipeline Model', () => {
 
             eventFactoryMock.list.resolves([event1, event2]);
 
-            return pipeline.getMetrics({ startTime, endTime }).then((result) => {
+            return pipeline.getMetrics({ startTime, endTime }).then(result => {
                 assert.calledOnce(event1.getMetrics);
                 assert.calledOnce(event2.getMetrics);
                 assert.deepEqual(result, metrics);
@@ -3030,7 +3163,7 @@ describe('Pipeline Model', () => {
             metrics[0].builds = [build13, build12, build11];
             eventFactoryMock.list.resolves([event1, event2]);
 
-            return pipeline.getMetrics({ startTime, endTime }).then((result) => {
+            return pipeline.getMetrics({ startTime, endTime }).then(result => {
                 assert.calledOnce(event1.getMetrics);
                 assert.calledOnce(event2.getMetrics);
                 assert.deepEqual(result, metrics);
@@ -3042,7 +3175,7 @@ describe('Pipeline Model', () => {
             event1.getMetrics = sinon.stub().resolves([]);
             metrics = metrics.slice(1);
 
-            return pipeline.getMetrics({ startTime, endTime }).then((result) => {
+            return pipeline.getMetrics({ startTime, endTime }).then(result => {
                 assert.deepEqual(result, metrics);
             });
         });
@@ -3064,7 +3197,7 @@ describe('Pipeline Model', () => {
 
             eventFactoryMock.list.resolves([event1, event2]);
 
-            return pipeline.getMetrics().then((result) => {
+            return pipeline.getMetrics().then(result => {
                 assert.calledWith(eventFactoryMock.list, eventListConfig);
                 assert.deepEqual(result, metrics);
             });
@@ -3073,10 +3206,12 @@ describe('Pipeline Model', () => {
         it('rejects with errors', () => {
             eventFactoryMock.list.rejects(new Error('cannotgetit'));
 
-            return pipeline.getMetrics({ startTime, endTime })
+            return pipeline
+                .getMetrics({ startTime, endTime })
                 .then(() => {
                     assert.fail('Should not get here');
-                }).catch((err) => {
+                })
+                .catch(err => {
                     assert.instanceOf(err, Error);
                     assert.equal(err.message, 'cannotgetit');
                 });
