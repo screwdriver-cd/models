@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 
@@ -76,51 +76,55 @@ describe('Collection Factory', () => {
         it('should create a Collection', () => {
             datastore.save.resolves(collectionData);
 
-            return factory.create({
-                userId,
-                name,
-                description,
-                pipelineIds,
-                type
-            }).then((model) => {
-                assert.isTrue(datastore.save.calledOnce);
-                assert.calledWith(datastore.save, {
-                    params: expected,
-                    table: 'collections'
+            return factory
+                .create({
+                    userId,
+                    name,
+                    description,
+                    pipelineIds,
+                    type
+                })
+                .then(model => {
+                    assert.isTrue(datastore.save.calledOnce);
+                    assert.calledWith(datastore.save, {
+                        params: expected,
+                        table: 'collections'
+                    });
+                    assert.instanceOf(model, Collection);
+                    Object.keys(collectionData).forEach(key => {
+                        assert.strictEqual(model[key], collectionData[key]);
+                    });
                 });
-                assert.instanceOf(model, Collection);
-                Object.keys(collectionData).forEach((key) => {
-                    assert.strictEqual(model[key], collectionData[key]);
-                });
-            });
         });
 
         it('should create a Collection without pipelineIds', () => {
-            const dataWithoutPipelineIds = Object.assign({}, collectionData);
+            const dataWithoutPipelineIds = { ...collectionData };
 
             dataWithoutPipelineIds.pipelineIds = [];
             datastore.save.resolves(dataWithoutPipelineIds);
 
-            return factory.create({
-                userId,
-                name,
-                description,
-                type
-            }).then((model) => {
-                assert.isTrue(datastore.save.calledOnce);
-                assert.calledWith(datastore.save, {
-                    params: {
-                        userId,
-                        name,
-                        description,
-                        pipelineIds: [], // The collectionFactory should add this field
-                        type
-                    },
-                    table: 'collections'
+            return factory
+                .create({
+                    userId,
+                    name,
+                    description,
+                    type
+                })
+                .then(model => {
+                    assert.isTrue(datastore.save.calledOnce);
+                    assert.calledWith(datastore.save, {
+                        params: {
+                            userId,
+                            name,
+                            description,
+                            pipelineIds: [], // The collectionFactory should add this field
+                            type
+                        },
+                        table: 'collections'
+                    });
+                    assert.instanceOf(model, Collection);
+                    assert.deepEqual(model, dataWithoutPipelineIds);
                 });
-                assert.instanceOf(model, Collection);
-                assert.deepEqual(model, dataWithoutPipelineIds);
-            });
         });
     });
 
@@ -128,13 +132,14 @@ describe('Collection Factory', () => {
         it('should get a collection by ID', () => {
             datastore.get.resolves(collectionData);
 
-            Promise.all([factory.get(collectionId), factory.get({ id: collectionId })])
-                .then(([collection1, collection2]) => {
-                    Object.keys(collection1).forEach((key) => {
+            Promise.all([factory.get(collectionId), factory.get({ id: collectionId })]).then(
+                ([collection1, collection2]) => {
+                    Object.keys(collection1).forEach(key => {
                         assert.strictEqual(collection1[key], collectionData[key]);
                         assert.strictEqual(collection2[key], collectionData[key]);
                     });
-                });
+                }
+            );
         });
     });
 
@@ -160,8 +165,7 @@ describe('Collection Factory', () => {
         });
 
         it('should throw an error when config not supplied', () => {
-            assert.throw(CollectionFactory.getInstance,
-                Error, 'No datastore provided to CollectionFactory');
+            assert.throw(CollectionFactory.getInstance, Error, 'No datastore provided to CollectionFactory');
         });
     });
 });

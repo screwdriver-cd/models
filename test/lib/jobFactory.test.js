@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
@@ -102,13 +102,15 @@ describe('Job Factory', () => {
                 archived: false
             }
         };
-        const permutations = [{
-            commands: [
-                { command: 'npm install', name: 'init' },
-                { command: 'npm test', name: 'test' }
-            ],
-            image: 'node:4'
-        }];
+        const permutations = [
+            {
+                commands: [
+                    { command: 'npm install', name: 'init' },
+                    { command: 'npm test', name: 'test' }
+                ],
+                image: 'node:4'
+            }
+        ];
 
         it('creates a new job in the datastore', () => {
             const expected = {
@@ -123,22 +125,25 @@ describe('Job Factory', () => {
             datastore.save.resolves(expected);
             saveConfig.params.permutations = permutations;
 
-            return factory.create({
-                pipelineId,
-                name,
-                permutations
-            }).then((model) => {
-                assert.calledWith(datastore.save, saveConfig);
-                assert.instanceOf(model, Job);
-            });
+            return factory
+                .create({
+                    pipelineId,
+                    name,
+                    permutations
+                })
+                .then(model => {
+                    assert.calledWith(datastore.save, saveConfig);
+                    assert.instanceOf(model, Job);
+                });
         });
 
         it('calls executor to create a periodic job', () => {
             const tokenGenFunc = () => 'bar';
             const periodicPermutations = [
-                Object.assign(
-                    { annotations: { 'screwdriver.cd/buildPeriodically': 'H * * * *' } }
-                    , permutations[0])
+                {
+                    annotations: { 'screwdriver.cd/buildPeriodically': 'H * * * *' },
+                    ...permutations[0]
+                }
             ];
 
             factory.tokenGen = tokenGenFunc;
@@ -155,29 +160,32 @@ describe('Job Factory', () => {
             datastore.save.resolves(expected);
             saveConfig.params.permutations = periodicPermutations;
 
-            return factory.create({
-                pipelineId,
-                name,
-                permutations: periodicPermutations
-            }).then((model) => {
-                assert.calledWith(datastore.save, saveConfig);
-                assert.instanceOf(model, Job);
-                assert.calledWith(pipelineFactoryMock.get, pipelineId);
-                assert.calledWith(executor.startPeriodic, {
-                    pipeline: { id: 9999 },
-                    job: model,
-                    tokenGen: tokenGenFunc,
-                    apiUri
+            return factory
+                .create({
+                    pipelineId,
+                    name,
+                    permutations: periodicPermutations
+                })
+                .then(model => {
+                    assert.calledWith(datastore.save, saveConfig);
+                    assert.instanceOf(model, Job);
+                    assert.calledWith(pipelineFactoryMock.get, pipelineId);
+                    assert.calledWith(executor.startPeriodic, {
+                        pipeline: { id: 9999 },
+                        job: model,
+                        tokenGen: tokenGenFunc,
+                        apiUri
+                    });
                 });
-            });
         });
 
         it('does not create a periodic job if job is PR', () => {
             const tokenGenFunc = () => 'bar';
             const periodicPermutations = [
-                Object.assign(
-                    { annotations: { 'screwdriver.cd/buildPeriodically': 'H * * * *' } }
-                    , permutations[0])
+                {
+                    annotations: { 'screwdriver.cd/buildPeriodically': 'H * * * *' },
+                    ...permutations[0]
+                }
             ];
 
             factory.tokenGen = tokenGenFunc;
@@ -195,16 +203,18 @@ describe('Job Factory', () => {
             saveConfig.params.permutations = periodicPermutations;
             saveConfig.params.name = 'PR-1:main';
 
-            return factory.create({
-                pipelineId,
-                name: 'PR-1:main',
-                permutations: periodicPermutations
-            }).then((model) => {
-                assert.calledWith(datastore.save, saveConfig);
-                assert.instanceOf(model, Job);
-                assert.notCalled(pipelineFactoryMock.get);
-                assert.notCalled(executor.startPeriodic);
-            });
+            return factory
+                .create({
+                    pipelineId,
+                    name: 'PR-1:main',
+                    permutations: periodicPermutations
+                })
+                .then(model => {
+                    assert.calledWith(datastore.save, saveConfig);
+                    assert.instanceOf(model, Job);
+                    assert.notCalled(pipelineFactoryMock.get);
+                    assert.notCalled(executor.startPeriodic);
+                });
         });
     });
 

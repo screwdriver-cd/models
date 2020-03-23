@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const sinon = require('sinon');
 const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
@@ -49,7 +49,7 @@ describe('Step Model', () => {
     it('is constructed properly', () => {
         assert.instanceOf(step, StepModel);
         assert.instanceOf(step, BaseModel);
-        schema.models.collection.allKeys.forEach((key) => {
+        schema.models.collection.allKeys.forEach(key => {
             assert.strictEqual(step[key], createConfig[key]);
         });
     });
@@ -58,29 +58,27 @@ describe('Step Model', () => {
         it('promises to update a step', () => {
             step.lines = 123;
 
-            return step.update()
-                .then(() => {
-                    assert.calledWith(datastore.update, {
-                        table: 'steps',
-                        params: {
-                            id: 51,
-                            lines: 123
-                        }
-                    });
+            return step.update().then(() => {
+                assert.calledWith(datastore.update, {
+                    table: 'steps',
+                    params: {
+                        id: 51,
+                        lines: 123
+                    }
                 });
+            });
         });
     });
 
     describe('remove', () => {
         it('removes a step', () =>
-            step.remove()
-                .then(() => {
-                    assert.calledWith(datastore.remove, {
-                        table: 'steps',
-                        params: {
-                            id: 51
-                        }
-                    });
-                }));
+            step.remove().then(() => {
+                assert.calledWith(datastore.remove, {
+                    table: 'steps',
+                    params: {
+                        id: 51
+                    }
+                });
+            }));
     });
 });
