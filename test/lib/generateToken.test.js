@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const sinon = require('sinon');
 const generateToken = require('../../lib/generateToken');
 
@@ -14,22 +14,20 @@ describe('generateToken', () => {
     let firstValue;
 
     it('generates a value', () =>
-        generateToken.generateValue()
-            .then((value) => {
-                firstValue = value;
-                // Check that it's a base64 value of the right length
-                assert.match(value, /^[a-zA-Z0-9_-]{43}$/);
-            }));
+        generateToken.generateValue().then(value => {
+            firstValue = value;
+            // Check that it's a base64 value of the right length
+            assert.match(value, /^[a-zA-Z0-9_-]{43}$/);
+        }));
 
     it('generates a different value on a second call', () => {
-        generateToken.generateValue()
-            .then((value) => {
-                assert.notEqual(value, firstValue);
-            });
+        generateToken.generateValue().then(value => {
+            assert.notEqual(value, firstValue);
+        });
     });
 
-    it('hashes a value', () => generateToken.hashValue(RANDOM_BYTES, '')
-        .then((hash) => {
+    it('hashes a value', () =>
+        generateToken.hashValue(RANDOM_BYTES, '').then(hash => {
             assert.strictEqual(hash, expectedHash);
         }));
 

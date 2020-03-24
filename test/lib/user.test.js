@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
@@ -52,7 +52,8 @@ describe('User Model', () => {
         mockery.registerMock('screwdriver-hashr', hashaMock);
         mockery.registerMock('iron', ironMock);
         mockery.registerMock('./tokenFactory', {
-            getInstance: sinon.stub().returns(tokenFactoryMock) });
+            getInstance: sinon.stub().returns(tokenFactoryMock)
+        });
 
         /* eslint-disable global-require */
         UserModel = require('../../lib/user');
@@ -83,7 +84,7 @@ describe('User Model', () => {
     it('is constructed properly', () => {
         assert.instanceOf(user, UserModel);
         assert.instanceOf(user, BaseModel);
-        schema.models.user.allKeys.forEach((key) => {
+        schema.models.user.allKeys.forEach(key => {
             assert.strictEqual(user[key], createConfig[key]);
         });
         // password is private
@@ -94,29 +95,26 @@ describe('User Model', () => {
         const unsealedToken = 'unsealedToken';
 
         beforeEach(() => {
-            ironMock.seal.withArgs(unsealedToken, password, ironMock.defaults)
-                .resolves('werlx');
+            ironMock.seal.withArgs(unsealedToken, password, ironMock.defaults).resolves('werlx');
         });
 
         it('promises to execute seal token', () =>
-            user.sealToken(unsealedToken)
-                .then((sealedToken) => {
-                    assert.deepEqual(sealedToken, 'werlx');
-                    assert.calledWith(ironMock.seal, unsealedToken, password, ironMock.defaults);
-                })
-        );
+            user.sealToken(unsealedToken).then(sealedToken => {
+                assert.deepEqual(sealedToken, 'werlx');
+                assert.calledWith(ironMock.seal, unsealedToken, password, ironMock.defaults);
+            }));
 
         it('rejects to execute a seal token', () => {
             const expectedError = new Error('whaleIsNotSeal');
 
-            ironMock.seal.withArgs(unsealedToken, password, ironMock.defaults)
-                .rejects(expectedError);
+            ironMock.seal.withArgs(unsealedToken, password, ironMock.defaults).rejects(expectedError);
 
-            return user.sealToken(unsealedToken)
+            return user
+                .sealToken(unsealedToken)
                 .then(() => {
                     assert.fail('This should not fail the test');
                 })
-                .catch((err) => {
+                .catch(err => {
                     assert.deepEqual(err, expectedError);
                 });
         });
@@ -126,28 +124,25 @@ describe('User Model', () => {
         const sealed = token;
 
         beforeEach(() => {
-            ironMock.unseal.withArgs(sealed, password, ironMock.defaults)
-                .resolves('1234');
+            ironMock.unseal.withArgs(sealed, password, ironMock.defaults).resolves('1234');
         });
 
         it('promises to execute unseal token', () =>
-            user.unsealToken()
-                .then((unsealed) => {
-                    assert.strictEqual(unsealed, '1234');
-                })
-        );
+            user.unsealToken().then(unsealed => {
+                assert.strictEqual(unsealed, '1234');
+            }));
 
         it('rejects when unseal token fails', () => {
             const expectedError = new Error('TooCoolToBeSeal');
 
-            ironMock.unseal.withArgs(sealed, password, ironMock.defaults)
-                .rejects(expectedError);
+            ironMock.unseal.withArgs(sealed, password, ironMock.defaults).rejects(expectedError);
 
-            return user.unsealToken()
+            return user
+                .unsealToken()
                 .then(() => {
                     assert.fail('This should not fail the test');
                 })
-                .catch((err) => {
+                .catch(err => {
                     assert.deepEqual(err, expectedError);
                 });
         });
@@ -169,27 +164,26 @@ describe('User Model', () => {
         });
 
         it('promises to get permissions', () =>
-            user.getPermissions(scmUri)
-                .then((data) => {
-                    assert.calledWith(scmMock.getPermissions, {
-                        token: '12345',
-                        scmUri,
-                        scmContext
-                    });
-                    assert.deepEqual(data, repo.permissions);
-                })
-        );
+            user.getPermissions(scmUri).then(data => {
+                assert.calledWith(scmMock.getPermissions, {
+                    token: '12345',
+                    scmUri,
+                    scmContext
+                });
+                assert.deepEqual(data, repo.permissions);
+            }));
 
         it('rejects if fails to get permissions', () => {
             const expectedError = new Error('brokeTheBreaker');
 
             scmMock.getPermissions.rejects(expectedError);
 
-            return user.getPermissions(scmUri)
+            return user
+                .getPermissions(scmUri)
                 .then(() => {
                     assert.fail('This should not fail the test');
                 })
-                .catch((err) => {
+                .catch(err => {
                     assert.deepEqual(err, expectedError);
                 });
         });

@@ -1,8 +1,8 @@
 'use strict';
 
-const assert = require('chai').assert;
-const nodeify = require('../../lib/nodeify');
+const { assert } = require('chai');
 const sinon = require('sinon');
+const nodeify = require('../../lib/nodeify');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -16,14 +16,14 @@ describe('nodeify', () => {
     });
 
     describe('callback', () => {
-        it('invokes the callback', (done) => {
+        it('invokes the callback', done => {
             nodeify(fakeFunction, 1, 2, 3, 4, 5, () => {
                 assert.calledWith(fakeFunction, 1, 2, 3, 4, 5);
                 done();
             });
         });
 
-        it('handles 0 arguments', (done) => {
+        it('handles 0 arguments', done => {
             nodeify(fakeFunction, () => {
                 assert.calledWith(fakeFunction);
                 done();
@@ -33,18 +33,14 @@ describe('nodeify', () => {
 
     describe('promises', () => {
         it('promises when not given a callback', () =>
-            nodeify(fakeFunction, 1, 2, 3, 4, 5)
-                .then(() => {
-                    assert.calledWith(fakeFunction, 1, 2, 3, 4, 5);
-                })
-        );
+            nodeify(fakeFunction, 1, 2, 3, 4, 5).then(() => {
+                assert.calledWith(fakeFunction, 1, 2, 3, 4, 5);
+            }));
 
         it('promises to handle 0 arguments', () =>
-            nodeify(fakeFunction)
-                .then(() => {
-                    assert.calledWith(fakeFunction);
-                })
-        );
+            nodeify(fakeFunction).then(() => {
+                assert.calledWith(fakeFunction);
+            }));
 
         it('rejects when the given function returns an error', () => {
             const expectedError = new Error('wittyErrorMessage');
@@ -55,17 +51,14 @@ describe('nodeify', () => {
                 .then(() => {
                     assert.fail('this should not fail the test');
                 })
-                .catch((err) => {
+                .catch(err => {
                     assert.deepEqual(err, expectedError);
                 });
         });
     });
 
     describe('withContext', () => {
-        const args = [
-            'firstArg',
-            'secondArg'
-        ];
+        const args = ['firstArg', 'secondArg'];
         let context;
         const expectedData = 'theDataReturnedFromMagicalMethod';
 
@@ -77,7 +70,7 @@ describe('nodeify', () => {
             context.magicalMethod.yieldsAsync(null, expectedData);
         });
 
-        it('invokes the function with context', (done) => {
+        it('invokes the function with context', done => {
             nodeify.withContext(context, 'magicalMethod', args, (err, data) => {
                 assert.isNull(err);
                 assert.deepEqual(data, expectedData);
@@ -87,18 +80,16 @@ describe('nodeify', () => {
         });
 
         it('promises to invoke the function with context', () =>
-            nodeify.withContext(context, 'magicalMethod', args)
-                .then((data) => {
-                    assert.deepEqual(data, expectedData);
-                })
-        );
+            nodeify.withContext(context, 'magicalMethod', args).then(data => {
+                assert.deepEqual(data, expectedData);
+            }));
     });
 
     describe('fail', () => {
-        it('invokes the callback with a failure', (done) => {
+        it('invokes the callback with a failure', done => {
             const expectedError = new Error('hanShotSecond');
 
-            nodeify.fail(expectedError, (err) => {
+            nodeify.fail(expectedError, err => {
                 assert.deepEqual(err, expectedError);
                 done();
             });
@@ -107,18 +98,19 @@ describe('nodeify', () => {
         it('rejects with a failure', () => {
             const expectedError = new Error('sarlackAteTheFett');
 
-            return nodeify.fail(expectedError)
+            return nodeify
+                .fail(expectedError)
                 .then(() => {
                     assert.fail('This should not fail the test');
                 })
-                .catch((err) => {
+                .catch(err => {
                     assert.deepEqual(err, expectedError);
                 });
         });
     });
 
     describe('success', () => {
-        it('invokes the callback with data', (done) => {
+        it('invokes the callback with data', done => {
             const expectedData = { dps: 'DamagePerSecond' };
 
             nodeify.success(expectedData, (err, data) => {
@@ -131,10 +123,9 @@ describe('nodeify', () => {
         it('promises with the given data', () => {
             const expectedData = { paladin: 'overPowered' };
 
-            return nodeify.success(expectedData)
-                .then((data) => {
-                    assert.deepEqual(data, expectedData);
-                });
+            return nodeify.success(expectedData).then(data => {
+                assert.deepEqual(data, expectedData);
+            });
         });
     });
 });

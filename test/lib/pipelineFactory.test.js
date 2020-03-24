@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
@@ -17,7 +17,7 @@ describe('Pipeline Factory', () => {
     let userFactoryMock;
     let tokenFactoryMock;
     const dateNow = 1111111111;
-    const nowTime = (new Date(dateNow)).toISOString();
+    const nowTime = new Date(dateNow).toISOString();
     const scmUri = 'github.com:12345:master';
     const scmContext = 'github:github.com';
     const testId = 123;
@@ -135,22 +135,26 @@ describe('Pipeline Factory', () => {
             datastore.save.resolves(expected);
             scm.decorateUrl.resolves(scmRepo);
 
-            userFactoryMock.get.withArgs({
-                username: Object.keys(admins)[0],
-                scmContext
-            }).resolves({
-                unsealToken: sinon.stub().resolves('foo')
-            });
+            userFactoryMock.get
+                .withArgs({
+                    username: Object.keys(admins)[0],
+                    scmContext
+                })
+                .resolves({
+                    unsealToken: sinon.stub().resolves('foo')
+                });
 
-            return factory.create({
-                scmUri,
-                scmContext,
-                admins
-            }).then((model) => {
-                assert.calledWith(scm.decorateUrl, { scmUri, scmContext, token: 'foo' });
-                assert.calledWith(datastore.save, saveConfig);
-                assert.instanceOf(model, Pipeline);
-            });
+            return factory
+                .create({
+                    scmUri,
+                    scmContext,
+                    admins
+                })
+                .then(model => {
+                    assert.calledWith(scm.decorateUrl, { scmUri, scmContext, token: 'foo' });
+                    assert.calledWith(datastore.save, saveConfig);
+                    assert.instanceOf(model, Pipeline);
+                });
         });
     });
 
@@ -183,28 +187,25 @@ describe('Pipeline Factory', () => {
 
             datastore.get.resolves(expected);
 
-            return factory.get({ accessToken })
-                .then((pipeline) => {
-                    assert.isOk(pipeline);
-                    assert.calledWith(tokenFactoryMock.get, { value: accessToken });
-                    assert.calledOnce(tokenMock.update);
-                    assert.equal(tokenMock.lastUsed, (new Date(now)).toISOString());
-                    assert.equal(tokenMock.pipelineId, testId);
-                });
+            return factory.get({ accessToken }).then(pipeline => {
+                assert.isOk(pipeline);
+                assert.calledWith(tokenFactoryMock.get, { value: accessToken });
+                assert.calledOnce(tokenMock.update);
+                assert.equal(tokenMock.lastUsed, new Date(now).toISOString());
+                assert.equal(tokenMock.pipelineId, testId);
+            });
         });
 
-        it('should return null if the pipeline doesn\'t exist', () => {
+        it("should return null if the pipeline doesn't exist", () => {
             datastore.get.resolves(null);
 
-            return factory.get({ accessToken })
-                .then(pipeline => assert.isNull(pipeline));
+            return factory.get({ accessToken }).then(pipeline => assert.isNull(pipeline));
         });
 
-        it('should return null if the token doesn\'t exist', () => {
+        it("should return null if the token doesn't exist", () => {
             tokenFactoryMock.get.resolves(null);
 
-            return factory.get({ accessToken })
-                .then(pipeline => assert.isNull(pipeline));
+            return factory.get({ accessToken }).then(pipeline => assert.isNull(pipeline));
         });
     });
 
@@ -226,16 +227,23 @@ describe('Pipeline Factory', () => {
         });
 
         it('should throw when config does not have everything necessary', () => {
-            assert.throw(PipelineFactory.getInstance,
-                Error, 'No scm plugin provided to PipelineFactory');
+            assert.throw(PipelineFactory.getInstance, Error, 'No scm plugin provided to PipelineFactory');
 
-            assert.throw(() => {
-                PipelineFactory.getInstance({ datastore });
-            }, Error, 'No scm plugin provided to PipelineFactory');
+            assert.throw(
+                () => {
+                    PipelineFactory.getInstance({ datastore });
+                },
+                Error,
+                'No scm plugin provided to PipelineFactory'
+            );
 
-            assert.throw(() => {
-                PipelineFactory.getInstance({ scm: {} });
-            }, Error, 'No datastore provided to PipelineFactory');
+            assert.throw(
+                () => {
+                    PipelineFactory.getInstance({ scm: {} });
+                },
+                Error,
+                'No datastore provided to PipelineFactory'
+            );
         });
     });
 
@@ -259,4 +267,3 @@ describe('Pipeline Factory', () => {
         });
     });
 });
-

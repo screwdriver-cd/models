@@ -1,9 +1,10 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 
+/* eslint max-classes-per-file: ["error", 2] */
 class Base {
     constructor(config) {
         this.scm = config.scm;
@@ -100,18 +101,20 @@ describe('Base Factory', () => {
 
             datastore.save.resolves(expected);
 
-            return factory.create({
-                foo: {
-                    key: 'foo',
-                    notkey: 'bar'
-                },
-                bar: false
-            }).then((model) => {
-                assert.isTrue(datastore.save.calledWith(saveConfig));
-                assert.instanceOf(model, Base);
-                assert.deepEqual(model.datastore, datastore);
-                assert.deepEqual(model.scm, scm);
-            });
+            return factory
+                .create({
+                    foo: {
+                        key: 'foo',
+                        notkey: 'bar'
+                    },
+                    bar: false
+                })
+                .then(model => {
+                    assert.isTrue(datastore.save.calledWith(saveConfig));
+                    assert.instanceOf(model, Base);
+                    assert.deepEqual(model.datastore, datastore);
+                    assert.deepEqual(model.scm, scm);
+                });
         });
 
         it('rejects when a datastore save fails', () => {
@@ -119,11 +122,12 @@ describe('Base Factory', () => {
 
             datastore.save.rejects(new Error(errorMessage));
 
-            return factory.create({ foo: 'foo', bar: 'bar' })
+            return factory
+                .create({ foo: 'foo', bar: 'bar' })
                 .then(() => {
                     assert.fail('This should not fail the test');
                 })
-                .catch((err) => {
+                .catch(err => {
                     assert.strictEqual(err.message, errorMessage);
                 });
         });
@@ -138,82 +142,80 @@ describe('Base Factory', () => {
 
         beforeEach(() => {
             factory.createClass = createMock;
-            datastore.get.withArgs({
-                table: 'base',
-                params: {
-                    id: baseId
-                }
-            }).resolves(baseData);
-            datastore.get.withArgs({
-                table: 'base',
-                params: {
-                    foo: 'foo'
-                }
-            }).resolves(baseData);
+            datastore.get
+                .withArgs({
+                    table: 'base',
+                    params: {
+                        id: baseId
+                    }
+                })
+                .resolves(baseData);
+            datastore.get
+                .withArgs({
+                    table: 'base',
+                    params: {
+                        foo: 'foo'
+                    }
+                })
+                .resolves(baseData);
         });
 
         it('calls datastore get with id and returns correct values', () =>
-            factory.get(baseData.id)
-                .then((model) => {
-                    assert.instanceOf(model, Base);
-                    assert.isTrue(datastore.get.calledOnce);
-                    assert.deepEqual(model.datastore, datastore);
-                    assert.deepEqual(model.scm, scm);
-                })
-        );
+            factory.get(baseData.id).then(model => {
+                assert.instanceOf(model, Base);
+                assert.isTrue(datastore.get.calledOnce);
+                assert.deepEqual(model.datastore, datastore);
+                assert.deepEqual(model.scm, scm);
+            }));
 
         it('calls datastore get with config.id and returns correct values', () =>
-            factory.get(baseData)
-                .then((model) => {
-                    assert.instanceOf(model, Base);
-                    assert.isTrue(datastore.get.calledOnce);
-                    assert.deepEqual(model.datastore, datastore);
-                    assert.deepEqual(model.scm, scm);
-                })
-        );
+            factory.get(baseData).then(model => {
+                assert.instanceOf(model, Base);
+                assert.isTrue(datastore.get.calledOnce);
+                assert.deepEqual(model.datastore, datastore);
+                assert.deepEqual(model.scm, scm);
+            }));
 
         it('converts string id to a number', () =>
-            factory.get('135323')
-                .then((model) => {
-                    assert.instanceOf(model, Base);
-                    assert.isTrue(datastore.get.calledOnce);
-                    assert.deepEqual(model.datastore, datastore);
-                    assert.deepEqual(model.scm, scm);
-                })
-        );
+            factory.get('135323').then(model => {
+                assert.instanceOf(model, Base);
+                assert.isTrue(datastore.get.calledOnce);
+                assert.deepEqual(model.datastore, datastore);
+                assert.deepEqual(model.scm, scm);
+            }));
 
         it('calls datastore get with config object and returns correct values', () =>
-            factory.get({ foo: 'foo', bar: 'bar' })
-                .then((model) => {
-                    assert.instanceOf(model, Base);
-                    assert.isTrue(datastore.get.calledOnce);
-                    assert.deepEqual(model.datastore, datastore);
-                    assert.deepEqual(model.scm, scm);
-                })
-        );
+            factory.get({ foo: 'foo', bar: 'bar' }).then(model => {
+                assert.instanceOf(model, Base);
+                assert.isTrue(datastore.get.calledOnce);
+                assert.deepEqual(model.datastore, datastore);
+                assert.deepEqual(model.scm, scm);
+            }));
 
         it('returns null when datastore miss occurs', () => {
-            datastore.get.withArgs({
-                table: 'base',
-                params: {
-                    id: baseId
-                }
-            }).resolves(null);
+            datastore.get
+                .withArgs({
+                    table: 'base',
+                    params: {
+                        id: baseId
+                    }
+                })
+                .resolves(null);
 
-            return factory.get(baseData.id)
-                .then((model) => {
-                    assert.isNull(model);
-                });
+            return factory.get(baseData.id).then(model => {
+                assert.isNull(model);
+            });
         });
 
         it('rejects with a failure from the datastore get', () => {
             datastore.get.rejects(new Error('teehee'));
 
-            return factory.get('doesntMatter')
+            return factory
+                .get('doesntMatter')
                 .then(() => {
                     assert.fail('this shall not pass');
                 })
-                .catch((err) => {
+                .catch(err => {
                     assert.strictEqual(err.message, 'teehee');
                 });
         });
@@ -241,112 +243,98 @@ describe('Base Factory', () => {
         });
 
         it('calls datastore scan', () =>
-            factory.list()
-                .then(() => {
-                    assert.calledWith(datastore.scan, {
-                        table: 'base',
-                        params: {}
-                    });
-                })
-        );
+            factory.list().then(() => {
+                assert.calledWith(datastore.scan, {
+                    table: 'base',
+                    params: {}
+                });
+            }));
 
         it('calls datastore scan and returns correct values', () =>
-            factory.list({ paginate })
-                .then((arr) => {
-                    assert.isArray(arr);
-                    assert.equal(arr.length, 2);
-                    arr.forEach((model) => {
-                        assert.instanceOf(model, Base);
-                        assert.deepEqual(model.datastore, datastore);
-                        assert.deepEqual(model.scm, scm);
-                    });
-                })
-        );
+            factory.list({ paginate }).then(arr => {
+                assert.isArray(arr);
+                assert.equal(arr.length, 2);
+                arr.forEach(model => {
+                    assert.instanceOf(model, Base);
+                    assert.deepEqual(model.datastore, datastore);
+                    assert.deepEqual(model.scm, scm);
+                });
+            }));
 
         it('does not set default values if none are passed in', () =>
-            factory.list({})
-                .then(() => {
-                    assert.calledWith(datastore.scan, {
-                        table: 'base',
-                        params: {}
-                    });
-                })
-        );
+            factory.list({}).then(() => {
+                assert.calledWith(datastore.scan, {
+                    table: 'base',
+                    params: {}
+                });
+            }));
 
         it('sets default paginate values if some are passed in', () =>
-            factory.list({ paginate: { count: 20 } })
-                .then(() => {
-                    assert.calledWith(datastore.scan, {
-                        table: 'base',
-                        params: {},
-                        paginate: {
-                            page: 1,
-                            count: 20
-                        }
-                    });
-                })
-        );
+            factory.list({ paginate: { count: 20 } }).then(() => {
+                assert.calledWith(datastore.scan, {
+                    table: 'base',
+                    params: {},
+                    paginate: {
+                        page: 1,
+                        count: 20
+                    }
+                });
+            }));
 
         it('sets aggregationField if it is passed in', () =>
-            factory.list({ aggregationField: 'templateId' })
-                .then(() => {
-                    assert.calledWith(datastore.scan, {
-                        table: 'base',
-                        params: {},
-                        aggregationField: 'templateId'
-                    });
-                })
-        );
+            factory.list({ aggregationField: 'templateId' }).then(() => {
+                assert.calledWith(datastore.scan, {
+                    table: 'base',
+                    params: {},
+                    aggregationField: 'templateId'
+                });
+            }));
 
         it('sets default paginate values if undefined is passed in', () =>
-            factory.list({ paginate: { page: undefined, count: undefined } })
-                .then(() => {
-                    assert.calledWith(datastore.scan, {
-                        table: 'base',
-                        params: {},
-                        paginate: {
-                            page: 1,
-                            count: 50
-                        }
-                    });
-                })
-        );
+            factory.list({ paginate: { page: undefined, count: undefined } }).then(() => {
+                assert.calledWith(datastore.scan, {
+                    table: 'base',
+                    params: {},
+                    paginate: {
+                        page: 1,
+                        count: 50
+                    }
+                });
+            }));
 
         it('sets sortBy value if it is passed in', () =>
-            factory.list({ sortBy: 'scmRepo.name' })
-                .then(() => {
-                    assert.calledWith(datastore.scan, {
-                        table: 'base',
-                        params: {},
-                        sortBy: 'scmRepo.name'
-                    });
-                })
-        );
+            factory.list({ sortBy: 'scmRepo.name' }).then(() => {
+                assert.calledWith(datastore.scan, {
+                    table: 'base',
+                    params: {},
+                    sortBy: 'scmRepo.name'
+                });
+            }));
 
         it('sets time range value if it is passed in', () => {
             const startTime = '2019-02-01T18:33:42.461Z';
             const endTime = '2019-02-11T18:33:42.461Z';
             const timeKey = 'startTime';
 
-            return factory.list({ startTime, endTime, timeKey })
-                .then(() => {
-                    assert.calledWith(datastore.scan, {
-                        table: 'base',
-                        params: {},
-                        startTime,
-                        endTime,
-                        timeKey
-                    });
+            return factory.list({ startTime, endTime, timeKey }).then(() => {
+                assert.calledWith(datastore.scan, {
+                    table: 'base',
+                    params: {},
+                    startTime,
+                    endTime,
+                    timeKey
                 });
+            });
         });
 
         it('sets search values if they are passed in', () =>
-            factory.list({
-                search: {
-                    field: 'scmRepo',
-                    keyword: '%name%screwdriver-cd/screwdriver%'
-                }
-            })
+            factory
+                .list({
+                    search: {
+                        field: 'scmRepo',
+                        keyword: '%name%screwdriver-cd/screwdriver%'
+                    }
+                })
                 .then(() => {
                     assert.calledWith(datastore.scan, {
                         table: 'base',
@@ -356,85 +344,72 @@ describe('Base Factory', () => {
                             keyword: '%name%screwdriver-cd/screwdriver%'
                         }
                     });
-                })
-        );
+                }));
 
         it('calls datastore scan with sorting option returns correct values', () =>
-            factory.list({ paginate, sort: 'ascending' })
-                .then(() => {
-                    assert.calledWith(datastore.scan, {
-                        table: 'base',
-                        params: {},
-                        paginate,
-                        sort: 'ascending'
-                    });
-                })
-        );
+            factory.list({ paginate, sort: 'ascending' }).then(() => {
+                assert.calledWith(datastore.scan, {
+                    table: 'base',
+                    params: {},
+                    paginate,
+                    sort: 'ascending'
+                });
+            }));
 
         it('call datastore scan with exclude and groupBy options', () =>
-            factory.list({ exclude: ['unwanted_col'], groupBy: ['colA', 'colB'] })
+            factory.list({ exclude: ['unwanted_col'], groupBy: ['colA', 'colB'] }).then(() =>
+                assert.calledWith(datastore.scan, {
+                    table: 'base',
+                    params: {},
+                    exclude: ['unwanted_col'],
+                    groupBy: ['colA', 'colB']
+                })
+            ));
+
+        it('call datastore scan with startTime and endTime options', () =>
+            factory
+                .list({
+                    startTime: '2019-01-20T22:28:35.039Z',
+                    endTime: '2019-01-24T22:28:35.039Z'
+                })
                 .then(() =>
                     assert.calledWith(datastore.scan, {
                         table: 'base',
                         params: {},
-                        exclude: ['unwanted_col'],
-                        groupBy: ['colA', 'colB']
+                        startTime: '2019-01-20T22:28:35.039Z',
+                        endTime: '2019-01-24T22:28:35.039Z'
                     })
-                )
-        );
-
-        it('call datastore scan with startTime and endTime options', () =>
-            factory.list({
-                startTime: '2019-01-20T22:28:35.039Z',
-                endTime: '2019-01-24T22:28:35.039Z'
-            }).then(() =>
-                assert.calledWith(datastore.scan, {
-                    table: 'base',
-                    params: {},
-                    startTime: '2019-01-20T22:28:35.039Z',
-                    endTime: '2019-01-24T22:28:35.039Z'
-                })
-            )
-        );
+                ));
 
         it('returns raw scan results when raw is true', () => {
-            const distinctRows = [
-                'namespace1',
-                'namespace2',
-                'namespace3'
-            ];
+            const distinctRows = ['namespace1', 'namespace2', 'namespace3'];
 
             datastore.scan.resolves(distinctRows);
 
-            return factory.list({
-                params: {
-                    distinct: 'namespace'
-                },
-                raw: true
-            })
-                .then((data) => {
+            return factory
+                .list({
+                    params: {
+                        distinct: 'namespace'
+                    },
+                    raw: true
+                })
+                .then(data => {
                     assert.calledWith(datastore.scan, {
                         table: 'base',
                         params: {
                             distinct: 'namespace'
                         }
                     });
-                    assert.deepEqual(data, [
-                        'namespace1',
-                        'namespace2',
-                        'namespace3'
-                    ]);
+                    assert.deepEqual(data, ['namespace1', 'namespace2', 'namespace3']);
                 });
         });
 
         it('handles when the scan does not return an array', () => {
             datastore.scan.resolves(null);
 
-            return factory.list({ paginate })
-                .catch((err) => {
-                    assert.strictEqual(err.message, 'Unexpected response from datastore, ' +
-                        'expected Array, got object');
-                });
+            return factory.list({ paginate }).catch(err => {
+                assert.strictEqual(err.message, 'Unexpected response from datastore, expected Array, got object');
+            });
         });
 
         it('rejects with a failure from the datastore scan', () => {
@@ -442,11 +417,12 @@ describe('Base Factory', () => {
 
             datastore.scan.rejects(new Error(errorMessage));
 
-            return factory.list({ paginate })
+            return factory
+                .list({ paginate })
                 .then(() => {
                     assert.fail('this should not happen');
                 })
-                .catch((err) => {
+                .catch(err => {
                     assert.strictEqual(err.message, errorMessage);
                 });
         });
@@ -475,9 +451,13 @@ describe('Base Factory', () => {
         });
 
         it('should throw when config not supplied or does not supply all expected params', () => {
-            assert.throw(() => {
-                BaseFactory.getInstance(BF, null);
-            }, Error, 'No datastore provided to BF');
+            assert.throw(
+                () => {
+                    BaseFactory.getInstance(BF, null);
+                },
+                Error,
+                'No datastore provided to BF'
+            );
         });
     });
 

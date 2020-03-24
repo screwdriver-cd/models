@@ -1,6 +1,6 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const sinon = require('sinon');
 const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
@@ -66,7 +66,7 @@ describe('Secret Model', () => {
     it('is constructed properly', () => {
         assert.instanceOf(secret, SecretModel);
         assert.instanceOf(secret, BaseModel);
-        schema.models.secret.allKeys.forEach((key) => {
+        schema.models.secret.allKeys.forEach(key => {
             assert.strictEqual(secret[key], createConfig[key]);
         });
     });
@@ -81,17 +81,18 @@ describe('Secret Model', () => {
 
             secret.value = 'spiderman';
 
-            return secret.update()
-                .then(() => {
-                    assert.calledWith(ironMock.seal, 'spiderman', password, ironMock.defaults);
-                    assert.isTrue(datastore.update.calledWith({
+            return secret.update().then(() => {
+                assert.calledWith(ironMock.seal, 'spiderman', password, ironMock.defaults);
+                assert.isTrue(
+                    datastore.update.calledWith({
                         table: 'secrets',
                         params: {
                             id: 12345,
                             value: 'sealedspiderman'
                         }
-                    }));
-                });
+                    })
+                );
+            });
         });
     });
 });
