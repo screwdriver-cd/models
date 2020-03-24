@@ -1,5 +1,6 @@
 'use strict';
 
+const BuildQueries = require('../../lib/rawQueries.js').BuildFactoryQueries;
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
@@ -903,8 +904,6 @@ describe('Build Factory', () => {
         let expected;
         let returnValue;
         let queryConfig;
-        let query;
-        let mysqlQuery;
 
         beforeEach(() => {
             sinon.stub(BuildFactory.prototype, 'query').returns();
@@ -1010,30 +1009,11 @@ describe('Build Factory', () => {
                 }
             ];
 
-            query =
-            'SELECT r."id", r."jobId", j."name" as "jobName", r."status", r."startTime", '
-            + 'r."endTime" '
-            + 'FROM (SELECT "id", "jobId", "status", "startTime", "endTime", '
-            + 'RANK() OVER ( PARTITION BY "jobId" ORDER BY "id" DESC ) AS rank '
-            + 'FROM builds WHERE "jobId" in (:jobIds)) r '
-            + 'INNER JOIN jobs as j ON j."id" = r."jobId" '
-            + 'WHERE rank > :offset AND rank <= :maxRank '
-            + 'ORDER BY r."jobId", r."id" DESC';
-
-            mysqlQuery =
-            'SELECT r.id, r.jobId, j.name as `jobName`, r.status, r.startTime, r.endTime FROM '
-            + '(SELECT id, jobId, status, startTime, endTime, '
-            + 'RANK() OVER ( PARTITION BY jobId ORDER BY id DESC ) AS `rank` '
-            + 'FROM builds WHERE jobId in (:jobIds)) r '
-            + 'INNER JOIN jobs as j ON j.id = r.jobId '
-            + 'WHERE `rank` > :offset AND `rank` <= :maxRank '
-            + 'ORDER BY r.jobId, r.id DESC';
-
             queryConfig = {
                 queries: [
-                    { dbType: 'postgres', query },
-                    { dbType: 'sqlite', query },
-                    { dbType: 'mysql', query: mysqlQuery }
+                    { dbType: 'postgres', query: BuildQueries.statusesQuery },
+                    { dbType: 'sqlite', query: BuildQueries.statusesQuery },
+                    { dbType: 'mysql', query: BuildQueries.statusesQueryMySql }
                 ],
                 replacements: {
                     jobIds: config.jobIds,
