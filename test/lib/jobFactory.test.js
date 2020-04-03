@@ -173,6 +173,8 @@ describe('Job Factory', () => {
                     assert.calledWith(executor.startPeriodic, {
                         pipeline: { id: 9999 },
                         job: model,
+                        jobId: model.id,
+                        pipelineId: 9999,
                         tokenGen: tokenGenFunc,
                         apiUri
                     });

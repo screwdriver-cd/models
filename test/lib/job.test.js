@@ -109,7 +109,8 @@ describe('Job Model', () => {
                 value: '3',
                 allowInPR: true
             }
-        ])
+        ]),
+        id: 123
     };
 
     before(() => {
@@ -427,6 +428,8 @@ describe('Job Model', () => {
                 assert.calledWith(executorMock.startPeriodic, {
                     pipeline: pipelineMock,
                     job,
+                    jobId: job.id,
+                    pipelineId: 123,
                     tokenGen,
                     apiUri,
                     isUpdate: true
