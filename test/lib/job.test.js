@@ -441,13 +441,14 @@ describe('Job Model', () => {
             buildFactoryMock.list.reset();
             build1.remove.reset();
             build2.remove.reset();
+            build3.remove.reset();
         });
 
         it('remove builds recursively', () => {
             let i;
 
             for (i = 0; i < 4; i += 1) {
-                buildFactoryMock.list.onCall(i).resolves([build1, build2]);
+                buildFactoryMock.list.onCall(i).resolves([build1, build2, build3]);
             }
 
             buildFactoryMock.list.onCall(i).resolves([]);
@@ -456,6 +457,7 @@ describe('Job Model', () => {
                 assert.callCount(buildFactoryMock.list, 5);
                 assert.callCount(build1.remove, 4); // remove builds recursively
                 assert.callCount(build2.remove, 4);
+                assert.callCount(build3.remove, 4);
                 assert.calledOnce(datastore.remove); // remove the job
                 assert.callCount(executorMock.stop, 8);
                 assert.notCalled(executorMock.stopPeriodic);
