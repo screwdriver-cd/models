@@ -1,10 +1,10 @@
 'use strict';
 
-const BuildQueries = require('../../lib/rawQueries.js').BuildFactoryQueries;
 const { assert } = require('chai');
 const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
 const sinon = require('sinon');
+const BuildQueries = require('../../lib/rawQueries.js').BuildFactoryQueries;
 let startStub;
 let getStepsStub;
 
@@ -1062,7 +1062,8 @@ describe('Build Factory', () => {
                         id: 6
                     }
                 ],
-                []];
+                []
+            ];
 
             expected = [
                 {
@@ -1115,6 +1116,10 @@ describe('Build Factory', () => {
                             id: 4
                         }
                     ]
+                },
+                {
+                    jobId: 4,
+                    builds: []
                 }
             ];
 
@@ -1137,18 +1142,18 @@ describe('Build Factory', () => {
         it('return build statuses for jobs', () => {
             datastore.query.resolves(returnValue);
 
-            return factory.getBuildStatuses(config).then((buildStatuses) => {
+            return factory.getBuildStatuses(config).then(buildStatuses => {
                 assert.calledWith(datastore.query, queryConfig);
 
                 let i = 0;
 
-                buildStatuses.forEach((b) => {
+                buildStatuses.forEach(b => {
                     let j = 0;
 
                     assert.deepEqual(b.jobId, expected[i].jobId);
                     assert.deepEqual(b.builds.length, expected[i].builds.length);
 
-                    b.builds.forEach((s) => {
+                    b.builds.forEach(s => {
                         assert.deepEqual(s, expected[i].builds[j]);
 
                         j += 1;

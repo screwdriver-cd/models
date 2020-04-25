@@ -519,52 +519,43 @@ describe('Base Factory', () => {
         });
 
         it('calls datastore query with given config params', () =>
-            factory.query(queryConfig)
-                .then(() => {
-                    assert.calledWith(datastore.query, queryConfig);
-                })
-        );
+            factory.query(queryConfig).then(() => {
+                assert.calledWith(datastore.query, queryConfig);
+            }));
 
         it('calls datastore query with default config params', () =>
-            factory.query(defaultQueryConfig)
-                .then(() => {
-                    assert.calledWith(
-                        datastore.query,
-                        {
-                            table: 'base',
-                            queries: defaultQueryConfig.queries,
-                            rawResponse: false,
-                            replacements: {}
-                        });
-                })
-        );
+            factory.query(defaultQueryConfig).then(() => {
+                assert.calledWith(datastore.query, {
+                    table: 'base',
+                    queries: defaultQueryConfig.queries,
+                    rawResponse: false,
+                    replacements: {}
+                });
+            }));
 
         it('calls datastore query without rawResponse and returns correct values', () =>
-            factory.query(queryConfig)
-                .then((arr) => {
-                    assert.isArray(arr);
-                    assert.equal(arr.length, 2);
-                    arr.forEach((model) => {
-                        assert.instanceOf(model, Base);
-                        assert.deepEqual(model.datastore, datastore);
-                        assert.deepEqual(model.scm, scm);
-                    });
-                })
-        );
+            factory.query(queryConfig).then(arr => {
+                assert.isArray(arr);
+                assert.equal(arr.length, 2);
+                arr.forEach(model => {
+                    assert.instanceOf(model, Base);
+                    assert.deepEqual(model.datastore, datastore);
+                    assert.deepEqual(model.scm, scm);
+                });
+            }));
 
         it('calls datastore query with rawResponse and returns correct values', () => {
             queryConfig.rawResponse = true;
 
-            return factory.query(queryConfig)
-                .then((arr) => {
-                    assert.isArray(arr);
-                    assert.equal(arr.length, 2);
-                    arr.forEach((value) => {
-                        assert.notInstanceOf(value, Base);
-                    });
-                    assert.deepEqual(arr[0], returnValue[0]);
-                    assert.deepEqual(arr[1], returnValue[1]);
+            return factory.query(queryConfig).then(arr => {
+                assert.isArray(arr);
+                assert.equal(arr.length, 2);
+                arr.forEach(value => {
+                    assert.notInstanceOf(value, Base);
                 });
+                assert.deepEqual(arr[0], returnValue[0]);
+                assert.deepEqual(arr[1], returnValue[1]);
+            });
         });
 
         it('rejects with a failure from the datastore query', () => {
@@ -572,11 +563,12 @@ describe('Base Factory', () => {
 
             datastore.query.rejects(new Error(errorMessage));
 
-            return factory.query()
+            return factory
+                .query()
                 .then(() => {
                     assert.fail('this should not happen');
                 })
-                .catch((err) => {
+                .catch(err => {
                     assert.strictEqual(err.message, errorMessage);
                 });
         });
