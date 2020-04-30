@@ -6,7 +6,9 @@
   "scripts": {
     "pretest": "eslint . --quiet",
     "test": "nyc --report-dir ./artifacts/coverage --reporter=lcov mocha --recursive --timeout 4000 --retries 1 --exit --color true",
-    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -58,6 +60,8 @@
     "screwdriver-config-parser": "^5.2.0",
     "screwdriver-data-schema": "^19.7.0",
     "screwdriver-logger": "^1.0.0",
-    "screwdriver-workflow-parser": "^2.0.3"
-  }
+    "screwdriver-workflow-parser": "^2.0.3",
+    "snyk": "^1.316.1"
+  },
+  "snyk": true
 }
