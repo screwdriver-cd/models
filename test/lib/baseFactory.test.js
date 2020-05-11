@@ -36,7 +36,8 @@ describe('Base Factory', () => {
         datastore = {
             save: sinon.stub(),
             scan: sinon.stub(),
-            get: sinon.stub()
+            get: sinon.stub(),
+            query: sinon.stub()
         };
         schema = {
             models: {
@@ -457,6 +458,119 @@ describe('Base Factory', () => {
                 Error,
                 'No datastore provided to BF'
             );
+        });
+    });
+
+    describe('query', () => {
+        const returnValue = [
+            {
+                id: '151c9b11e4a9a27e9e374daca6e59df37d8cf00f',
+                name: 'component'
+            },
+            {
+                id: 123,
+                name: 'deploy'
+            }
+        ];
+
+        const queryConfig = {
+            table: 'base',
+            queries: [
+                {
+                    dbType: 'postgres',
+                    query: 'postgresQuery'
+                },
+                {
+                    dbType: 'sqlite',
+                    query: 'sqliteQuery'
+                },
+                {
+                    dbType: 'mysql',
+                    query: 'mysqlQuery'
+                }
+            ],
+            rawResponse: false,
+            replacements: {
+                id: 1
+            }
+        };
+
+        const defaultQueryConfig = {
+            table: 'base',
+            queries: [
+                {
+                    dbType: 'postgres',
+                    query: 'postgresQuery'
+                },
+                {
+                    dbType: 'sqlite',
+                    query: 'sqliteQuery'
+                },
+                {
+                    dbType: 'mysql',
+                    query: 'mysqlQuery'
+                }
+            ]
+        };
+
+        beforeEach(() => {
+            factory.createClass = createMock;
+            datastore.query.resolves(returnValue);
+        });
+
+        it('calls datastore query with given config params', () =>
+            factory.query(queryConfig).then(() => {
+                assert.calledWith(datastore.query, queryConfig);
+            }));
+
+        it('calls datastore query with default config params', () =>
+            factory.query(defaultQueryConfig).then(() => {
+                assert.calledWith(datastore.query, {
+                    table: 'base',
+                    queries: defaultQueryConfig.queries,
+                    rawResponse: false,
+                    replacements: {}
+                });
+            }));
+
+        it('calls datastore query without rawResponse and returns correct values', () =>
+            factory.query(queryConfig).then(arr => {
+                assert.isArray(arr);
+                assert.equal(arr.length, 2);
+                arr.forEach(model => {
+                    assert.instanceOf(model, Base);
+                    assert.deepEqual(model.datastore, datastore);
+                    assert.deepEqual(model.scm, scm);
+                });
+            }));
+
+        it('calls datastore query with rawResponse and returns correct values', () => {
+            queryConfig.rawResponse = true;
+
+            return factory.query(queryConfig).then(arr => {
+                assert.isArray(arr);
+                assert.equal(arr.length, 2);
+                arr.forEach(value => {
+                    assert.notInstanceOf(value, Base);
+                });
+                assert.deepEqual(arr[0], returnValue[0]);
+                assert.deepEqual(arr[1], returnValue[1]);
+            });
+        });
+
+        it('rejects with a failure from the datastore query', () => {
+            const errorMessage = 'genericScanError';
+
+            datastore.query.rejects(new Error(errorMessage));
+
+            return factory
+                .query()
+                .then(() => {
+                    assert.fail('this should not happen');
+                })
+                .catch(err => {
+                    assert.strictEqual(err.message, errorMessage);
+                });
         });
     });
 });
