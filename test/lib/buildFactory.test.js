@@ -1028,37 +1028,37 @@ describe('Build Factory', () => {
                     {
                         jobId: 1,
                         jobName: 'name',
-                        Status: 'SUCCESS',
+                        status: 'SUCCESS',
                         id: 1
                     },
                     {
                         jobId: 1,
                         jobName: 'name',
-                        Status: 'ABORTED',
+                        status: 'ABORTED',
                         id: 2
                     },
                     {
                         jobId: 2,
                         jobName: 'name',
-                        Status: 'SUCCESS',
+                        status: 'SUCCESS',
                         id: 3
                     },
                     {
                         jobId: 3,
                         jobName: 'name',
-                        Status: 'SUCCESS',
+                        status: 'SUCCESS',
                         id: 4
                     },
                     {
                         jobId: 2,
                         jobName: 'name',
-                        Status: 'SUCCESS',
+                        status: 'SUCCESS',
                         id: 5
                     },
                     {
                         jobId: 1,
                         jobName: 'name',
-                        Status: 'SUCCESS',
+                        status: 'SUCCESS',
                         id: 6
                     }
                 ],
@@ -1072,19 +1072,19 @@ describe('Build Factory', () => {
                         {
                             jobId: 1,
                             jobName: 'name',
-                            Status: 'SUCCESS',
+                            status: 'SUCCESS',
                             id: 1
                         },
                         {
                             jobId: 1,
                             jobName: 'name',
-                            Status: 'ABORTED',
+                            status: 'ABORTED',
                             id: 2
                         },
                         {
                             jobId: 1,
                             jobName: 'name',
-                            Status: 'SUCCESS',
+                            status: 'SUCCESS',
                             id: 6
                         }
                     ]
@@ -1095,13 +1095,13 @@ describe('Build Factory', () => {
                         {
                             jobId: 2,
                             jobName: 'name',
-                            Status: 'SUCCESS',
+                            status: 'SUCCESS',
                             id: 3
                         },
                         {
                             jobId: 2,
                             jobName: 'name',
-                            Status: 'SUCCESS',
+                            status: 'SUCCESS',
                             id: 5
                         }
                     ]
@@ -1112,7 +1112,7 @@ describe('Build Factory', () => {
                         {
                             jobId: 3,
                             jobName: 'name',
-                            Status: 'SUCCESS',
+                            status: 'SUCCESS',
                             id: 4
                         }
                     ]
