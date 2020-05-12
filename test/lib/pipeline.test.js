@@ -1119,13 +1119,12 @@ describe('Pipeline Model', () => {
         });
 
         it('returns error if fails to get configuration', () => {
-            const error = new Error('fails to get config');
+            const error = new Error('pipelineId:123: Failed to fetch screwdriver.yaml.');
 
             scmMock.getFile.rejects(error);
-            parserMock.rejects(error);
 
             return pipeline.syncPR(1).catch(err => {
-                assert.deepEqual(err, error);
+                assert.equal(err.message, error.message);
             });
         });
 
@@ -1995,25 +1994,30 @@ describe('Pipeline Model', () => {
                 });
         });
 
-        it('converts fetch errors to empty file', () => {
+        it('returns error on scm fetch errors', async () => {
             scmMock.getFile.rejects(new Error('cannotgetit'));
 
-            return pipeline.getConfiguration({ ref: 'foobar' }).then(config => {
-                assert.equal(config, 'DEFAULT_YAML');
-                assert.calledWith(scmMock.getFile, {
-                    scmUri,
-                    scmContext,
-                    path: 'screwdriver.yaml',
-                    token: 'foo',
-                    ref: 'foobar',
-                    scmRepo: {
-                        branch: 'branch',
-                        url: 'https://host/owner/repo/tree/branch',
-                        name: 'owner/repo'
-                    }
-                });
-                assert.calledWith(parserMock, '', templateFactoryMock);
+            let errMessage = '';
+
+            try {
+                await pipeline.getConfiguration({ ref: 'foobar' });
+            } catch (err) {
+                errMessage = err.message;
+            }
+
+            assert.calledWith(scmMock.getFile, {
+                scmUri,
+                scmContext,
+                path: 'screwdriver.yaml',
+                token: 'foo',
+                ref: 'foobar',
+                scmRepo: {
+                    branch: 'branch',
+                    url: 'https://host/owner/repo/tree/branch',
+                    name: 'owner/repo'
+                }
             });
+            assert.equal(errMessage, 'pipelineId:123: Failed to fetch screwdriver.yaml.');
         });
     });
 
