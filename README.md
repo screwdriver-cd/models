@@ -347,8 +347,8 @@ factory.get({ jobId, number }).then(model => {
 });
 ```
 
-| Parameter        | Type  |  Description |
-| :-------------   | :---- | :-------------|
+| Parameter      | Type  |  Description   |
+| :------------- | :---- | :------------- |
 | id | Number | The unique ID for the build |
 | config.jobId | Number | The unique ID for a job |
 | config.number | Number | build number |
@@ -361,12 +361,25 @@ factory.getBuildStatuses(config).then(statuses => {
 });
 ```
 
-| Parameter        | Type  |  Required | Description |
-| :-------------   | :---- | :-------------|  :-------------|
+| Parameter       | Type  |  Required | Description |
+| :-------------  | :---- | :-------- | :---------- |
 | config        | Object | Yes | Configuration Object |
 | config.jobIds | Array | Yes | Ids of the jobs to get build statuses for |
 | config.numBuilds | Number | No | Number of build statuses to return per job |
 | config.offset | Number | No | Number of build statuses to skip per job|
+
+#### Get Latest Builds
+Get the latest builds for each job in corresponding groupEventId.
+```js
+factory.getLatestBuilds(config).then(latestBuilds => {
+    // do stuff with the latest builds
+});
+```
+
+| Parameter      | Type  |  Required | Description |
+| :------------- | :---- | :-------- | :---------- |
+| config        | Object | Yes | Configuration Object |
+| config.groupEventId | Number | Yes | Group event ID to get latest builds for |
 
 ### Build Model
 ```js
@@ -403,7 +416,7 @@ Update  a commit status
 model.updateCommitStatus(pipeline)
 ```
 | Parameter        | Type  |  Description |
-| :-------------   | :---- | :-------------|
+| :-------------   | :---- | :----------- |
 | pipeline        | Pipeline | The pipeline that this build belongs to |
 
 #### Start a build
