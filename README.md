@@ -368,6 +368,19 @@ factory.getBuildStatuses(config).then(statuses => {
 | config.numBuilds | Number | No | Number of build statuses to return per job |
 | config.offset | Number | No | Number of build statuses to skip per job|
 
+#### Get Latest Builds
+Get the latest builds for each job in corresponding groupEventId.
+```js
+factory.getLatestBuilds(config).then(latestBuilds => {
+    // do stuff with the latest builds
+});
+```
+
+| Parameter        | Type  |  Required | Description |
+| :-------------   | :---- | :-------------|  :-------------|
+| config        | Object | Yes | Configuration Object |
+| config.groupEventId | Number | Yes | Group event ID to get latest builds for |
+
 ### Build Model
 ```js
 'use strict';
