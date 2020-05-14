@@ -34,11 +34,15 @@ describe('Build Factory', () => {
     let jobFactoryMock;
     let userFactoryMock;
     let stepFactoryMock;
+    let templateFactoryMock;
+    let pipelineFactoryMock;
     let buildClusterFactoryMock;
     let scmMock;
     let factory;
     let jobFactory;
     let stepFactory;
+    let templateFactory;
+    let pipelineFactory;
     let buildClusterFactory;
     const apiUri = 'https://notify.com/some/endpoint';
     const tokenGen = sinon.stub();
@@ -113,6 +117,12 @@ describe('Build Factory', () => {
         stepFactoryMock = {
             create: sinon.stub().resolves({})
         };
+        templateFactoryMock = {
+            get: sinon.stub()
+        };
+        pipelineFactoryMock = {
+            get: sinon.stub()
+        };
         buildClusterFactoryMock = {
             list: sinon.stub().resolves([]),
             get: sinon.stub().resolves(externalBuildCluster)
@@ -129,6 +139,12 @@ describe('Build Factory', () => {
         stepFactory = {
             getInstance: sinon.stub().returns(stepFactoryMock)
         };
+        templateFactory = {
+            getInstance: sinon.stub().returns(templateFactoryMock)
+        };
+        pipelineFactory = {
+            getInstance: sinon.stub().returns(pipelineFactoryMock)
+        };
         buildClusterFactory = {
             getInstance: sinon.stub().returns(buildClusterFactoryMock)
         };
@@ -143,6 +159,8 @@ describe('Build Factory', () => {
 
         mockery.registerMock('./jobFactory', jobFactory);
         mockery.registerMock('./stepFactory', stepFactory);
+        mockery.registerMock('./templateFactory', templateFactory);
+        mockery.registerMock('./pipelineFactory', pipelineFactory);
         mockery.registerMock('./userFactory', {
             getInstance: sinon.stub().returns(userFactoryMock)
         });
@@ -347,6 +365,8 @@ describe('Build Factory', () => {
                 })
                 .then(() => {
                     assert.callCount(stepFactoryMock.create, steps.length);
+                    assert.callCount(templateFactoryMock.get, 0);
+                    assert.callCount(pipelineFactoryMock.get, 0);
                     assert.calledWith(datastore.save, saveConfig);
                 });
         });
