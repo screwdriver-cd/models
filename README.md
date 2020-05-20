@@ -354,7 +354,8 @@ factory.get({ jobId, number }).then(model => {
 | config.number | Number | build number |
 
 #### Get Build Statuses
-Get the statuses of the newest builds of jobs based on job ids. Can specify the number of build statuses desired per job id, this defaults to 1. Can specify the number of build statuses to skip per job id, this defaults to 0.
+Get the statuses of the newest builds of jobs based on job ids (in ascending order). Can specify the number of build statuses desired per job id, this defaults to 1. 
+Can specify the number of build statuses to skip per job id, this defaults to 0.
 ```js
 factory.getBuildStatuses(config).then(statuses => {
     // do stuff with the statuses

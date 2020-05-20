@@ -1164,7 +1164,7 @@ describe('Build Factory', () => {
             });
         });
 
-        it('Query with default config params', () => {
+        it('queries with default config params', () => {
             datastore.query.resolves([[], []]);
 
             delete config.numBuilds;
