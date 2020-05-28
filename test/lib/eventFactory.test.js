@@ -192,7 +192,9 @@ describe('Event Factory', () => {
                         { name: '~commit:branch' },
                         { name: '~commit:/^.*$/' },
                         { name: '~pr:branch' },
-                        { name: '~pr:/^.*$/' }
+                        { name: '~pr:/^.*$/' },
+                        { name: '~tag' },
+                        { name: '~release' }
                     ],
                     edges: [
                         { src: '~sd@123:main', dest: 'main' },
@@ -206,7 +208,9 @@ describe('Event Factory', () => {
                         { src: '~commit:/^.*$/', dest: 'commit-wild' },
                         { src: '~pr:branch', dest: 'main' },
                         { src: '~pr:branch', dest: 'pr-branch' },
-                        { src: '~pr:/^.*$/', dest: 'pr-wild' }
+                        { src: '~pr:/^.*$/', dest: 'pr-wild' },
+                        { src: '~tag', dest: 'main' },
+                        { src: '~release', dest: 'main' }
                     ]
                 },
                 causeMessage: 'Started by github:stjohn',
@@ -233,7 +237,9 @@ describe('Event Factory', () => {
                         { name: '~commit:branch' },
                         { name: '~commit:/^.*$/' },
                         { name: '~pr:branch' },
-                        { name: '~pr:/^.*$/' }
+                        { name: '~pr:/^.*$/' },
+                        { name: '~tag' },
+                        { name: '~release' }
                     ],
                     edges: [
                         { src: '~sd@123:main', dest: 'main' },
@@ -247,7 +253,9 @@ describe('Event Factory', () => {
                         { src: '~commit:/^.*$/', dest: 'commit-wild' },
                         { src: '~pr:branch', dest: 'main' },
                         { src: '~pr:branch', dest: 'pr-branch' },
-                        { src: '~pr:/^.*$/', dest: 'pr-wild' }
+                        { src: '~pr:/^.*$/', dest: 'pr-wild' },
+                        { src: '~tag', dest: 'main' },
+                        { src: '~release', dest: 'main' }
                     ]
                 },
                 getConfiguration: sinon.stub().resolves(PARSED_YAML),
@@ -1463,6 +1471,90 @@ describe('Event Factory', () => {
             });
         });
 
+        it('should start build from ~tag if changed file is not in sourcePaths', () => {
+            jobsMock = [
+                {
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [
+                        {
+                            requires: ['~tag'],
+                            sourcePaths: ['src/test/']
+                        }
+                    ],
+                    state: 'ENABLED'
+                }
+            ];
+            syncedPipelineMock.update = sinon.stub().resolves({
+                getJobs: sinon.stub().resolves(jobsMock),
+                branch: Promise.resolve('branch')
+            });
+
+            config.startFrom = '~tag';
+            config.webhooks = true;
+            config.changedFiles = ['README.md', 'root/src/test/file'];
+
+            return eventFactory.create(config).then(model => {
+                assert.instanceOf(model, Event);
+                assert.calledOnce(buildFactoryMock.create);
+                assert.calledWith(
+                    buildFactoryMock.create.firstCall,
+                    sinon.match({
+                        meta: {
+                            commit: {
+                                ...commit,
+                                changedFiles: 'README.md,root/src/test/file'
+                            }
+                        }
+                    })
+                );
+                assert.deepEqual(buildFactoryMock.create.args[0][0].environment, {});
+            });
+        });
+
+        it('should start build from ~release if changed file is not in sourcePaths', () => {
+            jobsMock = [
+                {
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [
+                        {
+                            requires: ['~release'],
+                            sourcePaths: ['src/test/']
+                        }
+                    ],
+                    state: 'ENABLED'
+                }
+            ];
+            syncedPipelineMock.update = sinon.stub().resolves({
+                getJobs: sinon.stub().resolves(jobsMock),
+                branch: Promise.resolve('branch')
+            });
+
+            config.startFrom = '~release';
+            config.webhooks = true;
+            config.changedFiles = ['README.md', 'root/src/test/file'];
+
+            return eventFactory.create(config).then(model => {
+                assert.instanceOf(model, Event);
+                assert.calledOnce(buildFactoryMock.create);
+                assert.calledWith(
+                    buildFactoryMock.create.firstCall,
+                    sinon.match({
+                        meta: {
+                            commit: {
+                                ...commit,
+                                changedFiles: 'README.md,root/src/test/file'
+                            }
+                        }
+                    })
+                );
+                assert.deepEqual(buildFactoryMock.create.args[0][0].environment, {});
+            });
+        });
+
         it('should start build if changed file is in rootDir', () => {
             jobsMock = [
                 {
@@ -1502,6 +1594,90 @@ describe('Event Factory', () => {
                     })
                 );
                 assert.deepEqual(buildFactoryMock.create.args[0][0].environment, { SD_SOURCE_PATH: 'root/src/test/' });
+            });
+        });
+
+        it('should start build from ~tag even if changed file is not in rootDir', () => {
+            jobsMock = [
+                {
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [
+                        {
+                            requires: ['~tag']
+                        }
+                    ],
+                    state: 'ENABLED'
+                }
+            ];
+            syncedPipelineMock.update = sinon.stub().resolves({
+                getJobs: sinon.stub().resolves(jobsMock),
+                branch: Promise.resolve('branch'),
+                rootDir: Promise.resolve('root/src/test')
+            });
+
+            config.startFrom = '~tag';
+            config.webhooks = true;
+            config.changedFiles = ['README.md', 'src/test/file'];
+
+            return eventFactory.create(config).then(model => {
+                assert.instanceOf(model, Event);
+                assert.calledOnce(buildFactoryMock.create);
+                assert.calledWith(
+                    buildFactoryMock.create.firstCall,
+                    sinon.match({
+                        meta: {
+                            commit: {
+                                ...commit,
+                                changedFiles: 'README.md,src/test/file'
+                            }
+                        }
+                    })
+                );
+                assert.deepEqual(buildFactoryMock.create.args[0][0].environment, {});
+            });
+        });
+
+        it('should start build from ~release even if changed file is not in rootDir', () => {
+            jobsMock = [
+                {
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [
+                        {
+                            requires: ['~release']
+                        }
+                    ],
+                    state: 'ENABLED'
+                }
+            ];
+            syncedPipelineMock.update = sinon.stub().resolves({
+                getJobs: sinon.stub().resolves(jobsMock),
+                branch: Promise.resolve('branch'),
+                rootDir: Promise.resolve('root/src/test')
+            });
+
+            config.startFrom = '~release';
+            config.webhooks = true;
+            config.changedFiles = ['README.md', 'src/test/file'];
+
+            return eventFactory.create(config).then(model => {
+                assert.instanceOf(model, Event);
+                assert.calledOnce(buildFactoryMock.create);
+                assert.calledWith(
+                    buildFactoryMock.create.firstCall,
+                    sinon.match({
+                        meta: {
+                            commit: {
+                                ...commit,
+                                changedFiles: 'README.md,src/test/file'
+                            }
+                        }
+                    })
+                );
+                assert.deepEqual(buildFactoryMock.create.args[0][0].environment, {});
             });
         });
 
