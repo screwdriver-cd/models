@@ -1463,6 +1463,36 @@ describe('Event Factory', () => {
             });
         });
 
+        it('should not start build if changed file is in exclude soucePath', () => {
+            jobsMock = [
+                {
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [
+                        {
+                            requires: ['~pr'],
+                            sourcePaths: ['src/test/', '!src/test/foo']
+                        }
+                    ],
+                    state: 'ENABLED'
+                }
+            ];
+            syncedPipelineMock.update = sinon.stub().resolves({
+                getJobs: sinon.stub().resolves(jobsMock),
+                branch: Promise.resolve('branch')
+            });
+
+            config.startFrom = 'main';
+            config.webhooks = true;
+            config.changedFiles = ['README.md', 'src/test/foo'];
+
+            return eventFactory.create(config).then(event => {
+                assert.notCalled(buildFactoryMock.create);
+                assert.equal(event.builds, null);
+            });
+        });
+
         it('should start build if changed file is in rootDir', () => {
             jobsMock = [
                 {
