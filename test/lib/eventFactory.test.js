@@ -1463,7 +1463,7 @@ describe('Event Factory', () => {
             });
         });
 
-        it('should not start build if changed file is in exclude soucePath', () => {
+        it('should not start build if changed file is in exclude sourcePath', () => {
             jobsMock = [
                 {
                     id: 1,
