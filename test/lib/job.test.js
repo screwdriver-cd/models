@@ -420,6 +420,13 @@ describe('Job Model', () => {
     describe('update', () => {
         it('Update a job', () => {
             job.state = 'DISABLED';
+            job.permutations = [
+                {
+                    annotations: {
+                        'screwdriver.cd/buildPeriodically': 'H * * * *'
+                    }
+                }
+            ];
 
             datastore.update.resolves(null);
 
@@ -429,7 +436,8 @@ describe('Job Model', () => {
                     job,
                     tokenGen,
                     apiUri,
-                    isUpdate: true
+                    isUpdate: true,
+                    token: 'tokengenerated'
                 });
                 assert.calledOnce(datastore.update);
             });
