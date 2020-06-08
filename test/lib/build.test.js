@@ -258,7 +258,8 @@ describe('Build Model', () => {
                     annotations,
                     freezeWindows,
                     blockedBy: [jobId],
-                    pipelineId
+                    pipelineId,
+                    token: 'equivalentToOneQuarter'
                 });
                 delete stepsMock[0].update;
                 delete stepsMock[1].update;
@@ -332,7 +333,8 @@ describe('Build Model', () => {
                     annotations,
                     freezeWindows,
                     blockedBy: [jobId],
-                    pipelineId
+                    pipelineId,
+                    token: 'equivalentToOneQuarter'
                 });
                 delete stepsMock[0].update;
                 delete stepsMock[1].update;
@@ -414,7 +416,8 @@ describe('Build Model', () => {
                     annotations,
                     freezeWindows,
                     blockedBy: [jobId],
-                    pipelineId
+                    pipelineId,
+                    token: 'equivalentToOneQuarter'
                 });
 
                 delete stepsMock[0].update;
@@ -474,7 +477,8 @@ describe('Build Model', () => {
                     annotations,
                     freezeWindows,
                     blockedBy: [jobId],
-                    pipelineId
+                    pipelineId,
+                    token: 'equivalentToOneQuarter'
                 });
 
                 delete stepsMock[0].update;
@@ -514,7 +518,8 @@ describe('Build Model', () => {
                     annotations,
                     freezeWindows,
                     blockedBy: [jobId],
-                    pipelineId
+                    pipelineId,
+                    token: 'equivalentToOneQuarter'
                 });
 
                 delete stepsMock[0].update;
@@ -604,7 +609,8 @@ describe('Build Model', () => {
                     annotations,
                     freezeWindows,
                     blockedBy: [jobId],
-                    pipelineId
+                    pipelineId,
+                    token: 'equivalentToOneQuarter'
                 });
             });
         });
@@ -635,7 +641,8 @@ describe('Build Model', () => {
                     annotations,
                     startTime: build.startTime,
                     buildStatus: build.status,
-                    pipelineId
+                    pipelineId,
+                    token: 'equivalentToOneQuarter'
                 });
                 assert.notCalled(executorMock.stop);
             });
@@ -668,7 +675,8 @@ describe('Build Model', () => {
                     annotations,
                     freezeWindows,
                     blockedBy: [jobId],
-                    pipelineId
+                    pipelineId,
+                    token: 'equivalentToOneQuarter'
                 });
 
                 // Completed step is not modified
@@ -814,7 +822,8 @@ describe('Build Model', () => {
                     annotations,
                     freezeWindows,
                     blockedBy: [jobId],
-                    pipelineId
+                    pipelineId,
+                    token: 'equivalentToOneQuarter'
                 });
             }));
 
@@ -828,7 +837,8 @@ describe('Build Model', () => {
                     annotations,
                     freezeWindows,
                     blockedBy: [jobId],
-                    pipelineId
+                    pipelineId,
+                    token: 'equivalentToOneQuarter'
                 });
                 assert.calledWith(executorMock.stopTimer, {
                     buildId,
@@ -836,7 +846,8 @@ describe('Build Model', () => {
                     annotations,
                     freezeWindows,
                     blockedBy: [jobId],
-                    pipelineId
+                    pipelineId,
+                    token: 'equivalentToOneQuarter'
                 });
             });
         });
@@ -852,7 +863,8 @@ describe('Build Model', () => {
                     annotations,
                     freezeWindows,
                     blockedBy: [jobId],
-                    pipelineId
+                    pipelineId,
+                    token: 'equivalentToOneQuarter'
                 });
             });
         });

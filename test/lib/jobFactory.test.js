@@ -174,6 +174,7 @@ describe('Job Factory', () => {
                         pipeline: { id: 9999 },
                         job: model,
                         tokenGen: tokenGenFunc,
+                        token: 'bar',
                         apiUri
                     });
                 });
