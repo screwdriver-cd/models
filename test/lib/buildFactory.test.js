@@ -4,7 +4,7 @@ const { assert } = require('chai');
 const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
 const sinon = require('sinon');
-const BuildQueries = require('../../lib/rawQueries.js').BuildFactoryQueries;
+const { STATUS_QUERY, LATEST_BUILD_QUERY, getQueries } = require('../../lib/rawQueries.js');
 let startStub;
 let getStepsStub;
 
@@ -1124,11 +1124,7 @@ describe('Build Factory', () => {
             ];
 
             queryConfig = {
-                queries: [
-                    { dbType: 'postgres', query: BuildQueries.statusesQuery },
-                    { dbType: 'sqlite', query: BuildQueries.statusesQuery },
-                    { dbType: 'mysql', query: BuildQueries.statusesQueryMySql }
-                ],
+                queries: getQueries('', STATUS_QUERY),
                 replacements: {
                     jobIds: config.jobIds,
                     offset: 1,
@@ -1205,11 +1201,7 @@ describe('Build Factory', () => {
             ];
 
             queryConfig = {
-                queries: [
-                    { dbType: 'postgres', query: BuildQueries.latestBuildQuery },
-                    { dbType: 'sqlite', query: BuildQueries.latestBuildQuery },
-                    { dbType: 'mysql', query: BuildQueries.latestBuildQueryMySql }
-                ],
+                queries: getQueries('', LATEST_BUILD_QUERY),
                 replacements: {
                     groupEventId: config.groupEventId
                 },
