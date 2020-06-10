@@ -1135,7 +1135,7 @@ describe('Build Factory', () => {
             };
         });
 
-        it('return build statuses for jobs', () => {
+        it.only('return build statuses for jobs', () => {
             datastore.query.resolves(returnValue);
 
             return factory.getBuildStatuses(config).then(buildStatuses => {
