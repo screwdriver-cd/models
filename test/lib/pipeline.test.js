@@ -361,7 +361,7 @@ describe('Pipeline Model', () => {
 
     describe('addWebhook', () => {
         beforeEach(() => {
-            getUserPermissionMocks({ username: 'batman', push: true });
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true });
             getUserPermissionMocks({ username: 'robin', push: true });
             pipeline.admins = { batman: true, robin: true };
             pipeline.update = sinon.stub().resolves('foo');
@@ -378,6 +378,19 @@ describe('Pipeline Model', () => {
                     webhookUrl: 'https://api.screwdriver.cd/v4/webhooks'
                 });
             });
+        });
+
+        it('rejects if there is no admins', () => {
+            // scmMock.addWebhook.rejects(new Error('error adding webhooks'));
+            getUserPermissionMocks({ username: 'batman', push: true });
+
+            return pipeline.addWebhook('https://api.screwdriver.cd/v4/webhooks').then(
+                () => assert.fail('should not get here'),
+                err => {
+                    assert.instanceOf(err, Error);
+                    assert.equal(err.message, 'Pipeline has no repository admins');
+                }
+            );
         });
 
         it('rejects if there is a failure to update the webhook', () => {
