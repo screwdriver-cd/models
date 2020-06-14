@@ -917,6 +917,56 @@ describe('Event Factory', () => {
                 });
             });
 
+            it('should create build if startFrom is ~release:releaseName', () => {
+                const releaseWorkflow = {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: '~release:releaseName' },
+                        { name: 'release' }
+                    ],
+                    edges: [{ src: '~release:releaseName', dest: 'release' }]
+                };
+
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'release',
+                        permutations: [
+                            {
+                                requires: ['~release:releaseName']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    }
+                ];
+
+                syncedPipelineMock.workflowGraph = releaseWorkflow;
+                syncedPipelineMock.getJobs = sinon.stub().resolves(jobsMock);
+                syncedPipelineMock.update = sinon.stub().resolves({
+                    getJobs: sinon.stub().resolves(jobsMock),
+                    branch: Promise.resolve('branch')
+                });
+                config.startFrom = '~release:releaseName';
+
+                return eventFactory.create(config).then(model => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.calledOnce(buildFactoryMock.create);
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 1
+                        })
+                    );
+                });
+            });
+
             it('should create build if startFrom is ~tag', () => {
                 const tagWorkflow = {
                     nodes: [{ name: '~pr' }, { name: '~commit' }, { name: '~tag' }, { name: 'tag' }],
@@ -944,6 +994,51 @@ describe('Event Factory', () => {
                     branch: Promise.resolve('branch')
                 });
                 config.startFrom = '~tag';
+
+                return eventFactory.create(config).then(model => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.calledOnce(buildFactoryMock.create);
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 1
+                        })
+                    );
+                });
+            });
+
+            it('should create build if startFrom is ~tag:tagName', () => {
+                const tagWorkflow = {
+                    nodes: [{ name: '~pr' }, { name: '~commit' }, { name: '~tag:tagName' }, { name: 'tag' }],
+                    edges: [{ src: '~tag:tagName', dest: 'tag' }]
+                };
+
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'tag',
+                        permutations: [
+                            {
+                                requires: ['~tag:tagName']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    }
+                ];
+
+                syncedPipelineMock.workflowGraph = tagWorkflow;
+                syncedPipelineMock.getJobs = sinon.stub().resolves(jobsMock);
+                syncedPipelineMock.update = sinon.stub().resolves({
+                    getJobs: sinon.stub().resolves(jobsMock),
+                    branch: Promise.resolve('branch')
+                });
+                config.startFrom = '~tag:tagName';
 
                 return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
