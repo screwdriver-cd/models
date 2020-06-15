@@ -874,8 +874,17 @@ describe('Event Factory', () => {
 
             it('should create build if startFrom is ~release', () => {
                 const releaseWorkflow = {
-                    nodes: [{ name: '~pr' }, { name: '~commit' }, { name: '~release' }, { name: 'release' }],
-                    edges: [{ src: '~release', dest: 'release' }]
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: '~release' },
+                        { name: 'release' },
+                        { name: '~release:releaseName' }
+                    ],
+                    edges: [
+                        { src: '~release', dest: 'release' },
+                        { src: '~release:releaseName', dest: 'release' }
+                    ]
                 };
 
                 jobsMock = [
@@ -886,6 +895,17 @@ describe('Event Factory', () => {
                         permutations: [
                             {
                                 requires: ['~release']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 2,
+                        pipelineId: 8765,
+                        name: 'release',
+                        permutations: [
+                            {
+                                requires: ['~release:releaseName']
                             }
                         ],
                         state: 'ENABLED'
@@ -905,13 +925,21 @@ describe('Event Factory', () => {
                     assert.notCalled(jobFactoryMock.create);
                     assert.notCalled(syncedPipelineMock.syncPR);
                     assert.calledOnce(pipelineMock.sync);
-                    assert.calledOnce(buildFactoryMock.create);
+                    assert.calledTwice(buildFactoryMock.create);
                     assert.calledWith(
                         buildFactoryMock.create,
                         sinon.match({
                             parentBuildId: 12345,
                             eventId: model.id,
                             jobId: 1
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 2
                         })
                     );
                 });
@@ -969,8 +997,17 @@ describe('Event Factory', () => {
 
             it('should create build if startFrom is ~tag', () => {
                 const tagWorkflow = {
-                    nodes: [{ name: '~pr' }, { name: '~commit' }, { name: '~tag' }, { name: 'tag' }],
-                    edges: [{ src: '~tag', dest: 'tag' }]
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: '~tag' },
+                        { name: 'tag' },
+                        { name: '~tag:tagName' }
+                    ],
+                    edges: [
+                        { src: '~tag', dest: 'tag' },
+                        { src: '~tag:tagName', dest: 'tag' }
+                    ]
                 };
 
                 jobsMock = [
@@ -981,6 +1018,17 @@ describe('Event Factory', () => {
                         permutations: [
                             {
                                 requires: ['~tag']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 2,
+                        pipelineId: 8765,
+                        name: 'tag',
+                        permutations: [
+                            {
+                                requires: ['~tag:tagName']
                             }
                         ],
                         state: 'ENABLED'
@@ -1000,13 +1048,21 @@ describe('Event Factory', () => {
                     assert.notCalled(jobFactoryMock.create);
                     assert.notCalled(syncedPipelineMock.syncPR);
                     assert.calledOnce(pipelineMock.sync);
-                    assert.calledOnce(buildFactoryMock.create);
+                    assert.calledTwice(buildFactoryMock.create);
                     assert.calledWith(
                         buildFactoryMock.create,
                         sinon.match({
                             parentBuildId: 12345,
                             eventId: model.id,
                             jobId: 1
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 2
                         })
                     );
                 });
