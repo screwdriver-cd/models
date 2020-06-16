@@ -965,9 +965,7 @@ describe('Build Model', () => {
                         scmContext: pipelineMockB.scmContext
                     },
                     tokenGen,
-                    pipelineId,
-                    isPR: false,
-                    prParentJobId
+                    pipelineId
                 });
 
                 assert.calledWith(
@@ -1022,9 +1020,7 @@ describe('Build Model', () => {
                         id: pipelineMockB.id,
                         scmContext: pipelineMockB.scmContext
                     },
-                    pipelineId,
-                    isPR: false,
-                    prParentJobId
+                    pipelineId
                 });
 
                 assert.calledWith(
@@ -1081,9 +1077,7 @@ describe('Build Model', () => {
                             id: pipelineMockB.id,
                             scmContext: pipelineMockB.scmContext
                         },
-                        pipelineId,
-                        isPR: false,
-                        prParentJobId
+                        pipelineId
                     });
 
                     assert.calledWith(
@@ -1161,8 +1155,7 @@ describe('Build Model', () => {
                         blockedBy: [blocking1.name, blocking2.name]
                     }
                 ],
-                isPR: () => true,
-                prParentJobId
+                isPR: () => false
             });
 
             return build.start().then(() => {
@@ -1186,9 +1179,7 @@ describe('Build Model', () => {
                         id: pipelineMockB.id,
                         scmContext: pipelineMockB.scmContext
                     },
-                    pipelineId,
-                    isPR: true,
-                    prParentJobId
+                    pipelineId
                 });
             });
         });
@@ -1277,9 +1268,7 @@ describe('Build Model', () => {
                         id: pipelineMockB.id,
                         scmContext: pipelineMockB.scmContext
                     },
-                    pipelineId: pipelineMockB.id,
-                    isPR: false,
-                    prParentJobId: undefined
+                    pipelineId: pipelineMockB.id
                 });
             });
         });
@@ -1359,9 +1348,7 @@ describe('Build Model', () => {
                         id: pipelineMockB.id,
                         scmContext: pipelineMockB.scmContext
                     },
-                    pipelineId: pipelineMockB.id,
-                    isPR: false,
-                    prParentJobId: undefined
+                    pipelineId: pipelineMockB.id
                 });
             });
         });
@@ -1407,9 +1394,7 @@ describe('Build Model', () => {
                         id: pipelineMockB.id,
                         scmContext: pipelineMockB.scmContext
                     },
-                    pipelineId: pipelineMockB.id,
-                    isPR: false,
-                    prParentJobId: undefined
+                    pipelineId: pipelineMockB.id
                 });
 
                 assert.calledWith(
