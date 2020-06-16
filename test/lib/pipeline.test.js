@@ -381,7 +381,6 @@ describe('Pipeline Model', () => {
         });
 
         it('rejects if there is no admins', () => {
-            // scmMock.addWebhook.rejects(new Error('error adding webhooks'));
             getUserPermissionMocks({ username: 'batman', push: true });
 
             return pipeline.addWebhook('https://api.screwdriver.cd/v4/webhooks').then(
