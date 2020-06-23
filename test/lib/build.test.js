@@ -467,6 +467,20 @@ describe('Build Model', () => {
             });
         });
 
+        it('throws error if steps missing', () => {
+            build.status = 'SUCCESS';
+            stepFactoryMock.list.resolves([]);
+
+            return build
+                .update()
+                .then(() => {
+                    assert.fail('nope');
+                })
+                .catch(err => {
+                    assert.equal('Steps do not exist', err.message);
+                });
+        });
+
         it('aborts running steps, and sets an endTime', () => {
             build.status = 'ABORTED';
 
