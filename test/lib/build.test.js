@@ -962,7 +962,8 @@ describe('Build Model', () => {
                     token,
                     pipeline: {
                         id: pipelineMockB.id,
-                        scmContext: pipelineMockB.scmContext
+                        scmContext: pipelineMockB.scmContext,
+                        configPipelineId: pipelineMockB.configPipelineId
                     },
                     tokenGen,
                     pipelineId,
@@ -1020,7 +1021,8 @@ describe('Build Model', () => {
                     tokenGen,
                     pipeline: {
                         id: pipelineMockB.id,
-                        scmContext: pipelineMockB.scmContext
+                        scmContext: pipelineMockB.scmContext,
+                        configPipelineId: pipelineMockB.configPipelineId
                     },
                     pipelineId,
                     isPR: false,
@@ -1079,7 +1081,8 @@ describe('Build Model', () => {
                         tokenGen,
                         pipeline: {
                             id: pipelineMockB.id,
-                            scmContext: pipelineMockB.scmContext
+                            scmContext: pipelineMockB.scmContext,
+                            configPipelineId: pipelineMockB.configPipelineId
                         },
                         pipelineId,
                         isPR: false,
@@ -1184,7 +1187,8 @@ describe('Build Model', () => {
                     tokenGen,
                     pipeline: {
                         id: pipelineMockB.id,
-                        scmContext: pipelineMockB.scmContext
+                        scmContext: pipelineMockB.scmContext,
+                        configPipelineId: pipelineMockB.configPipelineId
                     },
                     pipelineId,
                     isPR: true,
@@ -1227,6 +1231,7 @@ describe('Build Model', () => {
                 id: pipelineId,
                 scmUri,
                 scmContext,
+                configPipelineId,
                 admin: Promise.resolve(adminUser),
                 token: Promise.resolve('foo'),
                 getJobs: sinon.stub().resolves([
@@ -1275,7 +1280,8 @@ describe('Build Model', () => {
                     tokenGen,
                     pipeline: {
                         id: pipelineMockB.id,
-                        scmContext: pipelineMockB.scmContext
+                        scmContext: pipelineMockB.scmContext,
+                        configPipelineId: pipelineMockB.configPipelineId
                     },
                     pipelineId: pipelineMockB.id,
                     isPR: false,
@@ -1309,6 +1315,7 @@ describe('Build Model', () => {
                 id: pipelineId,
                 scmUri,
                 scmContext,
+                configPipelineId,
                 admin: Promise.resolve(adminUser),
                 token: Promise.resolve('foo'),
                 getJobs: sinon.stub().resolves([
@@ -1357,7 +1364,8 @@ describe('Build Model', () => {
                     tokenGen,
                     pipeline: {
                         id: pipelineMockB.id,
-                        scmContext: pipelineMockB.scmContext
+                        scmContext: pipelineMockB.scmContext,
+                        configPipelineId: pipelineMockB.configPipelineId
                     },
                     pipelineId: pipelineMockB.id,
                     isPR: false,
@@ -1405,7 +1413,8 @@ describe('Build Model', () => {
                     tokenGen,
                     pipeline: {
                         id: pipelineMockB.id,
-                        scmContext: pipelineMockB.scmContext
+                        scmContext: pipelineMockB.scmContext,
+                        configPipelineId: pipelineMockB.configPipelineId
                     },
                     pipelineId: pipelineMockB.id,
                     isPR: false,
