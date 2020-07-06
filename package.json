@@ -48,6 +48,7 @@
   "dependencies": {
     "async": "^2.6.3",
     "base64url": "^3.0.1",
+    "boom": "^7.3.0",
     "compare-versions": "^3.6.0",
     "dayjs": "^1.8.27",
     "deepcopy": "^2.0.0",
