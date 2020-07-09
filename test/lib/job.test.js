@@ -444,7 +444,6 @@ describe('Job Model', () => {
         });
 
         it('remove periodic job', () => {
-            job.state = 'DISABLED';
             job.permutations = [{}];
 
             datastore.update.resolves(null);
