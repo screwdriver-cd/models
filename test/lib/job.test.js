@@ -442,6 +442,17 @@ describe('Job Model', () => {
                 assert.calledOnce(datastore.update);
             });
         });
+
+        it('remove periodic job', () => {
+            job.state = 'DISABLED';
+            job.permutations = [{}];
+
+            datastore.update.resolves(null);
+
+            return job.update().then(() => {
+                assert.calledOnce(executorMock.stopPeriodic);
+            });
+        });
     });
 
     describe('remove', () => {
