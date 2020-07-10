@@ -16,6 +16,7 @@ describe('Job Model', () => {
     const token = 'tokengenerated';
     const apiUri = 'https://notify.com/some/endpoint';
     let pipelineFactoryMock;
+    let jobFactoryMock;
     let buildFactoryMock;
     let JobModel;
     let datastore;
@@ -111,6 +112,14 @@ describe('Job Model', () => {
             }
         ])
     };
+    const jobMock = Promise.resolve({
+        name: 'job',
+        permutations: [
+            {
+                annotations: { 'screwdriver.cd/buildPeriodically': 'H 9 * * *' }
+            }
+        ]
+    });
 
     before(() => {
         mockery.enable({
@@ -128,6 +137,10 @@ describe('Job Model', () => {
             get: sinon.stub().resolves(pipelineMock)
         };
 
+        jobFactoryMock = {
+            get: sinon.stub().resolves(jobMock)
+        };
+
         buildFactoryMock = {
             list: sinon.stub().resolves(null)
         };
@@ -142,6 +155,10 @@ describe('Job Model', () => {
 
         mockery.registerMock('./pipelineFactory', {
             getInstance: sinon.stub().returns(pipelineFactoryMock)
+        });
+
+        mockery.registerMock('./jobFactory', {
+            getInstance: sinon.stub().returns(jobFactoryMock)
         });
 
         mockery.registerMock('./buildFactory', {
