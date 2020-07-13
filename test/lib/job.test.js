@@ -460,6 +460,25 @@ describe('Job Model', () => {
             });
         });
 
+        it('no change of buildPeriodically', () => {
+            job.permutations = [
+                {
+                    annotations: {
+                        'screwdriver.cd/buildPeriodically': 'H 9 * * *'
+                    }
+                }
+            ];
+
+            datastore.update.resolves(null);
+
+            return job.update().then(() => {
+                assert.notCalled(executorMock.startPeriodic);
+                assert.notCalled(executorMock.stopPeriodic);
+                assert.calledOnce(datastore.update);
+                assert.notCalled(datastore.remove);
+            });
+        });
+
         it('remove periodic job', () => {
             job.permutations = [{}];
 
@@ -467,6 +486,7 @@ describe('Job Model', () => {
 
             return job.update().then(() => {
                 assert.calledOnce(executorMock.stopPeriodic);
+                assert.calledOnce(datastore.update);
             });
         });
     });
