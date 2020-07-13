@@ -16,6 +16,7 @@ describe('Job Model', () => {
     const token = 'tokengenerated';
     const apiUri = 'https://notify.com/some/endpoint';
     let pipelineFactoryMock;
+    let jobFactoryMock;
     let buildFactoryMock;
     let JobModel;
     let datastore;
@@ -111,6 +112,14 @@ describe('Job Model', () => {
             }
         ])
     };
+    const jobMock = Promise.resolve({
+        name: 'job',
+        permutations: [
+            {
+                annotations: { 'screwdriver.cd/buildPeriodically': 'H 9 * * *' }
+            }
+        ]
+    });
 
     before(() => {
         mockery.enable({
@@ -128,6 +137,10 @@ describe('Job Model', () => {
             get: sinon.stub().resolves(pipelineMock)
         };
 
+        jobFactoryMock = {
+            get: sinon.stub().resolves(jobMock)
+        };
+
         buildFactoryMock = {
             list: sinon.stub().resolves(null)
         };
@@ -142,6 +155,10 @@ describe('Job Model', () => {
 
         mockery.registerMock('./pipelineFactory', {
             getInstance: sinon.stub().returns(pipelineFactoryMock)
+        });
+
+        mockery.registerMock('./jobFactory', {
+            getInstance: sinon.stub().returns(jobFactoryMock)
         });
 
         mockery.registerMock('./buildFactory', {
@@ -439,6 +456,36 @@ describe('Job Model', () => {
                     isUpdate: true,
                     token: 'tokengenerated'
                 });
+                assert.calledOnce(datastore.update);
+            });
+        });
+
+        it('no change of buildPeriodically', () => {
+            job.permutations = [
+                {
+                    annotations: {
+                        'screwdriver.cd/buildPeriodically': 'H 9 * * *'
+                    }
+                }
+            ];
+
+            datastore.update.resolves(null);
+
+            return job.update().then(() => {
+                assert.notCalled(executorMock.startPeriodic);
+                assert.notCalled(executorMock.stopPeriodic);
+                assert.calledOnce(datastore.update);
+                assert.notCalled(datastore.remove);
+            });
+        });
+
+        it('remove periodic job', () => {
+            job.permutations = [{}];
+
+            datastore.update.resolves(null);
+
+            return job.update().then(() => {
+                assert.calledOnce(executorMock.stopPeriodic);
                 assert.calledOnce(datastore.update);
             });
         });
