@@ -2105,6 +2105,63 @@ describe('Event Factory', () => {
                 assert.equal(config.meta.parameters.user.value, 'adong');
             });
         });
+
+        it('should have default parameters if parameter with description enabled', () => {
+            const pipelineWithParameter = {
+                parameters: {
+                    user: {
+                        value: 'adong',
+                        description: 'User name'
+                    }
+                },
+                ...syncedPipelineMock
+            };
+
+            pipelineMock.sync = sinon.stub().resolves(pipelineWithParameter);
+            config.startFrom = 'main';
+
+            return eventFactory.create(config).then(model => {
+                assert.equal(model.meta.parameters.user.value, 'adong');
+                assert.equal(config.meta.parameters.user.value, 'adong');
+            });
+        });
+
+        it('should have first default parameters if it has multiple parameters', () => {
+            const pipelineWithParameter = {
+                parameters: {
+                    user: ['adong', 'batman']
+                },
+                ...syncedPipelineMock
+            };
+
+            pipelineMock.sync = sinon.stub().resolves(pipelineWithParameter);
+            config.startFrom = 'main';
+
+            return eventFactory.create(config).then(model => {
+                assert.equal(model.meta.parameters.user.value, 'adong');
+                assert.equal(config.meta.parameters.user.value, 'adong');
+            });
+        });
+
+        it('should have first default parameters if it has multiple parameters with description', () => {
+            const pipelineWithParameter = {
+                parameters: {
+                    user: {
+                        value: ['adong', 'batman'],
+                        description: 'User name'
+                    }
+                },
+                ...syncedPipelineMock
+            };
+
+            pipelineMock.sync = sinon.stub().resolves(pipelineWithParameter);
+            config.startFrom = 'main';
+
+            return eventFactory.create(config).then(model => {
+                assert.equal(model.meta.parameters.user.value, 'adong');
+                assert.equal(config.meta.parameters.user.value, 'adong');
+            });
+        });
     });
 
     describe('getInstance', () => {
