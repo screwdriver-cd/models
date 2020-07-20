@@ -2143,7 +2143,7 @@ describe('Event Factory', () => {
             });
         });
 
-        it('should have first default parameters if it has multiple parameter with description', () => {
+        it('should have first default parameters if it has multiple parameters with description', () => {
             const pipelineWithParameter = {
                 parameters: {
                     user: {
