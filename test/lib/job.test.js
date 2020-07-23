@@ -435,8 +435,35 @@ describe('Job Model', () => {
     });
 
     describe('update', () => {
-        it('Update a job', () => {
+        it('Update a job but not periodic', () => {
             job.state = 'DISABLED';
+            job.permutations = [
+                {
+                    annotations: {
+                        'screwdriver.cd/buildPeriodically': 'H * * * *'
+                    }
+                }
+            ];
+
+            datastore.update.resolves(null);
+            pipelineFactoryMock.get.resolves({
+                ...pipelineMock,
+                id: 9876
+            });
+
+            return job.update().then(() => {
+                assert.notCalled(executorMock.startPeriodic);
+                assert.calledWith(executorMock.stopPeriodic, {
+                    pipelineId: 9876,
+                    jobId: build1.jobId,
+                    token: 'tokengenerated'
+                });
+                assert.calledOnce(datastore.update);
+            });
+        });
+
+        it('starts a periodic job', () => {
+            job.state = 'ENABLED';
             job.permutations = [
                 {
                     annotations: {
@@ -448,6 +475,7 @@ describe('Job Model', () => {
             datastore.update.resolves(null);
 
             return job.update().then(() => {
+                assert.notCalled(executorMock.stopPeriodic);
                 assert.calledWith(executorMock.startPeriodic, {
                     pipeline: pipelineMock,
                     job,
@@ -482,6 +510,17 @@ describe('Job Model', () => {
         it('remove periodic job', () => {
             job.permutations = [{}];
 
+            datastore.update.resolves(null);
+
+            return job.update().then(() => {
+                assert.calledOnce(executorMock.stopPeriodic);
+                assert.calledOnce(datastore.update);
+            });
+        });
+
+        it('remove archived periodic job', () => {
+            job.permutations = [{}];
+            job.archived = true;
             datastore.update.resolves(null);
 
             return job.update().then(() => {
