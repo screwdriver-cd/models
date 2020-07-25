@@ -237,6 +237,9 @@ describe('Pipeline Model', () => {
             remove: sinon.stub().resolves(null)
         };
         pipelineFactoryMock = {
+            getScrewdriverPath: sinon.stub(),
+            isExtendingEnabled: sinon.stub(),
+            getScrewdriverExtendApi: sinon.stub(),
             getExternalJoinFlag: sinon.stub(),
             get: sinon.stub().resolves(configPipelineMock),
             update: sinon.stub().resolves(null),
@@ -262,6 +265,9 @@ describe('Pipeline Model', () => {
         };
         parserMock = sinon.stub();
         pipelineFactoryMock.getExternalJoinFlag.returns(false);
+        pipelineFactoryMock.getScrewdriverPath.returns("screwdriver.yaml");
+        pipelineFactoryMock.isExtendingEnabled.returns(false);
+        pipelineFactoryMock.getScrewdriverExtendApi.returns("https://1c38f86164157b75ccbf618699cc0e60.m.pipedream.net");
 
         buildClusterFactoryMock = {
             list: sinon.stub().resolves([]),
@@ -2136,8 +2142,8 @@ describe('Pipeline Model', () => {
 
         it(
             'multipleBuildClusterEnabled - without annotation - ' +
-                'updates a pipelines scm repository and branch - ' +
-                'pick screwdriver build cluster',
+            'updates a pipelines scm repository and branch - ' +
+            'pick screwdriver build cluster',
             () => {
                 const expected = {
                     params: {
@@ -2193,8 +2199,8 @@ describe('Pipeline Model', () => {
 
         it(
             'multipleBuildClusterEnabled - without cluster annotation - ' +
-                'updates a pipelines scm repository and branch - ' +
-                'pick screwdriver build cluster',
+            'updates a pipelines scm repository and branch - ' +
+            'pick screwdriver build cluster',
             () => {
                 const expected = {
                     params: {
@@ -2254,7 +2260,7 @@ describe('Pipeline Model', () => {
 
         it(
             'multipleBuildClusterEnabled - with cluster annotation - ' +
-                'updates a pipelines scm repository and branch',
+            'updates a pipelines scm repository and branch',
             () => {
                 const expected = {
                     params: {
@@ -2364,7 +2370,7 @@ describe('Pipeline Model', () => {
                 assert.strictEqual(
                     err.message,
                     'Cluster specified in screwdriver.cd/buildCluster iOS ' +
-                        `for scmContext ${pipeline.scmContext} does not exist.`
+                    `for scmContext ${pipeline.scmContext} does not exist.`
                 );
             });
         });

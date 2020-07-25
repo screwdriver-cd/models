@@ -5,7 +5,9 @@ const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
 
-class Pipeline {}
+class Pipeline {
+    // TestPipeline class
+}
 
 sinon.assert.expose(assert, { prefix: '' });
 
