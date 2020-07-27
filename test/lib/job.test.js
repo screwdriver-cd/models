@@ -528,6 +528,35 @@ describe('Job Model', () => {
                 assert.calledOnce(datastore.update);
             });
         });
+
+        it('state disabled->enabled should start periodic job', () => {
+            const oldJob = Object.assign({}, job);
+
+            oldJob.permutations = [
+                {
+                    annotations: {
+                        'screwdriver.cd/buildPeriodically': 'H 9 * * *'
+                    }
+                }
+            ];
+            oldJob.state = 'DISABLED';
+            jobFactoryMock.get.resolves(oldJob);
+
+            job.permutations = [
+                {
+                    annotations: {
+                        'screwdriver.cd/buildPeriodically': 'H 9 * * *'
+                    }
+                }
+            ];
+            job.state = 'ENABLED';
+            datastore.update.resolves(job);
+
+            return job.update().then(() => {
+                assert.calledOnce(executorMock.startPeriodic);
+                assert.calledOnce(datastore.update);
+            });
+        });
     });
 
     describe('remove', () => {
