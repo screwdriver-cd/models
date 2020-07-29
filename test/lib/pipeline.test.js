@@ -234,7 +234,8 @@ describe('Pipeline Model', () => {
             },
             configPipelineId: testId,
             update: sinon.stub().resolves(null),
-            remove: sinon.stub().resolves(null)
+            remove: sinon.stub().resolves(null),
+            sync: sinon.stub().resolves(null)
         };
         pipelineFactoryMock = {
             getExternalJoinFlag: sinon.stub(),
@@ -860,7 +861,7 @@ describe('Pipeline Model', () => {
                 assert.deepEqual(p.childPipelines.scmUrls, ['foo.git', 'bar.git']);
                 assert.calledWith(parserMock, 'yamlcontentwithscmurls', templateFactoryMock);
                 assert.calledOnce(pipelineFactoryMock.create);
-                assert.calledOnce(childPipelineMock.update);
+                assert.calledOnce(childPipelineMock.sync);
                 assert.calledOnce(childPipelineMock.remove);
             });
         });
