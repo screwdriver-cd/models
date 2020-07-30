@@ -435,8 +435,95 @@ describe('Job Model', () => {
     });
 
     describe('update', () => {
-        it('Update a job', () => {
+        it('Update a job and remove periodic, when job is disabled', () => {
             job.state = 'DISABLED';
+            job.permutations = [
+                {
+                    annotations: {
+                        'screwdriver.cd/buildPeriodically': 'H * * * *'
+                    }
+                }
+            ];
+
+            datastore.update.resolves(null);
+            pipelineFactoryMock.get.resolves({
+                ...pipelineMock,
+                id: 9876
+            });
+
+            return job.update().then(() => {
+                assert.notCalled(executorMock.startPeriodic);
+                assert.calledWith(executorMock.stopPeriodic, {
+                    pipelineId: 9876,
+                    jobId: build1.jobId,
+                    token: 'tokengenerated'
+                });
+                assert.calledOnce(datastore.update);
+            });
+        });
+
+        it('does not start periodic when new and old settings are undefined and job is enabled', () => {
+            const oldJob = Object.assign({}, job);
+
+            oldJob.permutations = [
+                {
+                    annotations: {}
+                }
+            ];
+            oldJob.state = 'DISABLED';
+            jobFactoryMock.get.resolves(oldJob);
+
+            job.permutations = [
+                {
+                    annotations: {}
+                }
+            ];
+            job.state = 'ENABLED';
+            datastore.update.resolves(job);
+
+            return job.update().then(() => {
+                assert.notCalled(executorMock.startPeriodic);
+                assert.notCalled(executorMock.stopPeriodic);
+                assert.calledOnce(datastore.update);
+            });
+        });
+
+        it('removes periodic when new and old settings are undefined and job is disabled', () => {
+            const oldJob = Object.assign({}, job);
+
+            oldJob.permutations = [
+                {
+                    annotations: {}
+                }
+            ];
+            oldJob.state = 'ENABLED';
+            jobFactoryMock.get.resolves(oldJob);
+            pipelineFactoryMock.get.resolves({
+                ...pipelineMock,
+                id: 9876
+            });
+
+            job.permutations = [
+                {
+                    annotations: {}
+                }
+            ];
+            job.state = 'DISABLED';
+            datastore.update.resolves(job);
+
+            return job.update().then(() => {
+                assert.notCalled(executorMock.startPeriodic);
+                assert.calledWith(executorMock.stopPeriodic, {
+                    pipelineId: 9876,
+                    jobId: build1.jobId,
+                    token: 'tokengenerated'
+                });
+                assert.calledOnce(datastore.update);
+            });
+        });
+
+        it('starts a periodic job when new periodic settings is added', () => {
+            job.state = 'ENABLED';
             job.permutations = [
                 {
                     annotations: {
@@ -448,6 +535,7 @@ describe('Job Model', () => {
             datastore.update.resolves(null);
 
             return job.update().then(() => {
+                assert.notCalled(executorMock.stopPeriodic);
                 assert.calledWith(executorMock.startPeriodic, {
                     pipeline: pipelineMock,
                     job,
@@ -479,13 +567,53 @@ describe('Job Model', () => {
             });
         });
 
-        it('remove periodic job', () => {
+        it('remove periodic job if settings is removed', () => {
             job.permutations = [{}];
 
             datastore.update.resolves(null);
 
             return job.update().then(() => {
                 assert.calledOnce(executorMock.stopPeriodic);
+                assert.calledOnce(datastore.update);
+            });
+        });
+
+        it('remove archived periodic job', () => {
+            job.permutations = [{}];
+            job.archived = true;
+            datastore.update.resolves(null);
+
+            return job.update().then(() => {
+                assert.calledOnce(executorMock.stopPeriodic);
+                assert.calledOnce(datastore.update);
+            });
+        });
+
+        it('state disabled->enabled should start periodic job', () => {
+            const oldJob = Object.assign({}, job);
+
+            oldJob.permutations = [
+                {
+                    annotations: {
+                        'screwdriver.cd/buildPeriodically': 'H 9 * * *'
+                    }
+                }
+            ];
+            oldJob.state = 'DISABLED';
+            jobFactoryMock.get.resolves(oldJob);
+
+            job.permutations = [
+                {
+                    annotations: {
+                        'screwdriver.cd/buildPeriodically': 'H 9 * * *'
+                    }
+                }
+            ];
+            job.state = 'ENABLED';
+            datastore.update.resolves(job);
+
+            return job.update().then(() => {
+                assert.calledOnce(executorMock.startPeriodic);
                 assert.calledOnce(datastore.update);
             });
         });
