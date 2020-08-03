@@ -1,6 +1,6 @@
 {
   "name": "screwdriver-models",
-  "version": "23.0.0",
+  "version": "24.0.0",
   "description": "Screwdriver models",
   "main": "index.js",
   "scripts": {
@@ -46,18 +46,18 @@
     "sinon": "^7.5.0"
   },
   "dependencies": {
-    "async": "^2.6.3",
+    "@hapi/boom": "^9.1.0",
+    "@hapi/hoek": "^9.0.4",
+    "@hapi/iron": "^6.0.0",
+    "async": "^3.2.0",
     "base64url": "^3.0.1",
-    "boom": "^7.3.0",
     "compare-versions": "^3.6.0",
     "dayjs": "^1.8.27",
     "deepcopy": "^2.0.0",
     "docker-parse-image": "^3.0.1",
-    "hoek": "^5.0.4",
-    "iron": "^5.0.6",
     "lodash": "^4.17.15",
     "screwdriver-config-parser": "^5.3.3",
-    "screwdriver-data-schema": "^19.10.1",
+    "screwdriver-data-schema": "git://github.com/screwdriver-cd/data-schema.git#hapi-v19",
     "screwdriver-logger": "^1.0.0",
     "screwdriver-workflow-parser": "^2.0.3"
   }

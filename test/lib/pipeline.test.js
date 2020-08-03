@@ -3,7 +3,7 @@
 const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
-const hoek = require('hoek');
+const hoek = require('@hapi/hoek');
 const schema = require('screwdriver-data-schema');
 const rewire = require('rewire');
 const dayjs = require('dayjs');
@@ -644,11 +644,13 @@ describe('Pipeline Model', () => {
             jobFactoryMock.list.resolves(jobs);
             jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
             jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
             return pipeline.sync().then(() => {
                 assert.deepEqual(pipeline.annotations, {
                     'beta.screwdriver.cd/executor': 'screwdriver-executor-vm',
-                    'screwdriver.cd/chainPR': true
+                    'screwdriver.cd/chainPR': true,
+                    'screwdriver.cd/buildCluster': 'sd1'
                 });
             });
         });

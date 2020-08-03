@@ -33,7 +33,7 @@ describe('Secret Model', () => {
             defaults: {}
         };
 
-        mockery.registerMock('iron', ironMock);
+        mockery.registerMock('@hapi/iron', ironMock);
 
         // eslint-disable-next-line global-require
         BaseModel = require('../../lib/base');

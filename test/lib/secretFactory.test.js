@@ -45,7 +45,7 @@ describe('Secret Factory', () => {
             defaults: 'defaults'
         };
 
-        mockery.registerMock('iron', ironMock);
+        mockery.registerMock('@hapi/iron', ironMock);
 
         // eslint-disable-next-line global-require
         Secret = require('../../lib/secret');

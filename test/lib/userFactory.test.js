@@ -41,7 +41,7 @@ describe('User Factory', () => {
         };
 
         mockery.registerMock('screwdriver-hashr', hashaMock);
-        mockery.registerMock('iron', ironMock);
+        mockery.registerMock('@hapi/iron', ironMock);
         mockery.registerMock('./tokenFactory', {
             getInstance: sinon.stub().returns(tokenFactoryMock)
         });
