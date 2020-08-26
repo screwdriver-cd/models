@@ -37,13 +37,13 @@
   },
   "devDependencies": {
     "chai": "^4.2.0",
-    "eslint": "^6.8.0",
+    "eslint": "^7.7.0",
     "eslint-config-screwdriver": "^5.0.3",
-    "mocha": "^7.1.0",
+    "mocha": "^8.1.2",
     "mockery": "^2.0.0",
-    "rewire": "^4.0.1",
+    "rewire": "^5.0.0",
     "nyc": "^15.0.0",
-    "sinon": "^7.5.0"
+    "sinon": "^9.0.3"
   },
   "dependencies": {
     "@hapi/boom": "^9.1.0",
