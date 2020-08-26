@@ -1,6 +1,6 @@
 {
   "name": "screwdriver-models",
-  "version": "24.0.0",
+  "version": "28.0.0",
   "description": "Screwdriver models",
   "main": "index.js",
   "scripts": {
@@ -56,9 +56,9 @@
     "deepcopy": "^2.0.0",
     "docker-parse-image": "^3.0.1",
     "lodash": "^4.17.15",
-    "screwdriver-config-parser": "^5.3.3",
-    "screwdriver-data-schema": "git://github.com/screwdriver-cd/data-schema.git#hapi-v19",
+    "screwdriver-config-parser": "^6.0.0",
+    "screwdriver-data-schema": "^20.0.0",
     "screwdriver-logger": "^1.0.0",
-    "screwdriver-workflow-parser": "^2.0.3"
+    "screwdriver-workflow-parser": "^3.0.0"
   }
 }
