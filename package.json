@@ -1,11 +1,11 @@
 {
   "name": "screwdriver-models",
-  "version": "23.0.0",
+  "version": "28.0.0",
   "description": "Screwdriver models",
   "main": "index.js",
   "scripts": {
     "pretest": "eslint . --quiet",
-    "test": "nyc --report-dir ./artifacts/coverage --reporter=lcov mocha --recursive --timeout 4000 --retries 1 --exit --color true",
+    "test": "nyc --report-dir ./artifacts/coverage --reporter=lcov mocha --recursive --timeout 10000 --retries 1 --exit --color true",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "repository": {
@@ -37,28 +37,28 @@
   },
   "devDependencies": {
     "chai": "^4.2.0",
-    "eslint": "^6.8.0",
+    "eslint": "^7.7.0",
     "eslint-config-screwdriver": "^5.0.3",
-    "mocha": "^7.1.0",
+    "mocha": "^8.1.2",
     "mockery": "^2.0.0",
-    "rewire": "^4.0.1",
+    "rewire": "^5.0.0",
     "nyc": "^15.0.0",
-    "sinon": "^7.5.0"
+    "sinon": "^9.0.3"
   },
   "dependencies": {
+    "@hapi/boom": "^9.1.0",
+    "@hapi/hoek": "^9.0.4",
+    "@hapi/iron": "^6.0.0",
     "async": "^2.6.3",
     "base64url": "^3.0.1",
-    "boom": "^7.3.0",
     "compare-versions": "^3.6.0",
     "dayjs": "^1.8.27",
     "deepcopy": "^2.0.0",
     "docker-parse-image": "^3.0.1",
-    "hoek": "^5.0.4",
-    "iron": "^5.0.6",
     "lodash": "^4.17.15",
-    "screwdriver-config-parser": "^5.3.3",
-    "screwdriver-data-schema": "^19.10.1",
+    "screwdriver-config-parser": "^6.0.0",
+    "screwdriver-data-schema": "^20.0.0",
     "screwdriver-logger": "^1.0.0",
-    "screwdriver-workflow-parser": "^2.0.3"
+    "screwdriver-workflow-parser": "^3.0.0"
   }
 }

@@ -3,7 +3,7 @@
 const { assert } = require('chai');
 const sinon = require('sinon');
 const mockery = require('mockery');
-const hoek = require('hoek');
+const hoek = require('@hapi/hoek');
 const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
