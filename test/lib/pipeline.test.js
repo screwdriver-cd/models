@@ -1,3 +1,6 @@
+/* eslint-disable max-lines-per-function */
+/* eslint-disable max-statements */
+
 'use strict';
 
 const { assert } = require('chai');
@@ -13,6 +16,7 @@ const PARSED_YAML = require('../data/parser');
 const PARSED_YAML_WITH_REQUIRES = require('../data/parserWithRequires');
 const PARSED_YAML_PR = require('../data/parserWithWorkflowGraphPR');
 const PARSED_YAML_WITH_ERRORS = require('../data/parserWithErrors');
+const PARSED_YAML_WITH_SUBSCRIBE = require('../data/parserWithSubscribedScms.json');
 const SCM_URLS = ['foo.git'];
 const EXTERNAL_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML, {
     annotations: { 'beta.screwdriver.cd/executor': 'screwdriver-executor-k8s' },
@@ -360,7 +364,7 @@ describe('Pipeline Model', () => {
         });
     };
 
-    describe('addWebhook', () => {
+    describe('addWebhooks', () => {
         beforeEach(() => {
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
             getUserPermissionMocks({ username: 'robin', push: true });
@@ -371,11 +375,12 @@ describe('Pipeline Model', () => {
         it('updates the webhook', () => {
             scmMock.addWebhook.resolves(null);
 
-            return pipeline.addWebhook('https://api.screwdriver.cd/v4/webhooks').then(() => {
+            return pipeline.addWebhooks('https://api.screwdriver.cd/v4/webhooks').then(() => {
                 assert.calledWith(scmMock.addWebhook, {
                     scmUri,
                     scmContext,
                     token: 'foo',
+                    actions: ['push', 'pull_request', 'create', 'release'],
                     webhookUrl: 'https://api.screwdriver.cd/v4/webhooks'
                 });
             });
@@ -384,7 +389,7 @@ describe('Pipeline Model', () => {
         it('rejects if there is no admins', () => {
             getUserPermissionMocks({ username: 'batman', push: true });
 
-            return pipeline.addWebhook('https://api.screwdriver.cd/v4/webhooks').then(
+            return pipeline.addWebhooks('https://api.screwdriver.cd/v4/webhooks').then(
                 () => assert.fail('should not get here'),
                 err => {
                     assert.instanceOf(err, Error);
@@ -396,7 +401,7 @@ describe('Pipeline Model', () => {
         it('rejects if there is a failure to update the webhook', () => {
             scmMock.addWebhook.rejects(new Error('error adding webhooks'));
 
-            return pipeline.addWebhook('https://api.screwdriver.cd/v4/webhooks').then(
+            return pipeline.addWebhooks('https://api.screwdriver.cd/v4/webhooks').then(
                 () => assert.fail('should not get here'),
                 err => {
                     assert.instanceOf(err, Error);
@@ -608,6 +613,32 @@ describe('Pipeline Model', () => {
                         { src: 'publish', dest: 'sd@123:main' }
                     ]
                 });
+            });
+        });
+
+        it('subscribed pipelines from config gets added to the model', () => {
+            jobs = [];
+            sinon.spy(pipeline, 'update');
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainModelMock);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishModelMock);
+            jobFactoryMock.create.withArgs(externalMock).resolves(externalModelMock);
+            pipelineFactoryMock.scm.parseUrl
+                .withArgs(
+                    sinon.match({
+                        checkoutUrl: 'foo.git'
+                    })
+                )
+                .resolves('foo');
+            parserMock
+                .withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock)
+                .resolves(PARSED_YAML_WITH_SUBSCRIBE);
+
+            return pipeline.sync().then(() => {
+                assert.deepEqual(pipeline.subscribedScmUrls, ['foo']);
+                assert.deepEqual(pipeline.subscribedScmUrlsWithActions, [
+                    { actions: ['commit', 'tags', 'release'], scmUri: 'foo' }
+                ]);
             });
         });
 
