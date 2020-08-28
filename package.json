@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "pretest": "eslint . --quiet",
-    "test": "nyc --report-dir ./artifacts/coverage --reporter=lcov mocha --recursive --timeout 5000 --retries 1 --exit --color true",
+    "test": "nyc --report-dir ./artifacts/coverage --reporter=lcov mocha --recursive --timeout 10000 --retries 1 --exit --color true",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "repository": {

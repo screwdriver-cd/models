@@ -5,6 +5,7 @@ jobs:
     main:
         environment:
             SD_SONAR_OPTS: "-Dsonar.sources=lib -Dsonar.javascript.lcov.reportPath=artifacts/coverage/lcov.info"
+            NODE_OPTIONS: "--max_old_space_size=8192"
         requires: [~pr, ~commit]
         steps:
             - install: npm install
