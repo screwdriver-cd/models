@@ -2163,18 +2163,15 @@ describe('Event Factory', () => {
             });
         });
 
-        it('should should not call syncPRs and decorate commit with hook info', () => {
+        it('should should not call syncPRs and decorate commit with subscribed hook event', () => {
             pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
             config.subscribedEvent = true;
-            config.subscribedScmConfig = {
-                scmUri: 'github.com:7893:branch'
-            };
 
             return eventFactory.create(config).then(() => {
                 assert.notCalled(syncedPipelineMock.syncPRs);
                 assert.calledWith(scm.decorateCommit, {
-                    scmUri: 'github.com:7893:branch',
                     scmContext,
+                    scmUri: 'github.com:1234:branch',
                     sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
                     token: 'foo'
                 });
