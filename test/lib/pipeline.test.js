@@ -635,7 +635,6 @@ describe('Pipeline Model', () => {
                 .resolves(PARSED_YAML_WITH_SUBSCRIBE);
 
             return pipeline.sync().then(() => {
-                assert.deepEqual(pipeline.subscribedScmUrls, ['foo']);
                 assert.deepEqual(pipeline.subscribedScmUrlsWithActions, [
                     { actions: ['commit', 'tags', 'release'], scmUri: 'foo' }
                 ]);
