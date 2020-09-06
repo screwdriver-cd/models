@@ -616,7 +616,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('subscribed pipelines from config gets added to the model', () => {
+        it('adds subscribed pipelines from config to the model', () => {
             jobs = [];
             sinon.spy(pipeline, 'update');
             jobFactoryMock.list.resolves(jobs);
