@@ -380,7 +380,7 @@ describe('Pipeline Model', () => {
                     scmUri,
                     scmContext,
                     token: 'foo',
-                    actions: ['push', 'pull_request', 'create', 'release'],
+                    actions: [],
                     webhookUrl: 'https://api.screwdriver.cd/v4/webhooks'
                 });
             });
