@@ -1975,7 +1975,7 @@ describe('Pipeline Model', () => {
             pipeline.configPipelineId = 1;
 
             return pipeline.getConfiguration().then(config => {
-                assert.calledWith(configPipelineMock.getConfiguration, { ref: undefined });
+                assert.calledWith(configPipelineMock.getConfiguration, { id: 123, ref: undefined });
                 assert.equal(config, EXTERNAL_PARSED_YAML);
             });
         });
@@ -1989,6 +1989,7 @@ describe('Pipeline Model', () => {
                 })
                 .then(config => {
                     assert.calledWith(configPipelineMock.getConfiguration, {
+                        id: 123,
                         ref: 'bar'
                     });
                     assert.equal(config, EXTERNAL_PARSED_YAML);
