@@ -1,6 +1,3 @@
-/* eslint-disable max-lines-per-function */
-/* eslint-disable max-statements */
-
 'use strict';
 
 const { assert } = require('chai');
