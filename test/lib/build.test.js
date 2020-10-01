@@ -1693,14 +1693,14 @@ describe('Build Model', () => {
                 assert.deepStrictEqual(json, expected);
             }));
 
-        it('returns the JSON with steps sorted by step.createTime', () => {
+        it('always returns the JSON with steps sorted by step.id', () => {
             const configWithEndTime = { ...config };
 
             configWithEndTime.endTime = '2019-01-22T22:30: 00.000Z';
             build = new BuildModel(configWithEndTime);
 
             return build.toJsonWithSteps().then(json => {
-                const expected = { ...build.toJson(), steps: [step2, step3, step1] };
+                const expected = { ...build.toJson(), steps: [step1, step2, step3] };
 
                 assert.deepStrictEqual(json, expected);
             });
