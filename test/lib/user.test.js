@@ -11,7 +11,7 @@ describe('User Model', () => {
     const password = 'password';
     const token = 'token';
     const scmContext = 'github:github.com';
-    const settings = { display: { jobNameLength: 20 } };
+    const settings = { displayJobNameLength: 25 };
     let UserModel;
     let datastore;
     let scmMock;
@@ -215,6 +215,28 @@ describe('User Model', () => {
             return user.update().then(() => {
                 const data = user.getSettings();
 
+                assert.deepEqual(data, settings);
+            });
+        });
+    });
+
+    describe('updateSettings', () => {
+        beforeEach(() => {
+            user.settings = {};
+        });
+
+        it('updates default user settings', () => {
+            datastore.update.resolves({});
+
+            return user.updateSettings().then(data => {
+                assert.deepEqual(data, {});
+            });
+        });
+
+        it('updates user settings', () => {
+            datastore.update.resolves({ metricsDowntimeJobs: ['prod', 'beta'] });
+
+            return user.updateSettings(settings).then(data => {
                 assert.deepEqual(data, settings);
             });
         });
