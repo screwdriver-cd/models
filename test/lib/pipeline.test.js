@@ -256,6 +256,7 @@ describe('Pipeline Model', () => {
         };
         scmMock = {
             addWebhook: sinon.stub(),
+            getWebhookEventsMapping: sinon.stub().returns({ pr: 'pull_request' }),
             getFile: sinon.stub(),
             decorateUrl: sinon.stub().resolves(scmRepo),
             annotations: sinon.stub(),
