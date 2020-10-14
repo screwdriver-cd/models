@@ -2162,6 +2162,22 @@ describe('Event Factory', () => {
                 assert.equal(config.meta.parameters.user.value, 'adong');
             });
         });
+
+        it('should should not call syncPRs and decorate commit with subscribed hook event', () => {
+            pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
+            config.subscribedEvent = true;
+
+            return eventFactory.create(config).then(() => {
+                assert.notCalled(syncedPipelineMock.syncPRs);
+                assert.calledWith(scm.decorateCommit, {
+                    scmContext,
+                    scmUri: 'github.com:1234:branch',
+                    sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
+                    token: 'foo'
+                });
+                assert.notCalled(syncedPipelineMock.getConfiguration);
+            });
+        });
     });
 
     describe('getInstance', () => {
