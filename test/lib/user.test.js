@@ -11,6 +11,7 @@ describe('User Model', () => {
     const password = 'password';
     const token = 'token';
     const scmContext = 'github:github.com';
+    const settings = { displayJobNameLength: 25 };
     let UserModel;
     let datastore;
     let scmMock;
@@ -31,7 +32,8 @@ describe('User Model', () => {
     beforeEach(() => {
         datastore = {
             get: sinon.stub(),
-            save: sinon.stub()
+            save: sinon.stub(),
+            update: sinon.stub()
         };
         scmMock = {
             getPermissions: sinon.stub(),
@@ -196,6 +198,47 @@ describe('User Model', () => {
             const userDisplayName = user.getFullDisplayName();
 
             assert.deepEqual(userDisplayName, 'github.com:me');
+        });
+    });
+
+    describe('getSettings', () => {
+        it('gets default user settings', () => {
+            const data = user.getSettings();
+
+            assert.deepEqual(data, {});
+        });
+
+        it('gets user settings', () => {
+            datastore.update.resolves({});
+            user.settings = settings;
+
+            return user.update().then(() => {
+                const data = user.getSettings();
+
+                assert.deepEqual(data, settings);
+            });
+        });
+    });
+
+    describe('updateSettings', () => {
+        beforeEach(() => {
+            user.settings = {};
+        });
+
+        it('updates default user settings', () => {
+            datastore.update.resolves({});
+
+            return user.updateSettings().then(data => {
+                assert.deepEqual(data, {});
+            });
+        });
+
+        it('updates user settings', () => {
+            datastore.update.resolves({ metricsDowntimeJobs: ['prod', 'beta'] });
+
+            return user.updateSettings(settings).then(data => {
+                assert.deepEqual(data, settings);
+            });
         });
     });
 
