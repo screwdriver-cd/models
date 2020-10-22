@@ -2791,7 +2791,7 @@ describe('Pipeline Model', () => {
         });
     });
 
-    describe.only('get metrics', () => {
+    describe('get metrics', () => {
         const startTime = '2019-01-20T12:00:00.000Z';
         const endTime = '2019-01-30T12:00:00.000Z';
         const page = 1;
