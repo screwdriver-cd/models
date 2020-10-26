@@ -428,7 +428,7 @@ describe('Pipeline Model', () => {
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
             pipeline.admins = { batman: true, robin: true };
-            pipelineFactoryMock.create.resolves({ id: '98765' });
+            pipelineFactoryMock.create.resolves({ id: '98765', sync: sinon.stub().resolves({ id: '98765' }) });
             triggerFactoryMock.list.resolves([]);
             triggerFactoryMock.create.resolves(null);
 
@@ -2798,6 +2798,7 @@ describe('Pipeline Model', () => {
         const count = 2;
         const build11 = {
             id: 11,
+            jobId: 1,
             eventId: 1,
             startTime: '2019-01-22T21:08:00.000Z', // minStartTime for event1
             endTime: '2019-01-22T21:30:00.000Z',
@@ -2807,6 +2808,7 @@ describe('Pipeline Model', () => {
         };
         const build12 = {
             id: 12,
+            jobId: 2,
             eventId: 1,
             startTime: '2019-01-22T21:21:00.000Z',
             endTime: '2019-01-22T22:30:00.000Z', // maxEndTime for event1
@@ -2814,17 +2816,20 @@ describe('Pipeline Model', () => {
             imagePullTime: 30,
             queuedTime: 2
         };
-        const build21 = {
-            id: 21,
-            eventId: 2,
-            startTime: '2019-01-24T11:31:00.000Z',
-            endTime: '2019-01-24T12:20:00.000Z',
+        const build13 = {
+            id: 13,
+            jobId: 3,
+            eventId: 1,
+            startTime: '2019-01-22T21:21:00.000Z',
+            endTime: '2019-01-22T22:30:00.000Z', // maxEndTime for event1
             status: 'FAILURE',
-            imagePullTime: 40,
-            queuedTime: 3
+            imagePullTime: 30,
+            queuedTime: 2
         };
+        let build21;
         const build22 = {
             id: 22,
+            jobId: 1,
             eventId: 2,
             startTime: '2019-01-24T11:30:00.000Z', // minStartTime for event2
             endTime: '2019-01-24T15:30:00.000Z', // maxEndTime for event2
@@ -2840,6 +2845,16 @@ describe('Pipeline Model', () => {
         let metrics;
 
         beforeEach(() => {
+            build21 = {
+                id: 21,
+                jobId: 2,
+                eventId: 2,
+                startTime: '2019-01-24T11:31:00.000Z',
+                endTime: '2019-01-24T12:20:00.000Z',
+                status: 'SUCCESS',
+                imagePullTime: 40,
+                queuedTime: 3
+            };
             event1 = {
                 id: 1233,
                 causeMessage: 'Merged by batman',
@@ -2908,7 +2923,10 @@ describe('Pipeline Model', () => {
                     status: build12.status,
                     imagePullTime: build11.imagePullTime + build12.imagePullTime,
                     queuedTime: build11.queuedTime + build12.queuedTime,
-                    builds: [build11, build12]
+                    builds: [build11, build12],
+                    downtimeDuration: dayjs(new Date()).diff(dayjs(new Date(build12.endTime)), 'second'),
+                    isDowntimeEvent: true,
+                    maxEndTime: new Date(build12.endTime)
                 },
                 {
                     id: event2.id,
@@ -2920,7 +2938,9 @@ describe('Pipeline Model', () => {
                     status: build22.status,
                     imagePullTime: build21.imagePullTime + build22.imagePullTime,
                     queuedTime: build21.queuedTime + build22.queuedTime,
-                    builds: [build21, build22]
+                    builds: [build21, build22],
+                    isDowntimeEvent: false,
+                    maxEndTime: new Date(build22.endTime)
                 }
             ];
         });
@@ -2945,6 +2965,69 @@ describe('Pipeline Model', () => {
             eventFactoryMock.list.resolves([event1, event0, event2]);
 
             return pipeline.getMetrics({ startTime, endTime }).then(result => {
+                assert.calledWith(eventFactoryMock.list, eventListConfig);
+                assert.calledOnce(event1.getMetrics);
+                assert.calledOnce(event2.getMetrics);
+                assert.deepEqual(result, metrics);
+            });
+        });
+
+        it('generates metrics for specified downtime jobs', () => {
+            const eventListConfig = {
+                params: {
+                    pipelineId: 123,
+                    type: 'pipeline'
+                },
+                sort: 'ascending',
+                sortBy: 'id',
+                paginate: {
+                    page: DEFAULT_PAGE,
+                    count: MAX_COUNT
+                },
+                startTime,
+                endTime,
+                readOnly: true
+            };
+
+            event1.getMetrics = sinon.stub().resolves([build11, build12, build13]);
+            build21.status = 'FAILURE';
+
+            metrics = [
+                {
+                    id: event1.id,
+                    createTime: event1.createTime,
+                    sha: event1.sha,
+                    commit: event1.commit,
+                    causeMessage: event1.causeMessage,
+                    duration: duration1,
+                    status: build13.status,
+                    imagePullTime: build11.imagePullTime + build12.imagePullTime + build13.imagePullTime,
+                    queuedTime: build11.queuedTime + build12.queuedTime + build13.queuedTime,
+                    builds: [build11, build12, build13],
+                    downtimeDuration: dayjs(new Date(build22.endTime)).diff(dayjs(new Date(build13.endTime)), 'second'),
+                    isDowntimeEvent: true,
+                    maxEndTime: new Date(build13.endTime)
+                },
+                {
+                    id: event2.id,
+                    createTime: event2.createTime,
+                    sha: event2.sha,
+                    commit: event2.commit,
+                    causeMessage: event2.causeMessage,
+                    duration: duration2,
+                    status: build22.status,
+                    imagePullTime: build21.imagePullTime + build22.imagePullTime,
+                    queuedTime: build21.queuedTime + build22.queuedTime,
+                    builds: [build21, build22],
+                    downtimeDuration: dayjs(new Date()).diff(dayjs(new Date(build22.endTime)), 'second'),
+                    isDowntimeEvent: true,
+                    maxEndTime: new Date(build22.endTime)
+                }
+            ];
+
+            eventFactoryMock.list.resolves([event1, event0, event2]);
+
+            return pipeline.getMetrics({ startTime, endTime, downtimeJobs: [2, 3] }).then(result => {
                 assert.calledWith(eventFactoryMock.list, eventListConfig);
                 assert.calledOnce(event1.getMetrics);
                 assert.calledOnce(event2.getMetrics);
@@ -3178,7 +3261,7 @@ describe('Pipeline Model', () => {
         });
 
         it('does not fail if stats is missing', () => {
-            const build13 = {
+            const build14 = {
                 id: 13,
                 eventId: 1,
                 startTime: '2019-01-22T21:10:00.000Z',
@@ -3186,8 +3269,8 @@ describe('Pipeline Model', () => {
                 status: 'SUCCESS'
             };
 
-            event1.getMetrics = sinon.stub().resolves([build11, build12, build13]);
-            metrics[0].builds = [build11, build12, build13];
+            event1.getMetrics = sinon.stub().resolves([build11, build12, build14]);
+            metrics[0].builds = [build11, build12, build14];
 
             eventFactoryMock.list.resolves([event1, event2]);
 
@@ -3199,7 +3282,7 @@ describe('Pipeline Model', () => {
         });
 
         it('do not fail if queuedTime and imagePullTime are not there', () => {
-            const build13 = {
+            const build14 = {
                 id: 13,
                 eventId: 1,
                 startTime: '2019-01-22T21:10:00.000Z',
@@ -3207,8 +3290,8 @@ describe('Pipeline Model', () => {
                 status: 'SUCCESS'
             };
 
-            event1.getMetrics = sinon.stub().resolves([build13, build12, build11]);
-            metrics[0].builds = [build13, build12, build11];
+            event1.getMetrics = sinon.stub().resolves([build14, build12, build11]);
+            metrics[0].builds = [build14, build12, build11];
             eventFactoryMock.list.resolves([event1, event2]);
 
             return pipeline.getMetrics({ startTime, endTime }).then(result => {
