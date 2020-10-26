@@ -428,7 +428,7 @@ describe('Pipeline Model', () => {
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
             pipeline.admins = { batman: true, robin: true };
-            pipelineFactoryMock.create.resolves({ id: '98765' });
+            pipelineFactoryMock.create.resolves({ id: '98765', sync: sinon.stub().resolves({ id: '98765' }) });
             triggerFactoryMock.list.resolves([]);
             triggerFactoryMock.create.resolves(null);
 
