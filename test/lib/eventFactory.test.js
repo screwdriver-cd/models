@@ -1651,6 +1651,75 @@ describe('Event Factory', () => {
             });
         });
 
+        it('should not start build if changed file match exclude sourcePath', () => {
+            jobsMock = [
+                {
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [
+                        {
+                            requires: ['~pr'],
+                            sourcePaths: ['!src/test/', '!README.md']
+                        }
+                    ],
+                    state: 'ENABLED'
+                }
+            ];
+            syncedPipelineMock.update = sinon.stub().resolves({
+                getJobs: sinon.stub().resolves(jobsMock),
+                branch: Promise.resolve('branch')
+            });
+            config.startFrom = 'main';
+            config.webhooks = true;
+            config.changedFiles = ['README.md'];
+
+            return eventFactory.create(config).then(event => {
+                assert.notCalled(buildFactoryMock.create);
+                assert.equal(event.builds, null);
+            });
+        });
+
+        it('should start build if changed file does not match exclude sourcePath', () => {
+            jobsMock = [
+                {
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [
+                        {
+                            requires: ['~pr'],
+                            sourcePaths: ['!src/test/']
+                        }
+                    ],
+                    state: 'ENABLED'
+                }
+            ];
+            syncedPipelineMock.update = sinon.stub().resolves({
+                getJobs: sinon.stub().resolves(jobsMock),
+                branch: Promise.resolve('branch')
+            });
+            config.startFrom = 'main';
+            config.webhooks = true;
+            config.changedFiles = ['README.md'];
+
+            return eventFactory.create(config).then(model => {
+                assert.instanceOf(model, Event);
+                assert.calledOnce(buildFactoryMock.create);
+                assert.calledWith(
+                    buildFactoryMock.create.firstCall,
+                    sinon.match({
+                        meta: {
+                            commit: {
+                                ...commit,
+                                changedFiles: 'README.md'
+                            }
+                        }
+                    })
+                );
+            });
+        });
+
         it('should start build from ~tag if changed file is not in sourcePaths', () => {
             jobsMock = [
                 {
