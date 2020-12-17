@@ -91,6 +91,48 @@ describe('Template Factory', () => {
         });
     });
 
+    describe('getFullNameAndVersion', () => {
+        it('versionOrTag is exact version', () => {
+            const template = factory.getFullNameAndVersion('foo/bar@1.2.3');
+
+            assert.equal(template.templateName, 'foo/bar');
+            assert.equal(template.versionOrTag, '1.2.3');
+            assert.isOk(template.isExactVersion);
+            assert.isOk(template.isVersion);
+            assert.isNotOk(template.isTag);
+        });
+
+        it('versionOrTag is not exact version', () => {
+            const template = factory.getFullNameAndVersion('foo/bar@1.2');
+
+            assert.equal(template.templateName, 'foo/bar');
+            assert.equal(template.versionOrTag, '1.2');
+            assert.isNotOk(template.isExactVersion);
+            assert.isOk(template.isVersion);
+            assert.isNotOk(template.isTag);
+        });
+
+        it('versionOrTag is tag', () => {
+            const template = factory.getFullNameAndVersion('foo/bar@stable');
+
+            assert.equal(template.templateName, 'foo/bar');
+            assert.equal(template.versionOrTag, 'stable');
+            assert.isNotOk(template.isExactVersion);
+            assert.isNotOk(template.isVersion);
+            assert.isOk(template.isTag);
+        });
+
+        it('versionOrTag is empty', () => {
+            const template = factory.getFullNameAndVersion('foo/bar');
+
+            assert.equal(template.templateName, 'foo/bar');
+            assert.isUndefined(template.versionOrTag);
+            assert.isNotOk(template.isExactVersion);
+            assert.isNotOk(template.isVersion);
+            assert.isNotOk(template.isTag);
+        });
+    });
+
     describe('create', () => {
         const generatedId = 1234135;
         let expected;
