@@ -436,6 +436,16 @@ describe('Job Model', () => {
 
     describe('update', () => {
         it('Update a job and remove periodic, when job is disabled', () => {
+            const oldJob = Object.assign({}, job);
+
+            oldJob.permutations = [
+                {
+                    annotations: {}
+                }
+            ];
+            oldJob.state = 'ENABLED';
+            jobFactoryMock.get.resolves(oldJob);
+
             job.state = 'DISABLED';
             job.permutations = [
                 {
