@@ -436,6 +436,16 @@ describe('Job Model', () => {
 
     describe('update', () => {
         it('Update a job and remove periodic, when job is disabled', () => {
+            const oldJob = Object.assign({}, job);
+
+            oldJob.permutations = [
+                {
+                    annotations: {}
+                }
+            ];
+            oldJob.state = 'ENABLED';
+            jobFactoryMock.get.resolves(oldJob);
+
             job.state = 'DISABLED';
             job.permutations = [
                 {
@@ -549,6 +559,18 @@ describe('Job Model', () => {
         });
 
         it('no change of buildPeriodically', () => {
+            const oldJob = Object.assign({}, job);
+
+            oldJob.state = 'ENABLED';
+            oldJob.permutations = [
+                {
+                    annotations: {
+                        'screwdriver.cd/buildPeriodically': 'H 9 * * *'
+                    }
+                }
+            ];
+            jobFactoryMock.get.resolves(oldJob);
+
             job.permutations = [
                 {
                     annotations: {
