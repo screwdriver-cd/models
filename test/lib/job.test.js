@@ -559,6 +559,18 @@ describe('Job Model', () => {
         });
 
         it('no change of buildPeriodically', () => {
+            const oldJob = Object.assign({}, job);
+
+            oldJob.state = 'ENABLED';
+            oldJob.permutations = [
+                {
+                    annotations: {
+                        'screwdriver.cd/buildPeriodically': 'H 9 * * *'
+                    }
+                }
+            ];
+            jobFactoryMock.get.resolves(oldJob);
+
             job.permutations = [
                 {
                     annotations: {
