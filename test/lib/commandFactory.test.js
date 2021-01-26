@@ -48,7 +48,8 @@ describe('Command Factory', () => {
         datastore = {
             save: sinon.stub(),
             get: sinon.stub(),
-            scan: sinon.stub()
+            scan: sinon.stub(),
+            update: sinon.stub()
         };
         commandTagFactoryMock = {
             get: sinon.stub()
@@ -169,6 +170,7 @@ describe('Command Factory', () => {
 
             datastore.save.resolves(expected);
             datastore.scan.resolves([latest]);
+            datastore.update.resolves(latest);
 
             return factory
                 .create({
@@ -183,6 +185,13 @@ describe('Command Factory', () => {
                 })
                 .then(model => {
                     assert.instanceOf(model, Command);
+                    assert.calledWith(datastore.update, {
+                        table: 'commands',
+                        params: {
+                            id: 1234135,
+                            latest: false
+                        }
+                    });
                     Object.keys(expected).forEach(key => {
                         assert.strictEqual(model[key], expected[key]);
                     });
