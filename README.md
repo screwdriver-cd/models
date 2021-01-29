@@ -913,7 +913,8 @@ const config = {
     paginate {
         page: 1,
         count: 3
-    }
+    },
+    getCount: true
 }
 
 factory.list(config).then(templates => {
@@ -927,6 +928,7 @@ factory.list(config).then(templates => {
 | config.paginate.page | Number | The page for pagination |
 | config.paginate.count | Number | The count for pagination |
 | config.params | Object | fields to search on |
+| config.getCount | Boolean | Total count of record matching search param |
 
 ### Template Tag Model
 ```js

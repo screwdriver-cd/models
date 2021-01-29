@@ -404,6 +404,33 @@ describe('Base Factory', () => {
                 });
         });
 
+        it('handles scan that returns count', () => {
+            const dataWithCount = {
+                count: 2,
+                rows: [
+                    {
+                        id: 'data1',
+                        key: 'value1'
+                    },
+                    {
+                        id: 'data2',
+                        key: 'value2'
+                    }
+                ]
+            };
+
+            datastore.scan.resolves(dataWithCount);
+
+            return factory.list({ getCount: true }).then(data => {
+                assert.calledWith(datastore.scan, {
+                    table: 'base',
+                    params: {},
+                    getCount: true
+                });
+                assert.deepEqual(data, dataWithCount);
+            });
+        });
+
         it('handles when the scan does not return an array', () => {
             datastore.scan.resolves(null);
 
