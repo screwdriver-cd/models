@@ -266,4 +266,26 @@ describe('Pipeline Factory', () => {
             assert.isFalse(factory.getExternalJoinFlag());
         });
     });
+
+    describe('getNotificationsValidationErr', () => {
+        beforeEach(() => {
+            // eslint-disable-next-line global-require
+            PipelineFactory = require('../../lib/pipelineFactory');
+            factory = new PipelineFactory(pipelineConfig);
+        });
+
+        it('getNotificationsValidationErr returns undefined', () => {
+            assert.isUndefined(factory.getNotificationsValidationErrFlag());
+        });
+
+        it('getNotificationsValidationErr returns false', () => {
+            factory.notificationsValidationErr = false;
+            assert.isFalse(factory.getNotificationsValidationErrFlag());
+        });
+
+        it('getNotificationsValidationErr returns true', () => {
+            factory.notificationsValidationErr = true;
+            assert.isTrue(factory.getNotificationsValidationErrFlag());
+        });
+    });
 });

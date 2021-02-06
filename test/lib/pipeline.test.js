@@ -240,6 +240,7 @@ describe('Pipeline Model', () => {
         };
         pipelineFactoryMock = {
             getExternalJoinFlag: sinon.stub(),
+            getNotificationsValidationErrFlag: sinon.stub(),
             get: sinon.stub().resolves(configPipelineMock),
             update: sinon.stub().resolves(null),
             create: sinon.stub(),
@@ -265,6 +266,7 @@ describe('Pipeline Model', () => {
         };
         parserMock = sinon.stub();
         pipelineFactoryMock.getExternalJoinFlag.returns(false);
+        pipelineFactoryMock.getNotificationsValidationErrFlag.returns(true);
 
         buildClusterFactoryMock = {
             list: sinon.stub().resolves([]),
@@ -416,14 +418,21 @@ describe('Pipeline Model', () => {
         let mainModelMock;
         let publishModelMock;
         let externalModelMock;
+        let parserConfig;
 
         beforeEach(() => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
             scmMock.addWebhook.resolves();
-            parserMock.withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock).resolves(PARSED_YAML);
+            parserConfig = {
+                yaml: 'superyamlcontent',
+                templateFactory: templateFactoryMock,
+                buildClusterFactory: buildClusterFactoryMock,
+                notificationsValidationErr: true
+            };
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML);
             parserMock
-                .withArgs('yamlcontentwithscmurls', templateFactoryMock, buildClusterFactoryMock)
+                .withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } })
                 .resolves(EXTERNAL_PARSED_YAML);
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
@@ -500,7 +509,7 @@ describe('Pipeline Model', () => {
                 ]
             };
             externalMock = {
-                pipelineId: 123,
+                pipelineId: testId,
                 name: 'main',
                 permutations: [
                     {
@@ -519,9 +528,7 @@ describe('Pipeline Model', () => {
         it('create external trigger in datastore for new jobs', () => {
             jobs = [];
             sinon.spy(pipeline, 'update');
-            parserMock
-                .withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock)
-                .resolves(PARSED_YAML_WITH_REQUIRES);
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML_WITH_REQUIRES);
             mainMock.permutations.forEach(p => {
                 p.requires = ['~pr', '~commit', '~sd@12345:test'];
             });
@@ -565,9 +572,7 @@ describe('Pipeline Model', () => {
                 remove: sinon.stub().resolves(null)
             };
 
-            parserMock
-                .withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock)
-                .resolves(PARSED_YAML_WITH_REQUIRES);
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML_WITH_REQUIRES);
             jobFactoryMock.list.resolves([mainModelMock, publishModelMock]);
             mainModelMock.update.resolves(mainModelMock);
             publishModelMock.update.resolves(publishModelMock);
@@ -588,7 +593,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.create.withArgs(publishMock).resolves(publishModelMock);
             jobFactoryMock.create.withArgs(externalMock).resolves(externalModelMock);
             pipelineFactoryMock.get.resolves({
-                id: 123,
+                id: testId,
                 update: sinon.stub().resolves(null),
                 remove: sinon.stub().resolves(null),
                 workflowGraph: { nodes: [{ name: '~pr' }, { name: '~commit' }, { name: 'main', id: 3 }] }
@@ -628,9 +633,7 @@ describe('Pipeline Model', () => {
                     })
                 )
                 .resolves('foo');
-            parserMock
-                .withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock)
-                .resolves(PARSED_YAML_WITH_SUBSCRIBE);
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML_WITH_SUBSCRIBE);
 
             return pipeline.sync().then(() => {
                 assert.deepEqual(pipeline.subscribedScmUrlsWithActions, [
@@ -651,9 +654,8 @@ describe('Pipeline Model', () => {
                 }
             ];
             scmMock.getFile.withArgs(sinon.match({ ref })).resolves('yamlcontentfromsha');
-            parserMock
-                .withArgs('yamlcontentfromsha', templateFactoryMock, buildClusterFactoryMock)
-                .resolves(YAML_FROM_SHA);
+            parserConfig.yaml = 'yamlcontentfromsha';
+            parserMock.withArgs(parserConfig).resolves(YAML_FROM_SHA);
             publishMock.permutations[0].commands = YAML_FROM_SHA.jobs.publish[0].commands;
             jobs = [];
             jobFactoryMock.list.resolves(jobs);
@@ -703,16 +705,18 @@ describe('Pipeline Model', () => {
 
         it('stores chainPR to pipeline', () => {
             const configMock = { ...PARSED_YAML };
-            const defatulChainPR = false;
+            const defaultChainPR = false;
 
-            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(configMock);
+            delete parserConfig.buildFactory;
+
+            parserMock.withArgs(parserConfig).resolves(configMock);
             jobs = [];
             jobFactoryMock.list.resolves(jobs);
             jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
             jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
-            return pipeline.sync(null, defatulChainPR).then(() => {
+            return pipeline.sync(null, defaultChainPR).then(() => {
                 assert.equal(pipeline.chainPR, true);
             });
         });
@@ -737,7 +741,7 @@ describe('Pipeline Model', () => {
                         name: 'owner/repo'
                     }
                 });
-                assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock);
+                assert.calledWith(parserMock, parserConfig);
                 assert.calledWith(jobFactoryMock.create, publishMock);
                 assert.calledWith(jobFactoryMock.create, mainMock);
             });
@@ -856,9 +860,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
             scmMock.getFile.resolves('yamlcontentwithscmurls');
-            parserMock
-                .withArgs('yamlcontentwithscmurls', templateFactoryMock, buildClusterFactoryMock)
-                .resolves(parsedYaml);
+            parserMock.withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } }).resolves(parsedYaml);
             pipelineFactoryMock.scm.parseUrl
                 .withArgs(
                     sinon.match({
@@ -889,7 +891,7 @@ describe('Pipeline Model', () => {
             return pipeline.sync().then(p => {
                 assert.equal(p.id, testId);
                 assert.deepEqual(p.childPipelines.scmUrls, ['foo.git', 'bar.git']);
-                assert.calledWith(parserMock, 'yamlcontentwithscmurls', templateFactoryMock);
+                assert.calledWith(parserMock, { ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } });
                 assert.calledOnce(pipelineFactoryMock.create);
                 assert.calledOnce(childPipelineMock.sync);
                 assert.calledOnce(childPipelineMock.remove);
@@ -971,7 +973,7 @@ describe('Pipeline Model', () => {
                     })
                 )
                 .resolves('bar');
-            childPipelineMock.configPipelineId = 123;
+            childPipelineMock.configPipelineId = testId;
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipeline.childPipelines = {
                 scmUrls: ['bar.git']
@@ -988,7 +990,7 @@ describe('Pipeline Model', () => {
         it('does not sync child pipelines if the YAML has errors', () => {
             scmMock.getFile.resolves('yamlcontentwithscmurls');
             parserMock
-                .withArgs('yamlcontentwithscmurls', templateFactoryMock, buildClusterFactoryMock)
+                .withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } })
                 .resolves(PARSED_YAML_WITH_ERRORS);
             jobs = [mainJob];
             jobFactoryMock.list.resolves(jobs);
@@ -1014,12 +1016,19 @@ describe('Pipeline Model', () => {
 
     describe('syncPR', () => {
         let prJob;
+        let parserConfig;
 
         beforeEach(() => {
+            parserConfig = {
+                yaml: 'superyamlcontent',
+                templateFactory: templateFactoryMock,
+                buildClusterFactory: buildClusterFactoryMock,
+                notificationsValidationErr: true
+            };
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
             scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge', baseBranch: 'testBranch' });
-            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML);
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML);
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
             pipeline.admins = { batman: true, robin: true };
@@ -1066,7 +1075,7 @@ describe('Pipeline Model', () => {
 
             jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob, testJob, firstPRJob]); // all jobs
             jobFactoryMock.list.onCall(1).resolves([mainJob, publishJob, testJob]); // pipeline jobs
-            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(clonedYAML);
+            parserMock.withArgs(parserConfig).resolves(clonedYAML);
 
             return pipeline.syncPR(1).then(() => {
                 assert.calledWith(scmMock.getFile, {
@@ -1092,20 +1101,20 @@ describe('Pipeline Model', () => {
                             requires: ['~pr']
                         }
                     ],
-                    pipelineId: 123,
+                    pipelineId: testId,
                     prParentJobId: 100
                 });
                 assert.calledWith(
                     jobFactoryMock.create.secondCall,
                     sinon.match({
-                        pipelineId: 123,
+                        pipelineId: testId,
                         name: 'PR-1:new_pr_job'
                     })
                 );
                 assert.calledWith(
                     jobFactoryMock.create.thirdCall,
                     sinon.match({
-                        pipelineId: 123,
+                        pipelineId: testId,
                         name: 'PR-1:pr_specific_branch'
                     })
                 );
@@ -1131,7 +1140,7 @@ describe('Pipeline Model', () => {
             };
 
             jobFactoryMock.list.resolves([firstPRJob, secondPRJob]);
-            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(PARSED_YAML_PR);
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML_PR);
 
             return pipeline.syncPR(1).then(() => {
                 assert.calledWith(scmMock.getFile, {
@@ -1151,7 +1160,7 @@ describe('Pipeline Model', () => {
                 assert.calledWith(
                     jobFactoryMock.create,
                     sinon.match({
-                        pipelineId: 123,
+                        pipelineId: testId,
                         name: 'PR-1:new_pr_job'
                     })
                 );
@@ -1195,7 +1204,7 @@ describe('Pipeline Model', () => {
 
             jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob, testJob, firstPRJob]); // all jobs
             jobFactoryMock.list.onCall(1).resolves([mainJob, publishJob, testJob]); // pipeline jobs
-            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(clonedYAML);
+            parserMock.withArgs(parserConfig).resolves(clonedYAML);
 
             return pipeline.syncPR(1).then(() => {
                 assert.calledWith(scmMock.getFile, {
@@ -1221,7 +1230,7 @@ describe('Pipeline Model', () => {
                             requires: ['~pr']
                         }
                     ],
-                    pipelineId: 123,
+                    pipelineId: testId,
                     prParentJobId: 100
                 });
                 assert.calledWith(
@@ -1235,7 +1244,7 @@ describe('Pipeline Model', () => {
                                 requires: ['~pr']
                             }
                         ],
-                        pipelineId: 123
+                        pipelineId: testId
                     })
                 );
                 assert.calledWith(
@@ -1250,7 +1259,7 @@ describe('Pipeline Model', () => {
                                 requires: ['main']
                             }
                         ],
-                        pipelineId: 123,
+                        pipelineId: testId,
                         prParentJobId: 99999
                     })
                 );
@@ -1286,7 +1295,7 @@ describe('Pipeline Model', () => {
             const clonedYAML = JSON.parse(JSON.stringify(PARSED_YAML_PR));
 
             jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob, testJob].concat(prJobs));
-            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(clonedYAML);
+            parserMock.withArgs(parserConfig).resolves(clonedYAML);
 
             return pipeline.syncPR(1).then(() => {
                 assert.calledWith(scmMock.getFile, {
@@ -1316,7 +1325,7 @@ describe('Pipeline Model', () => {
                                 requires: ['~pr:testBranch']
                             }
                         ],
-                        pipelineId: 123
+                        pipelineId: testId
                     })
                 );
             });
@@ -1350,7 +1359,7 @@ describe('Pipeline Model', () => {
             clonedYAML.jobs.test[0].requires = ['~pr', '~pr:testBranch'];
 
             jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob].concat(prJobs));
-            parserMock.withArgs('superyamlcontent', templateFactoryMock).resolves(clonedYAML);
+            parserMock.withArgs(parserConfig).resolves(clonedYAML);
 
             return pipeline.syncPR(1).then(() => {
                 assert.calledWith(scmMock.getFile, {
@@ -1379,7 +1388,7 @@ describe('Pipeline Model', () => {
                             requires: ['~pr', '~pr:testBranch']
                         }
                     ],
-                    pipelineId: 123
+                    pipelineId: testId
                 });
             });
         });
@@ -1387,11 +1396,18 @@ describe('Pipeline Model', () => {
 
     describe('syncPRs', () => {
         let prJob;
+        let parserConfig;
 
         beforeEach(() => {
+            parserConfig = {
+                yaml: 'superyamlcontent',
+                templateFactory: templateFactoryMock,
+                buildClusterFactory: buildClusterFactoryMock,
+                notificationsValidationErr: true
+            };
             datastore.update.resolves(null);
             scmMock.getFile.resolves('superyamlcontent');
-            parserMock.withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock).resolves(PARSED_YAML);
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML);
             scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge', baseBranch: 'testBranch' });
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
@@ -1751,7 +1767,7 @@ describe('Pipeline Model', () => {
         it('gets all jobs', () => {
             const expected = {
                 params: {
-                    pipelineId: 123,
+                    pipelineId: testId,
                     archived: false
                 }
             };
@@ -1779,7 +1795,7 @@ describe('Pipeline Model', () => {
             };
             const expected = {
                 params: {
-                    pipelineId: 123,
+                    pipelineId: testId,
                     archived: false
                 }
             };
@@ -1806,7 +1822,7 @@ describe('Pipeline Model', () => {
             };
             const expected = {
                 params: {
-                    pipelineId: 123,
+                    pipelineId: testId,
                     archived: false
                 }
             };
@@ -1828,7 +1844,7 @@ describe('Pipeline Model', () => {
             };
             const expected = {
                 params: {
-                    pipelineId: 123,
+                    pipelineId: testId,
                     archived: false
                 }
             };
@@ -1851,7 +1867,7 @@ describe('Pipeline Model', () => {
             };
             const expected = {
                 params: {
-                    pipelineId: 123,
+                    pipelineId: testId,
                     archived: true
                 }
             };
@@ -1882,7 +1898,7 @@ describe('Pipeline Model', () => {
         it('gets a list of events', () => {
             const expected = {
                 params: {
-                    pipelineId: 123,
+                    pipelineId: testId,
                     type: 'pipeline'
                 },
                 sort: 'descending'
@@ -1899,7 +1915,7 @@ describe('Pipeline Model', () => {
         it('merges the passed in config with the default config', () => {
             const expected = {
                 params: {
-                    pipelineId: 123,
+                    pipelineId: testId,
                     type: 'pr'
                 },
                 sort: 'descending'
@@ -1934,9 +1950,29 @@ describe('Pipeline Model', () => {
     });
 
     describe('getConfiguration', () => {
+        let parserConfig;
+        let getFileConfig;
+
         beforeEach(() => {
+            getFileConfig = {
+                scmUri,
+                scmContext,
+                path: 'screwdriver.yaml',
+                token: 'foo',
+                scmRepo: {
+                    branch: 'branch',
+                    url: 'https://host/owner/repo/tree/branch',
+                    name: 'owner/repo'
+                }
+            };
+            parserConfig = {
+                yaml: 'superyamlcontent',
+                templateFactory: templateFactoryMock,
+                buildClusterFactory: buildClusterFactoryMock,
+                notificationsValidationErr: true
+            };
             scmMock.getFile.resolves('superyamlcontent');
-            parserMock.withArgs('superyamlcontent', templateFactoryMock, buildClusterFactoryMock).resolves(PARSED_YAML);
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML);
             parserMock.withArgs('', templateFactoryMock, buildClusterFactoryMock).resolves('DEFAULT_YAML');
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
@@ -1947,63 +1983,37 @@ describe('Pipeline Model', () => {
         it('gets pipeline config', () =>
             pipeline.getConfiguration().then(config => {
                 assert.equal(config, PARSED_YAML);
-                assert.calledWith(scmMock.getFile, {
-                    scmUri,
-                    scmContext,
-                    path: 'screwdriver.yaml',
-                    token: 'foo',
-                    scmRepo: {
-                        branch: 'branch',
-                        url: 'https://host/owner/repo/tree/branch',
-                        name: 'owner/repo'
-                    }
-                });
-                assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock, buildClusterFactoryMock);
+                assert.calledWith(scmMock.getFile, getFileConfig);
+                assert.calledWith(parserMock, parserConfig);
             }));
 
         it('passes triggerFactoryMock and pipelineId if external join flag is true', () => {
             pipelineFactoryMock.getExternalJoinFlag.returns(true);
+            parserConfig.triggerFactory = triggerFactoryMock;
+            parserConfig.pipelineId = testId;
 
             return pipeline.getConfiguration().then(config => {
                 assert.equal(config, PARSED_YAML);
-                assert.calledWith(scmMock.getFile, {
-                    scmUri,
-                    scmContext,
-                    path: 'screwdriver.yaml',
-                    token: 'foo',
-                    scmRepo: {
-                        branch: 'branch',
-                        url: 'https://host/owner/repo/tree/branch',
-                        name: 'owner/repo'
-                    }
-                });
-                assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock, buildClusterFactoryMock);
+                assert.calledWith(scmMock.getFile, getFileConfig);
+                assert.calledWith(parserMock, parserConfig);
             });
         });
 
-        it('gets pipeline config from an alternate ref', () =>
-            pipeline.getConfiguration({ ref: 'bar' }).then(config => {
+        it('gets pipeline config from an alternate ref', () => {
+            getFileConfig.ref = 'bar';
+
+            return pipeline.getConfiguration({ ref: 'bar' }).then(config => {
                 assert.equal(config, PARSED_YAML);
-                assert.calledWith(scmMock.getFile, {
-                    scmUri,
-                    scmContext,
-                    path: 'screwdriver.yaml',
-                    token: 'foo',
-                    ref: 'bar',
-                    scmRepo: {
-                        branch: 'branch',
-                        url: 'https://host/owner/repo/tree/branch',
-                        name: 'owner/repo'
-                    }
-                });
-                assert.calledWith(parserMock, 'superyamlcontent', templateFactoryMock);
-            }));
+                assert.calledWith(scmMock.getFile, getFileConfig);
+                assert.calledWith(parserMock, parserConfig);
+            });
+        });
 
         it('gets config from external config pipeline', () => {
             pipeline.configPipelineId = 1;
 
             return pipeline.getConfiguration().then(config => {
-                assert.calledWith(configPipelineMock.getConfiguration, { id: 123, ref: undefined });
+                assert.calledWith(configPipelineMock.getConfiguration, { id: testId, ref: undefined });
                 assert.equal(config, EXTERNAL_PARSED_YAML);
             });
         });
@@ -2017,14 +2027,14 @@ describe('Pipeline Model', () => {
                 })
                 .then(config => {
                     assert.calledWith(configPipelineMock.getConfiguration, {
-                        id: 123,
+                        id: testId,
                         ref: 'bar'
                     });
                     assert.equal(config, EXTERNAL_PARSED_YAML);
                 });
         });
 
-        it('Do not pass PR ref when get config from external pipeline', () => {
+        it('does not pass PR ref when get config from external pipeline', () => {
             pipeline.configPipelineId = 1;
 
             return pipeline
@@ -2039,6 +2049,7 @@ describe('Pipeline Model', () => {
         });
 
         it('returns error on scm fetch errors', async () => {
+            getFileConfig.ref = 'foobar';
             scmMock.getFile.rejects(new Error('cannotgetit'));
 
             let errMessage = '';
@@ -2049,18 +2060,7 @@ describe('Pipeline Model', () => {
                 errMessage = err.message;
             }
 
-            assert.calledWith(scmMock.getFile, {
-                scmUri,
-                scmContext,
-                path: 'screwdriver.yaml',
-                token: 'foo',
-                ref: 'foobar',
-                scmRepo: {
-                    branch: 'branch',
-                    url: 'https://host/owner/repo/tree/branch',
-                    name: 'owner/repo'
-                }
-            });
+            assert.calledWith(scmMock.getFile, getFileConfig);
             assert.equal(errMessage, 'pipelineId:123: Failed to fetch screwdriver.yaml.');
         });
     });
@@ -2070,15 +2070,11 @@ describe('Pipeline Model', () => {
             const expected = {
                 params: {
                     admins: { d2lam: true },
-                    id: 123,
+                    id: testId,
                     name: 'foo/bar',
                     scmContext,
-                    scmRepo: {
-                        branch: 'master',
-                        name: 'foo/bar',
-                        url: 'https://github.com/foo/bar/tree/master'
-                    },
-                    scmUri: 'github.com:12345:master'
+                    scmRepo,
+                    scmUri
                 },
                 table: 'pipelines'
             };
@@ -2096,7 +2092,7 @@ describe('Pipeline Model', () => {
                 });
             datastore.update.resolves({});
 
-            pipeline.scmUri = 'github.com:12345:master';
+            pipeline.scmUri = scmUri;
             pipeline.scmContext = scmContext;
             pipeline.admins = {
                 d2lam: true
@@ -2117,15 +2113,11 @@ describe('Pipeline Model', () => {
             const expected = {
                 params: {
                     admins: { d2lam: true },
-                    id: 123,
+                    id: testId,
                     name: 'foo/bar',
                     scmContext,
-                    scmRepo: {
-                        branch: 'master',
-                        name: 'foo/bar',
-                        url: 'https://github.com/foo/bar/tree/master'
-                    },
-                    scmUri: 'github.com:12345:master',
+                    scmRepo,
+                    scmUri,
                     annotations: {
                         'screwdriver.cd/prChain': 'fork'
                     }
@@ -2146,7 +2138,7 @@ describe('Pipeline Model', () => {
                 });
             datastore.update.resolves({});
 
-            pipeline.scmUri = 'github.com:12345:master';
+            pipeline.scmUri = scmUri;
             pipeline.scmContext = scmContext;
             pipeline.admins = {
                 d2lam: true
@@ -2174,15 +2166,11 @@ describe('Pipeline Model', () => {
                 const expected = {
                     params: {
                         admins: { d2lam: true },
-                        id: 123,
+                        id: testId,
                         name: 'foo/bar',
                         scmContext,
-                        scmRepo: {
-                            branch: 'master',
-                            name: 'foo/bar',
-                            url: 'https://github.com/foo/bar/tree/master'
-                        },
-                        scmUri: 'github.com:12345:master',
+                        scmRepo,
+                        scmUri,
                         annotations: {
                             'screwdriver.cd/buildCluster': 'sd1'
                         }
@@ -2205,7 +2193,7 @@ describe('Pipeline Model', () => {
                 datastore.update.resolves({});
                 buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
-                pipeline.scmUri = 'github.com:12345:master';
+                pipeline.scmUri = scmUri;
                 pipeline.scmContext = scmContext;
                 pipeline.admins = {
                     d2lam: true
@@ -2231,15 +2219,11 @@ describe('Pipeline Model', () => {
                 const expected = {
                     params: {
                         admins: { d2lam: true },
-                        id: 123,
+                        id: testId,
                         name: 'foo/bar',
                         scmContext,
-                        scmRepo: {
-                            branch: 'master',
-                            name: 'foo/bar',
-                            url: 'https://github.com/foo/bar/tree/master'
-                        },
-                        scmUri: 'github.com:12345:master',
+                        scmRepo,
+                        scmUri,
                         annotations: {
                             'screwdriver.cd/prChain': 'fork',
                             'screwdriver.cd/buildCluster': 'sd1'
@@ -2263,7 +2247,7 @@ describe('Pipeline Model', () => {
                 datastore.update.resolves({});
                 buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
-                pipeline.scmUri = 'github.com:12345:master';
+                pipeline.scmUri = scmUri;
                 pipeline.scmContext = scmContext;
                 pipeline.admins = {
                     d2lam: true
@@ -2291,7 +2275,7 @@ describe('Pipeline Model', () => {
                 const expected = {
                     params: {
                         admins: { d2lam: true },
-                        id: 123,
+                        id: testId,
                         name: 'screwdriver/ui',
                         scmContext,
                         scmRepo: {
@@ -2299,7 +2283,7 @@ describe('Pipeline Model', () => {
                             name: 'screwdriver/ui',
                             url: 'https://github.com/foo/bar/tree/master'
                         },
-                        scmUri: 'github.com:12345:master',
+                        scmUri,
                         annotations: { 'screwdriver.cd/buildCluster': 'iOS' }
                     },
                     table: 'pipelines'
@@ -2324,7 +2308,7 @@ describe('Pipeline Model', () => {
                     name: 'screwdriver/ui',
                     url: 'https://github.com/foo/bar/tree/master'
                 });
-                pipeline.scmUri = 'github.com:12345:master';
+                pipeline.scmUri = scmUri;
                 pipeline.scmContext = scmContext;
                 pipeline.admins = {
                     d2lam: true
@@ -2357,7 +2341,7 @@ describe('Pipeline Model', () => {
                 });
             datastore.update.resolves({});
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
-            pipeline.scmUri = 'github.com:12345:master';
+            pipeline.scmUri = scmUri;
             pipeline.scmContext = scmContext;
             pipeline.admins = {
                 d2lam: true
@@ -2384,7 +2368,7 @@ describe('Pipeline Model', () => {
                 });
             datastore.update.resolves({});
             buildClusterFactoryMock.get.resolves(null);
-            pipeline.scmUri = 'github.com:12345:master';
+            pipeline.scmUri = scmUri;
             pipeline.scmContext = scmContext;
             pipeline.admins = {
                 d2lam: true
@@ -2405,14 +2389,10 @@ describe('Pipeline Model', () => {
             const expected = {
                 params: {
                     admins: { d2lam: true },
-                    id: 123,
+                    id: testId,
                     name: 'foo/bar',
                     scmContext,
-                    scmRepo: {
-                        branch: 'master',
-                        name: 'foo/bar',
-                        url: 'https://github.com/foo/bar/tree/master'
-                    }
+                    scmRepo
                 },
                 table: 'pipelines'
             };
@@ -2475,7 +2455,7 @@ describe('Pipeline Model', () => {
         };
         const collection = {
             name: 'TEST_COLLECTION',
-            pipelineIds: [123, 456],
+            pipelineIds: [testId, 456],
             update: sinon.stub().resolves(null)
         };
 
@@ -2948,7 +2928,7 @@ describe('Pipeline Model', () => {
         it('generates metrics by time', () => {
             const eventListConfig = {
                 params: {
-                    pipelineId: 123,
+                    pipelineId: testId,
                     type: 'pipeline'
                 },
                 sort: 'ascending',
@@ -2975,7 +2955,7 @@ describe('Pipeline Model', () => {
         it('generates metrics for specified downtime jobs', () => {
             const eventListConfig = {
                 params: {
-                    pipelineId: 123,
+                    pipelineId: testId,
                     type: 'pipeline'
                 },
                 sort: 'ascending',
@@ -3038,7 +3018,7 @@ describe('Pipeline Model', () => {
         it('generates metrics by pagination', () => {
             const eventListConfig = {
                 params: {
-                    pipelineId: 123,
+                    pipelineId: testId,
                     type: 'pipeline'
                 },
                 sort: 'ascending',
@@ -3064,7 +3044,7 @@ describe('Pipeline Model', () => {
         it('generates metrics by pagination if page is available but count', () => {
             const eventListConfig = {
                 params: {
-                    pipelineId: 123,
+                    pipelineId: testId,
                     type: 'pipeline'
                 },
                 sort: 'ascending',
@@ -3090,7 +3070,7 @@ describe('Pipeline Model', () => {
         it('generates metrics by pagination if count is available but page', () => {
             const eventListConfig = {
                 params: {
-                    pipelineId: 123,
+                    pipelineId: testId,
                     type: 'pipeline'
                 },
                 sort: 'ascending',
@@ -3124,7 +3104,7 @@ describe('Pipeline Model', () => {
                 pipeline = new RewirePipelineModel(pipelineConfig);
                 eventListConfig = {
                     params: {
-                        pipelineId: 123,
+                        pipelineId: testId,
                         type: 'pipeline'
                     },
                     startTime,
@@ -3314,7 +3294,7 @@ describe('Pipeline Model', () => {
         it('works with no startTime or endTime params passed in', () => {
             const eventListConfig = {
                 params: {
-                    pipelineId: 123,
+                    pipelineId: testId,
                     type: 'pipeline'
                 },
                 sort: 'ascending',
