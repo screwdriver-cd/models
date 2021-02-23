@@ -147,7 +147,8 @@ describe('Template Factory', () => {
                 labels,
                 config: templateConfig,
                 pipelineId,
-                id: generatedId
+                id: generatedId,
+                trusted: false
             };
         });
 

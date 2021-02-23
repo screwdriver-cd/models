@@ -99,7 +99,8 @@ describe('Command Factory', () => {
                 format,
                 habitat,
                 id: generatedId,
-                pipelineId
+                pipelineId,
+                trusted: false
             };
         });
 
