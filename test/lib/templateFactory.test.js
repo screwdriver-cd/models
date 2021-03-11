@@ -147,7 +147,8 @@ describe('Template Factory', () => {
                 labels,
                 config: templateConfig,
                 pipelineId,
-                id: generatedId
+                id: generatedId,
+                trusted: false
             };
         });
 
@@ -291,6 +292,51 @@ describe('Template Factory', () => {
             };
 
             expected.version = `${version}.1`;
+
+            datastore.save.resolves(expected);
+            datastore.scan.resolves([latest]);
+            datastore.update.resolves(latest);
+
+            return factory
+                .create({
+                    name,
+                    version,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Template);
+                    assert.calledWith(datastore.update, {
+                        table: 'templates',
+                        params: {
+                            id: 1234135,
+                            latest: false
+                        }
+                    });
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
+                    });
+                });
+        });
+
+        it('creates a trusted Template if latest Template was trusted', () => {
+            const latest = {
+                name,
+                version: `${version}.0`,
+                maintainer,
+                description,
+                labels,
+                config: templateConfig,
+                pipelineId,
+                id: generatedId,
+                trusted: true
+            };
+
+            expected.version = `${version}.1`;
+            expected.trusted = true;
 
             datastore.save.resolves(expected);
             datastore.scan.resolves([latest]);

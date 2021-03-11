@@ -99,7 +99,8 @@ describe('Command Factory', () => {
                 format,
                 habitat,
                 id: generatedId,
-                pipelineId
+                pipelineId,
+                trusted: false
             };
         });
 
@@ -167,6 +168,53 @@ describe('Command Factory', () => {
             };
 
             expected.version = `${version}.1`;
+
+            datastore.save.resolves(expected);
+            datastore.scan.resolves([latest]);
+            datastore.update.resolves(latest);
+
+            return factory
+                .create({
+                    namespace,
+                    name,
+                    version,
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Command);
+                    assert.calledWith(datastore.update, {
+                        table: 'commands',
+                        params: {
+                            id: 1234135,
+                            latest: false
+                        }
+                    });
+                    Object.keys(expected).forEach(key => {
+                        assert.strictEqual(model[key], expected[key]);
+                    });
+                });
+        });
+
+        it('creates a trusted Command if latest Command was trusted', () => {
+            const latest = {
+                namespace,
+                name,
+                version: `${version}.0`,
+                maintainer,
+                description,
+                format,
+                habitat,
+                id: generatedId,
+                pipelineId,
+                trusted: true
+            };
+
+            expected.version = `${version}.1`;
+            expected.trusted = true;
 
             datastore.save.resolves(expected);
             datastore.scan.resolves([latest]);
