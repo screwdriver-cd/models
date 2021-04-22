@@ -366,6 +366,52 @@ describe('Template Factory', () => {
                     });
                 });
         });
+
+        it('creates a trusted Template and bump major version when latest Template was trusted', () => {
+            const latest = {
+                name,
+                version: `${version}.1`,
+                maintainer,
+                description,
+                labels,
+                config: templateConfig,
+                pipelineId,
+                id: generatedId,
+                trusted: true
+            };
+            const newVersion = '2.0';
+
+            expected.version = `${newVersion}.0`;
+            expected.trusted = true;
+
+            datastore.save.resolves(expected);
+            datastore.scan.resolves([latest]);
+            datastore.update.resolves(latest);
+
+            return factory
+                .create({
+                    name,
+                    version: newVersion,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Template);
+                    assert.calledWith(datastore.update, {
+                        table: 'templates',
+                        params: {
+                            id: 1234135,
+                            latest: false
+                        }
+                    });
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
+                    });
+                });
+        });
     });
 
     describe('getInstance', () => {
