@@ -75,7 +75,8 @@ describe('Build Model', () => {
             start: sinon.stub(),
             stop: sinon.stub(),
             startTimer: sinon.stub(),
-            stopTimer: sinon.stub()
+            stopTimer: sinon.stub(),
+            stopFrozen: sinon.stub()
         };
         userFactoryMock = {
             get: sinon.stub()
@@ -1713,6 +1714,41 @@ describe('Build Model', () => {
                 .toJsonWithSteps()
                 .then(() => assert.fail('nope'))
                 .catch(err => assert.equal('Steps do not exist', err.message));
+        });
+    });
+
+    describe('stopFrozen', () => {
+        const previousStatus = 'FROZEN';
+
+        beforeEach(() => {
+            executorMock.stopFrozen.resolves(null);
+            jobFactoryMock.get.resolves(jobMock);
+        });
+
+        it('promises to stop a frozen build', () =>
+            build.stopFrozen(previousStatus).then(() => {
+                assert.calledWith(executorMock.stopFrozen, {
+                    buildId,
+                    jobId,
+                    pipelineId,
+                    token: 'equivalentToOneQuarter',
+                    status: previousStatus
+                });
+            }));
+
+        it('rejects on executor failure', () => {
+            const expectedError = new Error('cantStopTheRock');
+
+            executorMock.stopFrozen.rejects(expectedError);
+
+            return build
+                .stopFrozen(previousStatus)
+                .then(() => {
+                    assert.fail('This should not fail the test');
+                })
+                .catch(err => {
+                    assert.deepEqual(err, expectedError);
+                });
         });
     });
 });
