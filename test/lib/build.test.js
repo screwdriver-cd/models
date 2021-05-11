@@ -66,7 +66,8 @@ describe('Build Model', () => {
             get: sinon.stub(),
             save: sinon.stub(),
             scan: sinon.stub(),
-            update: sinon.stub()
+            update: sinon.stub(),
+            remove: sinon.stub()
         };
         hashaMock = {
             sha1: sinon.stub()
@@ -806,6 +807,58 @@ describe('Build Model', () => {
                 assert.notOk(scmMock.updateCommitStatus.thirdCall);
                 assert.notCalled(scmMock.addPrComment);
             });
+        });
+    });
+
+    describe('remove', () => {
+        let stepsMock;
+
+        beforeEach(() => {
+            const step0Mock = { remove: sinon.stub().resolves({}) };
+            const step1Mock = { remove: sinon.stub().resolves({}) };
+            const step2Mock = { remove: sinon.stub().resolves({}) };
+
+            stepsMock = [step0Mock, step1Mock, step2Mock];
+            datastore.remove.resolves({});
+            stepFactoryMock.list.resolves(stepsMock);
+        });
+
+        it('remove build and build steps', () => {
+            return build.remove().then(() => {
+                assert.calledOnce(stepFactoryMock.list);
+                assert.calledOnce(stepsMock[0].remove); // remove builds recursively
+                assert.calledOnce(stepsMock[1].remove);
+                assert.calledOnce(stepsMock[2].remove);
+                assert.calledOnce(datastore.remove); // remove the build
+            });
+        });
+
+        it('fail if getSteps returns error', () => {
+            stepFactoryMock.list.rejects(new Error('error'));
+
+            return build
+                .remove()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'error');
+                });
+        });
+
+        it('fail if step.remove returns error', () => {
+            stepsMock[0].remove.rejects(new Error('error removing step'));
+
+            return build
+                .remove()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'error removing step');
+                });
         });
     });
 
