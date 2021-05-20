@@ -28,7 +28,7 @@ const DEFAULT_PAGE = 1;
 const MAX_COUNT = 1000;
 const FAKE_MAX_COUNT = 5;
 
-describe('Pipeline Model', () => {
+describe.only('Pipeline Model', () => {
     let PipelineModel;
     let datastore;
     let hashaMock;
