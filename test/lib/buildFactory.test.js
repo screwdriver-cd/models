@@ -4,7 +4,7 @@ const { assert } = require('chai');
 const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
 const sinon = require('sinon');
-const { STATUS_QUERY, LATEST_BUILD_QUERY, getQueries } = require('../../lib/rawQueries.js');
+const { STATUS_QUERY, LATEST_BUILD_QUERY, getQueries } = require('../../lib/rawQueries');
 let startStub;
 let getStepsStub;
 
