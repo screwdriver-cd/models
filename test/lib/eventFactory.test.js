@@ -5,7 +5,7 @@ const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
 const mockery = require('mockery');
 const rewire = require('rewire');
-const PARSED_YAML = require('../data/parserWithWorkflowGraph');
+const PARSED_YAML = require('../data/parserWithWorkflowGraph.json');
 let updateStub;
 
 sinon.assert.expose(assert, { prefix: '' });

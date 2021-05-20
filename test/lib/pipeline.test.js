@@ -9,10 +9,10 @@ const rewire = require('rewire');
 const dayjs = require('dayjs');
 
 sinon.assert.expose(assert, { prefix: '' });
-const PARSED_YAML = require('../data/parser');
-const PARSED_YAML_WITH_REQUIRES = require('../data/parserWithRequires');
-const PARSED_YAML_PR = require('../data/parserWithWorkflowGraphPR');
-const PARSED_YAML_WITH_ERRORS = require('../data/parserWithErrors');
+const PARSED_YAML = require('../data/parser.json');
+const PARSED_YAML_WITH_REQUIRES = require('../data/parserWithRequires.json');
+const PARSED_YAML_PR = require('../data/parserWithWorkflowGraphPR.json');
+const PARSED_YAML_WITH_ERRORS = require('../data/parserWithErrors.json');
 const PARSED_YAML_WITH_SUBSCRIBE = require('../data/parserWithSubscribedScms.json');
 const SCM_URLS = ['foo.git'];
 const EXTERNAL_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML, {
