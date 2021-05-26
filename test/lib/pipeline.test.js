@@ -16,8 +16,10 @@ const PARSED_YAML_WITH_ERRORS = require('../data/parserWithErrors');
 const PARSED_YAML_WITH_SUBSCRIBE = require('../data/parserWithSubscribedScms.json');
 const SCM_URL_FOO = 'git@github.com:baz/foo.git';
 const SCM_URL_BAR = 'git@github.com:baz/bar.git';
+const SCM_URL_BAZ = 'git@github.com:baz/baz.git';
 const SCM_URL_GITLAB = 'git@gitlab.com:baz/foo.git';
 const SCM_URL_GITLAB2 = 'git@gitlab.com:baz/bar.git';
+const SCM_URL_GITLAB3 = 'git@gitlab.com:baz/baz.git';
 const SCM_URLS = [SCM_URL_FOO];
 const EXTERNAL_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML, {
     annotations: { 'beta.screwdriver.cd/executor': 'screwdriver-executor-k8s' },
@@ -455,6 +457,13 @@ describe.only('Pipeline Model', () => {
             pipelineFactoryMock.scm.parseUrl
                 .withArgs(
                     sinon.match({
+                        checkoutUrl: SCM_URL_BAZ
+                    })
+                )
+                .resolves('baz');
+            pipelineFactoryMock.scm.parseUrl
+                .withArgs(
+                    sinon.match({
                         checkoutUrl: SCM_URL_GITLAB
                     })
                 )
@@ -469,7 +478,7 @@ describe.only('Pipeline Model', () => {
             pipelineFactoryMock.scm.parseUrl
                 .withArgs(
                     sinon.match({
-                        checkoutUrl: 'baz.git'
+                        checkoutUrl: SCM_URL_GITLAB3
                     })
                 )
                 .resolves('baz');
@@ -912,7 +921,7 @@ describe.only('Pipeline Model', () => {
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipelineFactoryMock.get.withArgs({ scmUri: 'bar' }).resolves(null);
             pipeline.childPipelines = {
-                scmUrls: ['baz.git']
+                scmUrls: [SCM_URL_BAZ]
             };
 
             return pipeline.sync().then(p => {
@@ -940,7 +949,7 @@ describe.only('Pipeline Model', () => {
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipelineFactoryMock.get.withArgs({ scmUri: 'bar' }).resolves(null);
             pipeline.childPipelines = {
-                scmUrls: ['baz.git']
+                scmUrls: [SCM_URL_BAZ]
             };
 
             return pipeline.sync().then(p => {
@@ -969,7 +978,7 @@ describe.only('Pipeline Model', () => {
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipelineFactoryMock.get.withArgs({ scmUri: 'bar' }).resolves(null);
             pipeline.childPipelines = {
-                scmUrls: ['baz.git']
+                scmUrls: [SCM_URL_BAZ]
             };
 
             return pipeline.sync().then(p => {
@@ -1012,16 +1021,36 @@ describe.only('Pipeline Model', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
+            scmMock.readOnlyEnabled.withArgs({ scmContext: SCM_CONTEXT_GITLAB }).returns(false);
             childPipelineMock.configPipelineId = 789;
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipeline.childPipelines = {
-                scmUrls: [SCM_URL_BAR]
+                scmUrls: [SCM_URL_BAR, SCM_URL_GITLAB3]
             };
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
             return pipeline.sync().then(p => {
                 assert.equal(p.id, testId);
                 assert.notCalled(childPipelineMock.remove);
+            });
+        });
+
+        it('does not remove child pipelines if no admin permissions', () => {
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            pipelineFactoryMock.get.resolves(null);
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            scmMock.readOnlyEnabled.withArgs({ scmContext: SCM_CONTEXT_GITLAB }).returns(false);
+            childPipelineMock.configPipelineId = 789;
+            pipelineFactoryMock.get.resolves(childPipelineMock);
+            pipeline.childPipelines = {
+                scmUrls: [SCM_URL_BAR, SCM_URL_GITLAB3]
+            };
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.notCalled(pipelineFactoryMock.create);
             });
         });
 
@@ -1033,6 +1062,24 @@ describe.only('Pipeline Model', () => {
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipeline.childPipelines = {
                 scmUrls: [SCM_URL_BAR]
+            };
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.equal(p.childPipelines, null);
+                assert.calledOnce(childPipelineMock.remove);
+            });
+        });
+
+        it('removes child pipeline and resets scmUrls if it is read-only SCM', () => {
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true });
+            childPipelineMock.configPipelineId = testId;
+            pipelineFactoryMock.get.resolves(childPipelineMock);
+            pipeline.childPipelines = {
+                scmUrls: [SCM_URL_GITLAB3]
             };
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
