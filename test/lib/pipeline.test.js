@@ -36,7 +36,7 @@ const FAKE_MAX_COUNT = 5;
 const SCM_CONTEXT_GITHUB = 'github:github.com';
 const SCM_CONTEXT_GITLAB = 'gitlab:gitlab.com';
 
-describe.only('Pipeline Model', () => {
+describe('Pipeline Model', () => {
     let PipelineModel;
     let datastore;
     let hashaMock;
@@ -272,8 +272,7 @@ describe.only('Pipeline Model', () => {
             getOpenedPRs: sinon.stub(),
             getPrInfo: sinon.stub(),
             getScmContext: sinon.stub(),
-            readOnlyEnabled: sinon.stub(),
-            getUsername: sinon.stub()
+            getReadOnlyInfo: sinon.stub()
         };
         parserMock = sinon.stub();
         pipelineFactoryMock.getExternalJoinFlag.returns(false);
@@ -437,9 +436,10 @@ describe.only('Pipeline Model', () => {
             scmMock.addWebhook.resolves();
             scmMock.getScmContext.withArgs({ hostname: 'github.com' }).returns(SCM_CONTEXT_GITHUB);
             scmMock.getScmContext.withArgs({ hostname: 'gitlab.com' }).returns(SCM_CONTEXT_GITLAB);
-            scmMock.readOnlyEnabled.withArgs({ scmContext: SCM_CONTEXT_GITHUB }).returns(false);
-            scmMock.readOnlyEnabled.withArgs({ scmContext: SCM_CONTEXT_GITLAB }).returns(true);
-            scmMock.getUsername.withArgs({ scmContext: SCM_CONTEXT_GITLAB }).returns('sd-buildbot');
+            scmMock.getReadOnlyInfo.withArgs({ scmContext: SCM_CONTEXT_GITHUB }).returns({ enabled: false });
+            scmMock.getReadOnlyInfo
+                .withArgs({ scmContext: SCM_CONTEXT_GITLAB })
+                .returns({ enabled: true, username: 'sd-buildbot' });
             pipelineFactoryMock.scm.parseUrl
                 .withArgs(
                     sinon.match({
@@ -968,13 +968,12 @@ describe.only('Pipeline Model', () => {
             parsedYaml.childPipelines = {
                 scmUrls: [SCM_URL_GITLAB, SCM_URL_GITLAB2]
             };
-
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
             scmMock.getFile.resolves('yamlcontentwithscmurls');
-            scmMock.readOnlyEnabled.withArgs({ scmContext: SCM_CONTEXT_GITLAB }).returns(false);
             parserMock.withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } }).resolves(parsedYaml);
+            scmMock.getReadOnlyInfo.withArgs({ scmContext: SCM_CONTEXT_GITLAB }).returns({ enabled: false });
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipelineFactoryMock.get.withArgs({ scmUri: 'bar' }).resolves(null);
             pipeline.childPipelines = {
@@ -1021,7 +1020,7 @@ describe.only('Pipeline Model', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
-            scmMock.readOnlyEnabled.withArgs({ scmContext: SCM_CONTEXT_GITLAB }).returns(false);
+            scmMock.getReadOnlyInfo.withArgs({ scmContext: SCM_CONTEXT_GITLAB }).returns({ enabled: false });
             childPipelineMock.configPipelineId = 789;
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipeline.childPipelines = {
@@ -1040,7 +1039,7 @@ describe.only('Pipeline Model', () => {
             jobFactoryMock.list.resolves(jobs);
             pipelineFactoryMock.get.resolves(null);
             scmMock.getFile.resolves('yamlcontentwithscmurls');
-            scmMock.readOnlyEnabled.withArgs({ scmContext: SCM_CONTEXT_GITLAB }).returns(false);
+            scmMock.getReadOnlyInfo.withArgs({ scmContext: SCM_CONTEXT_GITLAB }).returns({ enabled: false });
             childPipelineMock.configPipelineId = 789;
             pipelineFactoryMock.get.resolves(childPipelineMock);
             pipeline.childPipelines = {
