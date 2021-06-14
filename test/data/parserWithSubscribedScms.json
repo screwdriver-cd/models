@@ -84,7 +84,7 @@
     },
     "subscribe": {
         "scmUrls": [{
-            "foo.git": ["~commit", "~tags", "~release"]
+            "git@github.com:baz/foo.git": ["~commit", "~tags", "~release"]
         }]
     }
 }

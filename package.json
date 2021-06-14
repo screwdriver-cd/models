@@ -37,9 +37,9 @@
   },
   "devDependencies": {
     "chai": "^4.3.0",
-    "eslint": "^7.11.0",
+    "eslint": "^7.27.0",
     "eslint-config-screwdriver": "^5.0.6",
-    "mocha": "^8.2.0",
+    "mocha": "^8.4.0",
     "mocha-multi-reporters": "^1.5.1",
     "mocha-sonarqube-reporter": "^1.0.2",
     "mockery": "^2.0.0",
@@ -59,7 +59,7 @@
     "docker-parse-image": "^3.0.1",
     "lodash": "^4.17.20",
     "screwdriver-config-parser": "^7.0.0",
-    "screwdriver-data-schema": "^21.0.0",
+    "screwdriver-data-schema": "^21.3.0",
     "screwdriver-logger": "^1.0.2",
     "screwdriver-workflow-parser": "^3.1.1"
   }
