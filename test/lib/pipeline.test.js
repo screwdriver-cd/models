@@ -940,7 +940,6 @@ describe('Pipeline Model', () => {
             parsedYaml.childPipelines = {
                 scmUrls: [SCM_URL_GITLAB, SCM_URL_GITLAB2]
             };
-
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
