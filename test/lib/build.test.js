@@ -38,6 +38,22 @@ describe('Build Model', () => {
         }
     };
     const TEMPORAL_JWT_TIMEOUT = 12 * 60;
+    // SCM handles only SUCCESS, PENDING & FAILURE status
+    const SCM_STATE_MAP = {
+        ABORTED: 'FAILURE',
+        CREATED: 'PENDING',
+        FAILURE: 'FAILURE',
+        FAILED: 'FAILURE',
+        QUEUED: 'PENDING',
+        RUNNING: 'PENDING',
+        SUCCESS: 'SUCCESS',
+        BLOCKED: 'FAILURE',
+        UNSTABLE: 'FAILURE',
+        COLLAPSED: 'FAILURE',
+        FIXED: 'SUCCESS',
+        PENDING: 'PENDING',
+        FROZEN: 'FAILURE'
+    };
     let BuildModel;
     let datastore;
     let executorMock;
@@ -198,7 +214,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'main',
-                    buildStatus: 'QUEUED',
+                    buildStatus: SCM_STATE_MAP.QUEUED,
                     url,
                     pipelineId
                 });
@@ -280,7 +296,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'PR-5:main',
-                    buildStatus: 'FAILURE',
+                    buildStatus: SCM_STATE_MAP.FAILURE,
                     url,
                     pipelineId
                 });
@@ -438,7 +454,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'PR-5:main',
-                    buildStatus: 'FAILURE',
+                    buildStatus: SCM_STATE_MAP.FAILURE,
                     url,
                     pipelineId
                 });
@@ -448,7 +464,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'PR-5:main',
-                    buildStatus: 'SUCCESS',
+                    buildStatus: SCM_STATE_MAP.SUCCESS,
                     url: 'http://findbugs.com',
                     pipelineId,
                     context: 'findbugs',
@@ -460,7 +476,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'PR-5:main',
-                    buildStatus: 'FAILURE',
+                    buildStatus: SCM_STATE_MAP.FAILURE,
                     url: 'https://display.com/some/endpoint/pipelines/1234/builds/9876',
                     pipelineId,
                     context: 'snyk',
@@ -500,7 +516,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'main',
-                    buildStatus: 'ABORTED',
+                    buildStatus: SCM_STATE_MAP.ABORTED,
                     url,
                     pipelineId
                 });
@@ -541,7 +557,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'main',
-                    buildStatus: 'ABORTED',
+                    buildStatus: SCM_STATE_MAP.ABORTED,
                     url,
                     pipelineId
                 });
@@ -564,7 +580,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'main',
-                    buildStatus: 'RUNNING',
+                    buildStatus: SCM_STATE_MAP.RUNNING,
                     url,
                     pipelineId
                 });
@@ -586,7 +602,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'main',
-                    buildStatus: 'UNSTABLE',
+                    buildStatus: SCM_STATE_MAP.UNSTABLE,
                     url,
                     pipelineId
                 });
@@ -635,14 +651,14 @@ describe('Build Model', () => {
                     jobName: 'main',
                     url,
                     pipelineId,
-                    buildStatus: build.status
+                    buildStatus: SCM_STATE_MAP[build.status]
                 });
                 assert.calledWith(executorMock.startTimer, {
                     buildId,
                     jobId,
                     annotations,
                     startTime: build.startTime,
-                    buildStatus: build.status,
+                    buildStatus: SCM_STATE_MAP[build.status],
                     pipelineId,
                     token: 'equivalentToOneQuarter'
                 });
@@ -697,7 +713,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'PR-5:main',
-                    buildStatus: 'FAILURE',
+                    buildStatus: SCM_STATE_MAP.FAILURE,
                     url,
                     pipelineId
                 });
@@ -720,7 +736,7 @@ describe('Build Model', () => {
                 permutations: [{ annotations, freezeWindows }],
                 isPR: sinon.stub().returns(true)
             });
-            build.status = 'FAILURE';
+            build.status = SCM_STATE_MAP.FAILURE;
             build.meta.meta.status = {
                 findbugs: 'hello',
                 snyk:
@@ -736,7 +752,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'PR-5:main',
-                    buildStatus: 'FAILURE',
+                    buildStatus: SCM_STATE_MAP.FAILURE,
                     url,
                     pipelineId
                 });
@@ -746,7 +762,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'PR-5:main',
-                    buildStatus: 'FAILURE',
+                    buildStatus: SCM_STATE_MAP.FAILURE,
                     url: 'https://display.com/some/endpoint/pipelines/1234/builds/9876',
                     pipelineId,
                     context: 'snyk',
@@ -788,7 +804,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'PR-5:main',
-                    buildStatus: 'FAILURE',
+                    buildStatus: SCM_STATE_MAP.FAILURE,
                     url,
                     pipelineId
                 });
@@ -798,7 +814,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'PR-5:main',
-                    buildStatus: 'FAILURE',
+                    buildStatus: SCM_STATE_MAP.FAILURE,
                     url: 'https://display.com/some/endpoint/pipelines/1234/builds/9876',
                     pipelineId,
                     context: 'snyk',
@@ -1046,7 +1062,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'main',
-                    buildStatus: 'QUEUED',
+                    buildStatus: SCM_STATE_MAP.QUEUED,
                     url,
                     pipelineId
                 });
@@ -1104,7 +1120,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'main',
-                    buildStatus: 'QUEUED',
+                    buildStatus: SCM_STATE_MAP.QUEUED,
                     url,
                     pipelineId
                 });
@@ -1164,7 +1180,7 @@ describe('Build Model', () => {
                         scmContext,
                         sha,
                         jobName: 'main',
-                        buildStatus: 'QUEUED',
+                        buildStatus: SCM_STATE_MAP.QUEUED,
                         url,
                         pipelineId
                     });
@@ -1495,7 +1511,7 @@ describe('Build Model', () => {
                     scmContext,
                     sha,
                     jobName: 'main',
-                    buildStatus: 'QUEUED',
+                    buildStatus: SCM_STATE_MAP.QUEUED,
                     url,
                     pipelineId
                 });
