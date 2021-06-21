@@ -658,7 +658,7 @@ describe('Build Model', () => {
                     jobId,
                     annotations,
                     startTime: build.startTime,
-                    buildStatus: SCM_STATE_MAP[build.status],
+                    buildStatus: build.status,
                     pipelineId,
                     token: 'equivalentToOneQuarter'
                 });
