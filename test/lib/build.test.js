@@ -4,6 +4,7 @@ const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
+const { SCM_STATE_MAP } = require('../../lib/helper');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -38,22 +39,6 @@ describe('Build Model', () => {
         }
     };
     const TEMPORAL_JWT_TIMEOUT = 12 * 60;
-    // SCM handles only SUCCESS, PENDING & FAILURE status
-    const SCM_STATE_MAP = {
-        ABORTED: 'FAILURE',
-        CREATED: 'PENDING',
-        FAILURE: 'FAILURE',
-        FAILED: 'FAILURE',
-        QUEUED: 'PENDING',
-        RUNNING: 'PENDING',
-        SUCCESS: 'SUCCESS',
-        BLOCKED: 'FAILURE',
-        UNSTABLE: 'FAILURE',
-        COLLAPSED: 'FAILURE',
-        FIXED: 'SUCCESS',
-        PENDING: 'PENDING',
-        FROZEN: 'FAILURE'
-    };
     let BuildModel;
     let datastore;
     let executorMock;
