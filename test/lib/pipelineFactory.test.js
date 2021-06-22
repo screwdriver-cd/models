@@ -151,7 +151,45 @@ describe('Pipeline Factory', () => {
                     admins
                 })
                 .then(model => {
+                    assert.calledOnce(userFactoryMock.get);
                     assert.calledWith(scm.decorateUrl, { scmUri, scmContext, token: 'foo' });
+                    assert.calledWith(datastore.save, saveConfig);
+                    assert.instanceOf(model, Pipeline);
+                });
+        });
+
+        // child pipeline for read-only SCM case
+        it('creates a new pipeline in the datastore when scmToken passed in', () => {
+            const expected = {
+                id: testId,
+                admins,
+                createTime: nowTime,
+                scmUri,
+                scmRepo
+            };
+
+            datastore.save.resolves(expected);
+            scm.decorateUrl.resolves(scmRepo);
+
+            userFactoryMock.get
+                .withArgs({
+                    username: Object.keys(admins)[0],
+                    scmContext
+                })
+                .resolves({
+                    unsealToken: sinon.stub().resolves('foo')
+                });
+
+            return factory
+                .create({
+                    scmUri,
+                    scmContext,
+                    admins,
+                    scmToken: 'tokenRO'
+                })
+                .then(model => {
+                    assert.notCalled(userFactoryMock.get);
+                    assert.calledWith(scm.decorateUrl, { scmUri, scmContext, token: 'tokenRO' });
                     assert.calledWith(datastore.save, saveConfig);
                     assert.instanceOf(model, Pipeline);
                 });
