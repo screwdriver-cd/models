@@ -4,7 +4,7 @@ const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
-const { SCM_STATE_MAP } = require('screwdriver-data-schema').config.scmCommons;
+const { SCM_STATE_MAP } = require('screwdriver-data-schema/lib/scmCommons');
 
 sinon.assert.expose(assert, { prefix: '' });
 
