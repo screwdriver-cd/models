@@ -272,7 +272,7 @@ describe('Pipeline Model', () => {
             getOpenedPRs: sinon.stub(),
             getPrInfo: sinon.stub(),
             getScmContext: sinon.stub(),
-            getReadOnlyInfo: sinon.stub()
+            getReadOnlyInfo: sinon.stub().returns({})
         };
         parserMock = sinon.stub();
         pipelineFactoryMock.getExternalJoinFlag.returns(false);
@@ -363,8 +363,8 @@ describe('Pipeline Model', () => {
         });
     });
 
-    const getUserPermissionMocks = a => {
-        userFactoryMock.get.withArgs({ username: a.username, scmContext }).resolves({
+    const getUserPermissionMocks = (a, context = scmContext) => {
+        userFactoryMock.get.withArgs({ username: a.username, scmContext: context }).resolves({
             unsealToken: sinon.stub().resolves('foo'),
             getPermissions: sinon.stub().resolves({
                 push: a.push,
@@ -380,6 +380,9 @@ describe('Pipeline Model', () => {
             getUserPermissionMocks({ username: 'robin', push: true });
             pipeline.admins = { batman: true, robin: true };
             pipeline.update = sinon.stub().resolves('foo');
+            scmMock.getReadOnlyInfo
+                .withArgs({ scmContext: SCM_CONTEXT_GITLAB })
+                .returns({ enabled: true, username: 'sd-buildbot', accessToken: 'tokenRO' });
         });
 
         it('updates the webhook', () => {
@@ -390,6 +393,23 @@ describe('Pipeline Model', () => {
                     scmUri,
                     scmContext,
                     token: 'foo',
+                    actions: [],
+                    webhookUrl: 'https://api.screwdriver.cd/v4/webhooks'
+                });
+            });
+        });
+
+        it('updates the webhook when child pipeline is in read-only SCM', () => {
+            pipelineConfig.scmContext = 'gitlab:gitlab.com';
+            pipelineConfig.configPipelineId = testId;
+            pipeline = new PipelineModel(pipelineConfig);
+            scmMock.addWebhook.resolves(null);
+
+            return pipeline.addWebhooks('https://api.screwdriver.cd/v4/webhooks').then(() => {
+                assert.calledWith(scmMock.addWebhook, {
+                    scmUri,
+                    scmContext: 'gitlab:gitlab.com',
+                    token: 'tokenRO',
                     actions: [],
                     webhookUrl: 'https://api.screwdriver.cd/v4/webhooks'
                 });
@@ -439,7 +459,7 @@ describe('Pipeline Model', () => {
             scmMock.getReadOnlyInfo.withArgs({ scmContext: SCM_CONTEXT_GITHUB }).returns({ enabled: false });
             scmMock.getReadOnlyInfo
                 .withArgs({ scmContext: SCM_CONTEXT_GITLAB })
-                .returns({ enabled: true, username: 'sd-buildbot' });
+                .returns({ enabled: true, username: 'sd-buildbot', accessToken: 'tokenRO' });
             pipelineFactoryMock.scm.parseUrl
                 .withArgs(
                     sinon.match({
@@ -1122,6 +1142,9 @@ describe('Pipeline Model', () => {
             datastore.update.resolves(null);
             scmMock.getFile.resolves(SCM_CONTEXT_GITHUB);
             scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge', baseBranch: 'testBranch' });
+            scmMock.getReadOnlyInfo
+                .withArgs({ scmContext: SCM_CONTEXT_GITLAB })
+                .returns({ enabled: true, username: 'sd-buildbot', accessToken: 'tokenRO' });
             parserMock.withArgs(parserConfig).resolves(PARSED_YAML);
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
@@ -1501,6 +1524,9 @@ describe('Pipeline Model', () => {
             };
             datastore.update.resolves(null);
             scmMock.getFile.resolves(SCM_CONTEXT_GITHUB);
+            scmMock.getReadOnlyInfo
+                .withArgs({ scmContext: SCM_CONTEXT_GITLAB })
+                .returns({ enabled: true, username: 'sd-buildbot', accessToken: 'tokenRO' });
             parserMock.withArgs(parserConfig).resolves(PARSED_YAML);
             scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge', baseBranch: 'testBranch' });
             getUserPermissionMocks({ username: 'batman', push: true });
@@ -1569,6 +1595,9 @@ describe('Pipeline Model', () => {
 
     describe('get admin', () => {
         beforeEach(() => {
+            scmMock.getReadOnlyInfo
+                .withArgs({ scmContext: SCM_CONTEXT_GITLAB })
+                .returns({ enabled: true, username: 'sd-buildbot', accessToken: 'tokenRO' });
             userFactoryMock.get.resolves({
                 getPermissions: sinon.stub().resolves({
                     push: true
@@ -1592,6 +1621,9 @@ describe('Pipeline Model', () => {
 
     describe('getFirstAdmin', () => {
         beforeEach(() => {
+            scmMock.getReadOnlyInfo
+                .withArgs({ scmContext: SCM_CONTEXT_GITLAB })
+                .returns({ enabled: true, username: 'sd-buildbot', accessToken: 'tokenRO' });
             getUserPermissionMocks({ username: 'batman', push: false });
             getUserPermissionMocks({ username: 'robin', push: true });
             pipeline.admins = { batman: true, robin: true };
@@ -1599,6 +1631,25 @@ describe('Pipeline Model', () => {
         });
 
         it('has an admin robin', () => {
+            const admin = pipeline.getFirstAdmin();
+
+            return admin.then(realAdmin => {
+                assert.equal(realAdmin.username, 'robin');
+            });
+        });
+
+        it('uses parent admin if read-only child pipeline', () => {
+            // Create child pipeline with read-only SCM
+            pipelineConfig.scmContext = 'gitlab:gitlab.com';
+            pipelineConfig.configPipelineId = testId;
+            pipeline = new PipelineModel(pipelineConfig);
+            // Create parent pipeline with normal SCM
+            pipelineConfig.scmContext = 'github:github.com';
+
+            const parentPipeline = new PipelineModel(pipelineConfig);
+
+            pipelineFactoryMock.get.withArgs(testId).resolves(parentPipeline);
+
             const admin = pipeline.getFirstAdmin();
 
             return admin.then(realAdmin => {
@@ -1677,6 +1728,9 @@ describe('Pipeline Model', () => {
         beforeEach(() => {
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
+            scmMock.getReadOnlyInfo
+                .withArgs({ scmContext: SCM_CONTEXT_GITLAB })
+                .returns({ enabled: true, username: 'sd-buildbot', accessToken: 'tokenRO' });
             pipeline.admins = { batman: true, robin: true };
             pipeline.update = sinon.stub().resolves('foo');
         });
@@ -1685,6 +1739,17 @@ describe('Pipeline Model', () => {
             pipeline.token.then(token => {
                 assert.equal(token, 'foo');
             }));
+
+        it('gets read-only token', () => {
+            pipelineConfig.scmContext = 'gitlab:gitlab.com';
+            pipelineConfig.configPipelineId = '456';
+
+            pipeline = new PipelineModel(pipelineConfig);
+
+            return pipeline.token.then(token => {
+                assert.equal(token, 'tokenRO');
+            });
+        });
     });
 
     describe('get branch', () => {
