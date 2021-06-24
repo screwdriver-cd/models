@@ -1801,7 +1801,8 @@ describe('Pipeline Model', () => {
         it('has a jobs getter', () => {
             const listConfig = {
                 params: {
-                    pipelineId: pipeline.id
+                    pipelineId: pipeline.id,
+                    archived: false
                 }
             };
 
