@@ -1181,6 +1181,11 @@ describe('Build Model', () => {
                 id: 222,
                 isPR: () => false
             };
+            const prJob = {
+                name: `PR-999:${blocking2.name}`,
+                isPR: () => true,
+                id: 333
+            };
 
             pipelineMockB = {
                 id: pipelineId,
@@ -1195,7 +1200,8 @@ describe('Build Model', () => {
                         blocking1,
                         { id: 123, name: 'somejob', isPR: () => false },
                         blocking2,
-                        { id: 456, name: 'someotherjob', isPR: () => false }
+                        { id: 456, name: 'someotherjob', isPR: () => false },
+                        prJob
                     ])
             };
 
@@ -1225,7 +1231,7 @@ describe('Build Model', () => {
                     jobState,
                     jobArchived,
                     eventId,
-                    blockedBy: [jobId, blocking1.id, blocking2.id],
+                    blockedBy: [jobId, blocking1.id, blocking2.id, prJob.id],
                     annotations,
                     freezeWindows,
                     apiUri,
