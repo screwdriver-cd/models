@@ -2585,9 +2585,6 @@ describe('Pipeline Model', () => {
     });
 
     describe('remove', () => {
-        let archived;
-        let prType;
-
         const testEvent = {
             pipelineId: testId,
             remove: sinon.stub().resolves(null),
@@ -2619,21 +2616,6 @@ describe('Pipeline Model', () => {
         };
 
         beforeEach(() => {
-            archived = {
-                params: {
-                    pipelineId: testId,
-                    archived: true
-                }
-            };
-
-            prType = {
-                params: {
-                    pipelineId: testId,
-                    type: 'pr'
-                },
-                sort: 'descending'
-            };
-
             eventFactoryMock.list.resolves([]);
             jobFactoryMock.list.resolves([]);
             collectionFactoryMock.list.resolves([collection]);
@@ -2678,30 +2660,33 @@ describe('Pipeline Model', () => {
             }));
 
         it('remove jobs recursively', () => {
-            const nonArchived = hoek.clone(archived);
+            const nonArchivedMatcher = sinon.match(function(value) {
+                return !value.params.archived;
+            });
+            const archivedMatcher = sinon.match(function(value) {
+                return value.params.archived;
+            });
             let i;
-
-            nonArchived.params.archived = false;
 
             for (i = 0; i < 4; i += 1) {
                 jobFactoryMock.list
-                    .withArgs(nonArchived)
+                    .withArgs(nonArchivedMatcher)
                     .onCall(i)
                     .resolves([publishJob, mainJob]);
             }
             jobFactoryMock.list
-                .withArgs(nonArchived)
+                .withArgs(nonArchivedMatcher)
                 .onCall(i)
                 .resolves([]);
 
             for (i = 0; i < 2; i += 1) {
                 jobFactoryMock.list
-                    .withArgs(archived)
+                    .withArgs(archivedMatcher)
                     .onCall(i)
                     .resolves([blahJob]);
             }
             jobFactoryMock.list
-                .withArgs(archived)
+                .withArgs(archivedMatcher)
                 .onCall(i)
                 .resolves([]);
 
@@ -2776,30 +2761,33 @@ describe('Pipeline Model', () => {
         });
 
         it('remove events recursively', () => {
-            const pipelineType = hoek.clone(prType);
+            const pipelineTypeMatcher = sinon.match(function(value) {
+                return value.params.type === 'pipeline';
+            });
+            const prTypeMatcher = sinon.match(function(value) {
+                return value.params.type === 'pr';
+            });
             let i;
-
-            pipelineType.params.type = 'pipeline';
 
             for (i = 0; i < 4; i += 1) {
                 eventFactoryMock.list
-                    .withArgs(pipelineType)
+                    .withArgs(pipelineTypeMatcher)
                     .onCall(i)
                     .resolves([testEvent]);
             }
             eventFactoryMock.list
-                .withArgs(pipelineType)
+                .withArgs(pipelineTypeMatcher)
                 .onCall(i)
                 .resolves([]);
 
             for (i = 0; i < 2; i += 1) {
                 eventFactoryMock.list
-                    .withArgs(prType)
+                    .withArgs(prTypeMatcher)
                     .onCall(i)
                     .resolves([testEvent]);
             }
             eventFactoryMock.list
-                .withArgs(prType)
+                .withArgs(prTypeMatcher)
                 .onCall(i)
                 .resolves([]);
 
