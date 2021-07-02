@@ -2661,10 +2661,10 @@ describe('Pipeline Model', () => {
 
         it('remove jobs recursively', () => {
             const nonArchivedMatcher = sinon.match(function(value) {
-                return !value.params.archived;
+                return value && value.params && !value.params.archived;
             });
             const archivedMatcher = sinon.match(function(value) {
-                return value.params.archived;
+                return value && value.params && value.params.archived;
             });
             let i;
 
@@ -2762,10 +2762,10 @@ describe('Pipeline Model', () => {
 
         it('remove events recursively', () => {
             const pipelineTypeMatcher = sinon.match(function(value) {
-                return value.params.type === 'pipeline';
+                return value && value.params && value.params.type === 'pipeline';
             });
             const prTypeMatcher = sinon.match(function(value) {
-                return value.params.type === 'pr';
+                return value && value.params && value.params.type === 'pr';
             });
             let i;
 
