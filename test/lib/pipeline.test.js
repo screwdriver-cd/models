@@ -31,8 +31,8 @@ const NON_CHAINPR_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML_PR, {
     annotations: { 'screwdriver.cd/chainPR': false }
 });
 const DEFAULT_PAGE = 1;
-const MAX_COUNT = 1000;
-const FAKE_MAX_COUNT = 5;
+const MAX_METRIC_GET_COUNT = 1000;
+const FAKE_MAX_METRIC_GET_COUNT = 5;
 const SCM_CONTEXT_GITHUB = 'github:github.com';
 const SCM_CONTEXT_GITLAB = 'gitlab:gitlab.com';
 
@@ -3082,7 +3082,7 @@ describe('Pipeline Model', () => {
                 sortBy: 'id',
                 paginate: {
                     page: DEFAULT_PAGE,
-                    count: MAX_COUNT
+                    count: MAX_METRIC_GET_COUNT
                 },
                 startTime,
                 endTime,
@@ -3109,7 +3109,7 @@ describe('Pipeline Model', () => {
                 sortBy: 'id',
                 paginate: {
                     page: DEFAULT_PAGE,
-                    count: MAX_COUNT
+                    count: MAX_METRIC_GET_COUNT
                 },
                 startTime,
                 endTime,
@@ -3244,7 +3244,7 @@ describe('Pipeline Model', () => {
             const RewirePipelineModel = rewire('../../lib/pipeline');
 
             // eslint-disable-next-line no-underscore-dangle
-            RewirePipelineModel.__set__('MAX_COUNT', FAKE_MAX_COUNT);
+            RewirePipelineModel.__set__('MAX_METRIC_GET_COUNT', FAKE_MAX_METRIC_GET_COUNT);
             let eventListConfig;
 
             beforeEach(() => {
@@ -3260,7 +3260,7 @@ describe('Pipeline Model', () => {
                     sortBy: 'id',
                     paginate: {
                         page: DEFAULT_PAGE,
-                        count: FAKE_MAX_COUNT
+                        count: FAKE_MAX_METRIC_GET_COUNT
                     },
                     readOnly: true
                 };
@@ -3448,7 +3448,7 @@ describe('Pipeline Model', () => {
                 sortBy: 'id',
                 paginate: {
                     page: DEFAULT_PAGE,
-                    count: MAX_COUNT
+                    count: MAX_METRIC_GET_COUNT
                 },
                 readOnly: true
             };
