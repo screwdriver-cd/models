@@ -31,8 +31,8 @@ const NON_CHAINPR_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML_PR, {
     annotations: { 'screwdriver.cd/chainPR': false }
 });
 const DEFAULT_PAGE = 1;
-const MAX_COUNT = 1000;
-const FAKE_MAX_COUNT = 5;
+const MAX_METRIC_GET_COUNT = 1000;
+const FAKE_MAX_METRIC_GET_COUNT = 5;
 const SCM_CONTEXT_GITHUB = 'github:github.com';
 const SCM_CONTEXT_GITLAB = 'gitlab:gitlab.com';
 
@@ -2585,9 +2585,6 @@ describe('Pipeline Model', () => {
     });
 
     describe('remove', () => {
-        let archived;
-        let prType;
-
         const testEvent = {
             pipelineId: testId,
             remove: sinon.stub().resolves(null),
@@ -2619,21 +2616,6 @@ describe('Pipeline Model', () => {
         };
 
         beforeEach(() => {
-            archived = {
-                params: {
-                    pipelineId: testId,
-                    archived: true
-                }
-            };
-
-            prType = {
-                params: {
-                    pipelineId: testId,
-                    type: 'pr'
-                },
-                sort: 'descending'
-            };
-
             eventFactoryMock.list.resolves([]);
             jobFactoryMock.list.resolves([]);
             collectionFactoryMock.list.resolves([collection]);
@@ -2678,30 +2660,33 @@ describe('Pipeline Model', () => {
             }));
 
         it('remove jobs recursively', () => {
-            const nonArchived = hoek.clone(archived);
+            const nonArchivedMatcher = sinon.match(function(value) {
+                return value && value.params && !value.params.archived;
+            });
+            const archivedMatcher = sinon.match(function(value) {
+                return value && value.params && value.params.archived;
+            });
             let i;
-
-            nonArchived.params.archived = false;
 
             for (i = 0; i < 4; i += 1) {
                 jobFactoryMock.list
-                    .withArgs(nonArchived)
+                    .withArgs(nonArchivedMatcher)
                     .onCall(i)
                     .resolves([publishJob, mainJob]);
             }
             jobFactoryMock.list
-                .withArgs(nonArchived)
+                .withArgs(nonArchivedMatcher)
                 .onCall(i)
                 .resolves([]);
 
             for (i = 0; i < 2; i += 1) {
                 jobFactoryMock.list
-                    .withArgs(archived)
+                    .withArgs(archivedMatcher)
                     .onCall(i)
                     .resolves([blahJob]);
             }
             jobFactoryMock.list
-                .withArgs(archived)
+                .withArgs(archivedMatcher)
                 .onCall(i)
                 .resolves([]);
 
@@ -2776,30 +2761,33 @@ describe('Pipeline Model', () => {
         });
 
         it('remove events recursively', () => {
-            const pipelineType = hoek.clone(prType);
+            const pipelineTypeMatcher = sinon.match(function(value) {
+                return value && value.params && value.params.type === 'pipeline';
+            });
+            const prTypeMatcher = sinon.match(function(value) {
+                return value && value.params && value.params.type === 'pr';
+            });
             let i;
-
-            pipelineType.params.type = 'pipeline';
 
             for (i = 0; i < 4; i += 1) {
                 eventFactoryMock.list
-                    .withArgs(pipelineType)
+                    .withArgs(pipelineTypeMatcher)
                     .onCall(i)
                     .resolves([testEvent]);
             }
             eventFactoryMock.list
-                .withArgs(pipelineType)
+                .withArgs(pipelineTypeMatcher)
                 .onCall(i)
                 .resolves([]);
 
             for (i = 0; i < 2; i += 1) {
                 eventFactoryMock.list
-                    .withArgs(prType)
+                    .withArgs(prTypeMatcher)
                     .onCall(i)
                     .resolves([testEvent]);
             }
             eventFactoryMock.list
-                .withArgs(prType)
+                .withArgs(prTypeMatcher)
                 .onCall(i)
                 .resolves([]);
 
@@ -3094,7 +3082,7 @@ describe('Pipeline Model', () => {
                 sortBy: 'id',
                 paginate: {
                     page: DEFAULT_PAGE,
-                    count: MAX_COUNT
+                    count: MAX_METRIC_GET_COUNT
                 },
                 startTime,
                 endTime,
@@ -3121,7 +3109,7 @@ describe('Pipeline Model', () => {
                 sortBy: 'id',
                 paginate: {
                     page: DEFAULT_PAGE,
-                    count: MAX_COUNT
+                    count: MAX_METRIC_GET_COUNT
                 },
                 startTime,
                 endTime,
@@ -3256,7 +3244,7 @@ describe('Pipeline Model', () => {
             const RewirePipelineModel = rewire('../../lib/pipeline');
 
             // eslint-disable-next-line no-underscore-dangle
-            RewirePipelineModel.__set__('MAX_COUNT', FAKE_MAX_COUNT);
+            RewirePipelineModel.__set__('MAX_METRIC_GET_COUNT', FAKE_MAX_METRIC_GET_COUNT);
             let eventListConfig;
 
             beforeEach(() => {
@@ -3272,7 +3260,7 @@ describe('Pipeline Model', () => {
                     sortBy: 'id',
                     paginate: {
                         page: DEFAULT_PAGE,
-                        count: FAKE_MAX_COUNT
+                        count: FAKE_MAX_METRIC_GET_COUNT
                     },
                     readOnly: true
                 };
@@ -3460,7 +3448,7 @@ describe('Pipeline Model', () => {
                 sortBy: 'id',
                 paginate: {
                     page: DEFAULT_PAGE,
-                    count: MAX_COUNT
+                    count: MAX_METRIC_GET_COUNT
                 },
                 readOnly: true
             };

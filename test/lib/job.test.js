@@ -7,8 +7,8 @@ const schema = require('screwdriver-data-schema');
 const hoek = require('@hapi/hoek');
 const rewire = require('rewire');
 const dayjs = require('dayjs');
-const MAX_COUNT = 1000;
-const FAKE_MAX_COUNT = 5;
+const MAX_METRIC_GET_COUNT = 1000;
+const FAKE_MAX_METRIC_GET_COUNT = 5;
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -797,7 +797,7 @@ describe('Job Model', () => {
                 sort: 'ascending',
                 sortBy: 'id',
                 paginate: {
-                    count: MAX_COUNT
+                    count: MAX_METRIC_GET_COUNT
                 },
                 readOnly: true
             };
@@ -814,7 +814,7 @@ describe('Job Model', () => {
             const RewireJobModel = rewire('../../lib/job');
 
             // eslint-disable-next-line no-underscore-dangle
-            RewireJobModel.__set__('MAX_COUNT', FAKE_MAX_COUNT);
+            RewireJobModel.__set__('MAX_METRIC_GET_COUNT', FAKE_MAX_METRIC_GET_COUNT);
             let buildListConfig;
 
             beforeEach(() => {
@@ -829,7 +829,7 @@ describe('Job Model', () => {
                     sortBy: 'id',
                     paginate: {
                         page: 1,
-                        count: FAKE_MAX_COUNT
+                        count: FAKE_MAX_METRIC_GET_COUNT
                     },
                     readOnly: true
                 };
@@ -945,7 +945,7 @@ describe('Job Model', () => {
                 sort: 'ascending',
                 sortBy: 'id',
                 paginate: {
-                    count: MAX_COUNT
+                    count: MAX_METRIC_GET_COUNT
                 },
                 readOnly: true
             };
