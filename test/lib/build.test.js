@@ -50,6 +50,7 @@ describe('Build Model', () => {
     let jobFactoryMock;
     let pipelineFactoryMock;
     let stepFactoryMock;
+    let buildFactoryMock;
     let scmMock;
     let tokenGen;
     let pipelineMock;
@@ -92,6 +93,9 @@ describe('Build Model', () => {
         stepFactoryMock = {
             list: sinon.stub().resolves([])
         };
+        buildFactoryMock = {
+            removeSteps: sinon.stub().resolves(null)
+        };
 
         pipelineMock = {
             id: pipelineId,
@@ -126,11 +130,15 @@ describe('Build Model', () => {
         const sF = {
             getInstance: sinon.stub().returns(stepFactoryMock)
         };
+        const bF = {
+            getInstance: sinon.stub().returns(buildFactoryMock)
+        };
 
         mockery.registerMock('./pipelineFactory', pF);
         mockery.registerMock('./userFactory', uF);
         mockery.registerMock('./jobFactory', jF);
         mockery.registerMock('./stepFactory', sF);
+        mockery.registerMock('./buildFactory', bF);
         mockery.registerMock('screwdriver-hashr', hashaMock);
 
         // eslint-disable-next-line global-require
@@ -826,30 +834,13 @@ describe('Build Model', () => {
 
         it('remove build and build steps', () => {
             return build.remove().then(() => {
-                assert.calledOnce(stepFactoryMock.list);
-                assert.calledOnce(stepsMock[0].remove); // remove builds recursively
-                assert.calledOnce(stepsMock[1].remove);
-                assert.calledOnce(stepsMock[2].remove);
+                assert.calledOnce(buildFactoryMock.removeSteps); // remove steps in one shot
                 assert.calledOnce(datastore.remove); // remove the build
             });
         });
 
-        it('fail if getSteps returns error', () => {
-            stepFactoryMock.list.rejects(new Error('error'));
-
-            return build
-                .remove()
-                .then(() => {
-                    assert.fail('should not get here');
-                })
-                .catch(err => {
-                    assert.isOk(err);
-                    assert.equal(err.message, 'error');
-                });
-        });
-
-        it('fail if step.remove returns error', () => {
-            stepsMock[0].remove.rejects(new Error('error removing step'));
+        it('fail if removeSteps returns error', () => {
+            buildFactoryMock.removeSteps.rejects(new Error('error removing step'));
 
             return build
                 .remove()
