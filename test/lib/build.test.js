@@ -90,7 +90,8 @@ describe('Build Model', () => {
             get: sinon.stub().resolves(null)
         };
         stepFactoryMock = {
-            list: sinon.stub().resolves([])
+            list: sinon.stub().resolves([]),
+            removeSteps: sinon.stub().resolves([])
         };
 
         pipelineMock = {
@@ -826,30 +827,13 @@ describe('Build Model', () => {
 
         it('remove build and build steps', () => {
             return build.remove().then(() => {
-                assert.calledOnce(stepFactoryMock.list);
-                assert.calledOnce(stepsMock[0].remove); // remove builds recursively
-                assert.calledOnce(stepsMock[1].remove);
-                assert.calledOnce(stepsMock[2].remove);
+                assert.calledOnce(stepFactoryMock.removeSteps); // remove steps in one shot
                 assert.calledOnce(datastore.remove); // remove the build
             });
         });
 
-        it('fail if getSteps returns error', () => {
-            stepFactoryMock.list.rejects(new Error('error'));
-
-            return build
-                .remove()
-                .then(() => {
-                    assert.fail('should not get here');
-                })
-                .catch(err => {
-                    assert.isOk(err);
-                    assert.equal(err.message, 'error');
-                });
-        });
-
-        it('fail if step.remove returns error', () => {
-            stepsMock[0].remove.rejects(new Error('error removing step'));
+        it('fail if removeSteps returns error', () => {
+            stepFactoryMock.removeSteps.rejects(new Error('error removing step'));
 
             return build
                 .remove()

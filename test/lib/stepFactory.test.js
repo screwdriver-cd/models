@@ -3,6 +3,7 @@
 const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
+const { DELETE_STEPS_QUERY, getQueries } = require('../../lib/rawQueries');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -33,7 +34,8 @@ describe('Step Factory', () => {
     beforeEach(() => {
         datastore = {
             save: sinon.stub(),
-            get: sinon.stub()
+            get: sinon.stub(),
+            query: sinon.stub()
         };
 
         /* eslint-disable global-require */
@@ -118,6 +120,36 @@ describe('Step Factory', () => {
 
         it('should throw an error when config not supplied', () => {
             assert.throw(StepFactory.getInstance, Error, 'No datastore provided to StepFactory');
+        });
+    });
+
+    describe('removeSteps', () => {
+        let config;
+        let queryConfig;
+
+        beforeEach(() => {
+            sinon.stub(StepFactory.prototype, 'query').returns();
+
+            config = {
+                buildId: '12345'
+            };
+
+            queryConfig = {
+                queries: getQueries('', DELETE_STEPS_QUERY),
+                replacements: {
+                    buildId: config.buildId
+                },
+                rawResponse: true,
+                table: 'steps'
+            };
+        });
+
+        it('returns latest builds for groupEventId', () => {
+            datastore.query.resolves([]);
+
+            return factory.removeSteps(config).then(() => {
+                assert.calledWith(datastore.query, queryConfig);
+            });
         });
     });
 });
