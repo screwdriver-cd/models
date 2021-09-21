@@ -148,7 +148,8 @@ describe('Template Factory', () => {
                 config: templateConfig,
                 pipelineId,
                 id: generatedId,
-                trusted: false
+                trusted: false,
+                latest: true
             };
         });
 
@@ -255,6 +256,42 @@ describe('Template Factory', () => {
                 });
         });
 
+        it('creates a Template given lower major/minor version and no target templates', () => {
+            expected.version = `2.3.0`;
+            expected.latest = false;
+            const latest = {
+                name,
+                version: `3.0.0`,
+                maintainer,
+                description,
+                labels,
+                config: templateConfig,
+                pipelineId,
+                latest: true,
+                id: generatedId
+            };
+
+            datastore.save.resolves(expected);
+            datastore.scan.resolves([latest]);
+
+            return factory
+                .create({
+                    name,
+                    version: '2.3',
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Template);
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
+                    });
+                });
+        });
+
         it('creates a Template given major version and no latest templates', () => {
             expected.version = '1.0.0';
 
@@ -265,6 +302,42 @@ describe('Template Factory', () => {
                 .create({
                     name,
                     version: 1,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Template);
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
+                    });
+                });
+        });
+
+        it('creates a Template given lower major version and no target templates', () => {
+            expected.version = '2.0.0';
+            expected.latest = false;
+            const latest = {
+                name,
+                version: `3.0.0`,
+                maintainer,
+                description,
+                labels,
+                config: templateConfig,
+                pipelineId,
+                latest: true,
+                id: generatedId
+            };
+
+            datastore.save.resolves(expected);
+            datastore.scan.resolves([latest]);
+
+            return factory
+                .create({
+                    name,
+                    version: '2.0',
                     maintainer,
                     description,
                     labels,
@@ -316,6 +389,82 @@ describe('Template Factory', () => {
                             latest: false
                         }
                     });
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
+                    });
+                });
+        });
+
+        it('creates a Template and auto-bumps version when target version exists', () => {
+            const latest = {
+                name,
+                version: `3.0.0`,
+                maintainer,
+                description,
+                labels,
+                config: templateConfig,
+                pipelineId,
+                latest: true,
+                id: generatedId
+            };
+
+            const target = [
+                {
+                    name,
+                    version: `2.1.2`,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId,
+                    latest: false,
+                    id: generatedId + 2
+                },
+                {
+                    name,
+                    version: `2.1.1`,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId,
+                    latest: false,
+                    id: generatedId + 1
+                },
+                {
+                    name,
+                    version: `2.1.0`,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId,
+                    latest: false,
+                    id: generatedId
+                }
+            ];
+
+            expected.version = `2.1.3`;
+            expected.latest = false;
+
+            datastore.save.resolves(expected);
+            datastore.scan.onFirstCall().resolves([latest]);
+            datastore.scan.onSecondCall().resolves(target);
+            datastore.update.resolves(latest);
+
+            return factory
+                .create({
+                    name,
+                    version: '2.1',
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Template);
+                    assert.notCalled(datastore.update);
                     Object.keys(expected).forEach(key => {
                         assert.deepEqual(model[key], expected[key]);
                     });
@@ -407,6 +556,85 @@ describe('Template Factory', () => {
                             latest: false
                         }
                     });
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
+                    });
+                });
+        });
+
+        it('creates a trusted Template and bump patch version when latest Template was trusted', () => {
+            const latest = {
+                name,
+                version: `3.1.0`,
+                maintainer,
+                description,
+                labels,
+                config: templateConfig,
+                pipelineId,
+                id: generatedId,
+                trusted: true
+            };
+
+            const target = [
+                {
+                    name,
+                    version: `2.1.2`,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId,
+                    latest: false,
+                    id: generatedId + 2
+                },
+                {
+                    name,
+                    version: `2.1.1`,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId,
+                    latest: false,
+                    id: generatedId + 1
+                },
+                {
+                    name,
+                    version: `2.1.0`,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId,
+                    latest: false,
+                    id: generatedId
+                }
+            ];
+
+            const newVersion = '2.1';
+
+            expected.version = `${newVersion}.3`;
+            expected.trusted = true;
+            expected.latest = false;
+
+            datastore.save.resolves(expected);
+            datastore.scan.onFirstCall().resolves([latest]);
+            datastore.scan.onSecondCall().resolves(target);
+            datastore.update.resolves(latest);
+
+            return factory
+                .create({
+                    name,
+                    version: '2.1',
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Template);
+                    assert.notCalled(datastore.update);
                     Object.keys(expected).forEach(key => {
                         assert.deepEqual(model[key], expected[key]);
                     });
