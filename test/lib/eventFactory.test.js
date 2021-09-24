@@ -2232,6 +2232,162 @@ describe('Event Factory', () => {
             });
         });
 
+        describe('job level parameters', () => {
+            beforeEach(() => {
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'component',
+                        permutations: [
+                            {
+                                requires: ['~commit'],
+                                sourcePaths: ['src/test'],
+                                parameters: {
+                                    color: 'white',
+                                    cuisine: {
+                                        value: 'Italian'
+                                    },
+                                    car: ['Audi', 'Tesla'],
+                                    music: {
+                                        value: ['jazz', 'rock']
+                                    }
+                                }
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 2,
+                        pipelineId: 8765,
+                        name: 'publish',
+                        permutations: [
+                            {
+                                requires: ['~component'],
+                                sourcePaths: ['src/test'],
+                                parameters: {
+                                    color: 'red',
+                                    cuisine: {
+                                        value: 'Japanese'
+                                    },
+                                    car: ['Ferrari', 'Lamborghini'],
+                                    sports: {
+                                        value: ['cricket', 'soccer']
+                                    }
+                                }
+                            }
+                        ],
+                        state: 'ENABLED'
+                    }
+                ];
+
+                syncedPipelineMock.getJobs = sinon.stub().resolves(jobsMock);
+                config.startFrom = '~commit';
+
+                const pipelineWithParameter = {
+                    parameters: {
+                        user: {
+                            value: ['ironman', 'batman'],
+                            description: 'User name'
+                        }
+                    },
+                    ...syncedPipelineMock
+                };
+
+                pipelineMock.sync = sinon.stub().resolves(pipelineWithParameter);
+            });
+
+            it('should have default parameters if create without parameters', () => {
+                return eventFactory.create(config).then(model => {
+                    assert.deepEqual(model.meta.parameters, {
+                        component: {
+                            car: {
+                                value: 'Audi'
+                            },
+                            color: {
+                                value: 'white'
+                            },
+                            cuisine: {
+                                value: 'Italian'
+                            },
+                            music: {
+                                value: 'jazz'
+                            }
+                        },
+                        publish: {
+                            car: {
+                                value: 'Ferrari'
+                            },
+                            color: {
+                                value: 'red'
+                            },
+                            cuisine: {
+                                value: 'Japanese'
+                            },
+                            sports: {
+                                value: 'cricket'
+                            }
+                        },
+                        user: {
+                            value: 'ironman'
+                        }
+                    });
+                });
+            });
+
+            it('should override default parameters if create with parameters', () => {
+                config.meta = {
+                    parameters: {
+                        user: 'batman',
+                        component: {
+                            color: 'blue',
+                            cuisine: 'Indian'
+                        },
+                        publish: {
+                            car: 'McLaren',
+                            sports: 'baseball'
+                        }
+                    }
+                };
+
+                return eventFactory.create(config).then(model => {
+                    assert.deepEqual(model.meta.parameters, {
+                        component: {
+                            car: {
+                                value: 'Audi'
+                            },
+                            color: {
+                                value: 'blue'
+                            },
+                            cuisine: {
+                                value: 'Indian'
+                            },
+                            music: {
+                                value: 'jazz'
+                            }
+                        },
+                        publish: {
+                            car: {
+                                value: 'McLaren'
+                            },
+                            color: {
+                                value: 'red'
+                            },
+                            cuisine: {
+                                value: 'Japanese'
+                            },
+                            sports: {
+                                value: 'baseball'
+                            }
+                        },
+                        user: {
+                            value: 'batman'
+                        }
+                    });
+                });
+            });
+        });
+
         it('should should not call syncPRs and decorate commit with subscribed hook event', () => {
             pipelineFactoryMock.get.withArgs(pipelineId).resolves(pipelineMock);
             config.subscribedEvent = true;
