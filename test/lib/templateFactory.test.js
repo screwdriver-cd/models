@@ -450,6 +450,7 @@ describe('Template Factory', () => {
             datastore.save.resolves(expected);
             datastore.scan.onFirstCall().resolves([latest]);
             datastore.scan.onSecondCall().resolves(target);
+            datastore.scan.onThirdCall().resolves(target);
             datastore.update.resolves(latest);
 
             return factory
@@ -619,13 +620,118 @@ describe('Template Factory', () => {
 
             datastore.save.resolves(expected);
             datastore.scan.onFirstCall().resolves([latest]);
-            datastore.scan.onSecondCall().resolves(target);
+            datastore.scan.onSecondCall().resolves([target[0]]);
+            datastore.scan.onThirdCall().resolves(target);
             datastore.update.resolves(latest);
 
             return factory
                 .create({
                     name,
                     version: '2.1',
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Template);
+                    assert.notCalled(datastore.update);
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
+                    });
+                });
+        });
+
+        it('creates a Template given only major version which is same value as latest version', () => {
+            const latest = {
+                name,
+                version: `3.0.0`,
+                maintainer,
+                description,
+                labels,
+                config: templateConfig,
+                pipelineId,
+                id: generatedId
+            };
+            const newVersion = '3';
+
+            expected.version = `3.0.1`;
+            expected.latest = true;
+
+            datastore.save.resolves(expected);
+            datastore.scan.resolves([latest]);
+            datastore.update.resolves();
+
+            return factory
+                .create({
+                    name,
+                    version: newVersion,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Template);
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
+                    });
+                });
+        });
+
+        it('creates a Template given only major version and auto-bumps version when target version exists', () => {
+            const latest = {
+                name,
+                version: `4.0.0`,
+                maintainer,
+                description,
+                labels,
+                config: templateConfig,
+                pipelineId,
+                latest: true,
+                id: generatedId
+            };
+
+            const target = [
+                {
+                    name,
+                    version: `3.1.1`,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId,
+                    latest: false,
+                    id: generatedId + 1
+                },
+                {
+                    name,
+                    version: `3.1.0`,
+                    maintainer,
+                    description,
+                    labels,
+                    config: templateConfig,
+                    pipelineId,
+                    latest: false,
+                    id: generatedId
+                }
+            ];
+
+            expected.version = `3.1.2`;
+            expected.latest = false;
+
+            datastore.save.resolves(expected);
+            datastore.scan.onFirstCall().resolves([latest]);
+            datastore.scan.onSecondCall().resolves([target[0]]);
+            datastore.scan.onThirdCall().resolves(target);
+            datastore.update.resolves();
+
+            return factory
+                .create({
+                    name,
+                    version: '3',
                     maintainer,
                     description,
                     labels,
