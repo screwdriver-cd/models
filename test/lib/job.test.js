@@ -15,6 +15,17 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('Job Model', () => {
     const token = 'tokengenerated';
     const apiUri = 'https://notify.com/some/endpoint';
+    const annotations = {
+        'screwdriver.cd/buildPeriodically': 'H * * * *'
+    };
+    const provider = {
+        name: 'aws',
+        region: 'us-west-2',
+        accountId: 111111111111,
+        role: 'arn:aws:iam::111111111111:role/role',
+        executor: 'eks',
+        clusterName: 'sd-build-eks'
+    };
     let pipelineFactoryMock;
     let jobFactoryMock;
     let buildFactoryMock;
@@ -435,7 +446,7 @@ describe('Job Model', () => {
     });
 
     describe('update', () => {
-        it('Update a job and remove periodic, when job is disabled', () => {
+        it('update a job and remove periodic, when job is disabled', () => {
             const oldJob = Object.assign({}, job);
 
             oldJob.permutations = [
@@ -445,16 +456,8 @@ describe('Job Model', () => {
             ];
             oldJob.state = 'ENABLED';
             jobFactoryMock.get.resolves(oldJob);
-
             job.state = 'DISABLED';
-            job.permutations = [
-                {
-                    annotations: {
-                        'screwdriver.cd/buildPeriodically': 'H * * * *'
-                    }
-                }
-            ];
-
+            job.permutations = [{ annotations, provider }];
             datastore.update.resolves(null);
             pipelineFactoryMock.get.resolves({
                 ...pipelineMock,
@@ -466,7 +469,8 @@ describe('Job Model', () => {
                 assert.calledWith(executorMock.stopPeriodic, {
                     pipelineId: 9876,
                     jobId: build1.jobId,
-                    token: 'tokengenerated'
+                    token: 'tokengenerated',
+                    provider
                 });
                 assert.calledOnce(datastore.update);
             });
@@ -515,7 +519,8 @@ describe('Job Model', () => {
 
             job.permutations = [
                 {
-                    annotations: {}
+                    annotations: {},
+                    provider
                 }
             ];
             job.state = 'DISABLED';
@@ -526,7 +531,8 @@ describe('Job Model', () => {
                 assert.calledWith(executorMock.stopPeriodic, {
                     pipelineId: 9876,
                     jobId: build1.jobId,
-                    token: 'tokengenerated'
+                    token: 'tokengenerated',
+                    provider
                 });
                 assert.calledOnce(datastore.update);
             });
@@ -538,7 +544,8 @@ describe('Job Model', () => {
                 {
                     annotations: {
                         'screwdriver.cd/buildPeriodically': 'H * * * *'
-                    }
+                    },
+                    provider
                 }
             ];
 
@@ -552,7 +559,8 @@ describe('Job Model', () => {
                     tokenGen,
                     apiUri,
                     isUpdate: true,
-                    token: 'tokengenerated'
+                    token: 'tokengenerated',
+                    provider
                 });
                 assert.calledOnce(datastore.update);
             });

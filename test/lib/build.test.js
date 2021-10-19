@@ -11,6 +11,14 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('Build Model', () => {
     const annotations = {};
     const freezeWindows = ['* * ? * 1', '0-59 0-23 * 1 ?'];
+    const provider = {
+        name: 'aws',
+        region: 'us-west-2',
+        accountId: 111111111111,
+        role: 'arn:aws:iam::111111111111:role/role',
+        executor: 'eks',
+        clusterName: 'sd-build-eks'
+    };
     const apiUri = 'https://notify.com/some/endpoint';
     const uiUri = 'https://display.com/some/endpoint';
     const jobId = 777;
@@ -107,7 +115,7 @@ describe('Build Model', () => {
             archived: false,
             name: 'main',
             pipeline: Promise.resolve(pipelineMock),
-            permutations: [{ annotations, freezeWindows }],
+            permutations: [{ annotations, freezeWindows, provider }],
             isPR: sinon.stub().returns(false)
         };
         scmMock = {
@@ -250,7 +258,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations, freezeWindows }],
+                permutations: [{ annotations, freezeWindows, provider }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
@@ -260,6 +268,7 @@ describe('Build Model', () => {
                     buildId,
                     jobId,
                     annotations,
+                    provider,
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
@@ -313,7 +322,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations, freezeWindows }],
+                permutations: [{ annotations, freezeWindows, provider }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
@@ -335,6 +344,7 @@ describe('Build Model', () => {
                     buildId,
                     jobId,
                     annotations,
+                    provider,
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
@@ -399,7 +409,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations, freezeWindows }],
+                permutations: [{ annotations, freezeWindows, provider }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
@@ -418,6 +428,7 @@ describe('Build Model', () => {
                     buildId,
                     jobId,
                     annotations,
+                    provider,
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
@@ -479,6 +490,7 @@ describe('Build Model', () => {
                     buildId,
                     jobId,
                     annotations,
+                    provider,
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
@@ -520,6 +532,7 @@ describe('Build Model', () => {
                     buildId,
                     jobId,
                     annotations,
+                    provider,
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
@@ -611,6 +624,7 @@ describe('Build Model', () => {
                     buildId,
                     jobId,
                     annotations,
+                    provider,
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
@@ -643,6 +657,7 @@ describe('Build Model', () => {
                     buildId,
                     jobId,
                     annotations,
+                    provider,
                     startTime: build.startTime,
                     buildStatus: build.status,
                     pipelineId,
@@ -664,7 +679,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations, freezeWindows }],
+                permutations: [{ annotations, freezeWindows, provider }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
@@ -677,6 +692,7 @@ describe('Build Model', () => {
                     buildId,
                     jobId,
                     annotations,
+                    provider,
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
@@ -719,7 +735,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations, freezeWindows }],
+                permutations: [{ annotations, freezeWindows, provider }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = SCM_STATE_MAP.FAILURE;
@@ -771,7 +787,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations, freezeWindows }],
+                permutations: [{ annotations, freezeWindows, provider }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
@@ -859,6 +875,7 @@ describe('Build Model', () => {
                     buildId,
                     jobId,
                     annotations,
+                    provider,
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
@@ -874,6 +891,7 @@ describe('Build Model', () => {
                     buildId,
                     jobId,
                     annotations,
+                    provider,
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
@@ -883,6 +901,7 @@ describe('Build Model', () => {
                     buildId,
                     jobId,
                     annotations,
+                    provider,
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
@@ -900,6 +919,7 @@ describe('Build Model', () => {
                     buildClusterName: 'sd',
                     jobId,
                     annotations,
+                    provider,
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
@@ -973,7 +993,7 @@ describe('Build Model', () => {
                 prParentJobId,
                 name: 'main',
                 pipeline: Promise.resolve(pipelineMockB),
-                permutations: [{ annotations, freezeWindows }],
+                permutations: [{ annotations, freezeWindows, provider }],
                 isPR: () => false
             });
         });
@@ -993,6 +1013,7 @@ describe('Build Model', () => {
                     jobState,
                     jobArchived,
                     annotations,
+                    provider,
                     freezeWindows,
                     blockedBy: [jobId],
                     apiUri,
@@ -1050,6 +1071,7 @@ describe('Build Model', () => {
                     jobArchived,
                     eventId,
                     annotations,
+                    provider,
                     freezeWindows,
                     blockedBy: [jobId],
                     apiUri,
@@ -1111,6 +1133,7 @@ describe('Build Model', () => {
                         jobArchived,
                         eventId,
                         annotations,
+                        provider,
                         freezeWindows,
                         blockedBy: [jobId],
                         apiUri,
@@ -1199,6 +1222,7 @@ describe('Build Model', () => {
                 permutations: [
                     {
                         annotations,
+                        provider,
                         freezeWindows,
                         blockedBy: [blocking1.name, blocking2.name]
                     }
@@ -1218,6 +1242,7 @@ describe('Build Model', () => {
                     eventId,
                     blockedBy: [jobId, blocking1.id, blocking2.id, prJob.id],
                     annotations,
+                    provider,
                     freezeWindows,
                     apiUri,
                     buildId,
@@ -1289,6 +1314,7 @@ describe('Build Model', () => {
                 permutations: [
                     {
                         annotations,
+                        provider,
                         freezeWindows,
                         blockedBy: [
                             `~sd@${externalPid1}:externalJob1`,
@@ -1311,6 +1337,7 @@ describe('Build Model', () => {
                     eventId,
                     blockedBy: [jobId, internalJob.id, externalJob1.id, externalJob2.id],
                     annotations,
+                    provider,
                     freezeWindows,
                     apiUri,
                     buildId,
@@ -1373,6 +1400,7 @@ describe('Build Model', () => {
                 permutations: [
                     {
                         annotations,
+                        provider,
                         freezeWindows,
                         blockedBy: [
                             `~sd@${externalPid1}:externalJob1`,
@@ -1395,6 +1423,7 @@ describe('Build Model', () => {
                     eventId,
                     blockedBy: [jobId, internalJob.id, externalJob1.id],
                     annotations,
+                    provider,
                     freezeWindows,
                     apiUri,
                     buildId,
@@ -1429,7 +1458,7 @@ describe('Build Model', () => {
                 state: 'ENABLED',
                 archived: false,
                 pipeline: Promise.resolve(pipelineMockB),
-                permutations: [{ annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' } }],
+                permutations: [{ annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' }, provider }],
                 isPR: () => false
             });
 
@@ -1443,6 +1472,7 @@ describe('Build Model', () => {
                     jobArchived,
                     eventId,
                     annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' },
+                    provider,
                     freezeWindows: [],
                     blockedBy: [jobId],
                     apiUri,
@@ -1769,6 +1799,7 @@ describe('Build Model', () => {
                     buildId,
                     jobId,
                     pipelineId,
+                    provider,
                     token: 'equivalentToOneQuarter',
                     status: previousStatus
                 });
