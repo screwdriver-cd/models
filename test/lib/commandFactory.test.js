@@ -100,7 +100,8 @@ describe('Command Factory', () => {
                 habitat,
                 id: generatedId,
                 pipelineId,
-                trusted: false
+                trusted: false,
+                latest: true
             };
         });
 
@@ -125,6 +126,43 @@ describe('Command Factory', () => {
                     assert.instanceOf(model, Command);
                     Object.keys(expected).forEach(key => {
                         assert.strictEqual(model[key], expected[key]);
+                    });
+                });
+        });
+
+        it('creates a Command given lower major version and no target commands', () => {
+            expected.version = '2.0.0';
+            expected.latest = false;
+            const latest = {
+                namespace,
+                name,
+                version: `3.0.0`,
+                maintainer,
+                description,
+                format,
+                habitat,
+                id: generatedId,
+                pipelineId
+            };
+
+            datastore.save.resolves(expected);
+            datastore.scan.resolves([latest]);
+
+            return factory
+                .create({
+                    namespace,
+                    name,
+                    version: '2.0',
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Command);
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
                     });
                 });
         });
@@ -195,6 +233,83 @@ describe('Command Factory', () => {
                     });
                     Object.keys(expected).forEach(key => {
                         assert.strictEqual(model[key], expected[key]);
+                    });
+                });
+        });
+
+        it('creates a Command and auto-bumps version when target version exists', () => {
+            const latest = {
+                namespace,
+                name,
+                version: `3.0.0`,
+                maintainer,
+                description,
+                format,
+                habitat,
+                id: generatedId,
+                pipelineId
+            };
+
+            const target = [
+                {
+                    namespace,
+                    name,
+                    version: `2.1.2`,
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    id: generatedId + 2,
+                    pipelineId
+                },
+                {
+                    namespace,
+                    name,
+                    version: `2.1.1`,
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    id: generatedId + 1,
+                    pipelineId
+                },
+                {
+                    namespace,
+                    name,
+                    version: `2.1.0`,
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    id: generatedId,
+                    pipelineId
+                }
+            ];
+
+            expected.version = `2.1.3`;
+            expected.latest = false;
+
+            datastore.save.resolves(expected);
+            datastore.scan.onFirstCall().resolves([latest]);
+            datastore.scan.onSecondCall().resolves(target);
+            datastore.update.resolves(latest);
+
+            return factory
+                .create({
+                    namespace,
+                    name,
+                    version: '2.1',
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Command);
+                    assert.notCalled(datastore.update);
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
                     });
                 });
         });
@@ -290,6 +405,199 @@ describe('Command Factory', () => {
                     });
                     Object.keys(expected).forEach(key => {
                         assert.strictEqual(model[key], expected[key]);
+                    });
+                });
+        });
+
+        it('creates a trusted Command and bump patch version when latest Command was trusted', () => {
+            const latest = {
+                namespace,
+                name,
+                version: `3.1.0`,
+                maintainer,
+                description,
+                format,
+                habitat,
+                id: generatedId,
+                pipelineId,
+                trusted: true
+            };
+
+            const target = [
+                {
+                    namespace,
+                    name,
+                    version: `2.1.2`,
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    id: generatedId + 2,
+                    pipelineId
+                },
+                {
+                    namespace,
+                    name,
+                    version: `2.1.1`,
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    id: generatedId + 1,
+                    pipelineId
+                },
+                {
+                    namespace,
+                    name,
+                    version: `2.1.0`,
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    id: generatedId,
+                    pipelineId
+                }
+            ];
+
+            const newVersion = '2.1';
+
+            expected.version = `${newVersion}.3`;
+            expected.trusted = true;
+            expected.latest = false;
+
+            datastore.save.resolves(expected);
+            datastore.scan.onFirstCall().resolves([latest]);
+            datastore.scan.onSecondCall().resolves(target);
+            datastore.update.resolves(latest);
+
+            return factory
+                .create({
+                    namespace,
+                    name,
+                    version: '2.1',
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Command);
+                    assert.notCalled(datastore.update);
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
+                    });
+                });
+        });
+
+        it('creates a Command given only major version which is same value as latest version', () => {
+            const latest = {
+                namespace,
+                name,
+                version: `3.0.0`,
+                maintainer,
+                description,
+                format,
+                habitat,
+                id: generatedId,
+                pipelineId
+            };
+
+            expected.version = `3.0.1`;
+            expected.latest = true;
+
+            datastore.save.resolves(expected);
+            datastore.scan.resolves([latest]);
+            datastore.update.resolves(latest);
+
+            return factory
+                .create({
+                    namespace,
+                    name,
+                    version: '3',
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Command);
+                    assert.calledWith(datastore.update, {
+                        table: 'commands',
+                        params: {
+                            id: 1234135,
+                            latest: false
+                        }
+                    });
+                    Object.keys(expected).forEach(key => {
+                        assert.strictEqual(model[key], expected[key]);
+                    });
+                });
+        });
+
+        it('creates a Command given only major version and auto-bumps version when target version exists', () => {
+            const latest = {
+                namespace,
+                name,
+                version: `4.0.0`,
+                maintainer,
+                description,
+                format,
+                habitat,
+                id: generatedId,
+                pipelineId
+            };
+
+            const target = [
+                {
+                    namespace,
+                    name,
+                    version: `3.1.1`,
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    id: generatedId + 1,
+                    pipelineId
+                },
+                {
+                    namespace,
+                    name,
+                    version: `3.1.0`,
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    id: generatedId,
+                    pipelineId
+                }
+            ];
+
+            expected.version = `3.1.2`;
+            expected.latest = false;
+
+            datastore.save.resolves(expected);
+            datastore.scan.onFirstCall().resolves([latest]);
+            datastore.scan.onSecondCall().resolves(target);
+            datastore.update.resolves(latest);
+
+            return factory
+                .create({
+                    namespace,
+                    name,
+                    version: '3',
+                    maintainer,
+                    description,
+                    format,
+                    habitat,
+                    pipelineId
+                })
+                .then(model => {
+                    assert.instanceOf(model, Command);
+                    assert.notCalled(datastore.update);
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
                     });
                 });
         });

@@ -719,6 +719,36 @@ describe('Pipeline Model', () => {
             });
         });
 
+        it('removes subscribed pipelines from config to the model', () => {
+            pipeline = new PipelineModel({
+                datastore,
+                id: testId,
+                scmUri,
+                scmContext,
+                scmRepo: {
+                    branch: 'branch',
+                    url: 'https://host/owner/repo/tree/branch',
+                    name: 'owner/repo'
+                },
+                createTime: dateNow,
+                admins,
+                scm: scmMock,
+                multiBuildClusterEnabled: true,
+                subscribedScmUrlsWithActions: [{ actions: ['commit', 'tags', 'release'], scmUri: 'foo' }]
+            });
+            jobs = [];
+            sinon.spy(pipeline, 'update');
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainModelMock);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishModelMock);
+            jobFactoryMock.create.withArgs(externalMock).resolves(externalModelMock);
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML);
+
+            return pipeline.sync().then(() => {
+                assert.deepEqual(pipeline.subscribedScmUrlsWithActions, []);
+            });
+        });
+
         it('gets job config from the given ref/sha if passed in', () => {
             const ref = 'shafromoldevent';
             // deep clone PARSED_YAML
