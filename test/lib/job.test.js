@@ -447,7 +447,7 @@ describe('Job Model', () => {
 
     describe('update', () => {
         it('update a job and remove periodic, when job is disabled', () => {
-            const oldJob = Object.assign({}, job);
+            const oldJob = { ...job };
 
             oldJob.permutations = [
                 {
@@ -477,7 +477,7 @@ describe('Job Model', () => {
         });
 
         it('does not start periodic when new and old settings are undefined and job is enabled', () => {
-            const oldJob = Object.assign({}, job);
+            const oldJob = { ...job };
 
             oldJob.permutations = [
                 {
@@ -503,7 +503,7 @@ describe('Job Model', () => {
         });
 
         it('removes periodic when new and old settings are undefined and job is disabled', () => {
-            const oldJob = Object.assign({}, job);
+            const oldJob = { ...job };
 
             oldJob.permutations = [
                 {
@@ -567,7 +567,7 @@ describe('Job Model', () => {
         });
 
         it('no change of buildPeriodically', () => {
-            const oldJob = Object.assign({}, job);
+            const oldJob = { ...job };
 
             oldJob.state = 'ENABLED';
             oldJob.permutations = [
@@ -620,7 +620,7 @@ describe('Job Model', () => {
         });
 
         it('state disabled->enabled should start periodic job', () => {
-            const oldJob = Object.assign({}, job);
+            const oldJob = { ...job };
 
             oldJob.permutations = [
                 {
@@ -649,7 +649,7 @@ describe('Job Model', () => {
         });
 
         it('state archived->unarchived should start periodic job', () => {
-            const oldJob = Object.assign({}, job);
+            const oldJob = { ...job };
 
             oldJob.permutations = [
                 {

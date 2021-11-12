@@ -272,7 +272,9 @@ describe('Build Model', () => {
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
-                    token: 'equivalentToOneQuarter'
+                    token: 'equivalentToOneQuarter',
+                    jobName: 'PR-5:main',
+                    apiUri
                 });
                 delete stepsMock[0].update;
                 delete stepsMock[1].update;
@@ -348,7 +350,9 @@ describe('Build Model', () => {
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
-                    token: 'equivalentToOneQuarter'
+                    token: 'equivalentToOneQuarter',
+                    jobName: 'PR-5:main',
+                    apiUri
                 });
                 delete stepsMock[0].update;
                 delete stepsMock[1].update;
@@ -432,7 +436,9 @@ describe('Build Model', () => {
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
-                    token: 'equivalentToOneQuarter'
+                    token: 'equivalentToOneQuarter',
+                    jobName: 'PR-5:main',
+                    apiUri
                 });
 
                 delete stepsMock[0].update;
@@ -494,7 +500,9 @@ describe('Build Model', () => {
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
-                    token: 'equivalentToOneQuarter'
+                    token: 'equivalentToOneQuarter',
+                    jobName,
+                    apiUri
                 });
 
                 delete stepsMock[0].update;
@@ -536,7 +544,9 @@ describe('Build Model', () => {
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
-                    token: 'equivalentToOneQuarter'
+                    token: 'equivalentToOneQuarter',
+                    jobName,
+                    apiUri
                 });
 
                 delete stepsMock[0].update;
@@ -628,7 +638,9 @@ describe('Build Model', () => {
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
-                    token: 'equivalentToOneQuarter'
+                    token: 'equivalentToOneQuarter',
+                    jobName,
+                    apiUri
                 });
             });
         });
@@ -696,7 +708,9 @@ describe('Build Model', () => {
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
-                    token: 'equivalentToOneQuarter'
+                    token: 'equivalentToOneQuarter',
+                    jobName: 'PR-5:main',
+                    apiUri
                 });
 
                 // Completed step is not modified
@@ -879,7 +893,9 @@ describe('Build Model', () => {
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
-                    token: 'equivalentToOneQuarter'
+                    token: 'equivalentToOneQuarter',
+                    jobName,
+                    apiUri
                 });
             }));
 
@@ -895,7 +911,9 @@ describe('Build Model', () => {
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
-                    token: 'equivalentToOneQuarter'
+                    token: 'equivalentToOneQuarter',
+                    jobName,
+                    apiUri
                 });
                 assert.calledWith(executorMock.stopTimer, {
                     buildId,
@@ -923,7 +941,9 @@ describe('Build Model', () => {
                     freezeWindows,
                     blockedBy: [jobId],
                     pipelineId,
-                    token: 'equivalentToOneQuarter'
+                    token: 'equivalentToOneQuarter',
+                    jobName,
+                    apiUri
                 });
             });
         });
