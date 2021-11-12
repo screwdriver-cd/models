@@ -5,12 +5,11 @@
   "main": "index.js",
   "scripts": {
     "pretest": "eslint . --quiet",
-    "test": "nyc --report-dir ./artifacts/coverage --reporter=lcov mocha --reporter mocha-multi-reporters --reporter-options configFile=./mocha.config.json --recursive --timeout 10000 --retries 1 --exit --allow-uncaught true --color true",
-    "semantic-release": "semantic-release"
+    "test": "nyc --report-dir ./artifacts/coverage --reporter=lcov mocha --reporter mocha-multi-reporters --reporter-options configFile=./mocha.config.json --recursive --timeout 10000 --retries 1 --exit --allow-uncaught true --color true"
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:screwdriver-cd/models.git"
+    "url": "git+https://github.com/screwdriver-cd/models.git"
   },
   "homepage": "https://github.com/screwdriver-cd/models",
   "bugs": "https://github.com/screwdriver-cd/models/issues",
