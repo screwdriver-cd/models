@@ -241,6 +241,7 @@ describe('Template Factory', () => {
             return factory
                 .create({
                     name,
+                    namespace,
                     version,
                     maintainer,
                     description,
@@ -1080,6 +1081,15 @@ describe('Template Factory', () => {
             ];
         });
 
+        it('should return empty array when templates are not found', () => {
+            expected = [];
+            datastore.scan.resolves(expected);
+
+            return factory.listWithMetrics(config).then(templates => {
+                assert.deepEqual(templates, expected);
+            });
+        });
+
         it('should list templates with metrics when namespace is passed in', () => {
             expected = [returnValue[0], returnValue[1], returnValue[2]];
             datastore.scan.resolves(expected);
@@ -1115,14 +1125,15 @@ describe('Template Factory', () => {
     });
 
     describe('getTemplate', () => {
-        const templateName = 'namespace/testTemplateName';
+        const templateName = 'testTemplateName';
+        const templateNamespace = 'namespace';
         const templateVersion = '1.0';
         let fullTemplateName;
         let expected;
         let returnValue;
 
         beforeEach(() => {
-            fullTemplateName = `${templateName}@${templateVersion}`;
+            fullTemplateName = `${templateNamespace}/${templateName}@${templateVersion}`;
 
             returnValue = [
                 {
@@ -1168,7 +1179,7 @@ describe('Template Factory', () => {
         });
 
         it('should get the correct template for a given namespace/name@exactVersion 1.0.2', () => {
-            fullTemplateName = `${templateName}@1.0.2`;
+            fullTemplateName = `${templateNamespace}/${templateName}@1.0.2`;
             expected = { namespace: 'namespace', ...returnValue[2] };
             returnValue[2].namespace = 'namespace';
             datastore.scan.onCall(0).resolves([returnValue[2]]);
@@ -1233,7 +1244,7 @@ describe('Template Factory', () => {
         });
 
         it('should get the correct template for a given namespace/name@tag', () => {
-            fullTemplateName = `${templateName}@latest`;
+            fullTemplateName = `${templateNamespace}/${templateName}@latest`;
             expected = { namespace: 'namespace', ...returnValue[2] };
             returnValue[2].namespace = 'namespace';
             templateTagFactoryMock.get.resolves({ version: '1.0.2' });
