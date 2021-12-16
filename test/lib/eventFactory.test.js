@@ -2241,7 +2241,7 @@ describe('Event Factory', () => {
                         name: 'component',
                         permutations: [
                             {
-                                requires: ['~commit'],
+                                requires: ['~commit', '~pr'],
                                 sourcePaths: ['src/test'],
                                 parameters: {
                                     color: 'white',
@@ -2273,6 +2273,29 @@ describe('Event Factory', () => {
                                     car: ['Ferrari', 'Lamborghini'],
                                     sports: {
                                         value: ['cricket', 'soccer']
+                                    }
+                                }
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 3,
+                        pipelineId: 8765,
+                        name: 'PR-3:component',
+                        prParentJobId: 1,
+                        permutations: [
+                            {
+                                requires: ['~commit', '~pr'],
+                                sourcePaths: ['src/test'],
+                                parameters: {
+                                    color: 'white',
+                                    cuisine: {
+                                        value: 'Italian'
+                                    },
+                                    car: ['Audi', 'Tesla'],
+                                    music: {
+                                        value: ['jazz', 'rock']
                                     }
                                 }
                             }
