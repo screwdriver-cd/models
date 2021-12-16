@@ -86,7 +86,8 @@ describe('Build Model', () => {
             stop: sinon.stub(),
             startTimer: sinon.stub(),
             stopTimer: sinon.stub(),
-            stopFrozen: sinon.stub()
+            stopFrozen: sinon.stub(),
+            unzipArtifacts: sinon.stub()
         };
         userFactoryMock = {
             get: sinon.stub()
@@ -1839,5 +1840,21 @@ describe('Build Model', () => {
                     assert.deepEqual(err, expectedError);
                 });
         });
+    });
+
+    describe('unzipArtifacts', () => {
+        beforeEach(() => {
+            executorMock.unzipArtifacts.resolves(null);
+            jobFactoryMock.get.resolves(jobMock);
+            pipelineFactoryMock.get.resolves(pipelineMock);
+        });
+
+        it('promises to unzip a ZIP of artifacts', () =>
+            build.unzipArtifacts().then(() => {
+                assert.calledWith(executorMock.unzipArtifacts, {
+                    buildId,
+                    token
+                });
+            }));
     });
 });
