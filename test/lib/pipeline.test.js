@@ -1699,6 +1699,7 @@ describe('Pipeline Model', () => {
                 .catch(e => {
                     assert.isOk(e);
                     assert.equal(e.message, 'Pipeline has no admin');
+                    assert.equal(e.output.statusCode, 403);
                 });
         });
 
