@@ -610,6 +610,37 @@ describe('Build Factory', () => {
                 });
         });
 
+        it('sets build cluster from provider if available', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const jobMock = {
+                permutations,
+                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext }),
+                provider: {
+                    executor: 'aws'
+                }
+            };
+
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+            delete saveConfig.params.commit;
+            saveConfig.params.buildClusterName = 'aws';
+
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    parentBuildId: 12345,
+                    meta
+                })
+                .then(() => {
+                    assert.callCount(stepFactoryMock.create, steps.length);
+                    assert.calledWith(datastore.save, saveConfig);
+                });
+        });
+
         it('use username as displayName if displayLabel is not set', () => {
             const jobMock = {
                 permutations,
@@ -911,6 +942,49 @@ describe('Build Factory', () => {
             const jobMock = {
                 permutations,
                 pipeline: Promise.resolve(pipelineMock)
+            };
+
+            userFactoryMock.get.resolves({});
+            jobFactoryMock.get.resolves(jobMock);
+
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    configPipelineSha,
+                    meta
+                })
+                .then(() => {
+                    assert.calledWith(bookendMock.getSetupCommands, {
+                        pipeline: pipelineMock,
+                        job: jobMock,
+                        build: sinon.match.object,
+                        configPipeline: { spooky: 'ghost' },
+                        configPipelineSha
+                    });
+                    assert.calledWith(bookendMock.getTeardownCommands, {
+                        pipeline: pipelineMock,
+                        job: jobMock,
+                        build: sinon.match.object,
+                        configPipeline: { spooky: 'ghost' },
+                        configPipelineSha
+                    });
+                });
+        });
+
+        it('passes buildClusterName from provider config to the bookend config', () => {
+            const pipelineMock = {
+                configPipelineId: 2,
+                configPipeline: Promise.resolve({ spooky: 'ghost' })
+            };
+            const jobMock = {
+                permutations,
+                pipeline: Promise.resolve(pipelineMock),
+                provider: {
+                    executor: 'aws'
+                }
             };
 
             userFactoryMock.get.resolves({});
