@@ -616,7 +616,7 @@ describe('Build Factory', () => {
                 permutations,
                 pipeline: Promise.resolve({ scmUri, scmRepo, scmContext }),
                 provider: {
-                    executor: 'aws'
+                    name: 'aws'
                 }
             };
 
@@ -983,7 +983,7 @@ describe('Build Factory', () => {
                 permutations,
                 pipeline: Promise.resolve(pipelineMock),
                 provider: {
-                    executor: 'aws'
+                    name: 'aws'
                 }
             };
 
