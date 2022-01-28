@@ -245,6 +245,35 @@ describe('Build Factory', () => {
                 image: 'node:6'
             }
         ];
+        const permutationsWithProvider = [
+            {
+                commands: [
+                    { command: 'npm install', name: 'init' },
+                    { command: 'npm test', name: 'test' }
+                ],
+                environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
+                image: 'node:4',
+                provider: {
+                    name: 'aws'
+                }
+            },
+            {
+                commands: [
+                    { command: 'npm install', name: 'init' },
+                    { command: 'npm test', name: 'test' }
+                ],
+                environment: { NODE_ENV: 'test', NODE_VERSION: '5' },
+                image: 'node:5'
+            },
+            {
+                commands: [
+                    { command: 'npm install', name: 'init' },
+                    { command: 'npm test', name: 'test' }
+                ],
+                environment: { NODE_ENV: 'test', NODE_VERSION: '6' },
+                image: 'node:6'
+            }
+        ];
         const permutationsWithAnnotations = [
             {
                 annotations: {
@@ -613,11 +642,8 @@ describe('Build Factory', () => {
         it('sets build cluster from provider if available', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
             const jobMock = {
-                permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext }),
-                provider: {
-                    name: 'aws'
-                }
+                permutations: permutationsWithProvider,
+                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
             };
 
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
@@ -980,11 +1006,8 @@ describe('Build Factory', () => {
                 configPipeline: Promise.resolve({ spooky: 'ghost' })
             };
             const jobMock = {
-                permutations,
-                pipeline: Promise.resolve(pipelineMock),
-                provider: {
-                    name: 'aws'
-                }
+                permutations: permutationsWithProvider,
+                pipeline: Promise.resolve(pipelineMock)
             };
 
             userFactoryMock.get.resolves({});
