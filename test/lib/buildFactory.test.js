@@ -48,7 +48,15 @@ describe('Build Factory', () => {
         { name: 'sd-setup-launcher' },
         { name: 'sd-setup-scm', command: 'git clone' },
         { command: 'npm install', name: 'init' },
-        { command: 'npm test', name: 'test' }
+        {
+            command: 'npm test',
+            name: 'test',
+            retry: {
+                attempt: 0,
+                interval: 0,
+                max: 1
+            }
+        }
     ];
     const scmContext = 'github:github.com';
     const sdBuildClusters = [
