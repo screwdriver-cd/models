@@ -7,8 +7,14 @@ const hoek = require('@hapi/hoek');
 const schema = require('screwdriver-data-schema');
 const rewire = require('rewire');
 const dayjs = require('dayjs');
+const fs = require('fs');
+const path = require('path');
 
 sinon.assert.expose(assert, { prefix: '' });
+const YAML_WITH_PROVIDER_FILE_PATH = '../data/yamlWithProviderPath.yaml';
+const YAML_WITH_PROVIDER = '../data/yamlWithProvider.yaml';
+const PROVIDER_YAML = '../data/provider.yaml';
+const PARSED_YAML_WITH_PROVIDER = require('../data/parserWithProvider.json');
 const PARSED_YAML = require('../data/parser.json');
 const PARSED_YAML_WITH_REQUIRES = require('../data/parserWithRequires.json');
 const PARSED_YAML_PR = require('../data/parserWithWorkflowGraphPR.json');
@@ -35,6 +41,16 @@ const MAX_METRIC_GET_COUNT = 1000;
 const FAKE_MAX_METRIC_GET_COUNT = 5;
 const SCM_CONTEXT_GITHUB = 'github:github.com';
 const SCM_CONTEXT_GITLAB = 'gitlab:gitlab.com';
+
+/**
+ * Load sample data from disk
+ * @method loadData
+ * @param  {String} name Filename to read (inside data dir)
+ * @return {String}      Contents of file
+ */
+function loadData(name) {
+    return fs.readFileSync(path.resolve(__dirname, name), 'utf-8');
+}
 
 describe('Pipeline Model', () => {
     let PipelineModel;
@@ -2186,6 +2202,47 @@ describe('Pipeline Model', () => {
                 assert.equal(config, PARSED_YAML);
                 assert.calledWith(scmMock.getFile, getFileConfig);
                 assert.calledWith(parserMock, parserConfig);
+            });
+        });
+
+        it('gets pipeline config with provider config', () => {
+            getFileConfig = {
+                scmUri,
+                scmContext,
+                path: 'screwdriver.yaml',
+                token: 'foo',
+                scmRepo: {
+                    branch: 'branch',
+                    url: 'https://host/owner/repo/tree/branch',
+                    name: 'owner/repo'
+                },
+                ref: 'bar'
+            };
+            parserConfig = {
+                yaml: loadData(YAML_WITH_PROVIDER),
+                templateFactory: templateFactoryMock,
+                buildClusterFactory: buildClusterFactoryMock,
+                notificationsValidationErr: true
+            };
+            scmMock.getFile.onCall(0).resolves(loadData(YAML_WITH_PROVIDER_FILE_PATH));
+            scmMock.getFile.onCall(1).resolves(loadData(PROVIDER_YAML));
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML_WITH_PROVIDER);
+
+            return pipeline.getConfiguration({ ref: 'bar' }).then(config => {
+                assert.calledWith(parserMock, parserConfig);
+                assert.deepEqual(config, PARSED_YAML_WITH_PROVIDER);
+                assert.calledWith(scmMock.getFile.secondCall, {
+                    scmUri: 'github.com:12345:master',
+                    scmContext: 'github:github.com',
+                    path: 'git@github.com:screwdriver-cd/provider.git:configuration/aws/provider.yaml',
+                    token: 'foo',
+                    scmRepo: {
+                        branch: 'branch',
+                        url: 'https://host/owner/repo/tree/branch',
+                        name: 'owner/repo'
+                    }
+                });
+                assert.calledWith(scmMock.getFile.firstCall, getFileConfig);
             });
         });
 

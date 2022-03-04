@@ -1,0 +1,25 @@
+jobs:
+  main:
+    requires:
+      - ~pr
+      - ~commit
+    image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+    provider:
+      name: aws
+      region: us-west-2
+      accountId: 123456789012
+      vpc:
+        vpcId: vpc-0123abc
+        securityGroupIds:
+          - sg-0123abc
+        subnetIds:
+          - subnet-0123abc
+          - subnet-0123def
+          - subnet-0123ghi
+      role: arn:aws:iam::123456789012:role/screwdriver-integration-role
+      executor: sls
+      launcherImage: screwdrivercd/launcher:v6.0.149
+      launcherVersion: v6.0.149
+    steps:
+      - init: npm install
+      - test: npm test
