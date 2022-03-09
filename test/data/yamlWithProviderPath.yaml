@@ -1,3 +1,5 @@
+shared:
+  provider: git@github.com:screwdriver-cd/provider.git:configuration/aws/sharedProvider.yaml
 jobs:
   main:
     requires: [~pr, ~commit]
@@ -6,3 +8,9 @@ jobs:
     steps:
       - init: npm install
       - test: npm test
+  publish:
+    requires: [main]
+    image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+    steps:
+      - init: npm install
+      - publish: npm publish

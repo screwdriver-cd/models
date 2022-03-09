@@ -13,6 +13,7 @@ const path = require('path');
 sinon.assert.expose(assert, { prefix: '' });
 const YAML_WITH_PROVIDER_FILE_PATH = '../data/yamlWithProviderPath.yaml';
 const YAML_WITH_PROVIDER = '../data/yamlWithProvider.yaml';
+const SHARED_PROVIDER_YAML = '../data/sharedProvider.yaml';
 const PROVIDER_YAML = '../data/provider.yaml';
 const PARSED_YAML_WITH_PROVIDER = require('../data/parserWithProvider.json');
 const PARSED_YAML = require('../data/parser.json');
@@ -2225,13 +2226,14 @@ describe('Pipeline Model', () => {
                 notificationsValidationErr: true
             };
             scmMock.getFile.onCall(0).resolves(loadData(YAML_WITH_PROVIDER_FILE_PATH));
-            scmMock.getFile.onCall(1).resolves(loadData(PROVIDER_YAML));
+            scmMock.getFile.onCall(1).resolves(loadData(SHARED_PROVIDER_YAML));
+            scmMock.getFile.onCall(2).resolves(loadData(PROVIDER_YAML));
             parserMock.withArgs(parserConfig).resolves(PARSED_YAML_WITH_PROVIDER);
 
             return pipeline.getConfiguration({ ref: 'bar' }).then(config => {
                 assert.calledWith(parserMock, parserConfig);
                 assert.deepEqual(config, PARSED_YAML_WITH_PROVIDER);
-                assert.calledWith(scmMock.getFile.secondCall, {
+                assert.calledWith(scmMock.getFile.thirdCall, {
                     scmUri: 'github.com:12345:master',
                     scmContext: 'github:github.com',
                     path: 'git@github.com:screwdriver-cd/provider.git:configuration/aws/provider.yaml',

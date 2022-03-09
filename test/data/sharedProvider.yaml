@@ -1,15 +1,13 @@
 provider:
   name: aws
-  region: us-west-2
-  accountId: 123456789012
+  region: us-east-2
+  accountId: 99999999999
   vpc:
     vpcId: vpc-0123abc
     securityGroupIds:
       - sg-0123abc
     subnetIds:
       - subnet-0123abc
-      - subnet-0123def
-      - subnet-0123ghi
   role: arn:aws:iam::123456789012:role/screwdriver-integration-role
   executor: sls
   launcherImage: screwdrivercd/launcher:v6.0.149
