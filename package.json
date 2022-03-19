@@ -52,13 +52,13 @@
     "async": "^2.6.3",
     "base64url": "^3.0.1",
     "compare-versions": "^3.6.0",
-    "dayjs": "^1.10.8",
+    "dayjs": "^1.11.0",
     "deepcopy": "^2.0.0",
     "docker-parse-image": "^3.0.1",
     "js-yaml": "^4.1.0",
     "lodash": "^4.17.20",
-    "screwdriver-config-parser": "^7.3.0",
-    "screwdriver-data-schema": "^21.21.1",
+    "screwdriver-config-parser": "^7.5.3",
+    "screwdriver-data-schema": "^21.22.1",
     "screwdriver-logger": "^1.1.0",
     "screwdriver-workflow-parser": "^3.2.0"
   }
