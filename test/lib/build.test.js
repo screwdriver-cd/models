@@ -11,6 +11,8 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('Build Model', () => {
     const annotations = {};
     const freezeWindows = ['* * ? * 1', '0-59 0-23 * 1 ?'];
+    const blockedBySameJob = false;
+    const blockedBySameJobWaitTime = 6;
     const provider = {
         name: 'aws',
         region: 'us-west-2',
@@ -116,7 +118,7 @@ describe('Build Model', () => {
             archived: false,
             name: 'main',
             pipeline: Promise.resolve(pipelineMock),
-            permutations: [{ annotations, freezeWindows, provider }],
+            permutations: [{ annotations, freezeWindows, blockedBySameJob, blockedBySameJobWaitTime, provider }],
             isPR: sinon.stub().returns(false)
         };
         scmMock = {
@@ -259,7 +261,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations, freezeWindows, provider }],
+                permutations: [{ annotations, freezeWindows, blockedBySameJob, blockedBySameJobWaitTime, provider }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
@@ -271,6 +273,8 @@ describe('Build Model', () => {
                     annotations,
                     provider,
                     freezeWindows,
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     blockedBy: [jobId],
                     pipelineId,
                     token: 'equivalentToOneQuarter',
@@ -325,7 +329,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations, freezeWindows, provider }],
+                permutations: [{ annotations, freezeWindows, blockedBySameJob, blockedBySameJobWaitTime, provider }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
@@ -349,6 +353,8 @@ describe('Build Model', () => {
                     annotations,
                     provider,
                     freezeWindows,
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     blockedBy: [jobId],
                     pipelineId,
                     token: 'equivalentToOneQuarter',
@@ -414,7 +420,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations, freezeWindows, provider }],
+                permutations: [{ annotations, freezeWindows, blockedBySameJob, blockedBySameJobWaitTime, provider }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
@@ -435,6 +441,8 @@ describe('Build Model', () => {
                     annotations,
                     provider,
                     freezeWindows,
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     blockedBy: [jobId],
                     pipelineId,
                     token: 'equivalentToOneQuarter',
@@ -499,6 +507,8 @@ describe('Build Model', () => {
                     annotations,
                     provider,
                     freezeWindows,
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     blockedBy: [jobId],
                     pipelineId,
                     token: 'equivalentToOneQuarter',
@@ -543,6 +553,8 @@ describe('Build Model', () => {
                     annotations,
                     provider,
                     freezeWindows,
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     blockedBy: [jobId],
                     pipelineId,
                     token: 'equivalentToOneQuarter',
@@ -637,6 +649,8 @@ describe('Build Model', () => {
                     annotations,
                     provider,
                     freezeWindows,
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     blockedBy: [jobId],
                     pipelineId,
                     token: 'equivalentToOneQuarter',
@@ -692,7 +706,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations, freezeWindows, provider }],
+                permutations: [{ annotations, freezeWindows, blockedBySameJob, blockedBySameJobWaitTime, provider }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
@@ -707,6 +721,8 @@ describe('Build Model', () => {
                     annotations,
                     provider,
                     freezeWindows,
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     blockedBy: [jobId],
                     pipelineId,
                     token: 'equivalentToOneQuarter',
@@ -750,7 +766,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations, freezeWindows, provider }],
+                permutations: [{ annotations, freezeWindows, blockedBySameJob, blockedBySameJobWaitTime, provider }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = SCM_STATE_MAP.FAILURE;
@@ -802,7 +818,7 @@ describe('Build Model', () => {
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
-                permutations: [{ annotations, freezeWindows, provider }],
+                permutations: [{ annotations, freezeWindows, blockedBySameJob, blockedBySameJobWaitTime, provider }],
                 isPR: sinon.stub().returns(true)
             });
             build.status = 'FAILURE';
@@ -892,6 +908,8 @@ describe('Build Model', () => {
                     annotations,
                     provider,
                     freezeWindows,
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     blockedBy: [jobId],
                     pipelineId,
                     token: 'equivalentToOneQuarter',
@@ -910,6 +928,8 @@ describe('Build Model', () => {
                     annotations,
                     provider,
                     freezeWindows,
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     blockedBy: [jobId],
                     pipelineId,
                     token: 'equivalentToOneQuarter',
@@ -922,6 +942,8 @@ describe('Build Model', () => {
                     annotations,
                     provider,
                     freezeWindows,
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     blockedBy: [jobId],
                     pipelineId,
                     token: 'equivalentToOneQuarter'
@@ -940,6 +962,8 @@ describe('Build Model', () => {
                     annotations,
                     provider,
                     freezeWindows,
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     blockedBy: [jobId],
                     pipelineId,
                     token: 'equivalentToOneQuarter',
@@ -1014,7 +1038,7 @@ describe('Build Model', () => {
                 prParentJobId,
                 name: 'main',
                 pipeline: Promise.resolve(pipelineMockB),
-                permutations: [{ annotations, freezeWindows, provider }],
+                permutations: [{ annotations, freezeWindows, blockedBySameJob, blockedBySameJobWaitTime, provider }],
                 isPR: () => false
             });
         });
@@ -1036,6 +1060,8 @@ describe('Build Model', () => {
                     annotations,
                     provider,
                     freezeWindows,
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     blockedBy: [jobId],
                     apiUri,
                     buildId,
@@ -1094,6 +1120,8 @@ describe('Build Model', () => {
                     annotations,
                     provider,
                     freezeWindows,
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     blockedBy: [jobId],
                     apiUri,
                     buildId,
@@ -1156,6 +1184,8 @@ describe('Build Model', () => {
                         annotations,
                         provider,
                         freezeWindows,
+                        blockedBySameJob,
+                        blockedBySameJobWaitTime,
                         blockedBy: [jobId],
                         apiUri,
                         buildId,
@@ -1245,6 +1275,8 @@ describe('Build Model', () => {
                         annotations,
                         provider,
                         freezeWindows,
+                        blockedBySameJob,
+                        blockedBySameJobWaitTime,
                         blockedBy: [blocking1.name, blocking2.name]
                     }
                 ],
@@ -1265,6 +1297,8 @@ describe('Build Model', () => {
                     annotations,
                     provider,
                     freezeWindows,
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     apiUri,
                     buildId,
                     container,
@@ -1337,6 +1371,8 @@ describe('Build Model', () => {
                         annotations,
                         provider,
                         freezeWindows,
+                        blockedBySameJob,
+                        blockedBySameJobWaitTime,
                         blockedBy: [
                             `~sd@${externalPid1}:externalJob1`,
                             `~${internalJob.name}`,
@@ -1360,6 +1396,8 @@ describe('Build Model', () => {
                     annotations,
                     provider,
                     freezeWindows,
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     apiUri,
                     buildId,
                     container,
@@ -1423,6 +1461,8 @@ describe('Build Model', () => {
                         annotations,
                         provider,
                         freezeWindows,
+                        blockedBySameJob,
+                        blockedBySameJobWaitTime,
                         blockedBy: [
                             `~sd@${externalPid1}:externalJob1`,
                             `~${internalJob.name}`,
@@ -1446,6 +1486,8 @@ describe('Build Model', () => {
                     annotations,
                     provider,
                     freezeWindows,
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     apiUri,
                     buildId,
                     container,
@@ -1495,6 +1537,8 @@ describe('Build Model', () => {
                     annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' },
                     provider,
                     freezeWindows: [],
+                    blockedBySameJob,
+                    blockedBySameJobWaitTime,
                     blockedBy: [jobId],
                     apiUri,
                     buildId,
