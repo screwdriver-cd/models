@@ -217,7 +217,7 @@ describe('Event Factory', () => {
                 createTime: nowTime,
                 creator,
                 commit,
-                meta: {}
+                meta: { event: { creator: 'stjohn' } }
             };
 
             syncedPipelineMock = {
