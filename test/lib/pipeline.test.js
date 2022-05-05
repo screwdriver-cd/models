@@ -997,7 +997,7 @@ describe('Pipeline Model', () => {
                 assert.calledWith(parserMock, { ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } });
                 assert.calledOnce(pipelineFactoryMock.create);
                 assert.calledOnce(childPipelineMock.sync);
-                assert.calledOnce(childPipelineMock.remove);
+                assert.notCalled(childPipelineMock.remove);
             });
         });
 
@@ -1024,7 +1024,7 @@ describe('Pipeline Model', () => {
                 assert.calledWith(parserMock, { ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } });
                 assert.calledOnce(pipelineFactoryMock.create);
                 assert.calledOnce(childPipelineMock.sync);
-                assert.calledOnce(childPipelineMock.remove);
+                assert.notCalled(childPipelineMock.remove);
             });
         });
 
@@ -1052,7 +1052,7 @@ describe('Pipeline Model', () => {
                 assert.calledWith(parserMock, { ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } });
                 assert.notCalled(pipelineFactoryMock.create);
                 assert.notCalled(childPipelineMock.sync);
-                assert.calledOnce(childPipelineMock.remove);
+                assert.notCalled(childPipelineMock.remove);
             });
         });
 
@@ -1119,7 +1119,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('removes child pipeline and resets scmUrls if it is removed from new yaml', () => {
+        it('does not remove child pipeline if scmUrls is removed from new yaml', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
@@ -1133,11 +1133,11 @@ describe('Pipeline Model', () => {
             return pipeline.sync().then(p => {
                 assert.equal(p.id, testId);
                 assert.equal(p.childPipelines, null);
-                assert.calledOnce(childPipelineMock.remove);
+                assert.notCalled(childPipelineMock.remove);
             });
         });
 
-        it('removes child pipeline and resets scmUrls if it is read-only SCM', () => {
+        it('does not remove child pipeline if scmUrls is is read-only SCM and removed from new yaml', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
@@ -1151,7 +1151,7 @@ describe('Pipeline Model', () => {
             return pipeline.sync().then(p => {
                 assert.equal(p.id, testId);
                 assert.equal(p.childPipelines, null);
-                assert.calledOnce(childPipelineMock.remove);
+                assert.notCalled(childPipelineMock.remove);
             });
         });
 
