@@ -457,6 +457,17 @@ describe('Event Factory', () => {
                         archived: true
                     },
                     {
+                        id: 2,
+                        name: 'outdated',
+                        permutations: [
+                            {
+                                requires: ['~pr']
+                            }
+                        ],
+                        state: 'DISABLED',
+                        archived: true
+                    },
+                    {
                         id: 7,
                         pipelineId: 8765,
                         name: 'PR-2:main',
