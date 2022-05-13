@@ -1002,6 +1002,29 @@ describe('Build Model', () => {
             admin: Promise.resolve(adminUser),
             token: Promise.resolve('foo')
         };
+        const externalPid1 = 101;
+        const externalPid2 = 202;
+        const externalJob1 = {
+            name: 'externalJob1',
+            id: 111,
+            isPR: () => false,
+            parsePRJobName: sinon.stub().returns(null)
+        };
+        const pipeline1 = {
+            id: externalPid1,
+            getJobs: sinon
+                .stub()
+                .resolves([
+                    { id: 999, name: 'somejob', isPR: () => false, parsePRJobName: sinon.stub().returns(null) },
+                    externalJob1
+                ])
+        };
+        const internalJob = {
+            name: 'internalJob',
+            id: 333,
+            isPR: () => false,
+            parsePRJobName: sinon.stub().returns(null)
+        };
 
         beforeEach(() => {
             sandbox = sinon.createSandbox();
@@ -1203,17 +1226,20 @@ describe('Build Model', () => {
             const blocking1 = {
                 name: 'blocking1',
                 id: 111,
-                isPR: () => false
+                isPR: () => false,
+                parsePRJobName: sinon.stub().returns(null)
             };
             const blocking2 = {
                 name: 'blocking2',
                 id: 222,
-                isPR: () => false
+                isPR: () => false,
+                parsePRJobName: sinon.stub().returns(null)
             };
             const prJob = {
                 name: `PR-999:${blocking2.name}`,
                 isPR: () => true,
-                id: 333
+                id: 333,
+                parsePRJobName: sinon.stub().returns('blocking2')
             };
 
             pipelineMockB = {
@@ -1222,16 +1248,19 @@ describe('Build Model', () => {
                 scmContext,
                 admin: Promise.resolve(adminUser),
                 token: Promise.resolve('foo'),
-                getJobs: sinon
-                    .stub()
-                    .resolves([
-                        { id: jobId, name: 'main', isPR: () => false },
-                        blocking1,
-                        { id: 123, name: 'somejob', isPR: () => false },
-                        blocking2,
-                        { id: 456, name: 'someotherjob', isPR: () => false },
-                        prJob
-                    ])
+                getJobs: sinon.stub().resolves([
+                    { id: jobId, name: 'main', isPR: () => false, parsePRJobName: sinon.stub().returns(null) },
+                    blocking1,
+                    { id: 123, name: 'somejob', isPR: () => false, parsePRJobName: sinon.stub().returns(null) },
+                    blocking2,
+                    {
+                        id: 456,
+                        name: 'someotherjob',
+                        isPR: () => false,
+                        parsePRJobName: sinon.stub().returns(null)
+                    },
+                    prJob
+                ])
             };
 
             jobFactoryMock.get.resolves({
@@ -1249,7 +1278,8 @@ describe('Build Model', () => {
                     }
                 ],
                 isPR: () => true,
-                prParentJobId
+                prParentJobId,
+                parsePRJobName: sinon.stub().returns('main')
             });
 
             return build.start().then(() => {
@@ -1283,30 +1313,24 @@ describe('Build Model', () => {
         });
 
         it('get external blockedby job Ids and pass to executor start', () => {
-            const externalPid1 = 101;
-            const externalPid2 = 202;
-            const externalJob1 = {
-                name: 'externalJob1',
-                id: 111,
-                isPR: () => false
-            };
             const externalJob2 = {
                 name: 'externalJob2',
                 id: 222,
-                isPR: () => false
+                isPR: () => false,
+                parsePRJobName: sinon.stub().returns(null)
             };
-            const pipeline1 = {
-                id: externalPid1,
-                getJobs: sinon.stub().resolves([{ id: 999, name: 'somejob', isPR: () => false }, externalJob1])
-            };
+
             const pipeline2 = {
                 id: externalPid2,
-                getJobs: sinon.stub().resolves([{ id: 888, name: 'somerandomjob', isPR: () => false }, externalJob2])
-            };
-            const internalJob = {
-                name: 'internalJob',
-                id: 333,
-                isPR: () => false
+                getJobs: sinon.stub().resolves([
+                    {
+                        id: 888,
+                        name: 'somerandomjob',
+                        isPR: () => false,
+                        parsePRJobName: sinon.stub().returns(null)
+                    },
+                    externalJob2
+                ])
             };
 
             pipelineFactoryMock.get.withArgs(externalPid1).resolves(pipeline1);
@@ -1320,9 +1344,14 @@ describe('Build Model', () => {
                 admin: Promise.resolve(adminUser),
                 token: Promise.resolve('foo'),
                 getJobs: sinon.stub().resolves([
-                    { id: jobId, name: 'main', isPR: () => false },
-                    { id: 123, name: 'somejob', isPR: () => false },
-                    { id: internalJob.id, name: internalJob.name, isPR: () => false }
+                    { id: jobId, name: 'main', isPR: () => false, parsePRJobName: sinon.stub().returns(null) },
+                    { id: 123, name: 'somejob', isPR: () => false, parsePRJobName: sinon.stub().returns(null) },
+                    {
+                        id: internalJob.id,
+                        name: internalJob.name,
+                        isPR: () => false,
+                        parsePRJobName: sinon.stub().returns(null)
+                    }
                 ])
             };
 
@@ -1344,7 +1373,8 @@ describe('Build Model', () => {
                         ]
                     }
                 ],
-                isPR: () => false
+                isPR: () => false,
+                parsePRJobName: sinon.stub().returns(null)
             });
 
             return build.start().then(() => {
@@ -1378,23 +1408,6 @@ describe('Build Model', () => {
         });
 
         it('gets external blockedby job Ids and pass to executor start even if pipeline does not exist', () => {
-            const externalPid1 = 101;
-            const externalPid2 = 202;
-            const externalJob1 = {
-                name: 'externalJob1',
-                id: 111,
-                isPR: () => false
-            };
-            const pipeline1 = {
-                id: externalPid1,
-                getJobs: sinon.stub().resolves([{ id: 999, name: 'somejob', isPR: () => false }, externalJob1])
-            };
-            const internalJob = {
-                name: 'internalJob',
-                id: 333,
-                isPR: () => false
-            };
-
             pipelineFactoryMock.get.withArgs(externalPid1).resolves(pipeline1);
             pipelineFactoryMock.get.withArgs(externalPid2).resolves(null);
 
@@ -1406,9 +1419,14 @@ describe('Build Model', () => {
                 admin: Promise.resolve(adminUser),
                 token: Promise.resolve('foo'),
                 getJobs: sinon.stub().resolves([
-                    { id: jobId, name: 'main', isPR: () => false },
-                    { id: 123, name: 'somejob', isPR: () => false },
-                    { id: internalJob.id, name: internalJob.name, isPR: () => false }
+                    { id: jobId, name: 'main', isPR: () => false, parsePRJobName: sinon.stub().returns(null) },
+                    { id: 123, name: 'somejob', isPR: () => false, parsePRJobName: sinon.stub().returns(null) },
+                    {
+                        id: internalJob.id,
+                        name: internalJob.name,
+                        isPR: () => false,
+                        parsePRJobName: sinon.stub().returns(null)
+                    }
                 ])
             };
 
@@ -1430,7 +1448,8 @@ describe('Build Model', () => {
                         ]
                     }
                 ],
-                isPR: () => false
+                isPR: () => false,
+                parsePRJobName: sinon.stub().returns(null)
             });
 
             return build.start().then(() => {

@@ -383,7 +383,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('main')
                     }
                 ];
 
@@ -442,7 +443,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('main')
                     },
                     {
                         id: 6,
@@ -454,6 +456,7 @@ describe('Event Factory', () => {
                             }
                         ],
                         state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('outdated'),
                         archived: true
                     },
                     {
@@ -476,7 +479,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('main')
                     },
                     {
                         id: 3,
@@ -496,7 +500,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr']
                             }
                         ],
-                        state: 'DISABLED'
+                        state: 'DISABLED',
+                        parsePRJobName: sinon.stub().returns('publish')
                     }
                 ];
 
@@ -535,7 +540,6 @@ describe('Event Factory', () => {
                 });
             });
 
-            // eslint-disable-next-line max-len
             it('should start existing unarchived branch pr jobs without creating duplicates', () => {
                 jobsMock = [
                     {
@@ -558,7 +562,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr:branch']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('main')
                     },
                     {
                         id: 6,
@@ -570,7 +575,8 @@ describe('Event Factory', () => {
                             }
                         ],
                         state: 'ENABLED',
-                        archived: true
+                        archived: true,
+                        parsePRJobName: sinon.stub().returns('outdated')
                     },
                     {
                         id: 7,
@@ -581,7 +587,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr:branch']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('main')
                     },
                     {
                         id: 8,
@@ -603,7 +610,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr:branch']
                             }
                         ],
-                        state: 'DISABLED'
+                        state: 'DISABLED',
+                        parsePRJobName: sinon.stub().returns('pr-branch')
                     }
                 ];
 
@@ -647,7 +655,6 @@ describe('Event Factory', () => {
                 });
             });
 
-            // eslint-disable-next-line max-len
             it("should start existing pipeline's branch pr jobs without creating duplicates", () => {
                 jobsMock = [
                     {
@@ -659,7 +666,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr', '~pr:branch']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('main')
                     },
                     {
                         id: 2,
@@ -670,7 +678,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr:branch']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('pr-branch')
                     },
                     {
                         id: 3,
@@ -2051,7 +2060,8 @@ describe('Event Factory', () => {
                             sourcePaths: ['src/test/']
                         }
                     ],
-                    state: 'ENABLED'
+                    state: 'ENABLED',
+                    parsePRJobName: sinon.stub().returns('main')
                 },
                 {
                     id: 2,
@@ -2063,7 +2073,8 @@ describe('Event Factory', () => {
                             sourcePaths: ['src/test/']
                         }
                     ],
-                    state: 'ENABLED'
+                    state: 'ENABLED',
+                    parsePRJobName: sinon.stub().returns('publish')
                 },
                 {
                     id: 3,
@@ -2120,7 +2131,8 @@ describe('Event Factory', () => {
                             sourcePaths: ['src/test']
                         }
                     ],
-                    state: 'ENABLED'
+                    state: 'ENABLED',
+                    parsePRJobName: sinon.stub().returns('main')
                 },
                 {
                     id: 2,

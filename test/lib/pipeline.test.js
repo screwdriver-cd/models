@@ -1178,6 +1178,18 @@ describe('Pipeline Model', () => {
     describe('syncPR', () => {
         let prJob;
         let parserConfig;
+        const expectedGetFile = {
+            path: 'screwdriver.yaml',
+            ref: 'pulls/1/merge',
+            scmUri,
+            scmContext,
+            token: 'foo',
+            scmRepo: {
+                branch: 'branch',
+                url: 'https://host/owner/repo/tree/branch',
+                name: 'owner/repo'
+            }
+        };
 
         beforeEach(() => {
             parserConfig = {
@@ -1201,26 +1213,20 @@ describe('Pipeline Model', () => {
                 isPR: sinon.stub().returns(true),
                 name: 'PR-1:main',
                 state: 'ENABLED',
-                archived: false
+                archived: false,
+                parsePRJobName: sinon.stub().returns('main')
             };
+        });
+
+        afterEach(() => {
+            prJob.update.reset();
         });
 
         it('update PR config', () => {
             jobFactoryMock.list.resolves([prJob]);
 
             return pipeline.syncPR(1).then(() => {
-                assert.calledWith(scmMock.getFile, {
-                    path: 'screwdriver.yaml',
-                    ref: 'pulls/1/merge',
-                    scmUri,
-                    scmContext,
-                    token: 'foo',
-                    scmRepo: {
-                        branch: 'branch',
-                        url: 'https://host/owner/repo/tree/branch',
-                        name: 'owner/repo'
-                    }
-                });
+                assert.calledWith(scmMock.getFile, expectedGetFile);
                 assert.called(prJob.update);
                 assert.deepEqual(prJob.permutations, PARSED_YAML.jobs.main);
                 assert.isFalse(prJob.archived);
@@ -1228,33 +1234,15 @@ describe('Pipeline Model', () => {
         });
 
         it('update PR config for multiple PR jobs and create missing PR jobs', () => {
-            const firstPRJob = {
-                update: sinon.stub().resolves(null),
-                isPR: sinon.stub().returns(true),
-                name: 'PR-1:main',
-                state: 'ENABLED',
-                archived: false
-            };
             const clonedYAML = JSON.parse(JSON.stringify(PARSED_YAML_PR));
 
-            jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob, testJob, firstPRJob]); // all jobs
+            jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob, testJob, prJob]); // all jobs
             jobFactoryMock.list.onCall(1).resolves([mainJob, publishJob, testJob]); // pipeline jobs
             parserMock.withArgs(parserConfig).resolves(clonedYAML);
 
             return pipeline.syncPR(1).then(() => {
-                assert.calledWith(scmMock.getFile, {
-                    path: 'screwdriver.yaml',
-                    ref: 'pulls/1/merge',
-                    scmUri,
-                    scmContext,
-                    token: 'foo',
-                    scmRepo: {
-                        branch: 'branch',
-                        url: 'https://host/owner/repo/tree/branch',
-                        name: 'owner/repo'
-                    }
-                });
-                assert.calledOnce(firstPRJob.update);
+                assert.calledWith(scmMock.getFile, expectedGetFile);
+                assert.calledOnce(prJob.update);
                 assert.calledThrice(jobFactoryMock.create);
                 assert.calledWith(jobFactoryMock.create.firstCall, {
                     name: 'PR-1:test',
@@ -1282,28 +1270,22 @@ describe('Pipeline Model', () => {
                         name: 'PR-1:pr_specific_branch'
                     })
                 );
-                assert.deepEqual(firstPRJob.permutations, clonedYAML.jobs.main);
-                assert.isFalse(firstPRJob.archived);
+                assert.deepEqual(prJob.permutations, clonedYAML.jobs.main);
+                assert.isFalse(prJob.archived);
             });
         });
 
         it('archives outdated PR job', () => {
-            const firstPRJob = {
-                update: sinon.stub().resolves(null),
-                isPR: sinon.stub().returns(true),
-                name: 'PR-1:main',
-                state: 'ENABLED',
-                archived: false
-            };
             const secondPRJob = {
                 update: sinon.stub().resolves(null),
                 isPR: sinon.stub().returns(true),
                 name: 'PR-1:publish',
                 state: 'ENABLED',
-                archived: false
+                archived: false,
+                parsePRJobName: sinon.stub().returns('main')
             };
 
-            jobFactoryMock.list.resolves([firstPRJob, secondPRJob]);
+            jobFactoryMock.list.resolves([prJob, secondPRJob]);
             parserMock.withArgs(parserConfig).resolves(PARSED_YAML_PR);
 
             return pipeline.syncPR(1).then(() => {
@@ -1319,7 +1301,7 @@ describe('Pipeline Model', () => {
                         name: 'owner/repo'
                     }
                 });
-                assert.calledOnce(firstPRJob.update);
+                assert.calledOnce(prJob.update);
                 assert.calledOnce(secondPRJob.update);
                 assert.calledWith(
                     jobFactoryMock.create,
@@ -1328,8 +1310,8 @@ describe('Pipeline Model', () => {
                         name: 'PR-1:new_pr_job'
                     })
                 );
-                assert.deepEqual(firstPRJob.permutations, PARSED_YAML_PR.jobs.main);
-                assert.isFalse(firstPRJob.archived);
+                assert.deepEqual(prJob.permutations, PARSED_YAML_PR.jobs.main);
+                assert.isFalse(prJob.archived);
                 assert.isTrue(secondPRJob.archived);
             });
         });
@@ -1355,18 +1337,10 @@ describe('Pipeline Model', () => {
         });
 
         it('updates PR config, but it can not override chainPR flag', () => {
-            const firstPRJob = {
-                update: sinon.stub().resolves(null),
-                isPR: sinon.stub().returns(true),
-                name: 'PR-1:main',
-                state: 'ENABLED',
-                archived: false
-            };
-
             pipeline.chainPR = true;
             const clonedYAML = JSON.parse(JSON.stringify(NON_CHAINPR_PARSED_YAML));
 
-            jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob, testJob, firstPRJob]); // all jobs
+            jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob, testJob, prJob]); // all jobs
             jobFactoryMock.list.onCall(1).resolves([mainJob, publishJob, testJob]); // pipeline jobs
             parserMock.withArgs(parserConfig).resolves(clonedYAML);
 
@@ -1383,7 +1357,7 @@ describe('Pipeline Model', () => {
                         name: 'owner/repo'
                     }
                 });
-                assert.calledOnce(firstPRJob.update);
+                assert.calledOnce(prJob.update);
                 assert.callCount(jobFactoryMock.create, 4);
                 assert.calledWith(jobFactoryMock.create.firstCall, {
                     name: 'PR-1:test',
@@ -1427,8 +1401,8 @@ describe('Pipeline Model', () => {
                         prParentJobId: 99999
                     })
                 );
-                assert.deepEqual(firstPRJob.permutations, clonedYAML.jobs.main);
-                assert.isFalse(firstPRJob.archived);
+                assert.deepEqual(prJob.permutations, clonedYAML.jobs.main);
+                assert.isFalse(prJob.archived);
             });
         });
 
@@ -1437,6 +1411,7 @@ describe('Pipeline Model', () => {
                 {
                     update: sinon.stub().resolves(null),
                     isPR: sinon.stub().returns(true),
+                    parsePRJobName: sinon.stub().returns('main'),
                     name: 'PR-1:main',
                     state: 'ENABLED',
                     archived: false
@@ -1444,6 +1419,7 @@ describe('Pipeline Model', () => {
                 {
                     update: sinon.stub().resolves(null),
                     isPR: sinon.stub().returns(true),
+                    parsePRJobName: sinon.stub().returns('test'),
                     name: 'PR-1:test',
                     state: 'ENABLED',
                     archived: false
@@ -1451,6 +1427,7 @@ describe('Pipeline Model', () => {
                 {
                     update: sinon.stub().resolves(null),
                     isPR: sinon.stub().returns(true),
+                    parsePRJobName: sinon.stub().returns('new_pr_job'),
                     name: 'PR-1:new_pr_job',
                     state: 'ENABLED',
                     archived: false
@@ -1499,6 +1476,7 @@ describe('Pipeline Model', () => {
                 {
                     update: sinon.stub().resolves(null),
                     isPR: sinon.stub().returns(true),
+                    parsePRJobName: sinon.stub().returns('main'),
                     name: 'PR-1:main',
                     state: 'ENABLED',
                     archived: false
@@ -1506,6 +1484,7 @@ describe('Pipeline Model', () => {
                 {
                     update: sinon.stub().resolves(null),
                     isPR: sinon.stub().returns(true),
+                    parsePRJobName: sinon.stub().returns('new_pr_job'),
                     name: 'PR-1:new_pr_job',
                     state: 'ENABLED',
                     archived: false
@@ -1513,6 +1492,7 @@ describe('Pipeline Model', () => {
                 {
                     update: sinon.stub().resolves(null),
                     isPR: sinon.stub().returns(true),
+                    parsePRJobName: sinon.stub().returns('pr_specific_branch'),
                     name: 'PR-1:pr_specific_branch',
                     state: 'ENABLED',
                     archived: false
@@ -1582,6 +1562,7 @@ describe('Pipeline Model', () => {
             prJob = {
                 update: sinon.stub().resolves(null),
                 isPR: sinon.stub().returns(true),
+                parsePRJobName: sinon.stub().returns('PR-1'),
                 name: 'PR-1:main',
                 state: 'ENABLED',
                 archived: false
@@ -1610,7 +1591,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.create.resolves(prJob2);
 
             return pipeline.syncPRs().then(() => {
-                // assert.calledOnce(jobFactoryMock.create);
+                assert.calledOnce(jobFactoryMock.create);
                 assert.calledWith(jobFactoryMock.create, {
                     permutations: PARSED_YAML.jobs.main,
                     pipelineId: testId,
@@ -1620,7 +1601,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('unarchive PR job if it was previously archived and chainPR is false.', () => {
+        it('unarchive PR job if it was previously archived and chainPR is false', () => {
             pipeline.chainPR = false;
             prJob.archived = true;
             scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
