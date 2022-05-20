@@ -224,7 +224,8 @@ describe('Pipeline Model', () => {
         jobFactoryMock = {
             create: sinon.stub(),
             list: sinon.stub(),
-            get: sinon.stub()
+            get: sinon.stub(),
+            getPullRequestJobsForPipelineSync: sinon.stub()
         };
         eventFactoryMock = {
             list: sinon.stub()
@@ -944,25 +945,6 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('does nothing if the job is a PR job', () => {
-            const prJobMock = {
-                update: sinon.stub(),
-                isPR: sinon.stub().returns(true),
-                name: 'PR-1',
-                state: 'ENABLED'
-            };
-
-            jobs = [mainModelMock, publishModelMock, prJobMock];
-            mainModelMock.update.resolves(mainModelMock);
-            publishModelMock.update.resolves(publishModelMock);
-            jobFactoryMock.list.resolves(jobs);
-            buildClusterFactoryMock.list.resolves(sdBuildClusters);
-
-            return pipeline.sync().then(() => {
-                assert.notCalled(prJobMock.update);
-            });
-        });
-
         it('returns error if something explodes', () => {
             const error = new Error('blah');
 
@@ -1223,7 +1205,10 @@ describe('Pipeline Model', () => {
         });
 
         it('update PR config', () => {
-            jobFactoryMock.list.resolves([prJob]);
+            jobFactoryMock.list.resolves([mainJob]); // pipeline jobs
+            jobFactoryMock.getPullRequestJobsForPipelineSync.resolves([prJob]); // pull request jobs
+
+            scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
 
             return pipeline.syncPR(1).then(() => {
                 assert.calledWith(scmMock.getFile, expectedGetFile);
@@ -1236,8 +1221,10 @@ describe('Pipeline Model', () => {
         it('update PR config for multiple PR jobs and create missing PR jobs', () => {
             const clonedYAML = JSON.parse(JSON.stringify(PARSED_YAML_PR));
 
-            jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob, testJob, prJob]); // all jobs
-            jobFactoryMock.list.onCall(1).resolves([mainJob, publishJob, testJob]); // pipeline jobs
+            jobFactoryMock.list.resolves([mainJob, publishJob, testJob]); // pipeline jobs
+            jobFactoryMock.getPullRequestJobsForPipelineSync.resolves([prJob]); // pull request jobs
+
+            scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
             parserMock.withArgs(parserConfig).resolves(clonedYAML);
 
             return pipeline.syncPR(1).then(() => {
@@ -1282,10 +1269,13 @@ describe('Pipeline Model', () => {
                 name: 'PR-1:publish',
                 state: 'ENABLED',
                 archived: false,
-                parsePRJobName: sinon.stub().returns('main')
+                parsePRJobName: sinon.stub().returns('publish')
             };
 
-            jobFactoryMock.list.resolves([prJob, secondPRJob]);
+            jobFactoryMock.list.resolves([mainJob, publishJob]); // pipeline jobs
+            jobFactoryMock.getPullRequestJobsForPipelineSync.resolves([prJob, secondPRJob]); // pull request jobs
+
+            scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
             parserMock.withArgs(parserConfig).resolves(PARSED_YAML_PR);
 
             return pipeline.syncPR(1).then(() => {
@@ -1340,8 +1330,10 @@ describe('Pipeline Model', () => {
             pipeline.chainPR = true;
             const clonedYAML = JSON.parse(JSON.stringify(NON_CHAINPR_PARSED_YAML));
 
-            jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob, testJob, prJob]); // all jobs
-            jobFactoryMock.list.onCall(1).resolves([mainJob, publishJob, testJob]); // pipeline jobs
+            jobFactoryMock.list.resolves([mainJob, publishJob, testJob]); // pipeline jobs
+            jobFactoryMock.getPullRequestJobsForPipelineSync.resolves([prJob]); // pull request jobs
+
+            scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
             parserMock.withArgs(parserConfig).resolves(clonedYAML);
 
             return pipeline.syncPR(1).then(() => {
@@ -1435,7 +1427,10 @@ describe('Pipeline Model', () => {
             ];
             const clonedYAML = JSON.parse(JSON.stringify(PARSED_YAML_PR));
 
-            jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob, testJob].concat(prJobs));
+            jobFactoryMock.list.resolves([mainJob, publishJob, testJob]); // pipeline jobs
+            jobFactoryMock.getPullRequestJobsForPipelineSync.resolves(prJobs); // pull request jobs
+
+            scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
             parserMock.withArgs(parserConfig).resolves(clonedYAML);
 
             return pipeline.syncPR(1).then(() => {
@@ -1471,6 +1466,7 @@ describe('Pipeline Model', () => {
                 );
             });
         });
+
         it("updates PR config, and it doesn't create duplicated PR jobs", () => {
             const prJobs = [
                 {
@@ -1502,7 +1498,11 @@ describe('Pipeline Model', () => {
 
             clonedYAML.jobs.test[0].requires = ['~pr', '~pr:testBranch'];
 
-            jobFactoryMock.list.onCall(0).resolves([mainJob, publishJob].concat(prJobs));
+            jobFactoryMock.list.resolves([mainJob, publishJob]); // pipeline jobs
+            jobFactoryMock.getPullRequestJobsForPipelineSync.resolves(prJobs); // pull request jobs
+
+            scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
+
             parserMock.withArgs(parserConfig).resolves(clonedYAML);
 
             return pipeline.syncPR(1).then(() => {
@@ -1567,8 +1567,9 @@ describe('Pipeline Model', () => {
                 state: 'ENABLED',
                 archived: false
             };
-            jobs = [mainJob, publishJob, prJob];
-            jobFactoryMock.list.resolves(jobs);
+
+            jobFactoryMock.getPullRequestJobsForPipelineSync.resolves([prJob]); // pull request jobs
+            jobFactoryMock.list.resolves([mainJob, publishJob]); // pipeline jobs
         });
 
         it('archive PR job if it is closed', () => {
@@ -1826,22 +1827,23 @@ describe('Pipeline Model', () => {
         });
     });
 
-    describe('get jobs', () => {
-        it('has a jobs getter', () => {
+    describe('get pipelineJobs', () => {
+        it('has a pipelineJobs getter', () => {
             const listConfig = {
                 params: {
-                    pipelineId: pipeline.id
+                    pipelineId: pipeline.id,
+                    prParentJobId: null
                 }
             };
 
             jobFactoryMock.list.resolves(null);
             // when we fetch jobs it resolves to a promise
-            assert.isFunction(pipeline.jobs.then);
+            assert.isFunction(pipeline.pipelineJobs.then);
             // and a factory is called to create that promise
             assert.calledWith(jobFactoryMock.list, listConfig);
 
             // When we call pipeline.jobs again it is still a promise
-            assert.isFunction(pipeline.jobs.then);
+            assert.isFunction(pipeline.pipelineJobs.then);
             // ...but the factory was not recreated, since the promise is stored
             // as the model's pipeline property, now
             assert.calledOnce(jobFactoryMock.list);
