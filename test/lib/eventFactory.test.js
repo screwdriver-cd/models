@@ -383,7 +383,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('main')
                     }
                 ];
 
@@ -442,7 +443,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('main')
                     },
                     {
                         id: 6,
@@ -454,6 +456,18 @@ describe('Event Factory', () => {
                             }
                         ],
                         state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('outdated'),
+                        archived: true
+                    },
+                    {
+                        id: 2,
+                        name: 'outdated',
+                        permutations: [
+                            {
+                                requires: ['~pr']
+                            }
+                        ],
+                        state: 'DISABLED',
                         archived: true
                     },
                     {
@@ -465,7 +479,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('main')
                     },
                     {
                         id: 3,
@@ -475,7 +490,7 @@ describe('Event Factory', () => {
                                 requires: ['~pr']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'DISABLED'
                     },
                     {
                         id: 6,
@@ -485,7 +500,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr']
                             }
                         ],
-                        state: 'DISABLED'
+                        state: 'DISABLED',
+                        parsePRJobName: sinon.stub().returns('publish')
                     }
                 ];
 
@@ -524,7 +540,6 @@ describe('Event Factory', () => {
                 });
             });
 
-            // eslint-disable-next-line max-len
             it('should start existing unarchived branch pr jobs without creating duplicates', () => {
                 jobsMock = [
                     {
@@ -547,7 +562,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr:branch']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('main')
                     },
                     {
                         id: 6,
@@ -559,7 +575,8 @@ describe('Event Factory', () => {
                             }
                         ],
                         state: 'ENABLED',
-                        archived: true
+                        archived: true,
+                        parsePRJobName: sinon.stub().returns('outdated')
                     },
                     {
                         id: 7,
@@ -570,7 +587,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr:branch']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('main')
                     },
                     {
                         id: 8,
@@ -592,7 +610,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr:branch']
                             }
                         ],
-                        state: 'DISABLED'
+                        state: 'DISABLED',
+                        parsePRJobName: sinon.stub().returns('pr-branch')
                     }
                 ];
 
@@ -636,7 +655,6 @@ describe('Event Factory', () => {
                 });
             });
 
-            // eslint-disable-next-line max-len
             it("should start existing pipeline's branch pr jobs without creating duplicates", () => {
                 jobsMock = [
                     {
@@ -648,7 +666,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr', '~pr:branch']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('main')
                     },
                     {
                         id: 2,
@@ -657,6 +676,29 @@ describe('Event Factory', () => {
                         permutations: [
                             {
                                 requires: ['~pr:branch']
+                            }
+                        ],
+                        state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('pr-branch')
+                    },
+                    {
+                        id: 3,
+                        pipelineId: 8765,
+                        name: 'main',
+                        permutations: [
+                            {
+                                requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch', '~pr:branch']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 4,
+                        pipelineId: 8765,
+                        name: 'pr-branch',
+                        permutations: [
+                            {
+                                requires: ['~pr']
                             }
                         ],
                         state: 'ENABLED'
@@ -2018,7 +2060,8 @@ describe('Event Factory', () => {
                             sourcePaths: ['src/test/']
                         }
                     ],
-                    state: 'ENABLED'
+                    state: 'ENABLED',
+                    parsePRJobName: sinon.stub().returns('main')
                 },
                 {
                     id: 2,
@@ -2028,6 +2071,29 @@ describe('Event Factory', () => {
                         {
                             requires: ['~pr'],
                             sourcePaths: ['src/test/']
+                        }
+                    ],
+                    state: 'ENABLED',
+                    parsePRJobName: sinon.stub().returns('publish')
+                },
+                {
+                    id: 3,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [
+                        {
+                            requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch', '~pr:branch']
+                        }
+                    ],
+                    state: 'ENABLED'
+                },
+                {
+                    id: 4,
+                    pipelineId: 8765,
+                    name: 'publish',
+                    permutations: [
+                        {
+                            requires: ['~pr']
                         }
                     ],
                     state: 'ENABLED'
@@ -2063,6 +2129,29 @@ describe('Event Factory', () => {
                         {
                             requires: ['~pr'],
                             sourcePaths: ['src/test']
+                        }
+                    ],
+                    state: 'ENABLED',
+                    parsePRJobName: sinon.stub().returns('main')
+                },
+                {
+                    id: 2,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [
+                        {
+                            requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch', '~pr:branch']
+                        }
+                    ],
+                    state: 'ENABLED'
+                },
+                {
+                    id: 3,
+                    pipelineId: 8765,
+                    name: 'publish',
+                    permutations: [
+                        {
+                            requires: ['~pr']
                         }
                     ],
                     state: 'ENABLED'
