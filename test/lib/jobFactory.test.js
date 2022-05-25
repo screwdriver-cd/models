@@ -4,6 +4,7 @@ const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
+const { getQueries, PR_JOBS_FOR_PIPELINE_SYNC } = require('../../lib/rawQueries');
 
 class Job {
     constructor(config) {
@@ -35,7 +36,8 @@ describe('Job Factory', () => {
         datastore = {
             save: sinon.stub(),
             scan: sinon.stub(),
-            get: sinon.stub()
+            get: sinon.stub(),
+            query: sinon.stub()
         };
         pipelineFactoryMock = {
             get: sinon.stub().resolves({ id: 9999 })
@@ -245,6 +247,69 @@ describe('Job Factory', () => {
         it('should call cleanUp', () => {
             factory.cleanUp().then(() => {
                 assert.calledWith(executor.cleanUp);
+            });
+        });
+    });
+
+    describe('getPullRequestJobsForPipelineSync', () => {
+        let config;
+        let returnValue;
+        let queryConfig;
+
+        beforeEach(() => {
+            sinon.stub(JobFactory.prototype, 'query').returns();
+
+            config = {
+                pipelineId: '12345',
+                prNames: ['PR-2', 'PR-3']
+            };
+
+            returnValue = [
+                {
+                    id: 20,
+                    prParentJobId: 1,
+                    name: 'PR-2:component',
+                    archived: false
+                },
+                {
+                    id: 20,
+                    prParentJobId: 2,
+                    name: 'PR-2:publish',
+                    archived: true
+                },
+                {
+                    id: 20,
+                    prParentJobId: 1,
+                    name: 'PR-3:component',
+                    archived: false
+                },
+                {
+                    id: 20,
+                    prParentJobId: 2,
+                    name: 'PR-3:publish',
+                    archived: false
+                }
+            ];
+
+            queryConfig = {
+                queries: getQueries('', PR_JOBS_FOR_PIPELINE_SYNC),
+                replacements: {
+                    pipelineId: config.pipelineId,
+                    prNames: ['PR-2', 'PR-3']
+                },
+                rawResponse: false,
+                table: 'jobs'
+            };
+        });
+
+        it('returns pull request jobs to be synced for specified pipelineId', () => {
+            datastore.query.resolves(returnValue);
+
+            return factory.getPullRequestJobsForPipelineSync(config).then(jobsForSync => {
+                assert.calledWith(datastore.query, queryConfig);
+                jobsForSync.forEach(j => {
+                    assert.instanceOf(j, Job);
+                });
             });
         });
     });
