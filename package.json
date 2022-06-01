@@ -47,18 +47,18 @@
   },
   "dependencies": {
     "@hapi/boom": "^9.1.4",
-    "@hapi/hoek": "^9.2.1",
+    "@hapi/hoek": "^9.3.0",
     "@hapi/iron": "^6.0.0",
     "async": "^3.2.2",
     "base64url": "^3.0.1",
     "compare-versions": "^3.6.0",
-    "dayjs": "^1.11.0",
+    "dayjs": "^1.11.2",
     "deepcopy": "^2.0.0",
     "docker-parse-image": "^3.0.1",
     "js-yaml": "^4.1.0",
     "lodash": "^4.17.20",
-    "screwdriver-config-parser": "^7.5.3",
-    "screwdriver-data-schema": "^21.22.2",
+    "screwdriver-config-parser": "^7.5.4",
+    "screwdriver-data-schema": "^21.23.0",
     "screwdriver-logger": "^1.1.0",
     "screwdriver-workflow-parser": "^3.2.0"
   }

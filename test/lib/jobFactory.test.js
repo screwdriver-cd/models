@@ -139,6 +139,51 @@ describe('Job Factory', () => {
                 });
         });
 
+        it('creates a new DISABLED job in the datastore', () => {
+            const permutationsWithAnnotation = [
+                {
+                    commands: [
+                        { command: 'npm install', name: 'init' },
+                        { command: 'npm test', name: 'test' }
+                    ],
+                    image: 'node:4',
+                    annotations: {
+                        'screwdriver.cd/jobDisabledByDefault': 'true'
+                    }
+                }
+            ];
+            const expected = {
+                name,
+                pipelineId,
+                state: 'DISABLED',
+                archived: false,
+                id: jobId,
+                permutations: permutationsWithAnnotation
+            };
+
+            datastore.save.resolves(expected);
+
+            return factory
+                .create({
+                    pipelineId,
+                    name,
+                    permutations: permutationsWithAnnotation
+                })
+                .then(model => {
+                    assert.calledWith(datastore.save, {
+                        table: 'jobs',
+                        params: {
+                            name,
+                            pipelineId,
+                            state: 'DISABLED',
+                            archived: false,
+                            permutations: permutationsWithAnnotation
+                        }
+                    });
+                    assert.instanceOf(model, Job);
+                });
+        });
+
         it('calls executor to create a periodic job', () => {
             const tokenGenFunc = () => 'bar';
             const periodicPermutations = [
