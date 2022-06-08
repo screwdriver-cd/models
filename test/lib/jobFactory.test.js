@@ -298,7 +298,6 @@ describe('Job Factory', () => {
 
     describe('getPullRequestJobsForPipelineSync', () => {
         let config;
-        let expectedQueryConfig;
 
         beforeEach(() => {
             sinon.stub(JobFactory.prototype, 'query').returns();
@@ -308,13 +307,9 @@ describe('Job Factory', () => {
             };
         });
 
-        afterEach(() => {
-            assert.calledWith(datastore.query, expectedQueryConfig);
-        });
-
         it('returns pull request jobs for specified pipelineId when there are open pull requests', () => {
             config.prNames = ['PR-2', 'PR-3'];
-            expectedQueryConfig = {
+            const expectedQueryConfig = {
                 queries: getQueries('', PR_JOBS_FOR_PIPELINE_SYNC),
                 replacements: {
                     pipelineId: config.pipelineId,
@@ -366,10 +361,13 @@ describe('Job Factory', () => {
                 jobsForSync.forEach(j => {
                     assert.instanceOf(j, Job);
                 });
+                assert.calledWith(datastore.query, expectedQueryConfig);
             });
         });
 
         describe('should set prNames to null in the query config', () => {
+            let expectedQueryConfig;
+
             beforeEach(() => {
                 expectedQueryConfig = {
                     queries: getQueries('', PR_JOBS_FOR_PIPELINE_SYNC),
@@ -415,19 +413,34 @@ describe('Job Factory', () => {
             it('when prNames is empty', () => {
                 config.prNames = [];
 
-                return factory.getPullRequestJobsForPipelineSync(config);
+                return factory.getPullRequestJobsForPipelineSync(config).then(jobsForSync => {
+                    jobsForSync.forEach(j => {
+                        assert.instanceOf(j, Job);
+                    });
+                    assert.calledWith(datastore.query, expectedQueryConfig);
+                });
             });
 
             it('when prNames is null', () => {
                 config.prNames = null;
 
-                return factory.getPullRequestJobsForPipelineSync(config);
+                return factory.getPullRequestJobsForPipelineSync(config).then(jobsForSync => {
+                    jobsForSync.forEach(j => {
+                        assert.instanceOf(j, Job);
+                    });
+                    assert.calledWith(datastore.query, expectedQueryConfig);
+                });
             });
 
             it('when prNames is undefined', () => {
                 config.prNames = undefined;
 
-                return factory.getPullRequestJobsForPipelineSync(config);
+                return factory.getPullRequestJobsForPipelineSync(config).then(jobsForSync => {
+                    jobsForSync.forEach(j => {
+                        assert.instanceOf(j, Job);
+                    });
+                    assert.calledWith(datastore.query, expectedQueryConfig);
+                });
             });
         });
     });
