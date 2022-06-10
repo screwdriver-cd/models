@@ -298,45 +298,18 @@ describe('Job Factory', () => {
 
     describe('getPullRequestJobsForPipelineSync', () => {
         let config;
-        let returnValue;
-        let queryConfig;
 
         beforeEach(() => {
             sinon.stub(JobFactory.prototype, 'query').returns();
 
             config = {
-                pipelineId: '12345',
-                prNames: ['PR-2', 'PR-3']
+                pipelineId: '12345'
             };
+        });
 
-            returnValue = [
-                {
-                    id: 20,
-                    prParentJobId: 1,
-                    name: 'PR-2:component',
-                    archived: false
-                },
-                {
-                    id: 20,
-                    prParentJobId: 2,
-                    name: 'PR-2:publish',
-                    archived: true
-                },
-                {
-                    id: 20,
-                    prParentJobId: 1,
-                    name: 'PR-3:component',
-                    archived: false
-                },
-                {
-                    id: 20,
-                    prParentJobId: 2,
-                    name: 'PR-3:publish',
-                    archived: false
-                }
-            ];
-
-            queryConfig = {
+        it('returns pull request jobs for specified pipelineId when there are open pull requests', () => {
+            config.prNames = ['PR-2', 'PR-3'];
+            const expectedQueryConfig = {
                 queries: getQueries('', PR_JOBS_FOR_PIPELINE_SYNC),
                 replacements: {
                     pipelineId: config.pipelineId,
@@ -345,15 +318,128 @@ describe('Job Factory', () => {
                 rawResponse: false,
                 table: 'jobs'
             };
-        });
 
-        it('returns pull request jobs to be synced for specified pipelineId', () => {
+            const returnValue = [
+                // jobs of closed PR (always only unarchived)
+                {
+                    id: 20,
+                    prParentJobId: 1,
+                    name: 'PR-1:component',
+                    archived: false
+                },
+                // jobs of open PR (archived and unarchived)
+                {
+                    id: 30,
+                    prParentJobId: 1,
+                    name: 'PR-2:component',
+                    archived: false
+                },
+                {
+                    id: 31,
+                    prParentJobId: 2,
+                    name: 'PR-2:publish',
+                    archived: true
+                },
+                // jobs of open PR (all archived)
+                {
+                    id: 40,
+                    prParentJobId: 1,
+                    name: 'PR-3:component',
+                    archived: false
+                },
+                {
+                    id: 41,
+                    prParentJobId: 2,
+                    name: 'PR-3:publish',
+                    archived: false
+                }
+            ];
+
             datastore.query.resolves(returnValue);
 
             return factory.getPullRequestJobsForPipelineSync(config).then(jobsForSync => {
-                assert.calledWith(datastore.query, queryConfig);
                 jobsForSync.forEach(j => {
                     assert.instanceOf(j, Job);
+                });
+                assert.calledWith(datastore.query, expectedQueryConfig);
+            });
+        });
+
+        describe('should set prNames to null in the query config', () => {
+            let expectedQueryConfig;
+
+            beforeEach(() => {
+                expectedQueryConfig = {
+                    queries: getQueries('', PR_JOBS_FOR_PIPELINE_SYNC),
+                    replacements: {
+                        pipelineId: config.pipelineId,
+                        prNames: null
+                    },
+                    rawResponse: false,
+                    table: 'jobs'
+                };
+
+                const returnValue = [
+                    // only unarchived jobs of all closed PRs
+                    {
+                        id: 20,
+                        prParentJobId: 1,
+                        name: 'PR-1:component',
+                        archived: false
+                    },
+                    {
+                        id: 30,
+                        prParentJobId: 1,
+                        name: 'PR-2:component',
+                        archived: false
+                    },
+                    {
+                        id: 40,
+                        prParentJobId: 1,
+                        name: 'PR-3:component',
+                        archived: false
+                    },
+                    {
+                        id: 41,
+                        prParentJobId: 2,
+                        name: 'PR-3:publish',
+                        archived: false
+                    }
+                ];
+
+                datastore.query.resolves(returnValue);
+            });
+
+            it('when prNames is empty', () => {
+                config.prNames = [];
+
+                return factory.getPullRequestJobsForPipelineSync(config).then(jobsForSync => {
+                    jobsForSync.forEach(j => {
+                        assert.instanceOf(j, Job);
+                    });
+                    assert.calledWith(datastore.query, expectedQueryConfig);
+                });
+            });
+
+            it('when prNames is null', () => {
+                config.prNames = null;
+
+                return factory.getPullRequestJobsForPipelineSync(config).then(jobsForSync => {
+                    jobsForSync.forEach(j => {
+                        assert.instanceOf(j, Job);
+                    });
+                    assert.calledWith(datastore.query, expectedQueryConfig);
+                });
+            });
+
+            it('when prNames is undefined', () => {
+                config.prNames = undefined;
+
+                return factory.getPullRequestJobsForPipelineSync(config).then(jobsForSync => {
+                    jobsForSync.forEach(j => {
+                        assert.instanceOf(j, Job);
+                    });
+                    assert.calledWith(datastore.query, expectedQueryConfig);
                 });
             });
         });
