@@ -300,11 +300,13 @@ describe('Build Model', () => {
                 });
                 assert.calledWith(scmMock.addPrComment, {
                     token: 'foo',
+                    jobName: 'PR-5:main',
                     scmContext,
                     scmUri,
+                    pipelineId,
                     comment:
                         '### SD Build [#9876](https://display.com/some/' +
-                        'endpoint/pipelines/1234/builds/9876)\n_node:4_\n- - - -\n' +
+                        'endpoint/pipelines/1234/builds/9876) Job PR-5:main\n_node:4_\n- - - -\n' +
                         '__coverage__ - Coverage increased by 15%\n' +
                         '__markdown__ - this markdown comment is **bold** and *italic*\n\n' +
                         '###### ~ Screwdriver automated build summary',
