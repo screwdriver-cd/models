@@ -680,6 +680,8 @@ factory.create(config).then(model => {
 | config.name | String | Yes | Stage name |
 | config.jobIds | Array | No | Jobs IDs that belong to this stage. Default `[]`. |
 | config.state | String | No | State of stage (ARCHIVED, ACTIVE). Default `ACTIVE`. |
+| config.description | String | No | Description for stage |
+| config.color | String | No | Hex color for Stage |
 
 #### Get
 Get stage based on ID.

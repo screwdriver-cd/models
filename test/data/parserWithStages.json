@@ -1,0 +1,108 @@
+{
+    "jobs": {
+        "main": [
+            {
+                "image": "node:4",
+                "commands": [
+                    {
+                        "name": "init",
+                        "command": "npm install"
+                    },
+                    {
+                        "name": "test",
+                        "command": "npm test"
+                    }
+                ],
+                "environment": {
+                    "NODE_ENV": "test",
+                    "NODE_VERSION": "4"
+                },
+                "requires": ["~pr", "~commit", "~sd@12345:test"]
+            },
+            {
+                "image": "node:5",
+                "commands": [
+                    {
+                        "name": "init",
+                        "command": "npm install"
+                    },
+                    {
+                        "name": "test",
+                        "command": "npm test"
+                    }
+                ],
+                "environment": {
+                    "NODE_ENV": "test",
+                    "NODE_VERSION": "5"
+                },
+                "requires": ["~pr", "~commit", "~sd@12345:test"]
+            },
+            {
+                "image": "node:6",
+                "commands": [
+                    {
+                        "name": "init",
+                        "command": "npm install"
+                    },
+                    {
+                        "name": "test",
+                        "command": "npm test"
+                    }
+                ],
+                "environment": {
+                    "NODE_ENV": "test",
+                    "NODE_VERSION": "6"
+                },
+                "requires": ["~pr", "~commit", "~sd@12345:test"]
+            }
+        ],
+        "publish": [
+            {
+                "image": "node:4",
+                "commands": [
+                    {
+                        "name": "bump",
+                        "command": "npm run bump"
+                    },
+                    {
+                        "name": "publish",
+                        "command": "npm publish --tag $NODE_TAG"
+                    },
+                    {
+                        "name": "tag",
+                        "command": "git push origin --tags"
+                    }
+                ],
+                "environment": {
+                    "NODE_ENV": "test",
+                    "NODE_TAG": "latest"
+                },
+                "requires": ["main"]
+            }
+        ]
+    },
+    "workflow": [],
+    "workflowGraph": {
+        "nodes": [
+            { "name": "~pr" },
+            { "name": "~commit" },
+            { "name": "main" },
+            { "name": "publish" }
+        ],
+        "edges": [
+            { "src": "~pr", "dest": "main" },
+            { "src": "~commit", "dest": "main" },
+            { "src": "main", "dest": "publish" }
+        ]
+    },
+    "annotations": {
+        "beta.screwdriver.cd/executor" : "screwdriver-executor-vm"
+    },
+    "stages": [{
+        "name": "canary",
+        "state": "ACTIVE",
+        "color": "#FFFF00",
+        "description": "Canary deployment",
+        "jobs": ["main", "publish"]
+    }]
+}
