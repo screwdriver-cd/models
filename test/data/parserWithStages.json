@@ -98,11 +98,12 @@
     "annotations": {
         "beta.screwdriver.cd/executor" : "screwdriver-executor-vm"
     },
-    "stages": [{
-        "name": "canary",
-        "state": "ACTIVE",
-        "color": "#FFFF00",
-        "description": "Canary deployment",
-        "jobs": ["main", "publish"]
-    }]
+    "stages": {
+        "canary": {
+            "state": "ACTIVE",
+            "color": "#FFFF00",
+            "description": "Canary deployment",
+            "jobs": ["main", "publish"]
+        }
+    }
 }
