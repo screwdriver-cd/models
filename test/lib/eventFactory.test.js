@@ -202,6 +202,7 @@ describe('Event Factory', () => {
                         { src: '~commit', dest: 'main' },
                         { src: 'main', dest: 'disabledJob' },
                         { src: '~pr', dest: 'publish' },
+                        { src: '~pr', dest: 'pr-only' },
                         { src: '~commit', dest: 'only-commit' },
                         { src: '~commit:branch', dest: 'main' },
                         { src: '~commit:branch', dest: 'commit-branch' },
@@ -247,6 +248,7 @@ describe('Event Factory', () => {
                         { src: '~commit', dest: 'main' },
                         { src: 'main', dest: 'disabledJob' },
                         { src: '~pr', dest: 'publish' },
+                        { src: '~pr', dest: 'pr-only' },
                         { src: '~commit', dest: 'only-commit' },
                         { src: '~commit:branch', dest: 'main' },
                         { src: '~commit:branch', dest: 'commit-branch' },
@@ -500,12 +502,27 @@ describe('Event Factory', () => {
                                 requires: ['~pr']
                             }
                         ],
-                        state: 'DISABLED',
+                        state: 'ENABLED',
                         parsePRJobName: sinon.stub().returns('publish')
+                    },
+                    {
+                        id: 8,
+                        name: 'PR-1:pr-only',
+                        permutations: [
+                            {
+                                requires: ['~pr']
+                            }
+                        ],
+                        state: 'ENABLED',
+                        parsePRJobName: sinon.stub().returns('pr-only')
                     }
                 ];
 
                 afterSyncedPRPipelineMock.getJobs.resolves(jobsMock);
+                afterSyncedPRPipelineMock.getConfiguration = sinon.stub().resolves({
+                    jobs: jobsMock,
+                    workflowGraph: syncedPipelineMock.workflowGraph
+                });
                 afterSyncedPRPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
                 syncedPipelineMock.update = sinon.stub().resolves(syncedPipelineMock);
 
@@ -518,13 +535,29 @@ describe('Event Factory', () => {
                 return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
-                    assert.calledOnce(buildFactoryMock.create);
+                    assert.calledTwice(buildFactoryMock.create);
                     assert.calledWith(
                         buildFactoryMock.create.firstCall,
                         sinon.match({
                             parentBuildId: 12345,
                             eventId: model.id,
                             jobId: 5,
+                            prRef: 'branch',
+                            prTitle: 'Update the README with new information',
+                            meta: {
+                                commit: {
+                                    ...commit,
+                                    changedFiles: ''
+                                }
+                            }
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create.secondCall,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 8,
                             prRef: 'branch',
                             prTitle: 'Update the README with new information',
                             meta: {
@@ -599,7 +632,7 @@ describe('Event Factory', () => {
                                 requires: ['~pr:branch']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'DISABLED'
                     },
                     {
                         id: 9,
@@ -610,7 +643,7 @@ describe('Event Factory', () => {
                                 requires: ['~pr:branch']
                             }
                         ],
-                        state: 'DISABLED',
+                        state: 'ENABLED',
                         parsePRJobName: sinon.stub().returns('pr-branch')
                     }
                 ];
