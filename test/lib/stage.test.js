@@ -7,12 +7,12 @@ const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe('Trigger Model', () => {
+describe('Stage Model', () => {
     let BaseModel;
-    let TriggerModel;
+    let StageModel;
     let datastore;
     let createConfig;
-    let trigger;
+    let stage;
 
     before(() => {
         mockery.enable({
@@ -30,15 +30,15 @@ describe('Trigger Model', () => {
         BaseModel = require('../../lib/base');
 
         // eslint-disable-next-line global-require
-        TriggerModel = require('../../lib/trigger');
+        StageModel = require('../../lib/stage');
 
         createConfig = {
             datastore,
             id: 1111,
-            src: '~sd@12345:component',
-            dest: '~sd@5678:main'
+            pipelineId: 12345,
+            name: 'deploy'
         };
-        trigger = new TriggerModel(createConfig);
+        stage = new StageModel(createConfig);
     });
 
     afterEach(() => {
@@ -52,10 +52,10 @@ describe('Trigger Model', () => {
     });
 
     it('is constructed properly', () => {
-        assert.instanceOf(trigger, TriggerModel);
-        assert.instanceOf(trigger, BaseModel);
-        schema.models.trigger.allKeys.forEach(key => {
-            assert.strictEqual(trigger[key], createConfig[key]);
+        assert.instanceOf(stage, StageModel);
+        assert.instanceOf(stage, BaseModel);
+        schema.models.stage.allKeys.forEach(key => {
+            assert.strictEqual(stage[key], createConfig[key]);
         });
     });
 });

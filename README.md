@@ -665,6 +665,48 @@ Update a specific secret
 model.update()
 ```
 
+### Stage Factory
+#### Create
+```js
+factory.create(config).then(model => {
+    // do stuff with stage model
+});
+```
+
+| Parameter        | Type  |  Required | Description |
+| :-------------   | :---- | :-------------|  :-------------|
+| config        | Object | Yes | Configuration Object |
+| config.pipelineId | Number | Yes | Pipeline that this stage belongs to |
+| config.name | String | Yes | Stage name |
+| config.jobIds | Array | No | Jobs IDs that belong to this stage. Default `[]`. |
+| config.state | String | No | State of stage (ARCHIVED, ACTIVE). Default `ACTIVE`. |
+| config.description | String | No | Description for stage |
+| config.color | String | No | Hex color for Stage |
+
+#### Get
+Get stage based on ID.
+```js
+factory.get(id).then(model => {
+    // do stuff with stage model
+});
+```
+
+| Parameter        | Type  |  Description |
+| :-------------   | :---- | :-------------|
+| id | Number | The unique ID for the stage |
+
+#### List
+List stages that have pipelineId as `12345`
+```js
+factory.list({
+    params: {
+        pipelineId: 12345
+    }
+}).then(recs =>
+    // do things with the records
+);
+```
+
 ### Event Factory
 #### Search
 ```js

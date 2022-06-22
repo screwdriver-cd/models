@@ -18,6 +18,7 @@ const PROVIDER_YAML = '../data/provider.yaml';
 const PARSED_YAML_WITH_PROVIDER = require('../data/parserWithProvider.json');
 const PARSED_YAML = require('../data/parser.json');
 const PARSED_YAML_WITH_REQUIRES = require('../data/parserWithRequires.json');
+const PARSED_YAML_WITH_STAGES = require('../data/parserWithStages.json');
 const PARSED_YAML_PR = require('../data/parserWithWorkflowGraphPR.json');
 const PARSED_YAML_WITH_ERRORS = require('../data/parserWithErrors.json');
 const PARSED_YAML_WITH_SUBSCRIBE = require('../data/parserWithSubscribedScms.json');
@@ -68,6 +69,7 @@ describe('Pipeline Model', () => {
     let buildFactoryMock;
     let templateFactoryMock;
     let buildClusterFactoryMock;
+    let stageFactoryMock;
     let triggerFactoryMock;
     let pipelineFactoryMock;
     let collectionFactoryMock;
@@ -240,6 +242,10 @@ describe('Pipeline Model', () => {
         secretFactoryMock = {
             list: sinon.stub()
         };
+        stageFactoryMock = {
+            list: sinon.stub(),
+            create: sinon.stub()
+        };
         templateFactoryMock = {};
         triggerFactoryMock = {
             list: sinon.stub(),
@@ -318,6 +324,9 @@ describe('Pipeline Model', () => {
         });
         mockery.registerMock('./secretFactory', {
             getInstance: sinon.stub().returns(secretFactoryMock)
+        });
+        mockery.registerMock('./stageFactory', {
+            getInstance: sinon.stub().returns(stageFactoryMock)
         });
         mockery.registerMock('./templateFactory', {
             getInstance: sinon.stub().returns(templateFactoryMock)
@@ -542,6 +551,8 @@ describe('Pipeline Model', () => {
             pipelineFactoryMock.create.resolves({ id: '98765', sync: sinon.stub().resolves({ id: '98765' }) });
             triggerFactoryMock.list.resolves([]);
             triggerFactoryMock.create.resolves(null);
+            stageFactoryMock.list.resolves([]);
+            stageFactoryMock.create.resolves(null);
 
             mainModelMock = {
                 isPR: sinon.stub().returns(false),
@@ -684,6 +695,77 @@ describe('Pipeline Model', () => {
             return pipeline.sync().then(() => {
                 assert.notCalled(triggerMock.remove);
                 assert.notCalled(triggerFactoryMock.create);
+            });
+        });
+
+        it('create stage in datastore for new stages', () => {
+            sinon.spy(pipeline, 'update');
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML_WITH_STAGES);
+            jobFactoryMock.list.resolves([mainModelMock, publishModelMock]);
+            mainModelMock.update.resolves(mainModelMock);
+            publishModelMock.update.resolves(publishModelMock);
+
+            return pipeline.sync().then(() => {
+                assert.calledOnce(pipeline.update);
+                assert.calledOnce(stageFactoryMock.create);
+                assert.calledWith(stageFactoryMock.create, {
+                    pipelineId: 123,
+                    name: 'canary',
+                    description: 'Canary deployment',
+                    jobIds: [1, 2],
+                    state: 'ACTIVE',
+                    color: '#FFFF00'
+                });
+            });
+        });
+
+        it('updates stage as ARCHIVED in datastore for removed stages', () => {
+            const stageMock = {
+                name: 'production',
+                state: 'ACTIVE',
+                color: '#00FFFF',
+                description: 'Some random placeholder',
+                jobIds: [1],
+                update: sinon.stub().resolves(null),
+                pipelineId: 123
+            };
+
+            sinon.spy(pipeline, 'update');
+
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML_WITH_REQUIRES);
+            jobFactoryMock.list.resolves([mainModelMock, publishModelMock]);
+            mainModelMock.update.resolves(mainModelMock);
+            publishModelMock.update.resolves(publishModelMock);
+            stageFactoryMock.list.resolves([stageMock]);
+
+            return pipeline.sync().then(() => {
+                assert.calledOnce(pipeline.update);
+                assert.calledOnce(stageMock.update);
+            });
+        });
+
+        it('updates stage in datastore for existing stages', () => {
+            const stageMock = {
+                name: 'canary',
+                state: 'ACTIVE',
+                color: '#00FFFF',
+                description: 'Some random placeholder',
+                jobIds: [1],
+                update: sinon.stub().resolves(null),
+                pipelineId: 123
+            };
+
+            sinon.spy(pipeline, 'update');
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML_WITH_STAGES);
+            jobFactoryMock.list.resolves([mainModelMock, publishModelMock]);
+            mainModelMock.update.resolves(mainModelMock);
+            publishModelMock.update.resolves(publishModelMock);
+            stageFactoryMock.list.resolves([stageMock]);
+
+            return pipeline.sync().then(() => {
+                assert.calledOnce(pipeline.update);
+                assert.calledOnce(stageMock.update);
+                assert.notCalled(stageFactoryMock.create);
             });
         });
 
