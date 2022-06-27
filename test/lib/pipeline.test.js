@@ -1392,6 +1392,7 @@ describe('Pipeline Model', () => {
             const error = new Error('pipelineId:123: Failed to fetch screwdriver.yaml.');
 
             scmMock.getFile.rejects(error);
+            jobFactoryMock.list.resolves([]);
 
             return pipeline.syncPR(1).catch(err => {
                 assert.equal(err.message, error.message);
