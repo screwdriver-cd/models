@@ -1930,6 +1930,14 @@ describe('Pipeline Model', () => {
             // as the model's pipeline property, now
             assert.calledOnce(jobFactoryMock.list);
         });
+
+        it('gets only pipelineJobs', () => {
+            jobFactoryMock.list.resolves([mainJob, pr10]);
+
+            return pipeline.pipelineJobs.then(value => {
+                assert.deepEqual(value, [mainJob]);
+            });
+        });
     });
 
     describe('get secrets', () => {
