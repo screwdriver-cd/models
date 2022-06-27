@@ -1392,6 +1392,7 @@ describe('Pipeline Model', () => {
             const error = new Error('pipelineId:123: Failed to fetch screwdriver.yaml.');
 
             scmMock.getFile.rejects(error);
+            jobFactoryMock.list.resolves([]);
 
             return pipeline.syncPR(1).catch(err => {
                 assert.equal(err.message, error.message);
@@ -1929,6 +1930,14 @@ describe('Pipeline Model', () => {
             // ...but the factory was not recreated, since the promise is stored
             // as the model's pipeline property, now
             assert.calledOnce(jobFactoryMock.list);
+        });
+
+        it('gets only pipelineJobs', () => {
+            jobFactoryMock.list.resolves([mainJob, pr10]);
+
+            return pipeline.pipelineJobs.then(value => {
+                assert.deepEqual(value, [mainJob]);
+            });
         });
     });
 
