@@ -58,7 +58,7 @@
     "js-yaml": "^4.1.0",
     "lodash": "^4.17.20",
     "screwdriver-config-parser": "^7.5.5",
-    "screwdriver-data-schema": "^21.23.1",
+    "screwdriver-data-schema": "^21.25.1",
     "screwdriver-logger": "^1.1.0",
     "screwdriver-workflow-parser": "^3.2.0"
   }
