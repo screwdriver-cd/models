@@ -1615,6 +1615,17 @@ describe('Event Factory', () => {
             });
         });
 
+        it('should create event with parentEventId even if it is pr event', () => {
+            config.prNum = 20;
+            config.prRef = 'branch';
+            config.parentEventId = 222;
+
+            return eventFactory.create(config).then(model => {
+                assert.instanceOf(model, Event);
+                assert.deepEqual(model.parentEventId, config.parentEventId);
+            });
+        });
+
         it('should not call pipeline sync with configPipelineSha if it is pr event', () => {
             config.parentEventId = 222;
             config.configPipelineSha = 'configpipelinesha';
