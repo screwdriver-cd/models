@@ -679,9 +679,8 @@ factory.create(config).then(model => {
 | config.pipelineId | Number | Yes | Pipeline that this stage belongs to |
 | config.name | String | Yes | Stage name |
 | config.jobIds | Array | No | Jobs IDs that belong to this stage. Default `[]`. |
-| config.state | String | No | State of stage (ARCHIVED, ACTIVE). Default `ACTIVE`. |
+| config.groupEventId | Number | Yes | Group event ID that this stage belongs to |
 | config.description | String | No | Description for stage |
-| config.color | String | No | Hex color for Stage |
 
 #### Get
 Get stage based on ID.
@@ -696,11 +695,12 @@ factory.get(id).then(model => {
 | id | Number | The unique ID for the stage |
 
 #### List
-List stages that have pipelineId as `12345`
+List stages that have pipelineId as `12345` and groupEventId as `555`
 ```js
 factory.list({
     params: {
-        pipelineId: 12345
+        pipelineId: 12345,
+        groupEventId: 555
     }
 }).then(recs =>
     // do things with the records

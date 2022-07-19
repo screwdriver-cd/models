@@ -100,8 +100,6 @@
     },
     "stages": {
         "canary": {
-            "state": "ACTIVE",
-            "color": "#FFFF00",
             "description": "Canary deployment",
             "jobs": ["main", "publish"]
         }

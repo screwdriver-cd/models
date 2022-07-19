@@ -10,12 +10,10 @@ describe('Stage Factory', () => {
     const pipelineId = 8765;
     const name = 'deploy';
     const jobIds = [1, 2, 3];
-    const state = 'ACTIVE';
     const metaData = {
         pipelineId,
         name,
-        jobIds,
-        state
+        jobIds
     };
     const generatedId = 1234135;
     let StageFactory;
@@ -71,8 +69,7 @@ describe('Stage Factory', () => {
                 id: generatedId,
                 pipelineId,
                 name,
-                jobIds,
-                state
+                jobIds
             };
         });
 
@@ -89,6 +86,23 @@ describe('Stage Factory', () => {
                     assert.instanceOf(model, Stage);
                     Object.keys(expected).forEach(key => {
                         assert.strictEqual(model[key], expected[key]);
+                    });
+                });
+        });
+
+        it('creates a Stage given pipelineId and name', () => {
+            expected.jobIds = [];
+            datastore.save.resolves(expected);
+
+            return factory
+                .create({
+                    pipelineId,
+                    name
+                })
+                .then(model => {
+                    assert.instanceOf(model, Stage);
+                    Object.keys(expected).forEach(key => {
+                        assert.deepEqual(model[key], expected[key]);
                     });
                 });
         });
