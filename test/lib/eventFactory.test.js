@@ -1975,8 +1975,7 @@ describe('Event Factory', () => {
                     pipelineId: 8765,
                     description: 'Canary deployment',
                     jobs: [1, 2],
-                    groupEventId: 'xzy1234',
-                    createTime: nowTime
+                    groupEventId: 'xzy1234'
                 }
             ]);
             config.startFrom = 'main';
