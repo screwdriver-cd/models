@@ -311,7 +311,8 @@ describe('Event Factory', () => {
                                 requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch', '~pr:branch']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
                     },
                     {
                         id: 2,
@@ -322,7 +323,8 @@ describe('Event Factory', () => {
                                 requires: ['main']
                             }
                         ],
-                        state: 'DISABLED'
+                        state: 'DISABLED',
+                        isPR: sinon.stub().returns(false)
                     },
                     {
                         id: 4,
@@ -333,7 +335,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(true)
                     },
                     {
                         id: 5,
@@ -344,7 +347,8 @@ describe('Event Factory', () => {
                                 requires: ['~commit:branch']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
                     },
                     {
                         id: 6,
@@ -355,7 +359,8 @@ describe('Event Factory', () => {
                                 requires: ['~commit']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
                     },
                     {
                         id: 7,
@@ -366,7 +371,8 @@ describe('Event Factory', () => {
                                 requires: ['~commit:/^.*$/']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
                     },
                     {
                         id: 8,
@@ -377,7 +383,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr:branch']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(true)
                     },
                     {
                         id: 9,
@@ -388,7 +395,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr:/^.*$/']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(true)
                     },
                     {
                         id: 10,
@@ -400,7 +408,8 @@ describe('Event Factory', () => {
                             }
                         ],
                         state: 'ENABLED',
-                        parsePRJobName: sinon.stub().returns('main')
+                        parsePRJobName: sinon.stub().returns('main'),
+                        isPR: sinon.stub().returns(true)
                     }
                 ];
 
@@ -958,6 +967,204 @@ describe('Event Factory', () => {
                             jobId: 1
                         })
                     );
+                });
+            });
+
+            it('should not create build if startFrom is a disabled jobName', () => {
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'main',
+                        permutations: [
+                            {
+                                requires: ['~commit', '~pr']
+                            }
+                        ],
+                        state: 'DISABLED',
+                        archived: false,
+                        isPR: sinon.stub().returns(false)
+                    }
+                ];
+                afterSyncedPRPipelineMock.getJobs.resolves(jobsMock);
+                syncedPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
+
+                config.startFrom = 'PR-1:main';
+
+                return eventFactory.create(config).then(model => {
+                    assert.instanceOf(model, Event);
+                    assert.isNull(model.builds);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.notCalled(buildFactoryMock.create);
+                });
+            });
+
+            it('should not create build if startFrom is a archived jobName', () => {
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'main',
+                        permutations: [
+                            {
+                                requires: ['~commit', '~pr']
+                            }
+                        ],
+                        state: 'ENABLED',
+                        archived: true,
+                        isPR: sinon.stub().returns(false)
+                    }
+                ];
+                afterSyncedPRPipelineMock.getJobs.resolves(jobsMock);
+                syncedPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
+
+                config.startFrom = 'PR-1:main';
+
+                return eventFactory.create(config).then(model => {
+                    assert.instanceOf(model, Event);
+                    assert.isNull(model.builds);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.notCalled(buildFactoryMock.create);
+                });
+            });
+
+            it('should create build if startFrom is a PR jobName', () => {
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'main',
+                        permutations: [
+                            {
+                                requires: ['~commit', '~pr']
+                            }
+                        ],
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
+                    },
+                    {
+                        id: 2,
+                        pipelineId: 8765,
+                        name: 'PR-1:main',
+                        permutations: [
+                            {
+                                requires: ['~pr']
+                            }
+                        ],
+                        isPR: sinon.stub().returns(true),
+                        state: 'DISABLED',
+                        parsePRJobName: sinon.stub().returns('main')
+                    }
+                ];
+                afterSyncedPRPipelineMock.getJobs.resolves(jobsMock);
+                syncedPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
+
+                config.startFrom = 'PR-1:main';
+
+                return eventFactory.create(config).then(model => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.calledOnce(buildFactoryMock.create);
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 2
+                        })
+                    );
+                });
+            });
+
+            it('should not create build if startFrom is a disabled PR jobName', () => {
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'main',
+                        permutations: [
+                            {
+                                requires: ['~commit', '~pr']
+                            }
+                        ],
+                        state: 'DISABLED',
+                        isPR: sinon.stub().returns(false)
+                    },
+                    {
+                        id: 2,
+                        pipelineId: 8765,
+                        name: 'PR-1:main',
+                        permutations: [
+                            {
+                                requires: ['~pr']
+                            }
+                        ],
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(true),
+                        parsePRJobName: sinon.stub().returns('main')
+                    }
+                ];
+                afterSyncedPRPipelineMock.getJobs.resolves(jobsMock);
+                syncedPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
+
+                config.startFrom = 'PR-1:main';
+
+                return eventFactory.create(config).then(model => {
+                    assert.instanceOf(model, Event);
+                    assert.isNull(model.builds);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.notCalled(buildFactoryMock.create);
+                });
+            });
+
+            it('should not create build if startFrom is a archived PR jobName', () => {
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'main',
+                        permutations: [
+                            {
+                                requires: ['~commit', '~pr']
+                            }
+                        ],
+                        state: 'ENABLED',
+                        archived: true,
+                        isPR: sinon.stub().returns(false)
+                    },
+                    {
+                        id: 2,
+                        pipelineId: 8765,
+                        name: 'PR-1:main',
+                        permutations: [
+                            {
+                                requires: ['~pr']
+                            }
+                        ],
+                        isPR: sinon.stub().returns(true),
+                        parsePRJobName: sinon.stub().returns('main')
+                    }
+                ];
+                afterSyncedPRPipelineMock.getJobs.resolves(jobsMock);
+                syncedPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
+
+                config.startFrom = 'PR-1:main';
+
+                return eventFactory.create(config).then(model => {
+                    assert.instanceOf(model, Event);
+                    assert.isNull(model.builds);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.notCalled(buildFactoryMock.create);
                 });
             });
 
@@ -1670,7 +1877,8 @@ describe('Event Factory', () => {
                             sourcePaths: ['src/test/']
                         }
                     ],
-                    state: 'ENABLED'
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(false)
                 }
             ];
             syncedPipelineMock.update = sinon.stub().resolves({
@@ -1705,7 +1913,8 @@ describe('Event Factory', () => {
                             sourcePaths: ['src/test/']
                         }
                     ],
-                    state: 'ENABLED'
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(false)
                 }
             ];
             syncedPipelineMock.update = sinon.stub().resolves({
@@ -1735,7 +1944,8 @@ describe('Event Factory', () => {
                             sourcePaths: ['src/test/', '!src/test/foo']
                         }
                     ],
-                    state: 'ENABLED'
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(false)
                 }
             ];
             syncedPipelineMock.update = sinon.stub().resolves({
@@ -1764,7 +1974,8 @@ describe('Event Factory', () => {
                             sourcePaths: ['!src/test/', '!README.md']
                         }
                     ],
-                    state: 'ENABLED'
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(false)
                 }
             ];
             syncedPipelineMock.update = sinon.stub().resolves({
@@ -1793,7 +2004,8 @@ describe('Event Factory', () => {
                             sourcePaths: ['!src/test/']
                         }
                     ],
-                    state: 'ENABLED'
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(false)
                 }
             ];
             syncedPipelineMock.update = sinon.stub().resolves({
@@ -1916,7 +2128,8 @@ describe('Event Factory', () => {
                             requires: ['~pr']
                         }
                     ],
-                    state: 'ENABLED'
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(false)
                 }
             ];
             syncedPipelineMock.update = sinon.stub().resolves({
@@ -1958,7 +2171,8 @@ describe('Event Factory', () => {
                             requires: ['~pr']
                         }
                     ],
-                    state: 'ENABLED'
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(false)
                 }
             ];
             syncedPipelineMock.update = sinon.stub().resolves({
@@ -2013,7 +2227,8 @@ describe('Event Factory', () => {
                             requires: ['~pr']
                         }
                     ],
-                    state: 'ENABLED'
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(false)
                 },
                 {
                     id: 2,
@@ -2024,7 +2239,8 @@ describe('Event Factory', () => {
                             requires: ['~pr']
                         }
                     ],
-                    state: 'ENABLED'
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(false)
                 }
             ];
             syncedPipelineMock.update = sinon.stub().resolves({
@@ -2156,7 +2372,8 @@ describe('Event Factory', () => {
                             sourcePaths: ['screwdriver.yaml', 'test.js']
                         }
                     ],
-                    state: 'ENABLED'
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(false)
                 }
             ];
             syncedPipelineMock.update = sinon.stub().resolves({
@@ -2188,7 +2405,8 @@ describe('Event Factory', () => {
                             sourcePaths: ['src/test/']
                         }
                     ],
-                    state: 'ENABLED'
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(false)
                 }
             ];
             syncedPipelineMock.update = sinon.stub().resolves({
