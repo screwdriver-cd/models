@@ -1153,7 +1153,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('activates child pipeline if scmUrls is read-only SCM and removed from new yaml', () => {
+        it('deactivates child pipeline if scmUrls is read-only SCM and removed from new yaml', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
@@ -1171,7 +1171,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('deactivates child pipeline if scmUrls added back (previously removed) in the new yaml', () => {
+        it('reactivates child pipeline if scmUrls is added back (previously removed) in the new yaml', () => {
             const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
             const inActiveChildPipelineMock = getChildPipelineMock({ state: 'INACTIVE' });
 
