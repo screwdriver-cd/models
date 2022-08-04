@@ -105,6 +105,7 @@ describe('Pipeline Factory', () => {
             params: {
                 admins,
                 createTime: nowTime,
+                state: 'ACTIVE',
                 name: scmRepo.name,
                 scmUri,
                 scmContext,
