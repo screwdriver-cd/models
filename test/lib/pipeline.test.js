@@ -1263,7 +1263,7 @@ describe('Pipeline Model', () => {
             };
             datastore.update.resolves(null);
             scmMock.getFile.resolves(SCM_CONTEXT_GITHUB);
-            scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge', baseBranch: 'testBranch' });
+            scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge', baseBranch: 'branch' });
             scmMock.getReadOnlyInfo
                 .withArgs({ scmContext: SCM_CONTEXT_GITLAB })
                 .returns({ enabled: true, username: 'sd-buildbot', accessToken: 'tokenRO' });
@@ -1311,7 +1311,7 @@ describe('Pipeline Model', () => {
             return pipeline.syncPR(1).then(() => {
                 assert.calledWith(scmMock.getFile, expectedGetFile);
                 assert.calledOnce(prJob.update);
-                assert.calledThrice(jobFactoryMock.create);
+                assert.calledTwice(jobFactoryMock.create);
                 assert.calledWith(jobFactoryMock.create.firstCall, {
                     name: 'PR-1:test',
                     permutations: [
@@ -1329,13 +1329,6 @@ describe('Pipeline Model', () => {
                     sinon.match({
                         pipelineId: testId,
                         name: 'PR-1:new_pr_job'
-                    })
-                );
-                assert.calledWith(
-                    jobFactoryMock.create.thirdCall,
-                    sinon.match({
-                        pipelineId: testId,
-                        name: 'PR-1:pr_specific_branch'
                     })
                 );
                 assert.deepEqual(prJob.permutations, clonedYAML.jobs.main);
@@ -1432,7 +1425,7 @@ describe('Pipeline Model', () => {
                     }
                 });
                 assert.calledOnce(prJob.update);
-                assert.callCount(jobFactoryMock.create, 4);
+                assert.callCount(jobFactoryMock.create, 3);
                 assert.calledWith(jobFactoryMock.create.firstCall, {
                     name: 'PR-1:test',
                     permutations: [
@@ -1460,7 +1453,7 @@ describe('Pipeline Model', () => {
                     })
                 );
                 assert.calledWith(
-                    jobFactoryMock.create.lastCall,
+                    jobFactoryMock.create.thirdCall,
                     sinon.match({
                         name: 'PR-1:publish',
                         permutations: [
@@ -1513,6 +1506,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.getPullRequestJobsForPipelineSync.resolves(prJobs); // pull request jobs
 
             scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
+            scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge', baseBranch: 'testBranch' });
             parserMock.withArgs(parserConfig).resolves(clonedYAML);
 
             return pipeline.syncPR(1).then(() => {
@@ -1637,7 +1631,7 @@ describe('Pipeline Model', () => {
                 .withArgs({ scmContext: SCM_CONTEXT_GITLAB })
                 .returns({ enabled: true, username: 'sd-buildbot', accessToken: 'tokenRO' });
             parserMock.withArgs(parserConfig).resolves(PARSED_YAML);
-            scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge', baseBranch: 'testBranch' });
+            scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge', baseBranch: 'branch' });
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
             pipeline.admins = { batman: true, robin: true };
