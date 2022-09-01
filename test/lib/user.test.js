@@ -242,6 +242,28 @@ describe('User Model', () => {
         });
     });
 
+    describe('removeSettings', () => {
+        beforeEach(() => {
+            user.settings = {
+                1: {
+                    showPRJobs: true
+                },
+                11: {
+                    showPRJobs: false
+                },
+                displayJobNameLength: 25
+            };
+        });
+
+        it('Remove user settings', () => {
+            datastore.update.resolves({});
+
+            return user.removeSettings().then(data => {
+                assert.deepEqual(data, {});
+            });
+        });
+    });
+
     describe('get tokens', () => {
         it('has a tokens getter', () => {
             const listConfig = {
