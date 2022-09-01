@@ -242,6 +242,20 @@ describe('User Model', () => {
         });
     });
 
+    describe('removeSettings', () => {
+        beforeEach(() => {
+            user.settings = {};
+        });
+
+        it('Remove user settings', () => {
+            datastore.update.resolves({});
+
+            return user.removeSettings(settings).then(data => {
+                assert.deepEqual(data, {});
+            });
+        });
+    });
+
     describe('get tokens', () => {
         it('has a tokens getter', () => {
             const listConfig = {
