@@ -244,7 +244,15 @@ describe('User Model', () => {
 
     describe('removeSettings', () => {
         beforeEach(() => {
-            user.settings = {};
+            user.settings = {
+                1: {
+                    showPRJobs: true
+                },
+                11: {
+                    showPRJobs: false
+                },
+                displayJobNameLength: 25
+            };
         });
 
         it('Remove user settings', () => {
