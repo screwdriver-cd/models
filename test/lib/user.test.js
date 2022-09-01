@@ -258,7 +258,7 @@ describe('User Model', () => {
         it('Remove user settings', () => {
             datastore.update.resolves({});
 
-            return user.removeSettings(settings).then(data => {
+            return user.removeSettings().then(data => {
                 assert.deepEqual(data, {});
             });
         });
