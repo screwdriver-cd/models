@@ -228,7 +228,7 @@ describe('Event Factory', () => {
                 createTime: nowTime,
                 creator,
                 commit,
-                meta: { event: { creator: 'stjohn' } }
+                meta: {}
             };
 
             syncedPipelineMock = {
@@ -1741,7 +1741,6 @@ describe('Event Factory', () => {
 
             config.creator = creatorTest;
             expected.creator = creatorTest;
-            expected.meta.event.creator = creatorTest.username;
 
             return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
