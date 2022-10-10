@@ -89,23 +89,6 @@ describe('Stage Factory', () => {
                     });
                 });
         });
-
-        it('creates a Stage given pipelineId and name', () => {
-            expected.jobIds = [];
-            datastore.save.resolves(expected);
-
-            return factory
-                .create({
-                    pipelineId,
-                    name
-                })
-                .then(model => {
-                    assert.instanceOf(model, Stage);
-                    Object.keys(expected).forEach(key => {
-                        assert.deepEqual(model[key], expected[key]);
-                    });
-                });
-        });
     });
 
     describe('getInstance', () => {
