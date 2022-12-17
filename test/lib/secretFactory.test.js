@@ -229,11 +229,13 @@ describe('Secret Factory', () => {
 
             return factory.list({ paginate }).then(arr => {
                 assert.isArray(arr);
-                assert.equal(arr.length, 2);
-                assert.deepEqual(arr, returnValue);
-                arr.forEach(model => {
-                    assert.instanceOf(model, Secret);
-                });
+                assert.equal(arr.length, returnValue.length);
+                for (let i = 0; i < arr.length; i += 1) {
+                    assert.instanceOf(arr[i], Secret);
+                    Object.keys(returnValue[i]).forEach(key => {
+                        assert.strictEqual(arr[i][key], returnValue[i][key]);
+                    });
+                }
             });
         });
     });
