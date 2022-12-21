@@ -79,6 +79,28 @@
                 },
                 "requires": ["main"]
             }
+        ],
+        "sd-stage-setup-canary": [
+            {
+                "image": "node:4",
+                "commands": [
+                    {
+                        "name": "announce",
+                        "command": "post banner"
+                    }
+                ]
+            }
+        ],
+        "sd-stage-teardown-canary": [
+            {
+                "image": "node:4",
+                "commands": [
+                    {
+                        "name": "publish",
+                        "command": "publish blog"
+                    }
+                ]
+            }
         ]
     },
     "workflow": [],
@@ -87,7 +109,9 @@
             { "name": "~pr" },
             { "name": "~commit" },
             { "name": "main" },
-            { "name": "publish" }
+            { "name": "publish" },
+            { "name": "sd-stage-setup-canary" },
+            { "name": "sd-stage-teardown-canary" }
         ],
         "edges": [
             { "src": "~pr", "dest": "main" },

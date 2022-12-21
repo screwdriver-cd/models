@@ -2240,6 +2240,22 @@ describe('Event Factory', () => {
                     ],
                     state: 'ENABLED',
                     isPR: sinon.stub().returns(false)
+                },
+                {
+                    id: 3,
+                    pipelineId: 8765,
+                    name: 'sd-stage-setup-canary',
+                    permutations: [],
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(false)
+                },
+                {
+                    id: 4,
+                    pipelineId: 8765,
+                    name: 'sd-stage-teardown-canary',
+                    permutations: [],
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(false)
                 }
             ];
             syncedPipelineMock.update = sinon.stub().resolves({
@@ -2248,12 +2264,21 @@ describe('Event Factory', () => {
                 rootDir: Promise.resolve('root/src/test')
             });
             syncedPipelineMock.pipelineJobs = Promise.resolve(jobsMock);
-
             syncedPipelineMock.getConfiguration.onCall(0).resolves(PARSED_YAML_WITH_STAGES);
 
             config.startFrom = 'main';
             config.webhooks = true;
             config.changedFiles = ['README.md', 'root/src/test/file'];
+
+            const expectedStageCreate = {
+                name: 'canary',
+                pipelineId: 8765,
+                groupEventId: 'xzy1234',
+                description: 'Canary deployment',
+                jobIds: [1, 2],
+                setup: 3,
+                teardown: 4
+            };
 
             return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
@@ -2272,6 +2297,7 @@ describe('Event Factory', () => {
                 assert.calledOnce(stageFactoryMock.list);
                 assert.calledOnce(stageFactoryMock.create);
                 assert.deepEqual(buildFactoryMock.create.args[0][0].environment, { SD_SOURCE_PATH: 'root/src/test/' });
+                assert.deepEqual(stageFactoryMock.create.args[0][0], expectedStageCreate);
             });
         });
 
