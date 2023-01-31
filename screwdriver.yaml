@@ -1,8 +1,10 @@
 shared:
-    image: node:12
+    image: node:18
 
 jobs:
     main:
+        annotations:
+            screwdriver.cd/ram: HIGH
         environment:
             SD_SONAR_OPTS: "-Dsonar.sources=lib -Dsonar.tests=test -Dsonar.javascript.lcov.reportPaths=artifacts/coverage/lcov.info -Dsonar.testExecutionReportPaths=artifacts/report/test.xml"
             NODE_OPTIONS: "--max_old_space_size=8192"

@@ -123,7 +123,9 @@ describe('Collection Factory', () => {
                         table: 'collections'
                     });
                     assert.instanceOf(model, Collection);
-                    assert.deepEqual(model, dataWithoutPipelineIds);
+                    Object.keys(dataWithoutPipelineIds).forEach(key => {
+                        assert.deepEqual(model[key], dataWithoutPipelineIds[key]);
+                    });
                 });
         });
     });
