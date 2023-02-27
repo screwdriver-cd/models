@@ -254,7 +254,9 @@ describe('Build Factory', () => {
                 environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
                 image: 'node:4',
                 provider: {
-                    name: 'aws'
+                    name: 'aws',
+                    executor: 'sls',
+                    accountId: '123456789012'
                 }
             },
             {
@@ -639,7 +641,7 @@ describe('Build Factory', () => {
                 });
         });
 
-        it('sets build cluster from provider if available', () => {
+        it('sets build cluster from provider as providerName-executor-accountId if available', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
             const jobMock = {
                 permutations: permutationsWithProvider,
@@ -650,7 +652,7 @@ describe('Build Factory', () => {
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
             delete saveConfig.params.commit;
-            saveConfig.params.buildClusterName = 'aws';
+            saveConfig.params.buildClusterName = 'aws-sls-123456789012';
 
             return factory
                 .create({
@@ -1000,11 +1002,12 @@ describe('Build Factory', () => {
                 });
         });
 
-        it('passes buildClusterName from provider config to the bookend config', () => {
+        it('passes buildClusterName as provider.name from provider config to the bookend config', () => {
             const pipelineMock = {
                 configPipelineId: 2,
                 configPipeline: Promise.resolve({ spooky: 'ghost' })
             };
+            const bookendClusterName = 'aws';
             const jobMock = {
                 permutations: permutationsWithProvider,
                 pipeline: Promise.resolve(pipelineMock)
@@ -1023,20 +1026,28 @@ describe('Build Factory', () => {
                     meta
                 })
                 .then(() => {
-                    assert.calledWith(bookendMock.getSetupCommands, {
-                        pipeline: pipelineMock,
-                        job: jobMock,
-                        build: sinon.match.object,
-                        configPipeline: { spooky: 'ghost' },
-                        configPipelineSha
-                    });
-                    assert.calledWith(bookendMock.getTeardownCommands, {
-                        pipeline: pipelineMock,
-                        job: jobMock,
-                        build: sinon.match.object,
-                        configPipeline: { spooky: 'ghost' },
-                        configPipelineSha
-                    });
+                    assert.calledWith(
+                        bookendMock.getSetupCommands,
+                        {
+                            pipeline: pipelineMock,
+                            job: jobMock,
+                            build: sinon.match.object,
+                            configPipeline: { spooky: 'ghost' },
+                            configPipelineSha
+                        },
+                        bookendClusterName
+                    );
+                    assert.calledWith(
+                        bookendMock.getTeardownCommands,
+                        {
+                            pipeline: pipelineMock,
+                            job: jobMock,
+                            build: sinon.match.object,
+                            configPipeline: { spooky: 'ghost' },
+                            configPipelineSha
+                        },
+                        bookendClusterName
+                    );
                 });
         });
     });
