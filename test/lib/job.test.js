@@ -857,7 +857,9 @@ describe('Job Model', () => {
                     testBuilds[i].createTime = currentDay.toISOString();
 
                     // testBuilds' durations are 10, 11, 12, 13 ... 17
-                    testBuilds[i].startTime = dayjs(currentDay).add(10, 'minute').toISOString();
+                    testBuilds[i].startTime = dayjs(currentDay)
+                        .add(10, 'minute')
+                        .toISOString();
                     testBuilds[i].endTime = dayjs(currentDay)
                         .add(20 + i, 'minute')
                         .toISOString();

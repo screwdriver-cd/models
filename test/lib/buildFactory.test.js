@@ -674,7 +674,7 @@ describe('Build Factory', () => {
                     assert.strictEqual(
                         err.message,
                         'Cluster specified in screwdriver.cd/buildCluster iOS ' +
-                        `for scmContext ${scmContext} does not exist.`
+                            `for scmContext ${scmContext} does not exist.`
                     );
                 });
         });
@@ -1095,9 +1095,8 @@ describe('Build Factory', () => {
                 permutations: permutations1,
                 pipeline: Promise.resolve(pMock)
             };
-            
-            const user = { unsealToken: sinon.stub().resolves('foo') };
 
+            const user = { unsealToken: sinon.stub().resolves('foo') };
 
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
@@ -1140,14 +1139,13 @@ describe('Build Factory', () => {
         it('passes buildKeyName from buildClusterName and default for executor to the bookend config', () => {
             const bookendKeyName = 'aws.us-west-2.default';
             const pMock = { name: 'screwdriver/ui', scmUri, scmRepo, scmContext };
-    
+
             const jobMock = {
                 permutations: permutations2,
                 pipeline: Promise.resolve(pMock)
             };
-            
-            const user = { unsealToken: sinon.stub().resolves('foo') };
 
+            const user = { unsealToken: sinon.stub().resolves('foo') };
 
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
