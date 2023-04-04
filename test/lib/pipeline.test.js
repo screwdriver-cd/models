@@ -2817,35 +2817,23 @@ describe('Pipeline Model', () => {
             }));
 
         it('remove jobs recursively', () => {
-            const nonArchivedMatcher = sinon.match(function(value) {
+            const nonArchivedMatcher = sinon.match(function (value) {
                 return value && value.params && !value.params.archived;
             });
-            const archivedMatcher = sinon.match(function(value) {
+            const archivedMatcher = sinon.match(function (value) {
                 return value && value.params && value.params.archived;
             });
             let i;
 
             for (i = 0; i < 4; i += 1) {
-                jobFactoryMock.list
-                    .withArgs(nonArchivedMatcher)
-                    .onCall(i)
-                    .resolves([publishJob, mainJob]);
+                jobFactoryMock.list.withArgs(nonArchivedMatcher).onCall(i).resolves([publishJob, mainJob]);
             }
-            jobFactoryMock.list
-                .withArgs(nonArchivedMatcher)
-                .onCall(i)
-                .resolves([]);
+            jobFactoryMock.list.withArgs(nonArchivedMatcher).onCall(i).resolves([]);
 
             for (i = 0; i < 2; i += 1) {
-                jobFactoryMock.list
-                    .withArgs(archivedMatcher)
-                    .onCall(i)
-                    .resolves([blahJob]);
+                jobFactoryMock.list.withArgs(archivedMatcher).onCall(i).resolves([blahJob]);
             }
-            jobFactoryMock.list
-                .withArgs(archivedMatcher)
-                .onCall(i)
-                .resolves([]);
+            jobFactoryMock.list.withArgs(archivedMatcher).onCall(i).resolves([]);
 
             return pipeline.remove().then(() => {
                 assert.callCount(jobFactoryMock.list, 8);
@@ -2918,35 +2906,23 @@ describe('Pipeline Model', () => {
         });
 
         it('remove events recursively', () => {
-            const pipelineTypeMatcher = sinon.match(function(value) {
+            const pipelineTypeMatcher = sinon.match(function (value) {
                 return value && value.params && value.params.type === 'pipeline';
             });
-            const prTypeMatcher = sinon.match(function(value) {
+            const prTypeMatcher = sinon.match(function (value) {
                 return value && value.params && value.params.type === 'pr';
             });
             let i;
 
             for (i = 0; i < 4; i += 1) {
-                eventFactoryMock.list
-                    .withArgs(pipelineTypeMatcher)
-                    .onCall(i)
-                    .resolves([testEvent]);
+                eventFactoryMock.list.withArgs(pipelineTypeMatcher).onCall(i).resolves([testEvent]);
             }
-            eventFactoryMock.list
-                .withArgs(pipelineTypeMatcher)
-                .onCall(i)
-                .resolves([]);
+            eventFactoryMock.list.withArgs(pipelineTypeMatcher).onCall(i).resolves([]);
 
             for (i = 0; i < 2; i += 1) {
-                eventFactoryMock.list
-                    .withArgs(prTypeMatcher)
-                    .onCall(i)
-                    .resolves([testEvent]);
+                eventFactoryMock.list.withArgs(prTypeMatcher).onCall(i).resolves([testEvent]);
             }
-            eventFactoryMock.list
-                .withArgs(prTypeMatcher)
-                .onCall(i)
-                .resolves([]);
+            eventFactoryMock.list.withArgs(prTypeMatcher).onCall(i).resolves([]);
 
             return pipeline.remove().then(() => {
                 assert.callCount(eventFactoryMock.list, 8);
@@ -3440,9 +3416,7 @@ describe('Pipeline Model', () => {
                         imagePullTime: 10 + i,
                         queuedTime: 5 + i,
                         createTime: currentDay.toISOString(),
-                        startTime: dayjs(currentDay)
-                            .add(10, 'minute')
-                            .toISOString(),
+                        startTime: dayjs(currentDay).add(10, 'minute').toISOString(),
                         endTime: dayjs(currentDay)
                             .add(20 + i, 'minute')
                             .toISOString()
