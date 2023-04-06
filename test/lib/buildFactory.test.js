@@ -77,7 +77,7 @@ describe('Build Factory', () => {
             weightage: 0
         },
         {
-            name: 'aws_us-west-2',
+            name: 'aws.us-west-2',
             managedByScrewdriver: true,
             isActive: true,
             scmContext,
@@ -302,7 +302,7 @@ describe('Build Factory', () => {
         const permutations1 = [
             {
                 annotations: {
-                    'screwdriver.cd/buildCluster': 'aws_us-west-2',
+                    'screwdriver.cd/buildCluster': 'aws.us-west-2',
                     'screwdriver.cd/executor': 'k8s-arm64'
                 },
                 commands: [
@@ -317,7 +317,7 @@ describe('Build Factory', () => {
         const permutations2 = [
             {
                 annotations: {
-                    'screwdriver.cd/buildCluster': 'aws_us-west-2'
+                    'screwdriver.cd/buildCluster': 'aws.us-west-2'
                 },
                 commands: [
                     { command: 'npm install', name: 'init' },
@@ -690,7 +690,7 @@ describe('Build Factory', () => {
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
             delete saveConfig.params.commit;
-            saveConfig.params.buildClusterName = 'aws_us-west-2_sls_123456789012';
+            saveConfig.params.buildClusterName = 'aws.us-west-2.sls.123456789012';
 
             return factory
                 .create({
@@ -1045,7 +1045,11 @@ describe('Build Factory', () => {
                 configPipelineId: 2,
                 configPipeline: Promise.resolve({ spooky: 'ghost' })
             };
-            const bookendKeyName = 'aws.us-west-2.sls';
+            const bookendKey = {
+                cluster: 'aws',
+                env: 'us-west-2',
+                executor: 'sls'
+            };
             const jobMock = {
                 permutations: permutationsWithProvider,
                 pipeline: Promise.resolve(pipelineMock)
@@ -1073,7 +1077,7 @@ describe('Build Factory', () => {
                             configPipeline: { spooky: 'ghost' },
                             configPipelineSha
                         },
-                        bookendKeyName
+                        bookendKey
                     );
                     assert.calledWith(
                         bookendMock.getTeardownCommands,
@@ -1084,12 +1088,16 @@ describe('Build Factory', () => {
                             configPipeline: { spooky: 'ghost' },
                             configPipelineSha
                         },
-                        bookendKeyName
+                        bookendKey
                     );
                 });
         });
         it('passes buildKeyName from buildClusterName and executorName to the bookend config', () => {
-            const bookendKeyName = 'aws.us-west-2.k8s-arm64';
+            const bookendKey = {
+                cluster: 'aws',
+                env: 'us-west-2',
+                executor: 'k8s-arm64'
+            };
             const pMock = { name: 'screwdriver/ui', scmUri, scmRepo, scmContext };
             const jobMock = {
                 permutations: permutations1,
@@ -1102,7 +1110,7 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves(user);
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
             delete saveConfig.params.commit;
-            saveConfig.params.buildClusterName = 'aws_us-west-2';
+            saveConfig.params.buildClusterName = 'aws.us-west-2';
 
             return factory
                 .create({
@@ -1123,7 +1131,7 @@ describe('Build Factory', () => {
                             job: jobMock,
                             build: sinon.match.object
                         },
-                        bookendKeyName
+                        bookendKey
                     );
                     assert.calledWith(
                         bookendMock.getTeardownCommands,
@@ -1132,12 +1140,16 @@ describe('Build Factory', () => {
                             job: jobMock,
                             build: sinon.match.object
                         },
-                        bookendKeyName
+                        bookendKey
                     );
                 });
         });
         it('passes buildKeyName from buildClusterName and default for executor to the bookend config', () => {
-            const bookendKeyName = 'aws.us-west-2.default';
+            const bookendKey = {
+                cluster: 'aws',
+                env: 'us-west-2',
+                executor: 'default'
+            };
             const pMock = { name: 'screwdriver/ui', scmUri, scmRepo, scmContext };
 
             const jobMock = {
@@ -1151,7 +1163,7 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves(user);
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
             delete saveConfig.params.commit;
-            saveConfig.params.buildClusterName = 'aws_us-west-2';
+            saveConfig.params.buildClusterName = 'aws.us-west-2';
 
             return factory
                 .create({
@@ -1172,7 +1184,7 @@ describe('Build Factory', () => {
                             job: jobMock,
                             build: sinon.match.object
                         },
-                        bookendKeyName
+                        bookendKey
                     );
                     assert.calledWith(
                         bookendMock.getTeardownCommands,
@@ -1181,7 +1193,7 @@ describe('Build Factory', () => {
                             job: jobMock,
                             build: sinon.match.object
                         },
-                        bookendKeyName
+                        bookendKey
                     );
                 });
         });
