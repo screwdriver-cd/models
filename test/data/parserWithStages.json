@@ -80,7 +80,7 @@
                 "requires": ["main"]
             }
         ],
-        "sd-stage-setup-canary": [
+        "stage@canary:setup": [
             {
                 "image": "node:4",
                 "commands": [
@@ -91,7 +91,7 @@
                 ]
             }
         ],
-        "sd-stage-teardown-canary": [
+        "stage@canary:teardown": [
             {
                 "image": "node:4",
                 "commands": [
@@ -109,14 +109,11 @@
             { "name": "~pr" },
             { "name": "~commit" },
             { "name": "main" },
-            { "name": "publish" },
-            { "name": "sd-stage-setup-canary" },
-            { "name": "sd-stage-teardown-canary" }
+            { "name": "publish" }
         ],
         "edges": [
             { "src": "~pr", "dest": "main" },
-            { "src": "~commit", "dest": "main" },
-            { "src": "main", "dest": "publish" }
+            { "src": "~commit", "dest": "main" }
         ]
     },
     "annotations": {
@@ -125,7 +122,18 @@
     "stages": {
         "canary": {
             "description": "Canary deployment",
-            "jobs": ["main", "publish"]
+            "jobs": ["main", "publish"],
+            "workflowGraph": {
+                "nodes": [
+                    { "name": "main" },
+                    { "name": "publish" },
+                    { "name": "stage@canary:setup" },
+                    { "name": "stage@canary:teardown" }
+                ],
+                "edges": [
+                    { "src": "main", "dest": "publish" }
+                ]
+            }
         }
     }
 }
