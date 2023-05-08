@@ -2297,6 +2297,7 @@ describe('Event Factory', () => {
             config.changedFiles = ['README.md', 'root/src/test/file'];
 
             const expectedStageCreate = {
+                archived: false,
                 name: 'canary',
                 pipelineId: 8765,
                 description: 'Canary deployment',
