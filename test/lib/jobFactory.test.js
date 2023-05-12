@@ -184,7 +184,7 @@ describe('Job Factory', () => {
                 });
         });
 
-        it('creates a new DISABLED job in the datastore', () => {
+        it('creates a new ENABLED job in the datastore', () => {
             const permutationsWithAnnotation = [
                 {
                     commands: [
