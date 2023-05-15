@@ -921,7 +921,7 @@ describe('Build Model', () => {
                                 'endpoint/pipelines/1234/builds/9876) Job PR-5:main\n_node:4_\n- - - -\n' +
                                 '__coverage__ - Coverage increased by 15%\n\n' +
                                 '###### ~ Screwdriver automated build summary',
-                            keyWord: 'coverage'
+                            keyword: 'coverage'
                         },
                         {
                             text:
@@ -929,7 +929,7 @@ describe('Build Model', () => {
                                 'endpoint/pipelines/1234/builds/9876) Job PR-5:main\n_node:4_\n- - - -\n' +
                                 '__markdown__ - this markdown comment is **bold** and *italic*\n\n' +
                                 '###### ~ Screwdriver automated build summary',
-                            keyWord: 'markdown'
+                            keyword: 'markdown'
                         }
                     ],
                     prNum: 5
