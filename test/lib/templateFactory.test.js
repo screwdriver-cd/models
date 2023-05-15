@@ -1122,6 +1122,131 @@ describe('Template Factory', () => {
                 assert.deepEqual(templates[0].metrics.builds.count, expected[0].metrics.builds.count);
             });
         });
+
+        describe('should list templates with metrics when startTime/endTime are passed in', () => {
+            const startTime = '2023-04-01T14:08';
+            const endTime = '2023-04-30T14:08';
+
+            beforeEach(() => {
+                expected = [returnValue[0], returnValue[1]];
+                datastore.scan.resolves(expected);
+                buildFactoryMock.list.resolves(buildsCount);
+                jobFactoryMock.list.resolves(jobsCount);
+            });
+
+            it('should list templates with metrics when both startTime and endTime are passed in', () => {
+                config.startTime = startTime;
+                config.endTime = endTime;
+
+                return factory.listWithMetrics(config).then(templates => {
+                    let i = 0;
+
+                    templates.forEach(t => {
+                        assert.deepEqual(t.id, expected[i].id);
+                        assert.deepEqual(t.metrics.jobs.count, expected[i].metrics.jobs.count);
+                        assert.deepEqual(t.metrics.builds.count, expected[i].metrics.builds.count);
+                        i += 1;
+                    });
+
+                    assert.calledWith(datastore.scan, {
+                        table: 'templates',
+                        params: {
+                            name,
+                            namespace,
+                            version: '1.0.2'
+                        }
+                    });
+
+                    assert.calledWith(jobFactoryMock.list, {
+                        params: { templateId: [returnValue[0].id, returnValue[1].id] },
+                        readOnly: true,
+                        aggregationField: 'templateId'
+                    });
+
+                    assert.calledWith(buildFactoryMock.list, {
+                        params: { templateId: [returnValue[0].id, returnValue[1].id] },
+                        readOnly: true,
+                        aggregationField: 'templateId',
+                        startTime,
+                        endTime
+                    });
+                });
+            });
+
+            it('should list templates with metrics when only startTime is passed in', () => {
+                config.startTime = startTime;
+
+                return factory.listWithMetrics(config).then(templates => {
+                    let i = 0;
+
+                    templates.forEach(t => {
+                        assert.deepEqual(t.id, expected[i].id);
+                        assert.deepEqual(t.metrics.jobs.count, expected[i].metrics.jobs.count);
+                        assert.deepEqual(t.metrics.builds.count, expected[i].metrics.builds.count);
+                        i += 1;
+                    });
+
+                    assert.calledWith(datastore.scan, {
+                        table: 'templates',
+                        params: {
+                            name,
+                            namespace,
+                            version: '1.0.2'
+                        }
+                    });
+
+                    assert.calledWith(jobFactoryMock.list, {
+                        params: { templateId: [returnValue[0].id, returnValue[1].id] },
+                        readOnly: true,
+                        aggregationField: 'templateId'
+                    });
+
+                    assert.calledWith(buildFactoryMock.list, {
+                        params: { templateId: [returnValue[0].id, returnValue[1].id] },
+                        readOnly: true,
+                        aggregationField: 'templateId',
+                        startTime
+                    });
+                });
+            });
+
+            it('should list templates with metrics when only endTime is passed in', () => {
+                config.endTime = endTime;
+
+                return factory.listWithMetrics(config).then(templates => {
+                    let i = 0;
+
+                    templates.forEach(t => {
+                        assert.deepEqual(t.id, expected[i].id);
+                        assert.deepEqual(t.metrics.jobs.count, expected[i].metrics.jobs.count);
+                        assert.deepEqual(t.metrics.builds.count, expected[i].metrics.builds.count);
+                        i += 1;
+                    });
+
+                    assert.calledWith(datastore.scan, {
+                        table: 'templates',
+                        params: {
+                            name,
+                            namespace,
+                            version: '1.0.2'
+                        }
+                    });
+
+                    assert.calledWith(jobFactoryMock.list, {
+                        params: { templateId: [returnValue[0].id, returnValue[1].id] },
+                        readOnly: true,
+                        aggregationField: 'templateId'
+                    });
+
+                    assert.calledWith(buildFactoryMock.list, {
+                        params: { templateId: [returnValue[0].id, returnValue[1].id] },
+                        readOnly: true,
+                        aggregationField: 'templateId',
+                        endTime
+                    });
+                });
+            });
+        });
     });
 
     describe('getTemplate', () => {
