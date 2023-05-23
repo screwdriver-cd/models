@@ -2,22 +2,8 @@ shared:
     image: node:18
 
 jobs:
-    main:
-        annotations:
-            screwdriver.cd/ram: HIGH
-        environment:
-            SD_SONAR_OPTS: "-Dsonar.sources=lib -Dsonar.tests=test -Dsonar.javascript.lcov.reportPaths=artifacts/coverage/lcov.info -Dsonar.testExecutionReportPaths=artifacts/report/test.xml"
-            NODE_OPTIONS: "--max_old_space_size=8192"
-        requires: [~pr, ~commit]
-        steps:
-            - install: npm install
-            - test: npm test
-
-    publish:
-        requires: main
-        template: screwdriver-cd/semantic-release
-        secrets:
-            # Publishing to NPM
-            - NPM_TOKEN
-            # Pushing tags to Git
-            - GH_TOKEN
+   main:
+      requires: [ ~pr, ~commit ]
+      steps:
+        - coverage: meta set meta.summary.coverage "Coverage increased by 15%"
+        - markdown: meta set meta.summary.markdown "this markdown comment is **bold** and *italic*"
