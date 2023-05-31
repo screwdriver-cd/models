@@ -2696,7 +2696,7 @@ describe('Pipeline Model', () => {
                 assert.strictEqual(
                     err.message,
                     'Cluster specified in screwdriver.cd/buildCluster iOS ' +
-                        `for scmContext ${pipeline.scmContext} does not exist.`
+                        `for scmContext ${pipeline.scmContext} and group default does not exist.`
                 );
             });
         });

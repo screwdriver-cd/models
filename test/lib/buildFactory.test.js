@@ -327,6 +327,19 @@ describe('Build Factory', () => {
                 image: 'node:4'
             }
         ];
+        const permutations3 = [
+            {
+                annotations: {
+                    'screwdriver.cd/buildCluster': 'aws.us-east-2'
+                },
+                commands: [
+                    { command: 'npm install', name: 'init' },
+                    { command: 'npm test', name: 'test' }
+                ],
+                environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
+                image: 'node:4'
+            }
+        ];
 
         const commit = {
             url: 'foo',
@@ -674,7 +687,7 @@ describe('Build Factory', () => {
                     assert.strictEqual(
                         err.message,
                         'Cluster specified in screwdriver.cd/buildCluster iOS ' +
-                            `for scmContext ${scmContext} does not exist.`
+                            `for scmContext ${scmContext} and group default does not exist.`
                     );
                 });
         });
@@ -691,6 +704,92 @@ describe('Build Factory', () => {
             userFactoryMock.get.resolves(user);
             delete saveConfig.params.commit;
             saveConfig.params.buildClusterName = 'aws.us-west-2.sls.123456789012';
+
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    parentBuildId: 12345,
+                    meta
+                })
+                .then(() => {
+                    assert.callCount(stepFactoryMock.create, steps.length);
+                    assert.calledWith(datastore.save, saveConfig);
+                });
+        });
+        it('pick build cluster from default group if buildClusterName not provided', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const jobMock = {
+                permutations,
+                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
+            };
+
+            const sdBuildClustersCopy = sdBuildClusters.slice();
+
+            sdBuildClustersCopy.push({
+                name: 'aws.us-east-2',
+                scmContext,
+                scmOrganizations: ['screwdriver-cd'],
+                weightage: 100,
+                isActive: true,
+                managedByScrewdriver: true,
+                group: 'aws'
+            });
+            buildClusterFactoryMock.list.resolves(sdBuildClustersCopy);
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+            delete saveConfig.params.commit;
+            saveConfig.params.buildClusterName = 'sd1';
+
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    parentBuildId: 12345,
+                    meta
+                })
+                .then(() => {
+                    assert.callCount(stepFactoryMock.create, steps.length);
+                    assert.calledWith(datastore.save, saveConfig);
+                });
+        });
+
+        it('pick build cluster from aws group if buildClusterName is provided', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const jobMock = {
+                permutations: permutations3,
+                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext })
+            };
+
+            const sdBuildClustersCopy = sdBuildClusters.slice();
+
+            sdBuildClustersCopy.push({
+                name: 'aws.us-east-2',
+                scmContext,
+                scmOrganizations: ['screwdriver-cd'],
+                weightage: 90,
+                isActive: true,
+                managedByScrewdriver: true,
+                group: 'aws'
+            });
+            sdBuildClustersCopy.push({
+                name: 'aws.us-east-1',
+                scmContext,
+                scmOrganizations: ['screwdriver-cd'],
+                weightage: 10,
+                isActive: true,
+                managedByScrewdriver: true,
+                group: 'aws'
+            });
+            buildClusterFactoryMock.list.resolves(sdBuildClustersCopy);
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+            delete saveConfig.params.commit;
+            saveConfig.params.buildClusterName = 'aws.us-east-2';
 
             return factory
                 .create({
