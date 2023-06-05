@@ -692,14 +692,25 @@ describe('Build Factory', () => {
                 });
         });
 
-        it('sets build cluster from provider as providerName_region_executor_accountId if available', () => {
+        it('sets build cluster as providerName.region.executor.accountId if provider config is present', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
             const jobMock = {
                 permutations: permutationsWithProvider,
-                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
+                pipeline: Promise.resolve({ name: 'screwdriver-cd/ui', scmUri, scmRepo, scmContext })
             };
 
-            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+            const sdBuildClustersCopy = sdBuildClusters.slice();
+
+            sdBuildClustersCopy.push({
+                name: 'aws.us-west-2.sls.123456789012',
+                scmContext,
+                scmOrganizations: ['screwdriver-cd'],
+                weightage: 100,
+                isActive: true,
+                managedByScrewdriver: false,
+                group: 'aws.sls'
+            });
+            buildClusterFactoryMock.list.resolves(sdBuildClustersCopy);
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
             delete saveConfig.params.commit;
@@ -717,6 +728,46 @@ describe('Build Factory', () => {
                 .then(() => {
                     assert.callCount(stepFactoryMock.create, steps.length);
                     assert.calledWith(datastore.save, saveConfig);
+                });
+        });
+        it('throws err if pipeline scmOrganization is not allowed to use buildCluster', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const jobMock = {
+                permutations: permutationsWithProvider,
+                pipeline: Promise.resolve({ name: 'screwdriver-cd/ui', scmUri, scmRepo, scmContext })
+            };
+
+            const sdBuildClustersCopy = sdBuildClusters.slice();
+
+            sdBuildClustersCopy.push({
+                name: 'aws.us-west-2.sls.123456789012',
+                scmContext,
+                scmOrganizations: ['some-cd'],
+                weightage: 100,
+                isActive: true,
+                managedByScrewdriver: false,
+                group: 'aws.sls'
+            });
+            buildClusterFactoryMock.list.resolves(sdBuildClustersCopy);
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+            delete saveConfig.params.commit;
+
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    parentBuildId: 12345,
+                    meta
+                })
+                .then(() => {
+                    assert.fail('should not reach here');
+                })
+                .catch(err => {
+                    assert.instanceOf(err, Error);
+                    assert.strictEqual(err.message, 'This pipeline is not authorized to use this build cluster.');
                 });
         });
         it('pick build cluster from default group if buildClusterName not provided', () => {
@@ -1140,22 +1191,42 @@ describe('Build Factory', () => {
         });
 
         it('passes buildKeyName from provider config to the bookend config', () => {
-            const pipelineMock = {
-                configPipelineId: 2,
-                configPipeline: Promise.resolve({ spooky: 'ghost' })
-            };
+            // const user = { unsealToken: sinon.stub().resolves('foo') };
+            // userFactoryMock.get.resolves(user);
             const bookendKey = {
                 cluster: 'aws',
                 env: 'us-west-2',
                 executor: 'sls'
+            };
+            const pipelineMock = {
+                name: 'screwdriver-cd/ui',
+                scmUri,
+                scmRepo,
+                scmContext,
+                configPipelineId: 2,
+                configPipeline: Promise.resolve({ spooky: 'ghost' })
             };
             const jobMock = {
                 permutations: permutationsWithProvider,
                 pipeline: Promise.resolve(pipelineMock)
             };
 
+            const sdBuildClustersCopy = sdBuildClusters.slice();
+
+            sdBuildClustersCopy.push({
+                name: 'aws.us-west-2.sls.123456789012',
+                scmContext,
+                scmOrganizations: ['screwdriver-cd'],
+                weightage: 100,
+                isActive: true,
+                managedByScrewdriver: false,
+                group: 'aws.sls'
+            });
+            buildClusterFactoryMock.list.resolves(sdBuildClustersCopy);
             userFactoryMock.get.resolves({});
             jobFactoryMock.get.resolves(jobMock);
+            delete saveConfig.params.commit;
+            saveConfig.params.buildClusterName = 'aws.us-west-2.sls.123456789012';
 
             return factory
                 .create({
