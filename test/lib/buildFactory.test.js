@@ -1191,8 +1191,6 @@ describe('Build Factory', () => {
         });
 
         it('passes buildKeyName from provider config to the bookend config', () => {
-            // const user = { unsealToken: sinon.stub().resolves('foo') };
-            // userFactoryMock.get.resolves(user);
             const bookendKey = {
                 cluster: 'aws',
                 env: 'us-west-2',
