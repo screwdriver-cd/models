@@ -108,12 +108,11 @@
         "nodes": [
             { "name": "~pr" },
             { "name": "~commit" },
-            { "name": "main" },
-            { "name": "publish" }
+            { "name": "stage@canary" }
         ],
         "edges": [
-            { "src": "~pr", "dest": "main" },
-            { "src": "~commit", "dest": "main" }
+            { "src": "~pr", "dest": "stage@canary" },
+            { "src": "~commit", "dest": "stage@canary" }
         ]
     },
     "annotations": {

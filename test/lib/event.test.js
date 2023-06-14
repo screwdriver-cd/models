@@ -9,11 +9,15 @@ sinon.assert.expose(assert, { prefix: '' });
 
 describe('Event Model', () => {
     let buildFactoryMock;
+    let stageFactoryMock;
+    let stageBuildFactoryMock;
     let EventModel;
     let datastore;
     let event;
     let BaseModel;
     let createConfig;
+    let mockStages;
+    let mockStageBuild;
 
     before(() => {
         mockery.enable({
@@ -23,13 +27,54 @@ describe('Event Model', () => {
     });
 
     beforeEach(() => {
+        mockStages = [
+            {
+                id: 555,
+                pipelineId: 123345,
+                name: 'deploy',
+                jobIds: [1, 2, 3, 4],
+                description: 'Deploys canary jobs',
+                setup: [222],
+                teardown: [333]
+            }
+        ];
+        mockStageBuild = {
+            id: 8888,
+            stageId: 555,
+            workflowGraph: {
+                nodes: [
+                    { name: 'stage@deploy:teardown' },
+                    { name: 'main' },
+                    { name: 'stage@deploy:setup' },
+                    { name: 'publish' }
+                ],
+                edges: [
+                    { src: 'stage@deploy:setup', dest: 'main' },
+                    { src: 'main', dest: 'publish' }
+                ]
+            }
+        };
         datastore = {};
         buildFactoryMock = {
             list: sinon.stub().resolves(null)
         };
+        stageFactoryMock = {
+            list: sinon.stub().resolves(mockStages)
+        };
+        stageBuildFactoryMock = {
+            get: sinon.stub().resolves(mockStageBuild)
+        };
 
         mockery.registerMock('./buildFactory', {
             getInstance: sinon.stub().returns(buildFactoryMock)
+        });
+
+        mockery.registerMock('./stageFactory', {
+            getInstance: sinon.stub().returns(stageFactoryMock)
+        });
+
+        mockery.registerMock('./stageBuildFactory', {
+            getInstance: sinon.stub().returns(stageBuildFactoryMock)
         });
 
         // eslint-disable-next-line global-require
@@ -40,6 +85,7 @@ describe('Event Model', () => {
 
         createConfig = {
             id: 1234,
+            pipelineId: 12345,
             datastore
         };
         event = new EventModel(createConfig);
@@ -60,6 +106,65 @@ describe('Event Model', () => {
         assert.instanceOf(event, BaseModel);
         schema.models.event.allKeys.forEach(key => {
             assert.strictEqual(event[key], createConfig[key]);
+        });
+    });
+
+    describe('getStageBuilds', () => {
+        it('resolves with stage builds', () => {
+            const expectedStageConfig = {
+                params: {
+                    pipelineId: 12345
+                }
+            };
+            const expectedStageBuildConfig = {
+                params: {
+                    eventId: 1234,
+                    stageId: 555
+                }
+            };
+            const expectedStageBuilds = [
+                {
+                    id: 8888,
+                    stageId: 555,
+                    stageName: 'deploy',
+                    workflowGraph: {
+                        edges: [
+                            {
+                                dest: 'main',
+                                src: 'stage@deploy:setup'
+                            },
+                            {
+                                dest: 'publish',
+                                src: 'main'
+                            }
+                        ],
+                        nodes: [
+                            {
+                                name: 'stage@deploy:teardown',
+                                stageName: 'deploy'
+                            },
+                            {
+                                name: 'main',
+                                stageName: 'deploy'
+                            },
+                            {
+                                name: 'stage@deploy:setup',
+                                stageName: 'deploy'
+                            },
+                            {
+                                name: 'publish',
+                                stageName: 'deploy'
+                            }
+                        ]
+                    }
+                }
+            ];
+
+            return event.getStageBuilds().then(result => {
+                assert.calledWith(stageFactoryMock.list, expectedStageConfig);
+                assert.calledWith(stageBuildFactoryMock.get, expectedStageBuildConfig);
+                assert.deepEqual(result, expectedStageBuilds);
+            });
         });
     });
 

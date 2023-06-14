@@ -17,6 +17,7 @@ const SHARED_PROVIDER_YAML = '../data/sharedProvider.yaml';
 const PROVIDER_YAML = '../data/provider.yaml';
 const PARSED_YAML_WITH_PROVIDER = require('../data/parserWithProvider.json');
 const PARSED_YAML = require('../data/parser.json');
+const PARSED_YAML_WITH_STAGES = require('../data/parserWithStages.json');
 const PARSED_YAML_WITH_REQUIRES = require('../data/parserWithRequires.json');
 const PARSED_YAML_PR = require('../data/parserWithWorkflowGraphPR.json');
 const PARSED_YAML_WITH_ERRORS = require('../data/parserWithErrors.json');
@@ -75,6 +76,7 @@ describe('Pipeline Model', () => {
     let configPipelineMock;
     let childPipelineMock;
     let buildClusterFactory;
+    let stageFactoryMock;
 
     const dateNow = 1111111111;
     const scmUri = 'github.com:12345:master';
@@ -297,6 +299,9 @@ describe('Pipeline Model', () => {
             list: sinon.stub().resolves([]),
             get: sinon.stub().resolves(externalBuildCluster)
         };
+        stageFactoryMock = {
+            get: sinon.stub().resolves({ id: 8888, name: 'canary' })
+        };
         buildClusterFactory = {
             getInstance: sinon.stub().returns(buildClusterFactoryMock)
         };
@@ -334,6 +339,9 @@ describe('Pipeline Model', () => {
             getInstance: sinon.stub().returns(tokenFactoryMock)
         });
         mockery.registerMock('./buildClusterFactory', buildClusterFactory);
+        mockery.registerMock('./stageFactory', {
+            getInstance: sinon.stub().returns(stageFactoryMock)
+        });
 
         // eslint-disable-next-line global-require
         PipelineModel = require('../../lib/pipeline');
@@ -473,6 +481,8 @@ describe('Pipeline Model', () => {
         let mainModelMock;
         let publishModelMock;
         let externalModelMock;
+        let stageSetupMock;
+        let stageTeardownMock;
         let parserConfig;
 
         beforeEach(() => {
@@ -632,6 +642,26 @@ describe('Pipeline Model', () => {
                     }
                 ]
             };
+            stageSetupMock = {
+                pipelineId: testId,
+                name: 'stage@canary:setup',
+                permutations: [
+                    {
+                        commands: [{ name: 'announce', command: 'post banner' }],
+                        image: 'node:4'
+                    }
+                ]
+            };
+            stageTeardownMock = {
+                pipelineId: testId,
+                name: 'stage@canary:teardown',
+                permutations: [
+                    {
+                        commands: [{ name: 'publish', command: 'publish blog' }],
+                        image: 'node:4'
+                    }
+                ]
+            };
         });
 
         it('create external trigger in datastore for new jobs', () => {
@@ -723,6 +753,57 @@ describe('Pipeline Model', () => {
                         { src: '~commit', dest: 'main' },
                         { src: 'main', dest: 'publish' },
                         { src: 'publish', dest: 'sd@123:main' }
+                    ]
+                });
+            });
+        });
+
+        it('stores workflowGraph to pipeline with stage', () => {
+            mainMock.permutations[0].requires = ['~pr', '~commit', '~sd@12345:test'];
+            mainMock.permutations[1].requires = ['~pr', '~commit', '~sd@12345:test'];
+            mainMock.permutations[2].requires = ['~pr', '~commit', '~sd@12345:test'];
+            publishMock.permutations[0].requires = ['main'];
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML_WITH_STAGES);
+            jobs = [];
+            sinon.spy(pipeline, 'update');
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainModelMock);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishModelMock);
+            jobFactoryMock.create.withArgs(stageSetupMock).resolves({
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 50,
+                name: 'stage@canary:setup',
+                state: 'ENABLED'
+            });
+            jobFactoryMock.create.withArgs(stageTeardownMock).resolves({
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 51,
+                name: 'stage@canary:teardown',
+                state: 'ENABLED'
+            });
+            pipelineFactoryMock.get.resolves({
+                id: testId,
+                update: sinon.stub().resolves(null),
+                remove: sinon.stub().resolves(null),
+                workflowGraph: {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: 'main', id: 3 },
+                        { name: 'stage@canary', stageId: 30 }
+                    ]
+                }
+            });
+
+            return pipeline.sync().then(() => {
+                assert.calledOnce(pipeline.update);
+                assert.deepEqual(pipeline.workflowGraph, {
+                    nodes: [{ name: '~pr' }, { name: '~commit' }, { name: 'stage@canary', stageId: 8888 }],
+                    edges: [
+                        { src: '~pr', dest: 'stage@canary' },
+                        { src: '~commit', dest: 'stage@canary' }
                     ]
                 });
             });
