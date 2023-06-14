@@ -304,12 +304,16 @@ describe('Build Model', () => {
                     scmContext,
                     scmUri,
                     pipelineId,
-                    comment:
-                        '### SD Build [#9876](https://display.com/some/' +
-                        'endpoint/pipelines/1234/builds/9876) Job PR-5:main\n_node:4_\n- - - -\n' +
-                        '__coverage__ - Coverage increased by 15%\n' +
-                        '__markdown__ - this markdown comment is **bold** and *italic*\n\n' +
-                        '###### ~ Screwdriver automated build summary',
+                    comments: [
+                        {
+                            text:
+                                '### SD Build [#9876](https://display.com/some/' +
+                                'endpoint/pipelines/1234/builds/9876) Job PR-5:main\n_node:4_\n- - - -\n' +
+                                '__coverage__ - Coverage increased by 15%\n' +
+                                '__markdown__ - this markdown comment is **bold** and *italic*\n\n' +
+                                '###### ~ Screwdriver automated build summary'
+                        }
+                    ],
                     prNum: 5
                 });
             });
@@ -841,6 +845,95 @@ describe('Build Model', () => {
                 });
                 assert.notOk(scmMock.updateCommitStatus.thirdCall);
                 assert.notCalled(scmMock.addPrComment);
+            });
+        });
+
+        it('splits pr comment into multiple string', () => {
+            jobFactoryMock.get.resolves({
+                id: jobId,
+                name: 'PR-5:main',
+                pipeline: Promise.resolve({
+                    id: pipelineId,
+                    configPipelineId,
+                    scmUri,
+                    scmContext,
+                    admin: Promise.resolve(adminUser),
+                    token: Promise.resolve('foo')
+                }),
+                permutations: [{ annotations, freezeWindows, provider }],
+                isPR: sinon.stub().returns(true)
+            });
+            build.status = 'FAILURE';
+            build.meta = {
+                meta: {
+                    splitComments: true,
+                    summary: {
+                        coverage: 'Coverage increased by 15%',
+                        markdown: 'this markdown comment is **bold** and *italic*'
+                    }
+                }
+            };
+
+            return build.update().then(() => {
+                assert.calledWith(executorMock.stop, {
+                    buildId,
+                    jobId,
+                    annotations,
+                    provider,
+                    freezeWindows,
+                    blockedBy: [jobId],
+                    pipelineId,
+                    token: 'equivalentToOneQuarter',
+                    jobName: 'PR-5:main',
+                    apiUri
+                });
+                delete stepsMock[0].update;
+                delete stepsMock[1].update;
+                delete stepsMock[2].update;
+                // Completed step is not modified
+                assert.deepEqual(stepsMock[0], step0);
+                // In progress step is aborted
+                assert.ok(stepsMock[1].endTime);
+                assert.equal(stepsMock[1].code, 130);
+                // Unstarted step is not modified
+                assert.deepEqual(stepsMock[2], step2);
+
+                assert.calledWith(scmMock.updateCommitStatus, {
+                    token: 'foo',
+                    scmUri,
+                    scmContext,
+                    sha,
+                    jobName: 'PR-5:main',
+                    buildStatus: SCM_STATE_MAP.FAILURE,
+                    url,
+                    pipelineId
+                });
+                assert.calledWith(scmMock.addPrComment, {
+                    token: 'foo',
+                    jobName: 'PR-5:main',
+                    scmContext,
+                    scmUri,
+                    pipelineId,
+                    comments: [
+                        {
+                            text:
+                                '### SD Build [#9876](https://display.com/some/' +
+                                'endpoint/pipelines/1234/builds/9876) Job PR-5:main\n_node:4_\n- - - -\n' +
+                                '__coverage__ - Coverage increased by 15%\n\n' +
+                                '###### ~ Screwdriver automated build summary',
+                            keyword: 'coverage'
+                        },
+                        {
+                            text:
+                                '### SD Build [#9876](https://display.com/some/' +
+                                'endpoint/pipelines/1234/builds/9876) Job PR-5:main\n_node:4_\n- - - -\n' +
+                                '__markdown__ - this markdown comment is **bold** and *italic*\n\n' +
+                                '###### ~ Screwdriver automated build summary',
+                            keyword: 'markdown'
+                        }
+                    ],
+                    prNum: 5
+                });
             });
         });
     });
