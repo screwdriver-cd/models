@@ -62,7 +62,7 @@ describe('Event Model', () => {
             list: sinon.stub().resolves(mockStages)
         };
         stageBuildFactoryMock = {
-            get: sinon.stub().resolves(mockStageBuild)
+            list: sinon.stub().resolves([mockStageBuild])
         };
 
         mockery.registerMock('./buildFactory', {
@@ -118,8 +118,7 @@ describe('Event Model', () => {
             };
             const expectedStageBuildConfig = {
                 params: {
-                    eventId: 1234,
-                    stageId: 555
+                    eventId: 1234
                 }
             };
             const expectedStageBuilds = [
@@ -162,7 +161,7 @@ describe('Event Model', () => {
 
             return event.getStageBuilds().then(result => {
                 assert.calledWith(stageFactoryMock.list, expectedStageConfig);
-                assert.calledWith(stageBuildFactoryMock.get, expectedStageBuildConfig);
+                assert.calledWith(stageBuildFactoryMock.list, expectedStageBuildConfig);
                 assert.deepEqual(result, expectedStageBuilds);
             });
         });

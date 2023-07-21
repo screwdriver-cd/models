@@ -2422,6 +2422,7 @@ describe('Event Factory', () => {
             config.changedFiles = ['README.md', 'root/src/test/file'];
 
             const expectedStageUpdate = {
+                id: 1,
                 description: 'Canary deployment',
                 jobIds: [1, 2],
                 setup: [3],
