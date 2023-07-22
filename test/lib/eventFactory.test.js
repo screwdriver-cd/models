@@ -2169,79 +2169,7 @@ describe('Event Factory', () => {
             });
         });
 
-        it('should start build and not update stages if they exist', () => {
-            jobsMock = [
-                {
-                    id: 1,
-                    pipelineId: 8765,
-                    name: 'main',
-                    permutations: [
-                        {
-                            requires: ['~pr']
-                        }
-                    ],
-                    state: 'ENABLED',
-                    isPR: sinon.stub().returns(false)
-                },
-                {
-                    id: 2,
-                    pipelineId: 8765,
-                    name: 'stage@canary:setup',
-                    permutations: [],
-                    state: 'ENABLED',
-                    isPR: sinon.stub().returns(false)
-                },
-                {
-                    id: 3,
-                    pipelineId: 8765,
-                    name: 'stage@canary:teardown',
-                    permutations: [],
-                    state: 'ENABLED',
-                    isPR: sinon.stub().returns(false)
-                }
-            ];
-            syncedPipelineMock.update = sinon.stub().resolves({
-                getJobs: sinon.stub().resolves(jobsMock),
-                branch: Promise.resolve('branch'),
-                rootDir: Promise.resolve('root/src/test')
-            });
-            syncedPipelineMock.pipelineJobs = Promise.resolve(jobsMock);
-            syncedPipelineMock.getConfiguration.onCall(0).resolves(PARSED_YAML_WITH_STAGES);
-            stageFactoryMock.list.resolves([
-                {
-                    id: 1,
-                    name: 'canary',
-                    pipelineId: 8765,
-                    description: 'Canary deployment',
-                    jobs: [1, 2]
-                }
-            ]);
-            config.startFrom = 'main';
-            config.webhooks = true;
-            config.changedFiles = ['README.md', 'root/src/test/file'];
-
-            return eventFactory.create(config).then(model => {
-                assert.instanceOf(model, Event);
-                assert.calledOnce(buildFactoryMock.create);
-                assert.calledWith(
-                    buildFactoryMock.create.firstCall,
-                    sinon.match({
-                        meta: {
-                            commit: {
-                                ...commit,
-                                changedFiles: 'README.md,root/src/test/file'
-                            }
-                        }
-                    })
-                );
-                assert.calledOnce(stageFactoryMock.list);
-                assert.notCalled(stageFactoryMock.create);
-                assert.calledOnce(stageFactoryMock.update);
-                assert.deepEqual(buildFactoryMock.create.args[0][0].environment, { SD_SOURCE_PATH: 'root/src/test/' });
-            });
-        });
-
-        it('should start build and create new stages if they exist', () => {
+        it('should start build and create new stageBuilds', () => {
             jobsMock = [
                 {
                     id: 1,
@@ -2291,20 +2219,42 @@ describe('Event Factory', () => {
             });
             syncedPipelineMock.pipelineJobs = Promise.resolve(jobsMock);
             syncedPipelineMock.getConfiguration.onCall(0).resolves(PARSED_YAML_WITH_STAGES);
+            stageFactoryMock.list.resolves([
+                {
+                    id: 555,
+                    name: 'canary',
+                    pipelineId: 8765,
+                    description: 'Canary deployment',
+                    jobs: [1, 2],
+                    workflowGraph: {
+                        edges: [
+                            {
+                                dest: 'publish',
+                                src: 'main'
+                            }
+                        ],
+                        nodes: [
+                            {
+                                name: 'main'
+                            },
+                            {
+                                name: 'publish'
+                            },
+                            {
+                                name: 'stage@canary:setup'
+                            },
+                            {
+                                name: 'stage@canary:teardown'
+                            }
+                        ]
+                    }
+                }
+            ]);
 
             config.startFrom = 'main';
             config.webhooks = true;
             config.changedFiles = ['README.md', 'root/src/test/file'];
 
-            const expectedStageCreate = {
-                archived: false,
-                name: 'canary',
-                pipelineId: 8765,
-                description: 'Canary deployment',
-                jobIds: [1, 2],
-                setup: [3],
-                teardown: [4]
-            };
             const expectedStageBuildCreate = {
                 stageId: 555,
                 eventId: 'xzy1234',
@@ -2349,103 +2299,9 @@ describe('Event Factory', () => {
                 );
                 assert.calledOnce(stageFactoryMock.list);
                 assert.notCalled(stageFactoryMock.update);
-                assert.calledOnce(stageFactoryMock.create);
                 assert.calledOnce(stageBuildFactoryMock.create);
                 assert.deepEqual(buildFactoryMock.create.args[0][0].environment, { SD_SOURCE_PATH: 'root/src/test/' });
-                assert.deepEqual(stageFactoryMock.create.args[0][0], expectedStageCreate);
                 assert.deepEqual(stageBuildFactoryMock.create.args[0][0], expectedStageBuildCreate);
-            });
-        });
-
-        it('should start build and update existing stages', () => {
-            jobsMock = [
-                {
-                    id: 1,
-                    pipelineId: 8765,
-                    name: 'main',
-                    permutations: [
-                        {
-                            requires: ['~pr']
-                        }
-                    ],
-                    state: 'ENABLED',
-                    isPR: sinon.stub().returns(false)
-                },
-                {
-                    id: 2,
-                    pipelineId: 8765,
-                    name: 'publish',
-                    permutations: [
-                        {
-                            requires: ['~pr']
-                        }
-                    ],
-                    state: 'ENABLED',
-                    isPR: sinon.stub().returns(false)
-                },
-                {
-                    id: 3,
-                    pipelineId: 8765,
-                    name: 'stage@canary:setup',
-                    permutations: [],
-                    state: 'ENABLED',
-                    isPR: sinon.stub().returns(false)
-                },
-                {
-                    id: 4,
-                    pipelineId: 8765,
-                    name: 'stage@canary:teardown',
-                    permutations: [],
-                    state: 'ENABLED',
-                    isPR: sinon.stub().returns(false)
-                }
-            ];
-            syncedPipelineMock.update = sinon.stub().resolves({
-                getJobs: sinon.stub().resolves(jobsMock),
-                branch: Promise.resolve('branch'),
-                rootDir: Promise.resolve('root/src/test')
-            });
-            syncedPipelineMock.pipelineJobs = Promise.resolve(jobsMock);
-            syncedPipelineMock.getConfiguration.onCall(0).resolves(PARSED_YAML_WITH_STAGES);
-            stageFactoryMock.list.resolves([
-                {
-                    id: 1,
-                    name: 'canary',
-                    pipelineId: 8765,
-                    description: 'This is an old description',
-                    jobs: [5, 6],
-                    startFrom: 'main'
-                }
-            ]);
-            config.startFrom = 'main';
-            config.webhooks = true;
-            config.changedFiles = ['README.md', 'root/src/test/file'];
-
-            const expectedStageUpdate = {
-                id: 1,
-                description: 'Canary deployment',
-                jobIds: [1, 2],
-                setup: [3],
-                teardown: [4]
-            };
-
-            return eventFactory.create(config).then(model => {
-                assert.instanceOf(model, Event);
-                assert.calledOnce(buildFactoryMock.create);
-                assert.calledWith(
-                    buildFactoryMock.create.firstCall,
-                    sinon.match({
-                        meta: {
-                            commit: {
-                                ...commit,
-                                changedFiles: 'README.md,root/src/test/file'
-                            }
-                        }
-                    })
-                );
-                assert.calledOnce(stageFactoryMock.list);
-                assert.deepEqual(buildFactoryMock.create.args[0][0].environment, { SD_SOURCE_PATH: 'root/src/test/' });
-                assert.deepEqual(stageFactoryMock.update.args[0][0], expectedStageUpdate);
             });
         });
 
@@ -3075,7 +2931,7 @@ describe('Event Factory', () => {
                     sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
                     token: 'foo'
                 });
-                assert.calledOnce(syncedPipelineMock.getConfiguration);
+                assert.notCalled(syncedPipelineMock.getConfiguration);
             });
         });
     });
