@@ -813,7 +813,7 @@ describe('Build Factory', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
             const jobMock = {
                 permutations: permutations3,
-                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext })
+                pipeline: Promise.resolve({ name: 'screwdriver-cd/ui', scmUri, scmRepo, scmContext })
             };
 
             const sdBuildClustersCopy = sdBuildClusters.slice();
