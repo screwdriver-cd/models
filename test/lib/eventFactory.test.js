@@ -6,7 +6,6 @@ const schema = require('screwdriver-data-schema');
 const mockery = require('mockery');
 const rewire = require('rewire');
 const PARSED_YAML = require('../data/parserWithWorkflowGraph.json');
-const PARSED_YAML_WITH_STAGES = require('../data/parserWithStages.json');
 
 let updateStub;
 
@@ -43,7 +42,6 @@ describe('Event Factory', () => {
     let pipelineFactoryMock;
     let buildFactoryMock;
     let jobFactoryMock;
-    let stageFactoryMock;
     let pipelineMock;
     let scm;
 
@@ -71,10 +69,6 @@ describe('Event Factory', () => {
             create: sinon.stub(),
             list: sinon.stub()
         };
-        stageFactoryMock = {
-            list: sinon.stub(),
-            create: sinon.stub()
-        };
         updateStub = sinon.stub();
         scm = {
             decorateAuthor: sinon.stub(),
@@ -94,9 +88,6 @@ describe('Event Factory', () => {
         });
         mockery.registerMock('./buildFactory', {
             getInstance: sinon.stub().returns(buildFactoryMock)
-        });
-        mockery.registerMock('./stageFactory', {
-            getInstance: sinon.stub().returns(stageFactoryMock)
         });
         mockery.registerMock('./event', Event);
 
@@ -294,9 +285,6 @@ describe('Event Factory', () => {
             scm.decorateCommit.resolves(commit);
             scm.getDisplayName.returns(displayName);
             datastore.save.resolves({ id: 'xzy1234' });
-
-            stageFactoryMock.list.resolves([]);
-            stageFactoryMock.create.resolves(null);
         });
 
         describe('with new workflow', () => {
@@ -2159,122 +2147,6 @@ describe('Event Factory', () => {
             });
         });
 
-        it('should start build and not create new stages if they exist', () => {
-            jobsMock = [
-                {
-                    id: 1,
-                    pipelineId: 8765,
-                    name: 'main',
-                    permutations: [
-                        {
-                            requires: ['~pr']
-                        }
-                    ],
-                    state: 'ENABLED',
-                    isPR: sinon.stub().returns(false)
-                }
-            ];
-            syncedPipelineMock.update = sinon.stub().resolves({
-                getJobs: sinon.stub().resolves(jobsMock),
-                branch: Promise.resolve('branch'),
-                rootDir: Promise.resolve('root/src/test')
-            });
-            syncedPipelineMock.pipelineJobs = Promise.resolve(jobsMock);
-            syncedPipelineMock.getConfiguration.onCall(0).resolves(PARSED_YAML_WITH_STAGES);
-            stageFactoryMock.list.resolves([
-                {
-                    id: 1,
-                    name: 'canary',
-                    pipelineId: 8765,
-                    description: 'Canary deployment',
-                    jobs: [1, 2],
-                    groupEventId: 'xzy1234'
-                }
-            ]);
-            config.startFrom = 'main';
-            config.webhooks = true;
-            config.changedFiles = ['README.md', 'root/src/test/file'];
-
-            return eventFactory.create(config).then(model => {
-                assert.instanceOf(model, Event);
-                assert.calledOnce(buildFactoryMock.create);
-                assert.calledWith(
-                    buildFactoryMock.create.firstCall,
-                    sinon.match({
-                        meta: {
-                            commit: {
-                                ...commit,
-                                changedFiles: 'README.md,root/src/test/file'
-                            }
-                        }
-                    })
-                );
-                assert.calledOnce(stageFactoryMock.list);
-                assert.notCalled(stageFactoryMock.create);
-                assert.deepEqual(buildFactoryMock.create.args[0][0].environment, { SD_SOURCE_PATH: 'root/src/test/' });
-            });
-        });
-
-        it('should start build and create new stages if they exist', () => {
-            jobsMock = [
-                {
-                    id: 1,
-                    pipelineId: 8765,
-                    name: 'main',
-                    permutations: [
-                        {
-                            requires: ['~pr']
-                        }
-                    ],
-                    state: 'ENABLED',
-                    isPR: sinon.stub().returns(false)
-                },
-                {
-                    id: 2,
-                    pipelineId: 8765,
-                    name: 'publish',
-                    permutations: [
-                        {
-                            requires: ['~pr']
-                        }
-                    ],
-                    state: 'ENABLED',
-                    isPR: sinon.stub().returns(false)
-                }
-            ];
-            syncedPipelineMock.update = sinon.stub().resolves({
-                getJobs: sinon.stub().resolves(jobsMock),
-                branch: Promise.resolve('branch'),
-                rootDir: Promise.resolve('root/src/test')
-            });
-            syncedPipelineMock.pipelineJobs = Promise.resolve(jobsMock);
-
-            syncedPipelineMock.getConfiguration.onCall(0).resolves(PARSED_YAML_WITH_STAGES);
-
-            config.startFrom = 'main';
-            config.webhooks = true;
-            config.changedFiles = ['README.md', 'root/src/test/file'];
-
-            return eventFactory.create(config).then(model => {
-                assert.instanceOf(model, Event);
-                assert.calledOnce(buildFactoryMock.create);
-                assert.calledWith(
-                    buildFactoryMock.create.firstCall,
-                    sinon.match({
-                        meta: {
-                            commit: {
-                                ...commit,
-                                changedFiles: 'README.md,root/src/test/file'
-                            }
-                        }
-                    })
-                );
-                assert.calledOnce(stageFactoryMock.list);
-                assert.calledOnce(stageFactoryMock.create);
-                assert.deepEqual(buildFactoryMock.create.args[0][0].environment, { SD_SOURCE_PATH: 'root/src/test/' });
-            });
-        });
-
         it('should start build from ~tag even if changed file is not in rootDir', () => {
             jobsMock = [
                 {
@@ -2901,7 +2773,7 @@ describe('Event Factory', () => {
                     sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
                     token: 'foo'
                 });
-                assert.calledOnce(syncedPipelineMock.getConfiguration);
+                assert.notCalled(syncedPipelineMock.getConfiguration);
             });
         });
     });
