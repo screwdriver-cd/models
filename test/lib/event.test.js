@@ -226,7 +226,10 @@ describe('Event Model', () => {
             createTime: '2019-01-22T21:00:00.000Z',
             startTime: '2019-01-22T21:08:00.000Z',
             endTime: '2019-01-22T21:30:00.000Z',
-            status: 'SUCCESS'
+            status: 'SUCCESS',
+            meta: {
+                foo: 'bar'
+            }
         };
         const build2 = {
             id: 12,
@@ -239,6 +242,9 @@ describe('Event Model', () => {
             stats: {
                 queueEnterTime: '2019-01-22T21:02:00.000Z',
                 imagePullStartTime: '2019-01-22T21:10:00.000Z'
+            },
+            meta: {
+                foo: 'bar'
             }
         };
         const duration1 = (new Date(build1.endTime) - new Date(build1.startTime)) / 1000;
@@ -257,7 +263,8 @@ describe('Event Model', () => {
                     status: build1.status,
                     duration: duration1,
                     imagePullTime: undefined,
-                    queuedTime: undefined
+                    queuedTime: undefined,
+                    meta: build1.meta
                 },
                 {
                     id: build2.id,
@@ -269,7 +276,8 @@ describe('Event Model', () => {
                     status: build2.status,
                     duration: duration2,
                     imagePullTime: 600,
-                    queuedTime: 480
+                    queuedTime: 480,
+                    meta: build2.meta
                 }
             ];
         });
@@ -307,6 +315,7 @@ describe('Event Model', () => {
                 params: {
                     eventId: 1234
                 },
+
                 sort: 'ascending',
                 sortBy: 'id',
                 readOnly: true

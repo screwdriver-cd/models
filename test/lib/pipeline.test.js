@@ -1,5 +1,7 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
@@ -7,8 +9,6 @@ const hoek = require('@hapi/hoek');
 const schema = require('screwdriver-data-schema');
 const rewire = require('rewire');
 const dayjs = require('dayjs');
-const fs = require('fs');
-const path = require('path');
 
 sinon.assert.expose(assert, { prefix: '' });
 const YAML_WITH_PROVIDER_FILE_PATH = '../data/yamlWithProviderPath.yaml';
