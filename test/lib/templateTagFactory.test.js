@@ -217,12 +217,10 @@ describe('TemplateTag Factory', () => {
             expected = { ...expected };
 
             return factory.get(config).then(model => {
-                assert.calledWith(
-                    datastore.get,
-                    sinon.match({
-                        params: { name, namespace: 'default', tag }
-                    })
-                );
+                assert.calledWith(datastore.get, {
+                    table: 'templateTags',
+                    params: { name, namespace: 'default', tag, templateType: 'JOB' }
+                });
                 assert.instanceOf(model, TemplateTag);
                 Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
@@ -237,12 +235,10 @@ describe('TemplateTag Factory', () => {
             config.name = fullTemplateName;
 
             return factory.get(config).then(model => {
-                assert.calledWith(
-                    datastore.get,
-                    sinon.match({
-                        params: { name: fullTemplateName, namespace: null, tag }
-                    })
-                );
+                assert.calledWith(datastore.get, {
+                    table: 'templateTags',
+                    params: { name: fullTemplateName, namespace: null, tag, templateType: 'JOB' }
+                });
                 assert.instanceOf(model, TemplateTag);
                 Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
@@ -257,12 +253,10 @@ describe('TemplateTag Factory', () => {
             config.name = fullTemplateName;
 
             return factory.get(config).then(model => {
-                assert.calledWith(
-                    datastore.get,
-                    sinon.match({
-                        params: { name, namespace, tag }
-                    })
-                );
+                assert.calledWith(datastore.get, {
+                    table: 'templateTags',
+                    params: { name, namespace, tag, templateType: 'JOB' }
+                });
                 assert.instanceOf(model, TemplateTag);
                 Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
@@ -277,12 +271,10 @@ describe('TemplateTag Factory', () => {
             config.namespace = namespace;
 
             return factory.get(config).then(model => {
-                assert.calledWith(
-                    datastore.get,
-                    sinon.match({
-                        params: { name, namespace, tag }
-                    })
-                );
+                assert.calledWith(datastore.get, {
+                    table: 'templateTags',
+                    params: { name, namespace, tag, templateType: 'JOB' }
+                });
                 assert.instanceOf(model, TemplateTag);
                 Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
@@ -318,6 +310,15 @@ describe('TemplateTag Factory', () => {
 
             return factory.list(config).then(model => {
                 assert.instanceOf(model[0], TemplateTag);
+                assert.callCount(datastore.scan, 2);
+                assert.calledWith(datastore.scan.firstCall, {
+                    table: 'templateTags',
+                    params: { name, namespace: 'default', templateType: 'JOB' }
+                });
+                assert.calledWith(datastore.scan.secondCall, {
+                    table: 'templateTags',
+                    params: { name, namespace: 'default', templateType: 'JOB' }
+                });
             });
         });
 
@@ -329,6 +330,16 @@ describe('TemplateTag Factory', () => {
 
             return factory.list(config).then(model => {
                 assert.instanceOf(model[0], TemplateTag);
+
+                assert.callCount(datastore.scan, 2);
+                assert.calledWith(datastore.scan.firstCall, {
+                    table: 'templateTags',
+                    params: { name, namespace: 'default', templateType: 'JOB' }
+                });
+                assert.calledWith(datastore.scan.secondCall, {
+                    table: 'templateTags',
+                    params: { name, templateType: 'JOB' }
+                });
             });
         });
 
@@ -339,6 +350,10 @@ describe('TemplateTag Factory', () => {
 
             return factory.list(config).then(model => {
                 assert.instanceOf(model[0], TemplateTag);
+                assert.calledWith(datastore.scan, {
+                    table: 'templateTags',
+                    params: { name, namespace, templateType: 'JOB' }
+                });
             });
         });
 
@@ -348,6 +363,10 @@ describe('TemplateTag Factory', () => {
 
             return factory.list(config).then(model => {
                 assert.instanceOf(model[0], TemplateTag);
+                assert.calledWith(datastore.scan, {
+                    table: 'templateTags',
+                    params: { name, namespace, templateType: 'JOB' }
+                });
             });
         });
     });
