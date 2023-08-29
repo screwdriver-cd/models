@@ -31,6 +31,8 @@ describe('Template Factory', () => {
     let Template;
     let jobFactoryMock;
     let buildFactoryMock;
+    let pipelineFactoryMock;
+    let eventFactoryMock;
 
     before(() => {
         mockery.enable({
@@ -55,6 +57,12 @@ describe('Template Factory', () => {
         buildFactoryMock = {
             list: sinon.stub()
         };
+        pipelineFactoryMock = {
+            list: sinon.stub()
+        };
+        eventFactoryMock = {
+            list: sinon.stub()
+        };
 
         mockery.registerMock('./templateTagFactory', {
             getInstance: sinon.stub().returns(templateTagFactoryMock)
@@ -64,6 +72,12 @@ describe('Template Factory', () => {
         });
         mockery.registerMock('./buildFactory', {
             getInstance: sinon.stub().returns(buildFactoryMock)
+        });
+        mockery.registerMock('./pipelineFactory', {
+            getInstance: sinon.stub().returns(pipelineFactoryMock)
+        });
+        mockery.registerMock('./eventFactory', {
+            getInstance: sinon.stub().returns(eventFactoryMock)
         });
 
         /* eslint-disable global-require */
@@ -966,6 +980,7 @@ describe('Template Factory', () => {
         let returnValue;
         let jobsCount;
         let buildsCount;
+        let pipelineJobs;
 
         beforeEach(() => {
             config = {
@@ -1022,6 +1037,53 @@ describe('Template Factory', () => {
                 }
             ];
 
+            pipelineJobs = [
+                {
+                    templateId: 1,
+                    pipelineId: 4
+                },
+                {
+                    templateId: 1,
+                    pipelineId: 5
+                },
+                {
+                    templateId: 1,
+                    pipelineId: 6
+                },
+                {
+                    templateId: 1,
+                    pipelineId: 2
+                },
+                {
+                    templateId: 2,
+                    pipelineId: 6
+                },
+                {
+                    templateId: 2,
+                    pipelineId: 6
+                },
+                {
+                    templateId: 3,
+                    pipelineId: 1
+                },
+                {
+                    templateId: 4,
+                    pipelineId: 1
+                },
+                {
+                    templateId: 4,
+                    pipelineId: 1
+                },
+                {
+                    templateId: 4,
+                    pipelineId: 2
+                },
+                {
+                    templateId: 4,
+                    pipelineId: 2
+                }
+            ];
+
             returnValue = [
                 {
                     id: 1,
@@ -1033,6 +1095,9 @@ describe('Template Factory', () => {
                             count: 3
                         },
                         builds: {
+                            count: 4
+                        },
+                        pipelines: {
                             count: 4
                         }
                     }
@@ -1048,6 +1113,9 @@ describe('Template Factory', () => {
                         },
                         builds: {
                             count: 0
+                        },
+                        pipelines: {
+                            count: 1
                         }
                     }
                 },
@@ -1062,6 +1130,9 @@ describe('Template Factory', () => {
                         },
                         builds: {
                             count: 0
+                        },
+                        pipelines: {
+                            count: 1
                         }
                     }
                 },
@@ -1075,6 +1146,9 @@ describe('Template Factory', () => {
                         },
                         builds: {
                             count: 3
+                        },
+                        pipelines: {
+                            count: 2
                         }
                     }
                 }
@@ -1094,7 +1168,8 @@ describe('Template Factory', () => {
             expected = [returnValue[0], returnValue[1], returnValue[2]];
             datastore.scan.resolves(expected);
             buildFactoryMock.list.resolves(buildsCount);
-            jobFactoryMock.list.resolves(jobsCount);
+            jobFactoryMock.list.onFirstCall().resolves(jobsCount);
+            jobFactoryMock.list.onSecondCall().resolves(pipelineJobs);
 
             return factory.listWithMetrics(config).then(templates => {
                 let i = 0;
@@ -1103,6 +1178,7 @@ describe('Template Factory', () => {
                     assert.deepEqual(t.id, expected[i].id);
                     assert.deepEqual(t.metrics.jobs.count, expected[i].metrics.jobs.count);
                     assert.deepEqual(t.metrics.builds.count, expected[i].metrics.builds.count);
+                    assert.deepEqual(t.metrics.pipelines.count, expected[i].metrics.pipelines.count);
                     i += 1;
                 });
             });
@@ -1112,7 +1188,8 @@ describe('Template Factory', () => {
             expected = [returnValue[3]];
             datastore.scan.resolves(expected);
             buildFactoryMock.list.resolves(buildsCount);
-            jobFactoryMock.list.resolves(jobsCount);
+            jobFactoryMock.list.onFirstCall().resolves(jobsCount);
+            jobFactoryMock.list.onSecondCall().resolves(pipelineJobs);
 
             delete config.namespace;
 
@@ -1120,6 +1197,7 @@ describe('Template Factory', () => {
                 assert.deepEqual(templates.length, 1);
                 assert.deepEqual(templates[0].metrics.jobs.count, expected[0].metrics.jobs.count);
                 assert.deepEqual(templates[0].metrics.builds.count, expected[0].metrics.builds.count);
+                assert.deepEqual(templates[0].metrics.pipelines.count, expected[0].metrics.pipelines.count);
             });
         });
 
@@ -1131,7 +1209,8 @@ describe('Template Factory', () => {
                 expected = [returnValue[0], returnValue[1]];
                 datastore.scan.resolves(expected);
                 buildFactoryMock.list.resolves(buildsCount);
-                jobFactoryMock.list.resolves(jobsCount);
+                jobFactoryMock.list.onFirstCall().resolves(jobsCount);
+                jobFactoryMock.list.onSecondCall().resolves(pipelineJobs);
             });
 
             it('should list templates with metrics when both startTime and endTime are passed in', () => {
@@ -1145,6 +1224,7 @@ describe('Template Factory', () => {
                         assert.deepEqual(t.id, expected[i].id);
                         assert.deepEqual(t.metrics.jobs.count, expected[i].metrics.jobs.count);
                         assert.deepEqual(t.metrics.builds.count, expected[i].metrics.builds.count);
+                        assert.deepEqual(t.metrics.pipelines.count, expected[i].metrics.pipelines.count);
                         i += 1;
                     });
 
@@ -1183,6 +1263,7 @@ describe('Template Factory', () => {
                         assert.deepEqual(t.id, expected[i].id);
                         assert.deepEqual(t.metrics.jobs.count, expected[i].metrics.jobs.count);
                         assert.deepEqual(t.metrics.builds.count, expected[i].metrics.builds.count);
+                        assert.deepEqual(t.metrics.pipelines.count, expected[i].metrics.pipelines.count);
                         i += 1;
                     });
 
@@ -1220,6 +1301,7 @@ describe('Template Factory', () => {
                         assert.deepEqual(t.id, expected[i].id);
                         assert.deepEqual(t.metrics.jobs.count, expected[i].metrics.jobs.count);
                         assert.deepEqual(t.metrics.builds.count, expected[i].metrics.builds.count);
+                        assert.deepEqual(t.metrics.pipelines.count, expected[i].metrics.pipelines.count);
                         i += 1;
                     });
 
@@ -1245,6 +1327,164 @@ describe('Template Factory', () => {
                         endTime
                     });
                 });
+            });
+        });
+    });
+
+    describe('getPipelineUsage', () => {
+        let returnValue;
+        let templateReturnValue;
+        let jobFactoryTestOutput;
+        let eventFactoryTestOutput;
+        let pipelineFactoryTestOutput;
+
+        beforeEach(() => {
+            templateReturnValue = {
+                id: 1,
+                name: `${namespace}/${name}`,
+                version
+            };
+
+            returnValue = [
+                {
+                    id: 6,
+                    name: 'nathom/sd-uses-template',
+                    scmRepo: {
+                        branch: 'main',
+                        name: 'test/repo',
+                        url: 'https://github.com/test/repo/tree/main/pipe1',
+                        rootDir: 'pipe1',
+                        private: false
+                    },
+                    lastRun: '2023-08-17T18:18:37.501Z',
+                    admins: { nathom: true }
+                },
+
+                {
+                    id: 5,
+                    name: 'nathom/sd-uses-template',
+                    scmRepo: {
+                        branch: 'main',
+                        name: 'test/repo',
+                        url: 'https://github.com/test/repo/tree/main/pipe1',
+                        rootDir: 'pipe1',
+                        private: false
+                    },
+                    lastRun: null,
+                    admins: { nathom: true }
+                },
+
+                {
+                    id: 4,
+                    name: 'nathom/sd-uses-template',
+                    scmRepo: {
+                        branch: 'main',
+                        name: 'test/repo',
+                        url: 'https://github.com/test/repo/tree/main/pipe1',
+                        rootDir: 'pipe1',
+                        private: false
+                    },
+                    lastRun: '2023-08-31T18:18:37.501Z',
+                    admins: { nathom: true }
+                }
+            ];
+
+            jobFactoryTestOutput = [
+                { pipelineId: 4, count: 1 },
+                { pipelineId: 5, count: 2 },
+                { pipelineId: 6, count: 1 }
+            ];
+
+            pipelineFactoryTestOutput = [
+                {
+                    id: 6,
+                    name: 'nathom/sd-uses-template',
+                    scmUri: 'github.com:672032066:main:pipe1',
+                    scmContext: 'github:github.com',
+                    scmRepo: {
+                        branch: 'main',
+                        name: 'test/repo',
+                        url: 'https://github.com/test/repo/tree/main/pipe1',
+                        rootDir: 'pipe1',
+                        private: false
+                    },
+                    createTime: '2023-08-17T18:18:37.501Z',
+                    admins: { nathom: true },
+                    lastEventId: 2
+                },
+
+                {
+                    id: 5,
+                    name: 'nathom/sd-uses-template',
+                    scmUri: 'github.com:672032066:main:pipe1',
+                    scmContext: 'github:github.com',
+                    scmRepo: {
+                        branch: 'main',
+                        name: 'test/repo',
+                        url: 'https://github.com/test/repo/tree/main/pipe1',
+                        rootDir: 'pipe1',
+                        private: false
+                    },
+                    createTime: '2023-08-17T18:18:37.501Z',
+                    admins: { nathom: true },
+                    lastEventId: null
+                },
+
+                {
+                    id: 4,
+                    name: 'nathom/sd-uses-template',
+                    scmUri: 'github.com:672032066:main:pipe1',
+                    scmContext: 'github:github.com',
+                    scmRepo: {
+                        branch: 'main',
+                        name: 'test/repo',
+                        url: 'https://github.com/test/repo/tree/main/pipe1',
+                        rootDir: 'pipe1',
+                        private: false
+                    },
+                    createTime: '2023-08-17T18:18:37.501Z',
+                    admins: { nathom: true },
+                    lastEventId: 1
+                }
+            ];
+
+            eventFactoryTestOutput = [
+                {
+                    id: 1,
+                    createTime: '2023-08-31T18:18:37.501Z'
+                },
+                {
+                    id: 2,
+                    createTime: '2023-08-17T18:18:37.501Z'
+                }
+            ];
+        });
+
+        it('should return empty array when no pipelines are using the template', () => {
+            const expected = [];
+
+            datastore.scan.onCall(0).resolves([]);
+            datastore.get.resolves(templateReturnValue);
+            jobFactoryMock.list.resolves([]);
+            pipelineFactoryMock.list.resolves([]);
+            eventFactoryMock.list.resolves([]);
+
+            return factory.getPipelineUsage(`${namespace}/${name}@1.0.2`).then(pipelines => {
+                assert.deepEqual(pipelines, expected);
+            });
+        });
+
+        it('should list pipelines using template version', () => {
+            const expected = returnValue;
+
+            datastore.scan.onCall(0).resolves([templateReturnValue]);
+            datastore.get.resolves(templateReturnValue);
+            jobFactoryMock.list.resolves(jobFactoryTestOutput);
+            pipelineFactoryMock.list.resolves(pipelineFactoryTestOutput);
+            eventFactoryMock.list.resolves(eventFactoryTestOutput);
+
+            return factory.getPipelineUsage(`${namespace}/${name}@1.0.2`).then(pipelines => {
+                assert.deepEqual(pipelines, expected);
             });
         });
     });
