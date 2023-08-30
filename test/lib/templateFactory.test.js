@@ -1,6 +1,6 @@
 'use strict';
 
-const { assert } = require('chai');
+const { assert, expect } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 
@@ -1040,47 +1040,48 @@ describe('Template Factory', () => {
             pipelineJobs = [
                 {
                     templateId: 1,
-                    pipelineId: 4
+                    pipelineId: 4,
+                    jobId: 0
                 },
                 {
                     templateId: 1,
-                    pipelineId: 5
+                    pipelineId: 5,
+                    jobId: 1
                 },
                 {
                     templateId: 1,
-                    pipelineId: 6
+                    pipelineId: 6,
+                    jobId: 2
                 },
                 {
                     templateId: 1,
-                    pipelineId: 2
-                },
-                {
-                    templateId: 2,
-                    pipelineId: 6
-                },
-                {
-                    templateId: 2,
-                    pipelineId: 6
+                    pipelineId: 2,
+                    jobId: 3
                 },
                 {
                     templateId: 3,
-                    pipelineId: 1
+                    pipelineId: 1,
+                    jobId: 4
                 },
                 {
                     templateId: 4,
-                    pipelineId: 1
+                    pipelineId: 1,
+                    jobId: 5
                 },
                 {
                     templateId: 4,
-                    pipelineId: 1
+                    pipelineId: 1,
+                    jobId: 5
                 },
                 {
                     templateId: 4,
-                    pipelineId: 2
+                    pipelineId: 2,
+                    jobId: 6
                 },
                 {
                     templateId: 4,
-                    pipelineId: 2
+                    pipelineId: 2,
+                    jobId: 6
                 }
             ];
 
@@ -1132,7 +1133,7 @@ describe('Template Factory', () => {
                             count: 0
                         },
                         pipelines: {
-                            count: 1
+                            count: 0
                         }
                     }
                 },
@@ -1351,12 +1352,12 @@ describe('Template Factory', () => {
                     name: 'nathom/sd-uses-template',
                     scmRepo: {
                         branch: 'main',
-                        name: 'test/repo',
+                        name: 'nathom/sd-uses-template',
                         url: 'https://github.com/test/repo/tree/main/pipe1',
                         rootDir: 'pipe1',
                         private: false
                     },
-                    lastRun: '2023-08-17T18:18:37.501Z',
+                    lastRun: '2023-07-18T12:18:42.501Z',
                     admins: { nathom: true }
                 },
 
@@ -1365,9 +1366,9 @@ describe('Template Factory', () => {
                     name: 'nathom/sd-uses-template',
                     scmRepo: {
                         branch: 'main',
-                        name: 'test/repo',
-                        url: 'https://github.com/test/repo/tree/main/pipe1',
-                        rootDir: 'pipe1',
+                        name: 'nathom/sd-uses-template',
+                        url: 'https://github.com/test/repo/tree/main/pipe2',
+                        rootDir: 'pipe2',
                         private: false
                     },
                     lastRun: null,
@@ -1379,9 +1380,9 @@ describe('Template Factory', () => {
                     name: 'nathom/sd-uses-template',
                     scmRepo: {
                         branch: 'main',
-                        name: 'test/repo',
-                        url: 'https://github.com/test/repo/tree/main/pipe1',
-                        rootDir: 'pipe1',
+                        name: 'nathom/sd-uses-template',
+                        url: 'https://github.com/test/repo/tree/main/pipe3',
+                        rootDir: 'pipe3',
                         private: false
                     },
                     lastRun: '2023-08-31T18:18:37.501Z',
@@ -1403,7 +1404,7 @@ describe('Template Factory', () => {
                     scmContext: 'github:github.com',
                     scmRepo: {
                         branch: 'main',
-                        name: 'test/repo',
+                        name: 'nathom/sd-uses-template',
                         url: 'https://github.com/test/repo/tree/main/pipe1',
                         rootDir: 'pipe1',
                         private: false
@@ -1416,13 +1417,13 @@ describe('Template Factory', () => {
                 {
                     id: 5,
                     name: 'nathom/sd-uses-template',
-                    scmUri: 'github.com:672032066:main:pipe1',
+                    scmUri: 'github.com:672032066:main:pipe2',
                     scmContext: 'github:github.com',
                     scmRepo: {
                         branch: 'main',
-                        name: 'test/repo',
-                        url: 'https://github.com/test/repo/tree/main/pipe1',
-                        rootDir: 'pipe1',
+                        name: 'nathom/sd-uses-template',
+                        url: 'https://github.com/test/repo/tree/main/pipe2',
+                        rootDir: 'pipe2',
                         private: false
                     },
                     createTime: '2023-08-17T18:18:37.501Z',
@@ -1433,13 +1434,13 @@ describe('Template Factory', () => {
                 {
                     id: 4,
                     name: 'nathom/sd-uses-template',
-                    scmUri: 'github.com:672032066:main:pipe1',
+                    scmUri: 'github.com:672032066:main:pipe3',
                     scmContext: 'github:github.com',
                     scmRepo: {
                         branch: 'main',
-                        name: 'test/repo',
-                        url: 'https://github.com/test/repo/tree/main/pipe1',
-                        rootDir: 'pipe1',
+                        name: 'nathom/sd-uses-template',
+                        url: 'https://github.com/test/repo/tree/main/pipe3',
+                        rootDir: 'pipe3',
                         private: false
                     },
                     createTime: '2023-08-17T18:18:37.501Z',
@@ -1455,7 +1456,7 @@ describe('Template Factory', () => {
                 },
                 {
                     id: 2,
-                    createTime: '2023-08-17T18:18:37.501Z'
+                    createTime: '2023-07-18T12:18:42.501Z'
                 }
             ];
         });
@@ -1466,10 +1467,29 @@ describe('Template Factory', () => {
             datastore.scan.onCall(0).resolves([]);
             datastore.get.resolves(templateReturnValue);
             jobFactoryMock.list.resolves([]);
-            pipelineFactoryMock.list.resolves([]);
-            eventFactoryMock.list.resolves([]);
 
             return factory.getPipelineUsage(`${namespace}/${name}@1.0.2`).then(pipelines => {
+                assert.calledWith(datastore.scan, {
+                    params: {
+                        namespace,
+                        name
+                    },
+                    table: 'templates',
+                    paginate: { count: 1, page: 1 }
+                });
+                assert.calledWith(datastore.get, {
+                    params: {
+                        namespace: null,
+                        name: `${namespace}/${name}`,
+                        version: '1.0.2'
+                    },
+                    table: 'templates'
+                });
+                assert.calledWith(jobFactoryMock.list, {
+                    params: { templateId: 1 },
+                    readOnly: true,
+                    aggregationField: 'pipelineId'
+                });
                 assert.deepEqual(pipelines, expected);
             });
         });
@@ -1484,7 +1504,56 @@ describe('Template Factory', () => {
             eventFactoryMock.list.resolves(eventFactoryTestOutput);
 
             return factory.getPipelineUsage(`${namespace}/${name}@1.0.2`).then(pipelines => {
+                assert.calledWith(datastore.scan, {
+                    params: {
+                        namespace,
+                        name
+                    },
+                    table: 'templates',
+                    paginate: { count: 1, page: 1 }
+                });
+                assert.calledWith(datastore.get, {
+                    params: {
+                        namespace,
+                        name,
+                        version: '1.0.2'
+                    },
+                    table: 'templates'
+                });
+                assert.calledWith(jobFactoryMock.list, {
+                    params: { templateId: 1 },
+                    readOnly: true,
+                    aggregationField: 'pipelineId'
+                });
+                assert.calledWith(pipelineFactoryMock.list, {
+                    params: { id: [4, 5, 6] },
+                    readOnly: true
+                });
+                assert.calledWith(eventFactoryMock.list, {
+                    params: { id: [2, 1] },
+                    readOnly: true
+                });
                 assert.deepEqual(pipelines, expected);
+            });
+        });
+
+        it('should throw an error if the template is not found', async () => {
+            datastore.scan.resolves([]);
+            datastore.get.resolves(null);
+
+            let error = null;
+
+            try {
+                await factory.getPipelineUsage('fake/template@0.0.0');
+            } catch (err) {
+                error = err;
+            }
+            expect(error).to.be.an('Error');
+            expect(error.message).to.equal('Template does not exist');
+            assert.calledWith(datastore.scan, {
+                table: 'templates',
+                params: { namespace: 'fake', name: 'template' },
+                paginate: { count: 1, page: 1 }
             });
         });
     });
