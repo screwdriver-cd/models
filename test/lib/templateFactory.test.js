@@ -52,7 +52,8 @@ describe('Template Factory', () => {
             get: sinon.stub()
         };
         jobFactoryMock = {
-            list: sinon.stub()
+            list: sinon.stub(),
+            query: sinon.stub()
         };
         buildFactoryMock = {
             list: sinon.stub()
@@ -1038,51 +1039,25 @@ describe('Template Factory', () => {
             ];
 
             pipelineJobs = [
-                {
-                    templateId: 1,
-                    pipelineId: 4,
-                    jobId: 0
-                },
-                {
-                    templateId: 1,
-                    pipelineId: 5,
-                    jobId: 1
-                },
-                {
-                    templateId: 1,
-                    pipelineId: 6,
-                    jobId: 2
-                },
-                {
-                    templateId: 1,
-                    pipelineId: 2,
-                    jobId: 3
-                },
-                {
-                    templateId: 3,
-                    pipelineId: 1,
-                    jobId: 4
-                },
-                {
-                    templateId: 4,
-                    pipelineId: 1,
-                    jobId: 5
-                },
-                {
-                    templateId: 4,
-                    pipelineId: 1,
-                    jobId: 5
-                },
-                {
-                    templateId: 4,
-                    pipelineId: 2,
-                    jobId: 6
-                },
-                {
-                    templateId: 4,
-                    pipelineId: 2,
-                    jobId: 6
-                }
+                [
+                    {
+                        templateId: 1,
+                        count: 4
+                    },
+                    {
+                        templateId: 2,
+                        count: 0
+                    },
+                    {
+                        templateId: 3,
+                        count: 1
+                    },
+                    {
+                        templateId: 4,
+                        count: 2
+                    }
+                ],
+                sinon.stub()
             ];
 
             returnValue = [
@@ -1170,7 +1145,7 @@ describe('Template Factory', () => {
             datastore.scan.resolves(expected);
             buildFactoryMock.list.resolves(buildsCount);
             jobFactoryMock.list.onFirstCall().resolves(jobsCount);
-            jobFactoryMock.list.onSecondCall().resolves(pipelineJobs);
+            jobFactoryMock.query.resolves(pipelineJobs);
 
             return factory.listWithMetrics(config).then(templates => {
                 let i = 0;
@@ -1190,7 +1165,7 @@ describe('Template Factory', () => {
             datastore.scan.resolves(expected);
             buildFactoryMock.list.resolves(buildsCount);
             jobFactoryMock.list.onFirstCall().resolves(jobsCount);
-            jobFactoryMock.list.onSecondCall().resolves(pipelineJobs);
+            jobFactoryMock.query.resolves(pipelineJobs);
 
             delete config.namespace;
 
@@ -1211,7 +1186,7 @@ describe('Template Factory', () => {
                 datastore.scan.resolves(expected);
                 buildFactoryMock.list.resolves(buildsCount);
                 jobFactoryMock.list.onFirstCall().resolves(jobsCount);
-                jobFactoryMock.list.onSecondCall().resolves(pipelineJobs);
+                jobFactoryMock.query.resolves(pipelineJobs);
             });
 
             it('should list templates with metrics when both startTime and endTime are passed in', () => {
