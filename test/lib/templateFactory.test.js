@@ -52,7 +52,8 @@ describe('Template Factory', () => {
             get: sinon.stub()
         };
         jobFactoryMock = {
-            list: sinon.stub()
+            list: sinon.stub(),
+            getPipelineUsageCountForTemplates: sinon.stub()
         };
         buildFactoryMock = {
             list: sinon.stub()
@@ -1040,48 +1041,19 @@ describe('Template Factory', () => {
             pipelineJobs = [
                 {
                     templateId: 1,
-                    pipelineId: 4,
-                    jobId: 0
+                    count: 4
                 },
                 {
-                    templateId: 1,
-                    pipelineId: 5,
-                    jobId: 1
-                },
-                {
-                    templateId: 1,
-                    pipelineId: 6,
-                    jobId: 2
-                },
-                {
-                    templateId: 1,
-                    pipelineId: 2,
-                    jobId: 3
+                    templateId: 2,
+                    count: 0
                 },
                 {
                     templateId: 3,
-                    pipelineId: 1,
-                    jobId: 4
+                    count: 1
                 },
                 {
                     templateId: 4,
-                    pipelineId: 1,
-                    jobId: 5
-                },
-                {
-                    templateId: 4,
-                    pipelineId: 1,
-                    jobId: 5
-                },
-                {
-                    templateId: 4,
-                    pipelineId: 2,
-                    jobId: 6
-                },
-                {
-                    templateId: 4,
-                    pipelineId: 2,
-                    jobId: 6
+                    count: 2
                 }
             ];
 
@@ -1162,6 +1134,10 @@ describe('Template Factory', () => {
 
             return factory.listWithMetrics(config).then(templates => {
                 assert.deepEqual(templates, expected);
+                assert.calledWith(datastore.scan, {
+                    table: 'templates',
+                    params: { name: 'testTemplate', namespace: 'namespace', version: '1.0.2' }
+                });
             });
         });
 
@@ -1170,7 +1146,7 @@ describe('Template Factory', () => {
             datastore.scan.resolves(expected);
             buildFactoryMock.list.resolves(buildsCount);
             jobFactoryMock.list.onFirstCall().resolves(jobsCount);
-            jobFactoryMock.list.onSecondCall().resolves(pipelineJobs);
+            jobFactoryMock.getPipelineUsageCountForTemplates.resolves(pipelineJobs);
 
             return factory.listWithMetrics(config).then(templates => {
                 let i = 0;
@@ -1180,6 +1156,25 @@ describe('Template Factory', () => {
                     assert.deepEqual(t.metrics.jobs.count, expected[i].metrics.jobs.count);
                     assert.deepEqual(t.metrics.builds.count, expected[i].metrics.builds.count);
                     assert.deepEqual(t.metrics.pipelines.count, expected[i].metrics.pipelines.count);
+
+                    assert.calledWith(datastore.scan, {
+                        table: 'templates',
+                        params: { name: 'testTemplate', namespace: 'namespace', version: '1.0.2' }
+                    });
+
+                    assert.calledWith(buildFactoryMock.list, {
+                        params: { templateId: [1, 3, 2] },
+                        readOnly: true,
+                        aggregationField: 'templateId'
+                    });
+
+                    assert.calledWith(jobFactoryMock.list, {
+                        params: { templateId: [1, 3, 2] },
+                        readOnly: true,
+                        aggregationField: 'templateId'
+                    });
+
+                    assert.calledWith(jobFactoryMock.getPipelineUsageCountForTemplates, [1, 3, 2]);
                     i += 1;
                 });
             });
@@ -1190,7 +1185,7 @@ describe('Template Factory', () => {
             datastore.scan.resolves(expected);
             buildFactoryMock.list.resolves(buildsCount);
             jobFactoryMock.list.onFirstCall().resolves(jobsCount);
-            jobFactoryMock.list.onSecondCall().resolves(pipelineJobs);
+            jobFactoryMock.getPipelineUsageCountForTemplates.resolves(pipelineJobs);
 
             delete config.namespace;
 
@@ -1199,6 +1194,25 @@ describe('Template Factory', () => {
                 assert.deepEqual(templates[0].metrics.jobs.count, expected[0].metrics.jobs.count);
                 assert.deepEqual(templates[0].metrics.builds.count, expected[0].metrics.builds.count);
                 assert.deepEqual(templates[0].metrics.pipelines.count, expected[0].metrics.pipelines.count);
+
+                assert.calledWith(datastore.scan, {
+                    table: 'templates',
+                    params: { name: 'testTemplate', namespace: 'namespace', version: '1.0.2' }
+                });
+
+                assert.calledWith(buildFactoryMock.list, {
+                    params: { templateId: [4] },
+                    readOnly: true,
+                    aggregationField: 'templateId'
+                });
+
+                assert.calledWith(jobFactoryMock.list, {
+                    params: { templateId: [4] },
+                    readOnly: true,
+                    aggregationField: 'templateId'
+                });
+
+                assert.calledWith(jobFactoryMock.getPipelineUsageCountForTemplates, [4]);
             });
         });
 
@@ -1211,7 +1225,7 @@ describe('Template Factory', () => {
                 datastore.scan.resolves(expected);
                 buildFactoryMock.list.resolves(buildsCount);
                 jobFactoryMock.list.onFirstCall().resolves(jobsCount);
-                jobFactoryMock.list.onSecondCall().resolves(pipelineJobs);
+                jobFactoryMock.getPipelineUsageCountForTemplates.resolves(pipelineJobs);
             });
 
             it('should list templates with metrics when both startTime and endTime are passed in', () => {
@@ -1251,6 +1265,26 @@ describe('Template Factory', () => {
                         startTime,
                         endTime
                     });
+                    assert.calledWith(datastore.scan, {
+                        table: 'templates',
+                        params: { name: 'testTemplate', namespace: 'namespace', version: '1.0.2' }
+                    });
+
+                    assert.calledWith(buildFactoryMock.list, {
+                        params: { templateId: [1, 3] },
+                        readOnly: true,
+                        aggregationField: 'templateId',
+                        startTime: '2023-04-01T14:08',
+                        endTime: '2023-04-30T14:08'
+                    });
+
+                    assert.calledWith(jobFactoryMock.list, {
+                        params: { templateId: [1, 3] },
+                        readOnly: true,
+                        aggregationField: 'templateId'
+                    });
+
+                    assert.calledWith(jobFactoryMock.getPipelineUsageCountForTemplates, [1, 3]);
                 });
             });
 
