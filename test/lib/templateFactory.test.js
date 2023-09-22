@@ -1,6 +1,6 @@
 'use strict';
 
-const { assert } = require('chai');
+const { assert, expect } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 
@@ -31,6 +31,8 @@ describe('Template Factory', () => {
     let Template;
     let jobFactoryMock;
     let buildFactoryMock;
+    let pipelineFactoryMock;
+    let eventFactoryMock;
 
     before(() => {
         mockery.enable({
@@ -50,9 +52,16 @@ describe('Template Factory', () => {
             get: sinon.stub()
         };
         jobFactoryMock = {
-            list: sinon.stub()
+            list: sinon.stub(),
+            getPipelineUsageCountForTemplates: sinon.stub()
         };
         buildFactoryMock = {
+            list: sinon.stub()
+        };
+        pipelineFactoryMock = {
+            list: sinon.stub()
+        };
+        eventFactoryMock = {
             list: sinon.stub()
         };
 
@@ -64,6 +73,12 @@ describe('Template Factory', () => {
         });
         mockery.registerMock('./buildFactory', {
             getInstance: sinon.stub().returns(buildFactoryMock)
+        });
+        mockery.registerMock('./pipelineFactory', {
+            getInstance: sinon.stub().returns(pipelineFactoryMock)
+        });
+        mockery.registerMock('./eventFactory', {
+            getInstance: sinon.stub().returns(eventFactoryMock)
         });
 
         /* eslint-disable global-require */
@@ -966,6 +981,7 @@ describe('Template Factory', () => {
         let returnValue;
         let jobsCount;
         let buildsCount;
+        let pipelineJobs;
 
         beforeEach(() => {
             config = {
@@ -1022,6 +1038,25 @@ describe('Template Factory', () => {
                 }
             ];
 
+            pipelineJobs = [
+                {
+                    templateId: 1,
+                    count: 4
+                },
+                {
+                    templateId: 2,
+                    count: 0
+                },
+                {
+                    templateId: 3,
+                    count: 1
+                },
+                {
+                    templateId: 4,
+                    count: 2
+                }
+            ];
+
             returnValue = [
                 {
                     id: 1,
@@ -1033,6 +1068,9 @@ describe('Template Factory', () => {
                             count: 3
                         },
                         builds: {
+                            count: 4
+                        },
+                        pipelines: {
                             count: 4
                         }
                     }
@@ -1048,6 +1086,9 @@ describe('Template Factory', () => {
                         },
                         builds: {
                             count: 0
+                        },
+                        pipelines: {
+                            count: 1
                         }
                     }
                 },
@@ -1062,6 +1103,9 @@ describe('Template Factory', () => {
                         },
                         builds: {
                             count: 0
+                        },
+                        pipelines: {
+                            count: 0
                         }
                     }
                 },
@@ -1075,6 +1119,9 @@ describe('Template Factory', () => {
                         },
                         builds: {
                             count: 3
+                        },
+                        pipelines: {
+                            count: 2
                         }
                     }
                 }
@@ -1087,6 +1134,10 @@ describe('Template Factory', () => {
 
             return factory.listWithMetrics(config).then(templates => {
                 assert.deepEqual(templates, expected);
+                assert.calledWith(datastore.scan, {
+                    table: 'templates',
+                    params: { name: 'testTemplate', namespace: 'namespace', version: '1.0.2' }
+                });
             });
         });
 
@@ -1094,7 +1145,8 @@ describe('Template Factory', () => {
             expected = [returnValue[0], returnValue[1], returnValue[2]];
             datastore.scan.resolves(expected);
             buildFactoryMock.list.resolves(buildsCount);
-            jobFactoryMock.list.resolves(jobsCount);
+            jobFactoryMock.list.onFirstCall().resolves(jobsCount);
+            jobFactoryMock.getPipelineUsageCountForTemplates.resolves(pipelineJobs);
 
             return factory.listWithMetrics(config).then(templates => {
                 let i = 0;
@@ -1103,6 +1155,26 @@ describe('Template Factory', () => {
                     assert.deepEqual(t.id, expected[i].id);
                     assert.deepEqual(t.metrics.jobs.count, expected[i].metrics.jobs.count);
                     assert.deepEqual(t.metrics.builds.count, expected[i].metrics.builds.count);
+                    assert.deepEqual(t.metrics.pipelines.count, expected[i].metrics.pipelines.count);
+
+                    assert.calledWith(datastore.scan, {
+                        table: 'templates',
+                        params: { name: 'testTemplate', namespace: 'namespace', version: '1.0.2' }
+                    });
+
+                    assert.calledWith(buildFactoryMock.list, {
+                        params: { templateId: [1, 3, 2] },
+                        readOnly: true,
+                        aggregationField: 'templateId'
+                    });
+
+                    assert.calledWith(jobFactoryMock.list, {
+                        params: { templateId: [1, 3, 2] },
+                        readOnly: true,
+                        aggregationField: 'templateId'
+                    });
+
+                    assert.calledWith(jobFactoryMock.getPipelineUsageCountForTemplates, [1, 3, 2]);
                     i += 1;
                 });
             });
@@ -1112,7 +1184,8 @@ describe('Template Factory', () => {
             expected = [returnValue[3]];
             datastore.scan.resolves(expected);
             buildFactoryMock.list.resolves(buildsCount);
-            jobFactoryMock.list.resolves(jobsCount);
+            jobFactoryMock.list.onFirstCall().resolves(jobsCount);
+            jobFactoryMock.getPipelineUsageCountForTemplates.resolves(pipelineJobs);
 
             delete config.namespace;
 
@@ -1120,6 +1193,26 @@ describe('Template Factory', () => {
                 assert.deepEqual(templates.length, 1);
                 assert.deepEqual(templates[0].metrics.jobs.count, expected[0].metrics.jobs.count);
                 assert.deepEqual(templates[0].metrics.builds.count, expected[0].metrics.builds.count);
+                assert.deepEqual(templates[0].metrics.pipelines.count, expected[0].metrics.pipelines.count);
+
+                assert.calledWith(datastore.scan, {
+                    table: 'templates',
+                    params: { name: 'testTemplate', namespace: 'namespace', version: '1.0.2' }
+                });
+
+                assert.calledWith(buildFactoryMock.list, {
+                    params: { templateId: [4] },
+                    readOnly: true,
+                    aggregationField: 'templateId'
+                });
+
+                assert.calledWith(jobFactoryMock.list, {
+                    params: { templateId: [4] },
+                    readOnly: true,
+                    aggregationField: 'templateId'
+                });
+
+                assert.calledWith(jobFactoryMock.getPipelineUsageCountForTemplates, [4]);
             });
         });
 
@@ -1131,7 +1224,8 @@ describe('Template Factory', () => {
                 expected = [returnValue[0], returnValue[1]];
                 datastore.scan.resolves(expected);
                 buildFactoryMock.list.resolves(buildsCount);
-                jobFactoryMock.list.resolves(jobsCount);
+                jobFactoryMock.list.onFirstCall().resolves(jobsCount);
+                jobFactoryMock.getPipelineUsageCountForTemplates.resolves(pipelineJobs);
             });
 
             it('should list templates with metrics when both startTime and endTime are passed in', () => {
@@ -1145,6 +1239,7 @@ describe('Template Factory', () => {
                         assert.deepEqual(t.id, expected[i].id);
                         assert.deepEqual(t.metrics.jobs.count, expected[i].metrics.jobs.count);
                         assert.deepEqual(t.metrics.builds.count, expected[i].metrics.builds.count);
+                        assert.deepEqual(t.metrics.pipelines.count, expected[i].metrics.pipelines.count);
                         i += 1;
                     });
 
@@ -1170,6 +1265,26 @@ describe('Template Factory', () => {
                         startTime,
                         endTime
                     });
+                    assert.calledWith(datastore.scan, {
+                        table: 'templates',
+                        params: { name: 'testTemplate', namespace: 'namespace', version: '1.0.2' }
+                    });
+
+                    assert.calledWith(buildFactoryMock.list, {
+                        params: { templateId: [1, 3] },
+                        readOnly: true,
+                        aggregationField: 'templateId',
+                        startTime: '2023-04-01T14:08',
+                        endTime: '2023-04-30T14:08'
+                    });
+
+                    assert.calledWith(jobFactoryMock.list, {
+                        params: { templateId: [1, 3] },
+                        readOnly: true,
+                        aggregationField: 'templateId'
+                    });
+
+                    assert.calledWith(jobFactoryMock.getPipelineUsageCountForTemplates, [1, 3]);
                 });
             });
 
@@ -1183,6 +1298,7 @@ describe('Template Factory', () => {
                         assert.deepEqual(t.id, expected[i].id);
                         assert.deepEqual(t.metrics.jobs.count, expected[i].metrics.jobs.count);
                         assert.deepEqual(t.metrics.builds.count, expected[i].metrics.builds.count);
+                        assert.deepEqual(t.metrics.pipelines.count, expected[i].metrics.pipelines.count);
                         i += 1;
                     });
 
@@ -1220,6 +1336,7 @@ describe('Template Factory', () => {
                         assert.deepEqual(t.id, expected[i].id);
                         assert.deepEqual(t.metrics.jobs.count, expected[i].metrics.jobs.count);
                         assert.deepEqual(t.metrics.builds.count, expected[i].metrics.builds.count);
+                        assert.deepEqual(t.metrics.pipelines.count, expected[i].metrics.pipelines.count);
                         i += 1;
                     });
 
@@ -1245,6 +1362,232 @@ describe('Template Factory', () => {
                         endTime
                     });
                 });
+            });
+        });
+    });
+
+    describe('getPipelineUsage', () => {
+        let returnValue;
+        let templateReturnValue;
+        let jobFactoryTestOutput;
+        let eventFactoryTestOutput;
+        let pipelineFactoryTestOutput;
+
+        beforeEach(() => {
+            templateReturnValue = {
+                id: 1,
+                name: `${namespace}/${name}`,
+                version
+            };
+
+            returnValue = [
+                {
+                    id: 6,
+                    name: 'nathom/sd-uses-template',
+                    scmRepo: {
+                        branch: 'main',
+                        name: 'nathom/sd-uses-template',
+                        url: 'https://github.com/test/repo/tree/main/pipe1',
+                        rootDir: 'pipe1',
+                        private: false
+                    },
+                    lastRun: '2023-07-18T12:18:42.501Z',
+                    admins: { nathom: true }
+                },
+
+                {
+                    id: 5,
+                    name: 'nathom/sd-uses-template',
+                    scmRepo: {
+                        branch: 'main',
+                        name: 'nathom/sd-uses-template',
+                        url: 'https://github.com/test/repo/tree/main/pipe2',
+                        rootDir: 'pipe2',
+                        private: false
+                    },
+                    lastRun: null,
+                    admins: { nathom: true }
+                },
+
+                {
+                    id: 4,
+                    name: 'nathom/sd-uses-template',
+                    scmRepo: {
+                        branch: 'main',
+                        name: 'nathom/sd-uses-template',
+                        url: 'https://github.com/test/repo/tree/main/pipe3',
+                        rootDir: 'pipe3',
+                        private: false
+                    },
+                    lastRun: '2023-08-31T18:18:37.501Z',
+                    admins: { nathom: true }
+                }
+            ];
+
+            jobFactoryTestOutput = [
+                { pipelineId: 4, count: 1 },
+                { pipelineId: 5, count: 2 },
+                { pipelineId: 6, count: 1 }
+            ];
+
+            pipelineFactoryTestOutput = [
+                {
+                    id: 6,
+                    name: 'nathom/sd-uses-template',
+                    scmUri: 'github.com:672032066:main:pipe1',
+                    scmContext: 'github:github.com',
+                    scmRepo: {
+                        branch: 'main',
+                        name: 'nathom/sd-uses-template',
+                        url: 'https://github.com/test/repo/tree/main/pipe1',
+                        rootDir: 'pipe1',
+                        private: false
+                    },
+                    createTime: '2023-08-17T18:18:37.501Z',
+                    admins: { nathom: true },
+                    lastEventId: 2
+                },
+
+                {
+                    id: 5,
+                    name: 'nathom/sd-uses-template',
+                    scmUri: 'github.com:672032066:main:pipe2',
+                    scmContext: 'github:github.com',
+                    scmRepo: {
+                        branch: 'main',
+                        name: 'nathom/sd-uses-template',
+                        url: 'https://github.com/test/repo/tree/main/pipe2',
+                        rootDir: 'pipe2',
+                        private: false
+                    },
+                    createTime: '2023-08-17T18:18:37.501Z',
+                    admins: { nathom: true },
+                    lastEventId: null
+                },
+
+                {
+                    id: 4,
+                    name: 'nathom/sd-uses-template',
+                    scmUri: 'github.com:672032066:main:pipe3',
+                    scmContext: 'github:github.com',
+                    scmRepo: {
+                        branch: 'main',
+                        name: 'nathom/sd-uses-template',
+                        url: 'https://github.com/test/repo/tree/main/pipe3',
+                        rootDir: 'pipe3',
+                        private: false
+                    },
+                    createTime: '2023-08-17T18:18:37.501Z',
+                    admins: { nathom: true },
+                    lastEventId: 1
+                }
+            ];
+
+            eventFactoryTestOutput = [
+                {
+                    id: 1,
+                    createTime: '2023-08-31T18:18:37.501Z'
+                },
+                {
+                    id: 2,
+                    createTime: '2023-07-18T12:18:42.501Z'
+                }
+            ];
+        });
+
+        it('should return empty array when no pipelines are using the template', () => {
+            const expected = [];
+
+            datastore.scan.onCall(0).resolves([]);
+            datastore.get.resolves(templateReturnValue);
+            jobFactoryMock.list.resolves([]);
+
+            return factory.getPipelineUsage(`${namespace}/${name}@1.0.2`).then(pipelines => {
+                assert.calledWith(datastore.scan, {
+                    params: {
+                        namespace,
+                        name
+                    },
+                    table: 'templates',
+                    paginate: { count: 1, page: 1 }
+                });
+                assert.calledWith(datastore.get, {
+                    params: {
+                        namespace: null,
+                        name: `${namespace}/${name}`,
+                        version: '1.0.2'
+                    },
+                    table: 'templates'
+                });
+                assert.calledWith(jobFactoryMock.list, {
+                    params: { templateId: 1 },
+                    readOnly: true,
+                    aggregationField: 'pipelineId'
+                });
+                assert.deepEqual(pipelines, expected);
+            });
+        });
+
+        it('should list pipelines using template version', () => {
+            const expected = returnValue;
+
+            datastore.scan.onCall(0).resolves([templateReturnValue]);
+            datastore.get.resolves(templateReturnValue);
+            jobFactoryMock.list.resolves(jobFactoryTestOutput);
+            pipelineFactoryMock.list.resolves(pipelineFactoryTestOutput);
+            eventFactoryMock.list.resolves(eventFactoryTestOutput);
+
+            return factory.getPipelineUsage(`${namespace}/${name}@1.0.2`).then(pipelines => {
+                assert.calledWith(datastore.scan, {
+                    params: {
+                        namespace,
+                        name
+                    },
+                    table: 'templates',
+                    paginate: { count: 1, page: 1 }
+                });
+                assert.calledWith(datastore.get, {
+                    params: {
+                        namespace,
+                        name,
+                        version: '1.0.2'
+                    },
+                    table: 'templates'
+                });
+                assert.calledWith(jobFactoryMock.list, {
+                    params: { templateId: 1 },
+                    readOnly: true,
+                    aggregationField: 'pipelineId'
+                });
+                assert.calledWith(pipelineFactoryMock.list, {
+                    params: { id: [4, 5, 6] },
+                    readOnly: true
+                });
+                assert.calledWith(eventFactoryMock.list, {
+                    params: { id: [2, 1] },
+                    readOnly: true
+                });
+                assert.deepEqual(pipelines, expected);
+            });
+        });
+
+        it('should throw an error if the template is not found', async () => {
+            datastore.scan.resolves([]);
+            datastore.get.resolves(null);
+
+            let error = null;
+
+            try {
+                await factory.getPipelineUsage('fake/template@0.0.0');
+            } catch (err) {
+                error = err;
+            }
+            expect(error).to.be.an('Error');
+            expect(error.message).to.equal('Template does not exist');
+            assert.calledWith(datastore.scan, {
+                table: 'templates',
+                params: { namespace: 'fake', name: 'template' },
+                paginate: { count: 1, page: 1 }
             });
         });
     });
