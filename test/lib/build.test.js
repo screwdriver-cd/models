@@ -57,11 +57,15 @@ describe('Build Model', () => {
     let userFactoryMock;
     let jobFactoryMock;
     let pipelineFactoryMock;
+    let stageFactoryMock;
+    let stageBuildFactoryMock;
     let stepFactoryMock;
     let scmMock;
     let tokenGen;
     let pipelineMock;
     let jobMock;
+    let stageMock;
+    let stageBuildMock;
 
     before(() => {
         mockery.enable({
@@ -98,6 +102,12 @@ describe('Build Model', () => {
         pipelineFactoryMock = {
             get: sinon.stub().resolves(null)
         };
+        stageFactoryMock = {
+            list: sinon.stub().resolves([])
+        };
+        stageBuildFactoryMock = {
+            get: sinon.stub().resolves({})
+        };
         stepFactoryMock = {
             list: sinon.stub().resolves([]),
             removeSteps: sinon.stub().resolves([])
@@ -119,6 +129,35 @@ describe('Build Model', () => {
             permutations: [{ annotations, freezeWindows, provider }],
             isPR: sinon.stub().returns(false)
         };
+        stageBuildMock = {
+            id: 123,
+            stageId: 1,
+            eventId: 123,
+            workflowGraph: {
+                nodes: [{ name: '~commit' }, { name: 'main' }, { name: 'publish' }],
+                edges: [
+                    { src: '~commit', dest: 'main' },
+                    { src: 'main', dest: 'publish' }
+                ]
+            },
+            status: 'SUCCESS'
+        };
+        stageMock = {
+            id: jobId,
+            name: 'deploy',
+            archived: false,
+            jobIds: [1, 2, 3, 4],
+            description: 'Deploys canary jobs',
+            setup: [222],
+            teardown: [333],
+            workflowGraph: {
+                nodes: [{ name: '~commit' }, { name: 'main' }, { name: 'publish' }],
+                edges: [
+                    { src: '~commit', dest: 'main' },
+                    { src: 'main', dest: 'publish' }
+                ]
+            }
+        };
         scmMock = {
             updateCommitStatus: sinon.stub().resolves(null),
             addPrComment: sinon.stub().resolves(null)
@@ -136,11 +175,19 @@ describe('Build Model', () => {
         const sF = {
             getInstance: sinon.stub().returns(stepFactoryMock)
         };
+        const stageF = {
+            getInstance: sinon.stub().returns(stageFactoryMock)
+        };
+        const stageBuildF = {
+            getInstance: sinon.stub().returns(stageBuildFactoryMock)
+        };
 
         mockery.registerMock('./pipelineFactory', pF);
         mockery.registerMock('./userFactory', uF);
         mockery.registerMock('./jobFactory', jF);
         mockery.registerMock('./stepFactory', sF);
+        mockery.registerMock('./stageFactory', stageF);
+        mockery.registerMock('./stageBuildFactory', stageBuildF);
         mockery.registerMock('screwdriver-hashr', hashaMock);
 
         // eslint-disable-next-line global-require
@@ -1765,6 +1812,89 @@ describe('Build Model', () => {
                 .catch(err => {
                     assert.instanceOf(err, Error);
                     assert.strictEqual(err.message, 'Job does not exist');
+                });
+        });
+    });
+
+    describe('stageBuild', () => {
+        it('has a stageBuild getter', () => {
+            stageMock = {};
+
+            jobFactoryMock.get.resolves(jobMock);
+            stageFactoryMock.list.resolves([stageMock]);
+            stageBuildFactoryMock.get.resolves(stageBuildMock);
+
+            build.getStageBuild().then(() => {
+                assert.calledWith(stageFactoryMock.list, {
+                    params: { pipelineId },
+                    search: { field: 'jobIds', keyword: '%123%' }
+                });
+                assert.calledWith(stageBuildFactoryMock.get, { params: { eventId: 123, stageId: 123 } });
+                assert.calledOnce(stageFactoryMock.list);
+                assert.calledOnce(stageBuildFactoryMock.get);
+            });
+        });
+
+        it('rejects if job is null', () => {
+            jobFactoryMock.get.resolves(null);
+
+            return build
+                .getStageBuild()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.instanceOf(err, Error);
+                    assert.strictEqual(err.message, 'Job does not exist');
+                });
+        });
+
+        it('rejects if pipeline is null', () => {
+            jobMock = {
+                pipeline: Promise.resolve(null)
+            };
+            jobFactoryMock.get.resolves(jobMock);
+
+            return build
+                .getStageBuild()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.instanceOf(err, Error);
+                    assert.strictEqual(err.message, 'Pipeline does not exist');
+                });
+        });
+
+        it('rejects if stage is null', () => {
+            stageFactoryMock.list.resolves([]);
+            jobFactoryMock.get.resolves(jobMock);
+            stageBuildFactoryMock.get.resolves(stageBuildMock);
+
+            return build
+                .getStageBuild()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.instanceOf(err, Error);
+                    assert.strictEqual(err.message, 'Stage does not exist');
+                });
+        });
+
+        it('rejects if stageBuild is null', () => {
+            jobFactoryMock.get.resolves(jobMock);
+            stageFactoryMock.list.resolves([stageMock]);
+            stageBuildFactoryMock.get.resolves(null);
+
+            return build
+                .getStageBuild()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.instanceOf(err, Error);
+                    assert.strictEqual(err.message, 'StageBuild does not exist');
                 });
         });
     });
