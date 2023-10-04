@@ -40,19 +40,7 @@ describe('Event Model', () => {
         ];
         mockStageBuild = {
             id: 8888,
-            stageId: 555,
-            workflowGraph: {
-                nodes: [
-                    { name: 'stage@deploy:teardown' },
-                    { name: 'main' },
-                    { name: 'stage@deploy:setup' },
-                    { name: 'publish' }
-                ],
-                edges: [
-                    { src: 'stage@deploy:setup', dest: 'main' },
-                    { src: 'main', dest: 'publish' }
-                ]
-            }
+            stageId: 555
         };
         datastore = {};
         buildFactoryMock = {
@@ -113,7 +101,8 @@ describe('Event Model', () => {
         it('resolves with stage builds', () => {
             const expectedStageConfig = {
                 params: {
-                    pipelineId: 12345
+                    pipelineId: 12345,
+                    archived: false
                 }
             };
             const expectedStageBuildConfig = {
@@ -125,37 +114,7 @@ describe('Event Model', () => {
                 {
                     id: 8888,
                     stageId: 555,
-                    stageName: 'deploy',
-                    workflowGraph: {
-                        edges: [
-                            {
-                                dest: 'main',
-                                src: 'stage@deploy:setup'
-                            },
-                            {
-                                dest: 'publish',
-                                src: 'main'
-                            }
-                        ],
-                        nodes: [
-                            {
-                                name: 'stage@deploy:teardown',
-                                stageName: 'deploy'
-                            },
-                            {
-                                name: 'main',
-                                stageName: 'deploy'
-                            },
-                            {
-                                name: 'stage@deploy:setup',
-                                stageName: 'deploy'
-                            },
-                            {
-                                name: 'publish',
-                                stageName: 'deploy'
-                            }
-                        ]
-                    }
+                    stageName: 'deploy'
                 }
             ];
 
