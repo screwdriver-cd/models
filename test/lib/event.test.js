@@ -6,6 +6,7 @@ const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
+const WORKFLOWGRAPH_WITH_STAGES = require('../data/workflowGraphWithStages.json');
 
 describe('Event Model', () => {
     let buildFactoryMock;
@@ -74,6 +75,7 @@ describe('Event Model', () => {
         createConfig = {
             id: 1234,
             pipelineId: 12345,
+            workflowGraph: WORKFLOWGRAPH_WITH_STAGES,
             datastore
         };
         event = new EventModel(createConfig);
@@ -102,12 +104,14 @@ describe('Event Model', () => {
             const expectedStageConfig = {
                 params: {
                     pipelineId: 12345,
+                    name: ['alpha', 'beta', 'gamma'],
                     archived: false
                 }
             };
             const expectedStageBuildConfig = {
                 params: {
-                    eventId: 1234
+                    eventId: 1234,
+                    stageId: [555]
                 }
             };
             const expectedStageBuilds = [

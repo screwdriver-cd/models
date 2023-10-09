@@ -8,6 +8,8 @@ const { SCM_STATE_MAP } = require('screwdriver-data-schema').plugins.scm;
 
 sinon.assert.expose(assert, { prefix: '' });
 
+const WORKFLOWGRAPH_WITH_STAGES = require('../data/workflowGraphWithStages.json');
+
 describe('Build Model', () => {
     const annotations = {};
     const freezeWindows = ['* * ? * 1', '0-59 0-23 * 1 ?'];
@@ -103,7 +105,7 @@ describe('Build Model', () => {
             get: sinon.stub().resolves(null)
         };
         stageFactoryMock = {
-            list: sinon.stub().resolves([])
+            get: sinon.stub().resolves([])
         };
         stageBuildFactoryMock = {
             get: sinon.stub().resolves({})
@@ -118,7 +120,8 @@ describe('Build Model', () => {
             scmUri,
             scmContext,
             admin: Promise.resolve(adminUser),
-            token: Promise.resolve('foo')
+            token: Promise.resolve('foo'),
+            workflowGraph: WORKFLOWGRAPH_WITH_STAGES
         };
         jobMock = {
             id: jobId,
@@ -133,13 +136,6 @@ describe('Build Model', () => {
             id: 123,
             stageId: 1,
             eventId: 123,
-            workflowGraph: {
-                nodes: [{ name: '~commit' }, { name: 'main' }, { name: 'publish' }],
-                edges: [
-                    { src: '~commit', dest: 'main' },
-                    { src: 'main', dest: 'publish' }
-                ]
-            },
             status: 'SUCCESS'
         };
         stageMock = {
@@ -149,14 +145,7 @@ describe('Build Model', () => {
             jobIds: [1, 2, 3, 4],
             description: 'Deploys canary jobs',
             setup: [222],
-            teardown: [333],
-            workflowGraph: {
-                nodes: [{ name: '~commit' }, { name: 'main' }, { name: 'publish' }],
-                edges: [
-                    { src: '~commit', dest: 'main' },
-                    { src: 'main', dest: 'publish' }
-                ]
-            }
+            teardown: [333]
         };
         scmMock = {
             updateCommitStatus: sinon.stub().resolves(null),
@@ -1817,20 +1806,24 @@ describe('Build Model', () => {
     });
 
     describe('stageBuild', () => {
+        beforeEach(() => {
+            jobMock.name = 'alpha-deploy';
+            jobFactoryMock.get.resolves(jobMock);
+        });
+
         it('has a stageBuild getter', () => {
             stageMock = {};
 
-            jobFactoryMock.get.resolves(jobMock);
-            stageFactoryMock.list.resolves([stageMock]);
+            stageFactoryMock.get.resolves([stageMock]);
             stageBuildFactoryMock.get.resolves(stageBuildMock);
 
             build.getStageBuild().then(() => {
-                assert.calledWith(stageFactoryMock.list, {
+                assert.calledWith(stageFactoryMock.get, {
                     params: { pipelineId },
                     search: { field: 'jobIds', keyword: '%123%' }
                 });
                 assert.calledWith(stageBuildFactoryMock.get, { params: { eventId: 123, stageId: 123 } });
-                assert.calledOnce(stageFactoryMock.list);
+                assert.calledOnce(stageFactoryMock.get);
                 assert.calledOnce(stageBuildFactoryMock.get);
             });
         });
@@ -1866,8 +1859,22 @@ describe('Build Model', () => {
                 });
         });
 
+        it('returns null if stageName is null', () => {
+            pipelineMock.workflowGraph = { nodes: [] };
+            jobMock = {
+                pipeline: Promise.resolve(pipelineMock)
+            };
+            jobFactoryMock.get.resolves(jobMock);
+
+            return build.getStageBuild().then(result => {
+                assert.notCalled(stageFactoryMock.get);
+                assert.notCalled(stageBuildFactoryMock.get);
+                assert.isNull(result);
+            });
+        });
+
         it('rejects if stage is null', () => {
-            stageFactoryMock.list.resolves([]);
+            stageFactoryMock.get.resolves([]);
             jobFactoryMock.get.resolves(jobMock);
             stageBuildFactoryMock.get.resolves(stageBuildMock);
 
@@ -1884,7 +1891,7 @@ describe('Build Model', () => {
 
         it('rejects if stageBuild is null', () => {
             jobFactoryMock.get.resolves(jobMock);
-            stageFactoryMock.list.resolves([stageMock]);
+            stageFactoryMock.get.resolves([stageMock]);
             stageBuildFactoryMock.get.resolves(null);
 
             return build
