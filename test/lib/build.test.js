@@ -131,8 +131,7 @@ describe('Build Model', () => {
         templateMock = {
             id: 8888,
             name: 'docker',
-            namespace: 'sd',
-            version: '1.0.0'
+            namespace: 'sd'
         };
         tokenGen = sinon.stub().returns(token);
         const uF = {
@@ -1179,8 +1178,6 @@ describe('Build Model', () => {
                 tokenGen,
                 pipelineId,
                 isPR: false,
-                prNum: null,
-                template: {},
                 prParentJobId
             };
             expectedUpdateCommitStatusConfig = {
@@ -1229,8 +1226,7 @@ describe('Build Model', () => {
                 id: templateMock.id,
                 fullName: `${templateMock.namespace}/${templateMock.name}`,
                 name: templateMock.name,
-                namespace: templateMock.namespace,
-                version: templateMock.version
+                namespace: templateMock.namespace
             };
 
             return build.start().then(() => {
