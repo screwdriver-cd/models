@@ -167,36 +167,12 @@
     },
     "stages": {
         "canary": {
-            "startFrom": "main",
             "description": "Canary deployment",
-            "jobs": ["main", "publish"],
-            "workflowGraph": {
-                "nodes": [
-                    { "name": "main" },
-                    { "name": "publish" },
-                    { "name": "stage@canary:setup" },
-                    { "name": "stage@canary:teardown" }
-                ],
-                "edges": [
-                    { "src": "main", "dest": "publish" }
-                ]
-            }
+            "jobs": ["main", "publish"]
         },
         "deploy": {
-            "startFrom": "A",
             "description": "Prod deployment",
-            "jobs": ["A", "B"],
-            "workflowGraph": {
-                "nodes": [
-                    { "name": "A" },
-                    { "name": "B" },
-                    { "name": "stage@deploy:setup" },
-                    { "name": "stage@deploy:teardown" }
-                ],
-                "edges": [
-                    { "src": "A", "dest": "B" }
-                ]
-            }
+            "jobs": ["A", "B"]
         }
     }
 }

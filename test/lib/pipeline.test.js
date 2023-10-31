@@ -150,11 +150,9 @@ describe('Pipeline Model', () => {
     const decorateStageMock = stage => {
         const decorated = hoek.clone(stage);
 
-        sinon.stub(decorated, 'update').callsFake(function fakeFn(updatedStage) {
-            return Promise.resolve(updatedStage);
+        sinon.stub(decorated, 'update').callsFake(async () => {
+            return decorated;
         });
-
-        // decorated.update = sinon.stub().res(stage);
 
         return decorated;
     };
@@ -321,29 +319,7 @@ describe('Pipeline Model', () => {
                 name: 'outdated',
                 pipelineId: 123,
                 description: 'Old stage',
-                jobs: [1, 2],
-                workflowGraph: {
-                    edges: [
-                        {
-                            dest: 'publish',
-                            src: 'main'
-                        }
-                    ],
-                    nodes: [
-                        {
-                            name: 'main'
-                        },
-                        {
-                            name: 'publish'
-                        },
-                        {
-                            name: 'stage@outdated:setup'
-                        },
-                        {
-                            name: 'stage@outdated:teardown'
-                        }
-                    ]
-                },
+                jobIds: [1, 2],
                 archived: false,
                 update() {}
             },
@@ -352,29 +328,7 @@ describe('Pipeline Model', () => {
                 name: 'canary',
                 pipelineId: 123,
                 description: 'Canary deployment',
-                jobs: [3, 4],
-                workflowGraph: {
-                    edges: [
-                        {
-                            dest: 'B',
-                            src: 'A'
-                        }
-                    ],
-                    nodes: [
-                        {
-                            name: 'A'
-                        },
-                        {
-                            name: 'B'
-                        },
-                        {
-                            name: 'stage@canary:setup'
-                        },
-                        {
-                            name: 'stage@canary:teardown'
-                        }
-                    ]
-                },
+                jobIds: [3, 4],
                 archived: false,
                 update() {}
             }
@@ -390,7 +344,6 @@ describe('Pipeline Model', () => {
         stageFactoryMock = {
             get: sinon.stub().resolves({ id: 8888, name: 'canary' }),
             list: sinon.stub().resolves(stageMocks),
-            update: sinon.stub().resolves({ id: 8888, name: 'canary' }),
             create: sinon.stub().resolves({ id: 8889, name: 'deploy' })
         };
         buildClusterFactory = {
@@ -942,8 +895,8 @@ describe('Pipeline Model', () => {
                 });
             });
         });
-        // TODO Sagar
-        it.only('stores workflowGraph to pipeline with stage', () => {
+
+        it('stores workflowGraph to pipeline with stage', () => {
             mainMock.permutations[0].requires = ['~pr', '~commit', '~sd@12345:test', 'stage@canary:setup'];
             mainMock.permutations[1].requires = ['~pr', '~commit', '~sd@12345:test', 'stage@canary:setup'];
             mainMock.permutations[2].requires = ['~pr', '~commit', '~sd@12345:test', 'stage@canary:setup'];
@@ -1015,20 +968,6 @@ describe('Pipeline Model', () => {
                     ]
                 }
             });
-            // stageFactoryMock.update.withArgs({ id: 555, archived: true }).resolves({ id: 555, name: 'outdated' });
-            // stageFactoryMock.update
-            //     .withArgs({
-            //         id: 8888,
-            //         jobIds: [1, 2],
-            //         description: 'Canary deployment',
-            //         setup: [5],
-            //         teardown: [6],
-            //         archived: false
-            //     })
-            //     .resolves({
-            //         id: 8888,
-            //         name: 'canary'
-            //     });
 
             return pipeline.sync().then(() => {
                 assert.calledOnce(pipeline.update);
@@ -1044,8 +983,36 @@ describe('Pipeline Model', () => {
                         { src: '~commit', dest: 'stage@canary' }
                     ]
                 });
-
-                // TODO assertion
+                assert.calledWith(stageFactoryMock.create, {
+                    name: 'deploy',
+                    pipelineId: 123,
+                    description: 'Prod deployment',
+                    jobIds: [3, 4],
+                    setup: 7,
+                    teardown: 8
+                });
+                assert.calledOnce(stageMocks[0].update);
+                assert.deepEqual(stageMocks[0], {
+                    id: 555,
+                    name: 'outdated',
+                    pipelineId: 123,
+                    description: 'Old stage',
+                    jobIds: [1, 2],
+                    archived: true,
+                    update: stageMocks[0].update
+                });
+                assert.calledOnce(stageMocks[1].update);
+                assert.deepEqual(stageMocks[1], {
+                    id: 8888,
+                    name: 'canary',
+                    pipelineId: 123,
+                    description: 'Canary deployment',
+                    jobIds: [1, 2],
+                    setup: 5,
+                    teardown: 6,
+                    archived: false,
+                    update: stageMocks[1].update
+                });
             });
         });
 
