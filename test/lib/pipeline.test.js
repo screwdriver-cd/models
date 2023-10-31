@@ -126,68 +126,7 @@ describe('Pipeline Model', () => {
         scmOrganizations: ['screwdriver']
     };
 
-    const stageMocks = [
-        {
-            id: 555,
-            name: 'outdated',
-            pipelineId: 123,
-            description: 'Old stage',
-            jobs: [1, 2],
-            workflowGraph: {
-                edges: [
-                    {
-                        dest: 'publish',
-                        src: 'main'
-                    }
-                ],
-                nodes: [
-                    {
-                        name: 'main'
-                    },
-                    {
-                        name: 'publish'
-                    },
-                    {
-                        name: 'stage@outdated:setup'
-                    },
-                    {
-                        name: 'stage@outdated:teardown'
-                    }
-                ]
-            },
-            archived: false
-        },
-        {
-            id: 8888,
-            name: 'canary',
-            pipelineId: 123,
-            description: 'Canary deployment',
-            jobs: [3, 4],
-            workflowGraph: {
-                edges: [
-                    {
-                        dest: 'B',
-                        src: 'A'
-                    }
-                ],
-                nodes: [
-                    {
-                        name: 'A'
-                    },
-                    {
-                        name: 'B'
-                    },
-                    {
-                        name: 'stage@canary:setup'
-                    },
-                    {
-                        name: 'stage@canary:teardown'
-                    }
-                ]
-            },
-            archived: false
-        }
-    ];
+    let stageMocks;
 
     const decorateJobMock = job => {
         const decorated = hoek.clone(job);
@@ -206,6 +145,24 @@ describe('Pipeline Model', () => {
         }
 
         return decorateJobMock(j);
+    };
+
+    const decorateStageMock = stage => {
+        const decorated = hoek.clone(stage);
+
+        sinon.stub(decorated, 'update').callsFake(async () => {
+            return decorated;
+        });
+
+        return decorated;
+    };
+
+    const getStageMocks = s => {
+        if (Array.isArray(s)) {
+            return s.map(decorateStageMock);
+        }
+
+        return decorateStageMock(s);
     };
 
     before(() => {
@@ -355,6 +312,28 @@ describe('Pipeline Model', () => {
             getReadOnlyInfo: sinon.stub().returns({})
         };
         parserMock = sinon.stub();
+
+        stageMocks = getStageMocks([
+            {
+                id: 555,
+                name: 'outdated',
+                pipelineId: 123,
+                description: 'Old stage',
+                jobIds: [1, 2],
+                archived: false,
+                update() {}
+            },
+            {
+                id: 8888,
+                name: 'canary',
+                pipelineId: 123,
+                description: 'Canary deployment',
+                jobIds: [3, 4],
+                archived: false,
+                update() {}
+            }
+        ]);
+
         pipelineFactoryMock.getExternalJoinFlag.returns(false);
         pipelineFactoryMock.getNotificationsValidationErrFlag.returns(true);
 
@@ -365,7 +344,6 @@ describe('Pipeline Model', () => {
         stageFactoryMock = {
             get: sinon.stub().resolves({ id: 8888, name: 'canary' }),
             list: sinon.stub().resolves(stageMocks),
-            update: sinon.stub().resolves({ id: 8888, name: 'canary' }),
             create: sinon.stub().resolves({ id: 8889, name: 'deploy' })
         };
         buildClusterFactory = {
@@ -990,20 +968,6 @@ describe('Pipeline Model', () => {
                     ]
                 }
             });
-            stageFactoryMock.update.withArgs({ id: 555, archived: true }).resolves({ id: 555, name: 'outdated' });
-            stageFactoryMock.update
-                .withArgs({
-                    id: 8888,
-                    jobIds: [1, 2],
-                    description: 'Canary deployment',
-                    setup: [5],
-                    teardown: [6],
-                    archived: false
-                })
-                .resolves({
-                    id: 8888,
-                    name: 'canary'
-                });
 
             return pipeline.sync().then(() => {
                 assert.calledOnce(pipeline.update);
@@ -1018,6 +982,36 @@ describe('Pipeline Model', () => {
                         { src: '~pr', dest: 'stage@canary' },
                         { src: '~commit', dest: 'stage@canary' }
                     ]
+                });
+                assert.calledWith(stageFactoryMock.create, {
+                    name: 'deploy',
+                    pipelineId: 123,
+                    description: 'Prod deployment',
+                    jobIds: [3, 4],
+                    setup: 7,
+                    teardown: 8
+                });
+                assert.calledOnce(stageMocks[0].update);
+                assert.deepEqual(stageMocks[0], {
+                    id: 555,
+                    name: 'outdated',
+                    pipelineId: 123,
+                    description: 'Old stage',
+                    jobIds: [1, 2],
+                    archived: true,
+                    update: stageMocks[0].update
+                });
+                assert.calledOnce(stageMocks[1].update);
+                assert.deepEqual(stageMocks[1], {
+                    id: 8888,
+                    name: 'canary',
+                    pipelineId: 123,
+                    description: 'Canary deployment',
+                    jobIds: [1, 2],
+                    setup: 5,
+                    teardown: 6,
+                    archived: false,
+                    update: stageMocks[1].update
                 });
             });
         });
