@@ -971,18 +971,7 @@ describe('Pipeline Model', () => {
 
             return pipeline.sync().then(() => {
                 assert.calledOnce(pipeline.update);
-                assert.deepEqual(pipeline.workflowGraph, {
-                    nodes: [
-                        { name: '~pr' },
-                        { name: '~commit' },
-                        { name: 'stage@canary', id: 8888, type: 'stage' },
-                        { name: 'stage@deploy', id: 8889, type: 'stage' }
-                    ],
-                    edges: [
-                        { src: '~pr', dest: 'stage@canary' },
-                        { src: '~commit', dest: 'stage@canary' }
-                    ]
-                });
+                assert.deepEqual(pipeline.workflowGraph, PARSED_YAML_WITH_STAGES.workflowGraph);
                 assert.calledWith(stageFactoryMock.create, {
                     name: 'deploy',
                     pipelineId: 123,
@@ -1011,6 +1000,7 @@ describe('Pipeline Model', () => {
                     setup: 5,
                     teardown: 6,
                     archived: false,
+                    requires: ['~pr', '~commit', '~sd@12345:test'],
                     update: stageMocks[1].update
                 });
             });
