@@ -17,7 +17,7 @@
                     "NODE_ENV": "test",
                     "NODE_VERSION": "4"
                 },
-                "requires": ["~pr", "~commit", "~sd@12345:test", "stage@canary:setup"]
+                "requires": ["stage@canary:setup"]
             },
             {
                 "image": "node:5",
@@ -35,7 +35,7 @@
                     "NODE_ENV": "test",
                     "NODE_VERSION": "5"
                 },
-                "requires": ["~pr", "~commit", "~sd@12345:test", "stage@canary:setup"]
+                "requires": ["stage@canary:setup"]
             },
             {
                 "image": "node:6",
@@ -53,7 +53,7 @@
                     "NODE_ENV": "test",
                     "NODE_VERSION": "6"
                 },
-                "requires": ["~pr", "~commit", "~sd@12345:test", "stage@canary:setup"]
+                "requires": ["stage@canary:setup"]
             }
         ],
         "publish": [
@@ -112,7 +112,8 @@
                         "name": "announce",
                         "command": "post banner"
                     }
-                ]
+                ],
+                "requires": ["~pr", "~commit", "~sd@12345:test"]
             }
         ],
         "stage@canary:teardown": [
@@ -123,7 +124,8 @@
                         "name": "publish",
                         "command": "publish blog"
                     }
-                ]
+                ],
+                "requires": ["publish"]
             }
         ],
         "stage@deploy:setup": [
@@ -145,7 +147,8 @@
                         "name": "publish",
                         "command": "publish blog"
                     }
-                ]
+                ],
+                "requires": ["B"]
             }
         ]
     },
@@ -154,12 +157,24 @@
         "nodes": [
             { "name": "~pr" },
             { "name": "~commit" },
-            { "name": "stage@canary" },
-            { "name": "stage@deploy" }
+            { "name": "stage@canary:setup" },
+            { "name": "main" },
+            { "name": "publish" },
+            { "name": "stage@canary:teardown" },
+            { "name": "stage@deploy:setup" },
+            { "name": "A" },
+            { "name": "B" },
+            { "name": "stage@deploy:teardown" }
         ],
         "edges": [
-            { "src": "~pr", "dest": "stage@canary" },
-            { "src": "~commit", "dest": "stage@canary" }
+            { "src": "~pr", "dest": "stage@canary:setup" },
+            { "src": "~commit", "dest": "stage@canary:setup" },
+            { "src": "stage@canary:setup", "dest": "main" },
+            { "src": "main", "dest": "publish" },
+            { "src": "publish", "dest": "stage@canary:teardown" },
+            { "src": "stage@deploy:setup", "dest": "A" },
+            { "src": "A", "dest": "B" },
+            { "src": "B", "dest": "stage@deploy:teardown" }
         ]
     },
     "annotations": {
@@ -168,7 +183,8 @@
     "stages": {
         "canary": {
             "description": "Canary deployment",
-            "jobs": ["main", "publish"]
+            "jobs": ["main", "publish"],
+            "requires": ["~pr", "~commit", "~sd@12345:test"]
         },
         "deploy": {
             "description": "Prod deployment",
