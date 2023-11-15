@@ -69,32 +69,45 @@ describe('PipelineTemplateVersion Factory', () => {
 
     describe('create', async () => {
         const generatedId = 1234135;
+        const generatedVersionId = 2341351;
         let expected;
         let returnValue;
 
         beforeEach(() => {
             expected = {
-                id: generatedId,
+                id: generatedVersionId,
                 name,
                 version
             };
             returnValue = [
                 {
-                    id: generatedId,
+                    id: generatedId + 3,
                     name,
-                    version
+                    version: '2.1.2'
+                },
+                {
+                    id: generatedId + 2,
+                    name,
+                    version: '1.3.5'
+                },
+                {
+                    id: generatedId + 1,
+                    name,
+                    version: '1.3.1'
                 }
             ];
         });
 
         it('creates a pipeline template version given name, version and namespace', async () => {
-            expected.namespace = 'default';
-            templateMetaFactoryMock.get.resolves({
-                latestVersion: '1.3',
+            expected.namespace = namespace;
+            const pipelineTemplateMetaMock = {
+                latestVersion: '2.1.2',
                 name: 'testPipelineTemplateVersion',
-                namespace: 'default',
+                namespace,
                 update: sinon.stub().resolves()
-            });
+            };
+
+            templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
 
             datastore.scan.resolves(returnValue);
             datastore.save.resolves(expected);
@@ -102,7 +115,7 @@ describe('PipelineTemplateVersion Factory', () => {
             const model = await factory.create(
                 {
                     name,
-                    namespace: 'default',
+                    namespace,
                     version
                 },
                 templateMetaFactoryMock
@@ -110,23 +123,29 @@ describe('PipelineTemplateVersion Factory', () => {
 
             assert.calledWith(templateMetaFactoryMock.get, {
                 name,
-                namespace: 'default'
+                namespace
             });
+            assert.calledOnce(datastore.scan);
+            assert.calledOnce(datastore.save);
+            assert.notCalled(templateMetaFactoryMock.create);
+            assert.notCalled(pipelineTemplateMetaMock.update);
             assert.instanceOf(model, PipelineTemplateVersion);
-            assert.equal(model.id, generatedId);
-            assert.equal(model.version, '1.3.1');
+            assert.equal(model.id, generatedVersionId);
+            assert.equal(model.version, '1.3.6');
         });
 
         it('creates a pipeline template meta and version when name and namespace does not exist', async () => {
             templateMetaFactoryMock.get.resolves(null);
-            templateMetaFactoryMock.create.resolves({
+            const pipelineTemplateMetaMock = {
                 pipelineId: 123,
                 name: 'testPipelineTemplateVersion',
                 namespace: 'example',
                 maintainer: 'abc',
-                latestVersion: '1.3',
+                latestVersion: null,
                 update: sinon.stub().resolves()
-            });
+            };
+
+            templateMetaFactoryMock.create.resolves(pipelineTemplateMetaMock);
             datastore.scan.resolves([]);
             datastore.save.resolves(expected);
 
@@ -144,25 +163,26 @@ describe('PipelineTemplateVersion Factory', () => {
                 namespace: 'example'
             });
             assert.calledOnce(templateMetaFactoryMock.create);
+            assert.notCalled(datastore.scan);
+            assert.calledOnce(datastore.save);
+            assert.calledOnce(pipelineTemplateMetaMock.update);
             assert.instanceOf(model, PipelineTemplateVersion);
-            assert.equal(model.id, generatedId);
-            assert.equal(model.version, '1.3.1');
+            assert.equal(model.id, generatedVersionId);
+            assert.equal(model.version, '1.3.0');
         });
 
-        it('creates a pipeline template version given name with namespace exists and version is exact', async () => {
-            templateMetaFactoryMock.get.resolves({
-                latestVersion: '1.3.2',
+        it('creates a pipeline template version given name with namespace exists but version does not exit', async () => {
+            const pipelineTemplateMetaMock = {
+                latestVersion: '2.1.2',
                 name,
                 namespace,
                 update: sinon.stub().resolves()
-            });
+            };
+
+            templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
 
             datastore.save.resolves(expected);
-            datastore.get.resolves({
-                version: '1.3.2',
-                name,
-                namespace
-            });
+            datastore.scan.resolves(returnValue);
             expected.name = name;
             expected.namespace = namespace;
 
@@ -170,7 +190,7 @@ describe('PipelineTemplateVersion Factory', () => {
                 {
                     name,
                     namespace,
-                    version: '1.3.2'
+                    version: '3.1'
                 },
                 templateMetaFactoryMock
             );
@@ -180,9 +200,13 @@ describe('PipelineTemplateVersion Factory', () => {
                 namespace
             });
             assert.notCalled(templateMetaFactoryMock.create);
+            assert.calledOnce(datastore.scan);
+            assert.calledOnce(datastore.save);
+            assert.calledOnce(pipelineTemplateMetaMock.update);
             assert.instanceOf(model, PipelineTemplateVersion);
-            assert.equal(model.id, generatedId);
-            assert.equal(model.version, '1.3.2');
+            assert.equal(model.id, generatedVersionId);
+            assert.equal(model.version, '3.1.0');
+            assert.equal(pipelineTemplateMetaMock.latestVersion, '3.1.0');
         });
     });
 
