@@ -179,6 +179,7 @@ describe('Build Model', () => {
         };
         const stageBuildF = {
             getInstance: sinon.stub().returns(stageBuildFactoryMock)
+        };
         const tF = {
             getInstance: sinon.stub().returns(templateFactoryMock)
         };
