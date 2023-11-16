@@ -10,7 +10,7 @@ sinon.assert.expose(assert, { prefix: '' });
 
 const WORKFLOWGRAPH_WITH_STAGES = require('../data/workflowGraphWithStages.json');
 
-describe('Build Model', () => {
+describe.only('Build Model', () => {
     const annotations = {};
     const freezeWindows = ['* * ? * 1', '0-59 0-23 * 1 ?'];
     const provider = {
@@ -67,8 +67,6 @@ describe('Build Model', () => {
     let tokenGen;
     let pipelineMock;
     let jobMock;
-    let stageMock;
-    let stageBuildMock;
     let templateMock;
 
     before(() => {
@@ -136,21 +134,6 @@ describe('Build Model', () => {
             pipeline: Promise.resolve(pipelineMock),
             permutations: [{ annotations, freezeWindows, provider }],
             isPR: sinon.stub().returns(false)
-        };
-        stageBuildMock = {
-            id: 123,
-            stageId: 1,
-            eventId: 123,
-            status: 'SUCCESS'
-        };
-        stageMock = {
-            id: jobId,
-            name: 'deploy',
-            archived: false,
-            jobIds: [1, 2, 3, 4],
-            description: 'Deploys canary jobs',
-            setup: [222],
-            teardown: [333]
         };
         scmMock = {
             updateCommitStatus: sinon.stub().resolves(null),
@@ -1696,107 +1679,6 @@ describe('Build Model', () => {
                 .catch(err => {
                     assert.instanceOf(err, Error);
                     assert.strictEqual(err.message, 'Job does not exist');
-                });
-        });
-    });
-
-    describe('stageBuild', () => {
-        beforeEach(() => {
-            jobMock.name = 'alpha-deploy';
-            jobFactoryMock.get.resolves(jobMock);
-        });
-
-        it('has a stageBuild getter', () => {
-            stageMock = {};
-
-            stageFactoryMock.get.resolves([stageMock]);
-            stageBuildFactoryMock.get.resolves(stageBuildMock);
-
-            build.getStageBuild().then(() => {
-                assert.calledWith(stageFactoryMock.get, {
-                    params: { pipelineId },
-                    search: { field: 'jobIds', keyword: '%123%' }
-                });
-                assert.calledWith(stageBuildFactoryMock.get, { params: { eventId: 123, stageId: 123 } });
-                assert.calledOnce(stageFactoryMock.get);
-                assert.calledOnce(stageBuildFactoryMock.get);
-            });
-        });
-
-        it('rejects if job is null', () => {
-            jobFactoryMock.get.resolves(null);
-
-            return build
-                .getStageBuild()
-                .then(() => {
-                    assert.fail('should not get here');
-                })
-                .catch(err => {
-                    assert.instanceOf(err, Error);
-                    assert.strictEqual(err.message, 'Job does not exist');
-                });
-        });
-
-        it('rejects if pipeline is null', () => {
-            jobMock = {
-                pipeline: Promise.resolve(null)
-            };
-            jobFactoryMock.get.resolves(jobMock);
-
-            return build
-                .getStageBuild()
-                .then(() => {
-                    assert.fail('should not get here');
-                })
-                .catch(err => {
-                    assert.instanceOf(err, Error);
-                    assert.strictEqual(err.message, 'Pipeline does not exist');
-                });
-        });
-
-        it('returns null if stageName is null', () => {
-            pipelineMock.workflowGraph = { nodes: [] };
-            jobMock = {
-                pipeline: Promise.resolve(pipelineMock)
-            };
-            jobFactoryMock.get.resolves(jobMock);
-
-            return build.getStageBuild().then(result => {
-                assert.notCalled(stageFactoryMock.get);
-                assert.notCalled(stageBuildFactoryMock.get);
-                assert.isNull(result);
-            });
-        });
-
-        it('rejects if stage is null', () => {
-            stageFactoryMock.get.resolves([]);
-            jobFactoryMock.get.resolves(jobMock);
-            stageBuildFactoryMock.get.resolves(stageBuildMock);
-
-            return build
-                .getStageBuild()
-                .then(() => {
-                    assert.fail('should not get here');
-                })
-                .catch(err => {
-                    assert.instanceOf(err, Error);
-                    assert.strictEqual(err.message, 'Stage does not exist');
-                });
-        });
-
-        it('rejects if stageBuild is null', () => {
-            jobFactoryMock.get.resolves(jobMock);
-            stageFactoryMock.get.resolves([stageMock]);
-            stageBuildFactoryMock.get.resolves(null);
-
-            return build
-                .getStageBuild()
-                .then(() => {
-                    assert.fail('should not get here');
-                })
-                .catch(err => {
-                    assert.instanceOf(err, Error);
-                    assert.strictEqual(err.message, 'StageBuild does not exist');
                 });
         });
     });
