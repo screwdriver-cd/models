@@ -6,7 +6,7 @@ const sinon = require('sinon');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('TemplateTag Factory', () => {
-    let PipelineTemplateTagFactory;
+    let JobTemplateTagFactory;
     let datastore;
     let factory;
 
@@ -18,9 +18,9 @@ describe('TemplateTag Factory', () => {
         };
 
         // eslint-disable-next-line global-require
-        PipelineTemplateTagFactory = require('../../lib/pipelineTemplateTagFactory');
+        JobTemplateTagFactory = require('../../lib/jobTemplateTagFactory');
 
-        factory = new PipelineTemplateTagFactory({ datastore });
+        factory = new JobTemplateTagFactory({ datastore });
     });
 
     afterEach(() => {
@@ -31,26 +31,22 @@ describe('TemplateTag Factory', () => {
         it('should get an template type', () => {
             const type = factory.getTemplateType();
 
-            assert.equal(type, 'PIPELINE');
+            assert.equal(type, 'JOB');
         });
     });
 
     describe('getInstance', () => {
         it('should throw when config not supplied', () => {
-            assert.throw(
-                PipelineTemplateTagFactory.getInstance,
-                Error,
-                'No datastore provided to PipelineTemplateTagFactory'
-            );
+            assert.throw(JobTemplateTagFactory.getInstance, Error, 'No datastore provided to JobTemplateTagFactory');
         });
 
         it('should get an instance', () => {
             const config = { datastore };
-            const f1 = PipelineTemplateTagFactory.getInstance(config);
-            const f2 = PipelineTemplateTagFactory.getInstance(config);
+            const f1 = JobTemplateTagFactory.getInstance(config);
+            const f2 = JobTemplateTagFactory.getInstance(config);
 
-            assert.instanceOf(f1, PipelineTemplateTagFactory);
-            assert.instanceOf(f2, PipelineTemplateTagFactory);
+            assert.instanceOf(f1, JobTemplateTagFactory);
+            assert.instanceOf(f2, JobTemplateTagFactory);
 
             assert.equal(f1, f2);
         });

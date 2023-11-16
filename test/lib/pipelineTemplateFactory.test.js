@@ -35,4 +35,24 @@ describe('Pipeline Template Factory', () => {
             assert.equal(type, 'PIPELINE');
         });
     });
+
+    describe('getInstance', () => {
+        it('should throw when config not supplied', () => {
+            assert.throw(
+                PipelineTemplateFactory.getInstance,
+                Error,
+                'No datastore provided to PipelineTemplateFactory'
+            );
+        });
+        it('should get an instance', () => {
+            const config = { datastore };
+            const f1 = PipelineTemplateFactory.getInstance(config);
+            const f2 = PipelineTemplateFactory.getInstance(config);
+
+            assert.instanceOf(f1, PipelineTemplateFactory);
+            assert.instanceOf(f2, PipelineTemplateFactory);
+
+            assert.equal(f1, f2);
+        });
+    });
 });
