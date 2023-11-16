@@ -10,7 +10,7 @@ sinon.assert.expose(assert, { prefix: '' });
 
 const WORKFLOWGRAPH_WITH_STAGES = require('../data/workflowGraphWithStages.json');
 
-describe.only('Build Model', () => {
+describe('Build Model', () => {
     const annotations = {};
     const freezeWindows = ['* * ? * 1', '0-59 0-23 * 1 ?'];
     const provider = {

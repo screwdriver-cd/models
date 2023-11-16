@@ -104,8 +104,7 @@ describe('Event Model', () => {
             const expectedStageConfig = {
                 params: {
                     pipelineId: 12345,
-                    name: ['alpha', 'beta', 'gamma'],
-                    archived: false
+                    name: ['alpha', 'beta', 'gamma']
                 }
             };
             const expectedStageBuildConfig = {
@@ -117,8 +116,7 @@ describe('Event Model', () => {
             const expectedStageBuilds = [
                 {
                     id: 8888,
-                    stageId: 555,
-                    stageName: 'deploy'
+                    stageId: 555
                 }
             ];
 
