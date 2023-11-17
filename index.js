@@ -11,6 +11,7 @@ const JobFactory = require('./lib/jobFactory');
 const PipelineFactory = require('./lib/pipelineFactory');
 const SecretFactory = require('./lib/secretFactory');
 const StageFactory = require('./lib/stageFactory');
+const StageBuildFactory = require('./lib/stageBuildFactory');
 const StepFactory = require('./lib/stepFactory');
 const TemplateFactory = require('./lib/templateFactory');
 const TemplateTagFactory = require('./lib/templateTagFactory');
@@ -35,6 +36,7 @@ module.exports = {
     PipelineFactory,
     SecretFactory,
     StageFactory,
+    StageBuildFactory,
     StepFactory,
     TemplateFactory,
     TemplateTagFactory,
