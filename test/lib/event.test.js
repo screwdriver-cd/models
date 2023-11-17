@@ -101,16 +101,9 @@ describe('Event Model', () => {
 
     describe('getStageBuilds', () => {
         it('resolves with stage builds', () => {
-            const expectedStageConfig = {
-                params: {
-                    pipelineId: 12345,
-                    name: ['alpha', 'beta', 'gamma']
-                }
-            };
             const expectedStageBuildConfig = {
                 params: {
-                    eventId: 1234,
-                    stageId: [555]
+                    eventId: 1234
                 }
             };
             const expectedStageBuilds = [
@@ -121,7 +114,6 @@ describe('Event Model', () => {
             ];
 
             return event.getStageBuilds().then(result => {
-                assert.calledWith(stageFactoryMock.list, expectedStageConfig);
                 assert.calledWith(stageBuildFactoryMock.list, expectedStageBuildConfig);
                 assert.deepEqual(result, expectedStageBuilds);
             });
