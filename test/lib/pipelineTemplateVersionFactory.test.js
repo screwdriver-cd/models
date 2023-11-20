@@ -210,6 +210,88 @@ describe('PipelineTemplateVersion Factory', () => {
         });
     });
 
+    describe('list', async () => {
+        const templateId = 1234135;
+        const generatedVersionId = 2341351;
+        let returnValue;
+
+        beforeEach(() => {
+            returnValue = [
+                {
+                    id: generatedVersionId + 3,
+                    name,
+                    version: '2.1.2',
+                    templateId
+                },
+                {
+                    id: generatedVersionId + 2,
+                    name,
+                    version: '1.3.5',
+                    templateId
+                },
+                {
+                    id: generatedVersionId + 1,
+                    name,
+                    version: '1.3.1',
+                    templateId
+                }
+            ];
+        });
+        it('list all pipeline template versions for given pipeline template id', async () => {
+            const pipelineTemplateMetaMock = {
+                name,
+                namespace,
+                id: templateId
+            };
+
+            templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
+            datastore.scan.resolves(returnValue);
+
+            const models = await factory.list(
+                {
+                    templateId
+                },
+                templateMetaFactoryMock
+            );
+
+            assert.calledWith(templateMetaFactoryMock.get, {
+                id: templateId
+            });
+            assert.calledOnce(datastore.scan);
+            models.forEach(model => {
+                assert.instanceOf(model, PipelineTemplateVersion);
+            });
+        });
+
+        it('list all pipeline template versions for given pipeline name and namespace', async () => {
+            const pipelineTemplateMetaMock = {
+                name,
+                namespace,
+                id: templateId
+            };
+
+            templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
+            datastore.scan.resolves(returnValue);
+
+            const models = await factory.list(
+                {
+                    name,
+                    namespace
+                },
+                templateMetaFactoryMock
+            );
+
+            assert.calledWith(templateMetaFactoryMock.get, {
+                name,
+                namespace
+            });
+            assert.calledOnce(datastore.scan);
+            models.forEach(model => {
+                assert.instanceOf(model, PipelineTemplateVersion);
+            });
+        });
+    });
+
     describe('getInstance', () => {
         let config;
 
