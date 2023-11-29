@@ -8,6 +8,8 @@ const { SCM_STATE_MAP } = require('screwdriver-data-schema').plugins.scm;
 
 sinon.assert.expose(assert, { prefix: '' });
 
+const WORKFLOWGRAPH_WITH_STAGES = require('../data/workflowGraphWithStages.json');
+
 describe('Build Model', () => {
     const annotations = {};
     const freezeWindows = ['* * ? * 1', '0-59 0-23 * 1 ?'];
@@ -57,6 +59,8 @@ describe('Build Model', () => {
     let userFactoryMock;
     let jobFactoryMock;
     let pipelineFactoryMock;
+    let stageFactoryMock;
+    let stageBuildFactoryMock;
     let stepFactoryMock;
     let templateFactoryMock;
     let scmMock;
@@ -100,6 +104,12 @@ describe('Build Model', () => {
         pipelineFactoryMock = {
             get: sinon.stub().resolves(null)
         };
+        stageFactoryMock = {
+            get: sinon.stub().resolves([])
+        };
+        stageBuildFactoryMock = {
+            get: sinon.stub().resolves({})
+        };
         stepFactoryMock = {
             list: sinon.stub().resolves([]),
             removeSteps: sinon.stub().resolves([])
@@ -113,7 +123,8 @@ describe('Build Model', () => {
             scmUri,
             scmContext,
             admin: Promise.resolve(adminUser),
-            token: Promise.resolve('foo')
+            token: Promise.resolve('foo'),
+            workflowGraph: WORKFLOWGRAPH_WITH_STAGES
         };
         jobMock = {
             id: jobId,
@@ -146,6 +157,12 @@ describe('Build Model', () => {
         const sF = {
             getInstance: sinon.stub().returns(stepFactoryMock)
         };
+        const stageF = {
+            getInstance: sinon.stub().returns(stageFactoryMock)
+        };
+        const stageBuildF = {
+            getInstance: sinon.stub().returns(stageBuildFactoryMock)
+        };
         const tF = {
             getInstance: sinon.stub().returns(templateFactoryMock)
         };
@@ -154,6 +171,8 @@ describe('Build Model', () => {
         mockery.registerMock('./userFactory', uF);
         mockery.registerMock('./jobFactory', jF);
         mockery.registerMock('./stepFactory', sF);
+        mockery.registerMock('./stageFactory', stageF);
+        mockery.registerMock('./stageBuildFactory', stageBuildF);
         mockery.registerMock('./templateFactory', tF);
         mockery.registerMock('screwdriver-hashr', hashaMock);
 

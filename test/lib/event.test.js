@@ -6,14 +6,19 @@ const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
+const WORKFLOWGRAPH_WITH_STAGES = require('../data/workflowGraphWithStages.json');
 
 describe('Event Model', () => {
     let buildFactoryMock;
+    let stageFactoryMock;
+    let stageBuildFactoryMock;
     let EventModel;
     let datastore;
     let event;
     let BaseModel;
     let createConfig;
+    let mockStages;
+    let mockStageBuild;
 
     before(() => {
         mockery.enable({
@@ -23,13 +28,42 @@ describe('Event Model', () => {
     });
 
     beforeEach(() => {
+        mockStages = [
+            {
+                id: 555,
+                pipelineId: 123345,
+                name: 'deploy',
+                jobIds: [1, 2, 3, 4],
+                description: 'Deploys canary jobs',
+                setup: [222],
+                teardown: [333]
+            }
+        ];
+        mockStageBuild = {
+            id: 8888,
+            stageId: 555
+        };
         datastore = {};
         buildFactoryMock = {
             list: sinon.stub().resolves(null)
         };
+        stageFactoryMock = {
+            list: sinon.stub().resolves(mockStages)
+        };
+        stageBuildFactoryMock = {
+            list: sinon.stub().resolves([mockStageBuild])
+        };
 
         mockery.registerMock('./buildFactory', {
             getInstance: sinon.stub().returns(buildFactoryMock)
+        });
+
+        mockery.registerMock('./stageFactory', {
+            getInstance: sinon.stub().returns(stageFactoryMock)
+        });
+
+        mockery.registerMock('./stageBuildFactory', {
+            getInstance: sinon.stub().returns(stageBuildFactoryMock)
         });
 
         // eslint-disable-next-line global-require
@@ -40,6 +74,8 @@ describe('Event Model', () => {
 
         createConfig = {
             id: 1234,
+            pipelineId: 12345,
+            workflowGraph: WORKFLOWGRAPH_WITH_STAGES,
             datastore
         };
         event = new EventModel(createConfig);
@@ -60,6 +96,27 @@ describe('Event Model', () => {
         assert.instanceOf(event, BaseModel);
         schema.models.event.allKeys.forEach(key => {
             assert.strictEqual(event[key], createConfig[key]);
+        });
+    });
+
+    describe('getStageBuilds', () => {
+        it('resolves with stage builds', () => {
+            const expectedStageBuildConfig = {
+                params: {
+                    eventId: 1234
+                }
+            };
+            const expectedStageBuilds = [
+                {
+                    id: 8888,
+                    stageId: 555
+                }
+            ];
+
+            return event.getStageBuilds().then(result => {
+                assert.calledWith(stageBuildFactoryMock.list, expectedStageBuildConfig);
+                assert.deepEqual(result, expectedStageBuilds);
+            });
         });
     });
 

@@ -17,6 +17,7 @@ const SHARED_PROVIDER_YAML = '../data/sharedProvider.yaml';
 const PROVIDER_YAML = '../data/provider.yaml';
 const PARSED_YAML_WITH_PROVIDER = require('../data/parserWithProvider.json');
 const PARSED_YAML = require('../data/parser.json');
+const PARSED_YAML_WITH_STAGES = require('../data/parserWithStages.json');
 const PARSED_YAML_WITH_REQUIRES = require('../data/parserWithRequires.json');
 const PARSED_YAML_PR = require('../data/parserWithWorkflowGraphPR.json');
 const PARSED_YAML_WITH_ERRORS = require('../data/parserWithErrors.json');
@@ -75,6 +76,7 @@ describe('Pipeline Model', () => {
     let configPipelineMock;
     let childPipelineMock;
     let buildClusterFactory;
+    let stageFactoryMock;
 
     const dateNow = 1111111111;
     const scmUri = 'github.com:12345:master';
@@ -124,6 +126,8 @@ describe('Pipeline Model', () => {
         scmOrganizations: ['screwdriver']
     };
 
+    let stageMocks;
+
     const decorateJobMock = job => {
         const decorated = hoek.clone(job);
 
@@ -141,6 +145,24 @@ describe('Pipeline Model', () => {
         }
 
         return decorateJobMock(j);
+    };
+
+    const decorateStageMock = stage => {
+        const decorated = hoek.clone(stage);
+
+        sinon.stub(decorated, 'update').callsFake(async () => {
+            return decorated;
+        });
+
+        return decorated;
+    };
+
+    const getStageMocks = s => {
+        if (Array.isArray(s)) {
+            return s.map(decorateStageMock);
+        }
+
+        return decorateStageMock(s);
     };
 
     before(() => {
@@ -290,12 +312,39 @@ describe('Pipeline Model', () => {
             getReadOnlyInfo: sinon.stub().returns({})
         };
         parserMock = sinon.stub();
+
+        stageMocks = getStageMocks([
+            {
+                id: 555,
+                name: 'outdated',
+                pipelineId: 123,
+                description: 'Old stage',
+                jobIds: [1, 2],
+                archived: false,
+                update() {}
+            },
+            {
+                id: 8888,
+                name: 'canary',
+                pipelineId: 123,
+                description: 'Canary deployment',
+                jobIds: [3, 4],
+                archived: false,
+                update() {}
+            }
+        ]);
+
         pipelineFactoryMock.getExternalJoinFlag.returns(false);
         pipelineFactoryMock.getNotificationsValidationErrFlag.returns(true);
 
         buildClusterFactoryMock = {
             list: sinon.stub().resolves([]),
             get: sinon.stub().resolves(externalBuildCluster)
+        };
+        stageFactoryMock = {
+            get: sinon.stub().resolves({ id: 8888, name: 'canary' }),
+            list: sinon.stub().resolves(stageMocks),
+            create: sinon.stub().resolves({ id: 8889, name: 'deploy' })
         };
         buildClusterFactory = {
             getInstance: sinon.stub().returns(buildClusterFactoryMock)
@@ -334,6 +383,9 @@ describe('Pipeline Model', () => {
             getInstance: sinon.stub().returns(tokenFactoryMock)
         });
         mockery.registerMock('./buildClusterFactory', buildClusterFactory);
+        mockery.registerMock('./stageFactory', {
+            getInstance: sinon.stub().returns(stageFactoryMock)
+        });
 
         // eslint-disable-next-line global-require
         PipelineModel = require('../../lib/pipeline');
@@ -469,10 +521,22 @@ describe('Pipeline Model', () => {
     describe('sync', () => {
         let publishMock;
         let mainMock;
+        let aMock;
+        let bMock;
         let externalMock;
         let mainModelMock;
         let publishModelMock;
+        let setupModelMock;
+        let teardownModelMock;
+        let aModelMock;
+        let bModelMock;
+        let setupModelMock2;
+        let teardownModelMock2;
         let externalModelMock;
+        let stageSetupMock;
+        let stageTeardownMock;
+        let stageSetupMock2;
+        let stageTeardownMock2;
         let parserConfig;
 
         beforeEach(() => {
@@ -564,6 +628,48 @@ describe('Pipeline Model', () => {
                 name: 'publish',
                 state: 'ENABLED'
             };
+            setupModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 5,
+                name: 'stage@canary:setup',
+                state: 'ENABLED'
+            };
+            teardownModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 6,
+                name: 'stage@canary:teardown',
+                state: 'ENABLED'
+            };
+            aModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 3,
+                name: 'A',
+                state: 'ENABLED'
+            };
+            bModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 4,
+                name: 'B',
+                state: 'ENABLED'
+            };
+            setupModelMock2 = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 7,
+                name: 'stage@deploy:setup',
+                state: 'ENABLED'
+            };
+            teardownModelMock2 = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 8,
+                name: 'stage@deploy:teardown',
+                state: 'ENABLED'
+            };
             externalModelMock = {
                 isPR: sinon.stub().returns(false),
                 update: sinon.stub(),
@@ -617,6 +723,28 @@ describe('Pipeline Model', () => {
                     }
                 ]
             };
+            aMock = {
+                pipelineId: testId,
+                name: 'a',
+                permutations: [
+                    {
+                        commands: [{ command: 'echo hi', name: 'echo' }],
+                        environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
+                        image: 'node:4'
+                    }
+                ]
+            };
+            bMock = {
+                pipelineId: testId,
+                name: 'b',
+                permutations: [
+                    {
+                        commands: [{ command: 'echo bye', name: 'echo' }],
+                        environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
+                        image: 'node:4'
+                    }
+                ]
+            };
             externalMock = {
                 pipelineId: testId,
                 name: 'main',
@@ -628,6 +756,46 @@ describe('Pipeline Model', () => {
                             { command: 'git push origin --tags', name: 'tag' }
                         ],
                         environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
+                        image: 'node:4'
+                    }
+                ]
+            };
+            stageSetupMock = {
+                pipelineId: testId,
+                name: 'stage@canary:setup',
+                permutations: [
+                    {
+                        commands: [{ name: 'announce', command: 'post banner' }],
+                        image: 'node:4'
+                    }
+                ]
+            };
+            stageTeardownMock = {
+                pipelineId: testId,
+                name: 'stage@canary:teardown',
+                permutations: [
+                    {
+                        commands: [{ name: 'publish', command: 'publish blog' }],
+                        image: 'node:4'
+                    }
+                ]
+            };
+            stageSetupMock2 = {
+                pipelineId: testId,
+                name: 'stage@deploy:setup',
+                permutations: [
+                    {
+                        commands: [{ name: 'announce', command: 'post banner' }],
+                        image: 'node:4'
+                    }
+                ]
+            };
+            stageTeardownMock2 = {
+                pipelineId: testId,
+                name: 'stage@deploy:teardown',
+                permutations: [
+                    {
+                        commands: [{ name: 'publish', command: 'publish blog' }],
                         image: 'node:4'
                     }
                 ]
@@ -724,6 +892,116 @@ describe('Pipeline Model', () => {
                         { src: 'main', dest: 'publish' },
                         { src: 'publish', dest: 'sd@123:main' }
                     ]
+                });
+            });
+        });
+
+        it('stores workflowGraph to pipeline with stage', () => {
+            mainMock.permutations[0].requires = ['~pr', '~commit', '~sd@12345:test', 'stage@canary:setup'];
+            mainMock.permutations[1].requires = ['~pr', '~commit', '~sd@12345:test', 'stage@canary:setup'];
+            mainMock.permutations[2].requires = ['~pr', '~commit', '~sd@12345:test', 'stage@canary:setup'];
+            aMock.permutations[0].requires = ['stage@deploy:setup'];
+            mainModelMock.update.resolves(mainModelMock);
+            publishModelMock.update.resolves(publishModelMock);
+            setupModelMock.update.resolves(setupModelMock);
+            teardownModelMock.update.resolves(teardownModelMock);
+            aModelMock.update.resolves(aModelMock);
+            bModelMock.update.resolves(bModelMock);
+            setupModelMock2.update.resolves(setupModelMock2);
+            teardownModelMock2.update.resolves(teardownModelMock2);
+            publishMock.permutations[0].requires = ['main'];
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML_WITH_STAGES);
+            jobs = [
+                mainModelMock,
+                publishModelMock,
+                aModelMock,
+                bModelMock,
+                setupModelMock,
+                teardownModelMock,
+                setupModelMock2,
+                teardownModelMock2
+            ];
+            sinon.spy(pipeline, 'update');
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainModelMock);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishModelMock);
+            jobFactoryMock.create.withArgs(stageSetupMock).resolves({
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 50,
+                name: 'stage@canary:setup',
+                state: 'ENABLED'
+            });
+            jobFactoryMock.create.withArgs(stageTeardownMock).resolves({
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 51,
+                name: 'stage@canary:teardown',
+                state: 'ENABLED'
+            });
+            jobFactoryMock.create.withArgs(aMock).resolves(aModelMock);
+            jobFactoryMock.create.withArgs(bMock).resolves(bModelMock);
+            jobFactoryMock.create.withArgs(stageSetupMock2).resolves({
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 50,
+                name: 'stage@deploy:setup',
+                state: 'ENABLED'
+            });
+            jobFactoryMock.create.withArgs(stageTeardownMock2).resolves({
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 51,
+                name: 'stage@deploy:teardown',
+                state: 'ENABLED'
+            });
+            pipelineFactoryMock.get.resolves({
+                id: testId,
+                update: sinon.stub().resolves(null),
+                remove: sinon.stub().resolves(null),
+                workflowGraph: {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: 'main', id: 3 },
+                        { name: 'stage@canary', stageId: 30 }
+                    ]
+                }
+            });
+
+            return pipeline.sync().then(() => {
+                assert.calledOnce(pipeline.update);
+                assert.deepEqual(pipeline.workflowGraph, PARSED_YAML_WITH_STAGES.workflowGraph);
+                assert.calledWith(stageFactoryMock.create, {
+                    name: 'deploy',
+                    pipelineId: 123,
+                    description: 'Prod deployment',
+                    jobIds: [3, 4],
+                    setup: 7,
+                    teardown: 8
+                });
+                assert.calledOnce(stageMocks[0].update);
+                assert.deepEqual(stageMocks[0], {
+                    id: 555,
+                    name: 'outdated',
+                    pipelineId: 123,
+                    description: 'Old stage',
+                    jobIds: [1, 2],
+                    archived: true,
+                    update: stageMocks[0].update
+                });
+                assert.calledOnce(stageMocks[1].update);
+                assert.deepEqual(stageMocks[1], {
+                    id: 8888,
+                    name: 'canary',
+                    pipelineId: 123,
+                    description: 'Canary deployment',
+                    jobIds: [1, 2],
+                    setup: 5,
+                    teardown: 6,
+                    archived: false,
+                    requires: ['~pr', '~commit', '~sd@12345:test'],
+                    update: stageMocks[1].update
                 });
             });
         });
