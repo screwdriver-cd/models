@@ -237,31 +237,6 @@ describe('PipelineTemplateVersion Factory', () => {
                 }
             ];
         });
-        it('list all pipeline template versions for given pipeline template id', async () => {
-            const pipelineTemplateMetaMock = {
-                name,
-                namespace,
-                id: templateId
-            };
-
-            templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
-            datastore.scan.resolves(returnValue);
-
-            const models = await factory.list(
-                {
-                    templateId
-                },
-                templateMetaFactoryMock
-            );
-
-            assert.calledWith(templateMetaFactoryMock.get, {
-                id: templateId
-            });
-            assert.calledOnce(datastore.scan);
-            models.forEach(model => {
-                assert.instanceOf(model, PipelineTemplateVersion);
-            });
-        });
 
         it('list all pipeline template versions for given pipeline name and namespace', async () => {
             const pipelineTemplateMetaMock = {
@@ -275,15 +250,19 @@ describe('PipelineTemplateVersion Factory', () => {
 
             const models = await factory.list(
                 {
-                    name,
-                    namespace
+                    params: {
+                        name,
+                        namespace
+                    }
                 },
                 templateMetaFactoryMock
             );
 
             assert.calledWith(templateMetaFactoryMock.get, {
-                name,
-                namespace
+                params: {
+                    name,
+                    namespace
+                }
             });
             assert.calledOnce(datastore.scan);
             models.forEach(model => {
