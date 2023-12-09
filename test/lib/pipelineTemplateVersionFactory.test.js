@@ -259,10 +259,8 @@ describe('PipelineTemplateVersion Factory', () => {
             );
 
             assert.calledWith(templateMetaFactoryMock.get, {
-                params: {
-                    name,
-                    namespace
-                }
+                name,
+                namespace
             });
             assert.calledOnce(datastore.scan);
             models.forEach(model => {
