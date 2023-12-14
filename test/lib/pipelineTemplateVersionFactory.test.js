@@ -20,6 +20,7 @@ describe('PipelineTemplateVersion Factory', () => {
     let datastore;
     let factory;
     let PipelineTemplateVersion;
+    let PipelineTemplateMeta;
     let templateMetaFactoryMock;
 
     before(() => {
@@ -43,6 +44,8 @@ describe('PipelineTemplateVersion Factory', () => {
 
         // eslint-disable-next-line global-require
         PipelineTemplateVersion = require('../../lib/pipelineTemplateVersion');
+        // eslint-disable-next-line global-require
+        PipelineTemplateMeta = require('../../lib/pipelineTemplate');
         // eslint-disable-next-line global-require
         PipelineTemplateVersionFactory = require('../../lib/pipelineTemplateVersionFactory');
 
@@ -266,6 +269,175 @@ describe('PipelineTemplateVersion Factory', () => {
             models.forEach(model => {
                 assert.instanceOf(model, PipelineTemplateVersion);
             });
+        });
+    });
+
+    describe('get', async () => {
+        const templateId = 1234135;
+        const generatedVersionId = 2341351;
+        let returnValue;
+
+        beforeEach(() => {
+            returnValue = {
+                id: generatedVersionId + 3,
+                name,
+                version: '2.1.2',
+                templateId
+            };
+        });
+
+        it('gets a pipeline template version given name, version and namespace', async () => {
+            const pipelineTemplateMetaMock = {
+                name,
+                namespace,
+                id: templateId
+            };
+
+            templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
+            datastore.get.resolves(returnValue);
+
+            const model = await factory.get(
+                {
+                    name,
+                    namespace,
+                    version
+                },
+                templateMetaFactoryMock
+            );
+
+            assert.calledWith(templateMetaFactoryMock.get, {
+                name,
+                namespace
+            });
+            assert.calledOnce(datastore.get);
+            assert.instanceOf(model, PipelineTemplateVersion);
+        });
+
+        it('gets a pipeline template version given templateId', async () => {
+            const pipelineTemplateMetaMock = {
+                name,
+                namespace,
+                id: templateId
+            };
+
+            templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
+            datastore.get.resolves(returnValue);
+
+            const model = await factory.get(
+                {
+                    templateId
+                },
+                templateMetaFactoryMock
+            );
+
+            assert.notCalled(templateMetaFactoryMock.get);
+            assert.calledOnce(datastore.get);
+            assert.instanceOf(model, PipelineTemplateVersion);
+        });
+
+        it('Returns null if pipeline template does not exist', async () => {
+            templateMetaFactoryMock.get.resolves(null);
+
+            const model = await factory.get(
+                {
+                    name,
+                    namespace
+                },
+                templateMetaFactoryMock
+            );
+
+            assert.calledOnce(templateMetaFactoryMock.get);
+            assert.notCalled(datastore.get);
+            assert.isNull(model);
+        });
+    });
+
+    describe('getWithMetadata', async () => {
+        const templateId = 1234135;
+        const generatedVersionId = 2341351;
+        let returnValue;
+        const hasAllProperties = (obj, class1, class2) => {
+            const allProps = Object.getOwnPropertyNames(class1.prototype).concat(
+                Object.getOwnPropertyNames(class2.prototype)
+            );
+
+            return allProps.every(prop => prop in obj);
+        };
+
+        beforeEach(() => {
+            returnValue = {
+                id: generatedVersionId + 3,
+                name,
+                version: '2.1.2',
+                templateId
+            };
+        });
+
+        it('gets a pipeline template version and meta given name, version and namespace', async () => {
+            const pipelineTemplateMetaMock = {
+                name,
+                namespace,
+                id: templateId
+            };
+
+            templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
+            datastore.get.resolves(returnValue);
+
+            const model = await factory.getWithMetadata(
+                {
+                    name,
+                    namespace,
+                    version
+                },
+                templateMetaFactoryMock
+            );
+
+            assert.calledWith(templateMetaFactoryMock.get, {
+                name,
+                namespace
+            });
+            assert.calledOnce(datastore.get);
+            assert.isTrue(hasAllProperties(model, PipelineTemplateVersion, PipelineTemplateMeta));
+        });
+
+        it('gets a pipeline template version and meta given templateId', async () => {
+            const pipelineTemplateMetaMock = {
+                name,
+                namespace,
+                id: templateId
+            };
+
+            templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
+            datastore.get.resolves(returnValue);
+
+            const model = await factory.getWithMetadata(
+                {
+                    templateId
+                },
+                templateMetaFactoryMock
+            );
+
+            assert.calledWith(templateMetaFactoryMock.get, {
+                id: templateId
+            });
+            assert.calledOnce(datastore.get);
+            assert.isTrue(hasAllProperties(model, PipelineTemplateVersion, PipelineTemplateMeta));
+        });
+
+        it('Returns null if pipeline template does not exist', async () => {
+            templateMetaFactoryMock.get.resolves(null);
+
+            const model = await factory.get(
+                {
+                    name,
+                    namespace
+                },
+                templateMetaFactoryMock
+            );
+
+            assert.calledOnce(templateMetaFactoryMock.get);
+            assert.notCalled(datastore.get);
+            assert.isNull(model);
         });
     });
 

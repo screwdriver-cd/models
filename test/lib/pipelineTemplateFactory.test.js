@@ -42,6 +42,62 @@ describe('Pipeline Template Factory', () => {
         });
     });
 
+    describe('create', async () => {
+        let returnValue;
+        const generatedId = 2341351;
+
+        beforeEach(() => {
+            returnValue = [
+                {
+                    id: generatedId + 3,
+                    name,
+                    namespace,
+                    latestVersion: '2.1.2',
+                    trustedSinceVersion: '2.1.0',
+                    pipelineId
+                },
+                {
+                    id: generatedId + 2,
+                    name,
+                    namespace,
+                    latestVersion: '3.1.2',
+                    trustedSinceVersion: '2.0.0',
+                    pipelineId
+                },
+                {
+                    id: generatedId + 1,
+                    name,
+                    namespace,
+                    latestVersion: '1.1.2',
+                    trustedSinceVersion: '1.1.2',
+                    pipelineId
+                }
+            ];
+        });
+
+        it('should create a pipeline template', async () => {
+            datastore.scan.resolves(returnValue);
+            datastore.save.resolves(returnValue[0]);
+
+            const res = await factory.create({
+                pipelineId,
+                name,
+                namespace
+            });
+
+            assert.calledWith(datastore.save, {
+                table: 'templateMeta',
+                params: {
+                    pipelineId,
+                    name,
+                    namespace,
+                    templateType: 'PIPELINE'
+                }
+            });
+            assert.instanceOf(res, PipelineTemplate);
+        });
+    });
+
     describe('list', async () => {
         let returnValue;
         const generatedId = 2341351;
@@ -74,6 +130,7 @@ describe('Pipeline Template Factory', () => {
                 }
             ];
         });
+
         it('should list all pipeline templates', async () => {
             datastore.scan.resolves(returnValue);
             const params = {
@@ -92,6 +149,52 @@ describe('Pipeline Template Factory', () => {
                 assert.instanceOf(model, PipelineTemplate);
             });
             assert.equal(res.length, 3);
+        });
+    });
+
+    describe('get', () => {
+        const templateId = 1234135;
+        const generatedVersionId = 2341351;
+        let returnValue;
+
+        beforeEach(() => {
+            returnValue = {
+                id: generatedVersionId + 3,
+                name,
+                namespace,
+                latestVersion: '2.1.2',
+                trustedSinceVersion: '2.1.0',
+                pipelineId
+            };
+        });
+
+        it('should get a pipeline template by templateId', async () => {
+            datastore.get.resolves(returnValue);
+
+            const model = await factory.get({
+                id: templateId
+            });
+
+            assert.calledWith(datastore.get, {
+                table: 'templateMeta',
+                params: { id: 1234135 }
+            });
+            assert.instanceOf(model, PipelineTemplate);
+        });
+
+        it('should get a pipeline template by name and namespace', async () => {
+            datastore.get.resolves(returnValue);
+
+            const model = await factory.get({
+                name,
+                namespace
+            });
+
+            assert.calledWith(datastore.get, {
+                table: 'templateMeta',
+                params: { name, namespace, templateType: 'PIPELINE' }
+            });
+            assert.instanceOf(model, PipelineTemplate);
         });
     });
 
