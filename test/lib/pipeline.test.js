@@ -94,6 +94,7 @@ describe('Pipeline Model', () => {
     let mainJob;
     let blahJob;
     let testJob;
+    let templateJob;
     let pr10;
     let pr3;
     let pr3Info;
@@ -182,6 +183,8 @@ describe('Pipeline Model', () => {
         testJob = getJobMocks({
             id: 100,
             name: 'test',
+            description: 'test job',
+            templateId: 5,
             archived: false
         });
 
@@ -1564,7 +1567,7 @@ describe('Pipeline Model', () => {
         });
 
         it('update PR config', () => {
-            jobFactoryMock.list.resolves([mainJob]); // pipeline jobs
+            jobFactoryMock.list.resolves([templateJob]); // pipeline jobs
             jobFactoryMock.getPullRequestJobsForPipelineSync.resolves([prJob]); // pull request jobs
 
             scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
@@ -1600,7 +1603,9 @@ describe('Pipeline Model', () => {
                         }
                     ],
                     pipelineId: testId,
-                    prParentJobId: 100
+                    prParentJobId: 100,
+                    templateId: 5,
+                    description: 'test job'
                 });
                 assert.calledWith(
                     jobFactoryMock.create.secondCall,
@@ -1714,7 +1719,9 @@ describe('Pipeline Model', () => {
                         }
                     ],
                     pipelineId: testId,
-                    prParentJobId: 100
+                    prParentJobId: 100,
+                    templateId: 5,
+                    description: 'test job'
                 });
                 assert.calledWith(
                     jobFactoryMock.create.secondCall,
@@ -1951,7 +1958,9 @@ describe('Pipeline Model', () => {
                     permutations: PARSED_YAML.jobs.main,
                     pipelineId: testId,
                     name: 'PR-2:main',
-                    prParentJobId: 99998
+                    prParentJobId: 99998,
+                    templateId: undefined,
+                    description: undefined
                 });
             });
         });
