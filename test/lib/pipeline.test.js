@@ -182,6 +182,8 @@ describe('Pipeline Model', () => {
         testJob = getJobMocks({
             id: 100,
             name: 'test',
+            description: 'test job',
+            templateId: 5,
             archived: false
         });
 
@@ -1600,7 +1602,9 @@ describe('Pipeline Model', () => {
                         }
                     ],
                     pipelineId: testId,
-                    prParentJobId: 100
+                    prParentJobId: 100,
+                    templateId: 5,
+                    description: 'test job'
                 });
                 assert.calledWith(
                     jobFactoryMock.create.secondCall,
@@ -1714,7 +1718,9 @@ describe('Pipeline Model', () => {
                         }
                     ],
                     pipelineId: testId,
-                    prParentJobId: 100
+                    prParentJobId: 100,
+                    templateId: 5,
+                    description: 'test job'
                 });
                 assert.calledWith(
                     jobFactoryMock.create.secondCall,
@@ -1951,7 +1957,9 @@ describe('Pipeline Model', () => {
                     permutations: PARSED_YAML.jobs.main,
                     pipelineId: testId,
                     name: 'PR-2:main',
-                    prParentJobId: 99998
+                    prParentJobId: 99998,
+                    templateId: undefined,
+                    description: undefined
                 });
             });
         });
