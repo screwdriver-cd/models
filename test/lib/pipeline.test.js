@@ -94,7 +94,6 @@ describe('Pipeline Model', () => {
     let mainJob;
     let blahJob;
     let testJob;
-    let templateJob;
     let pr10;
     let pr3;
     let pr3Info;
@@ -1567,7 +1566,7 @@ describe('Pipeline Model', () => {
         });
 
         it('update PR config', () => {
-            jobFactoryMock.list.resolves([templateJob]); // pipeline jobs
+            jobFactoryMock.list.resolves([mainJob]); // pipeline jobs
             jobFactoryMock.getPullRequestJobsForPipelineSync.resolves([prJob]); // pull request jobs
 
             scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
