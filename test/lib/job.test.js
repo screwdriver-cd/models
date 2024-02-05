@@ -502,6 +502,27 @@ describe('Job Model', () => {
             });
         });
 
+        it('does not start periodic when job is PR', () => {
+            job.state = 'ENABLED';
+            job.permutations = [
+                {
+                    annotations: {
+                        'screwdriver.cd/buildPeriodically': 'H * * * *'
+                    },
+                    provider
+                }
+            ];
+            job.name = 'PR-142:main';
+
+            datastore.update.resolves(null);
+
+            return job.update().then(() => {
+                assert.notCalled(executorMock.stopPeriodic);
+                assert.notCalled(executorMock.startPeriodic);
+                assert.calledOnce(datastore.update);
+            });
+        });
+
         it('removes periodic when new and old settings are undefined and job is disabled', () => {
             const oldJob = { ...job };
 
