@@ -17,6 +17,7 @@ const SHARED_PROVIDER_YAML = '../data/sharedProvider.yaml';
 const PROVIDER_YAML = '../data/provider.yaml';
 const PARSED_YAML_WITH_PROVIDER = require('../data/parserWithProvider.json');
 const PARSED_YAML = require('../data/parser.json');
+const PARSED_YAML_WITH_PRJOB = require('../data/parserWithPRjob.json');
 const PARSED_YAML_WITH_STAGES = require('../data/parserWithStages.json');
 const PARSED_YAML_WITH_REQUIRES = require('../data/parserWithRequires.json');
 const PARSED_YAML_PR = require('../data/parserWithWorkflowGraphPR.json');
@@ -1914,7 +1915,7 @@ describe('Pipeline Model', () => {
             scmMock.getReadOnlyInfo
                 .withArgs({ scmContext: SCM_CONTEXT_GITLAB })
                 .returns({ enabled: true, username: 'sd-buildbot', accessToken: 'tokenRO' });
-            parserMock.withArgs(parserConfig).resolves(PARSED_YAML);
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML_WITH_PRJOB);
             scmMock.getPrInfo.resolves({ ref: 'pulls/1/merge', baseBranch: 'branch' });
             getUserPermissionMocks({ username: 'batman', push: true });
             getUserPermissionMocks({ username: 'robin', push: true });
