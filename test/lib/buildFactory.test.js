@@ -34,11 +34,15 @@ describe('Build Factory', () => {
     let jobFactoryMock;
     let userFactoryMock;
     let stepFactoryMock;
+    let stageFactoryMock;
+    let stageBuildFactoryMock;
     let buildClusterFactoryMock;
     let scmMock;
     let factory;
     let jobFactory;
     let stepFactory;
+    let stageFactory;
+    let stageBuildFactory;
     let buildClusterFactory;
     const apiUri = 'https://notify.com/some/endpoint';
     const tokenGen = sinon.stub();
@@ -121,6 +125,12 @@ describe('Build Factory', () => {
         stepFactoryMock = {
             create: sinon.stub().resolves({})
         };
+        stageFactoryMock = {
+            get: sinon.stub().resolves({})
+        };
+        stageBuildFactoryMock = {
+            create: sinon.stub().resolves({})
+        };
         buildClusterFactoryMock = {
             list: sinon.stub().resolves([]),
             get: sinon.stub().resolves(externalBuildCluster)
@@ -137,6 +147,12 @@ describe('Build Factory', () => {
         stepFactory = {
             getInstance: sinon.stub().returns(stepFactoryMock)
         };
+        stageFactory = {
+            getInstance: sinon.stub().returns(stageFactoryMock)
+        };
+        stageBuildFactory = {
+            getInstance: sinon.stub().returns(stageBuildFactoryMock)
+        };
         buildClusterFactory = {
             getInstance: sinon.stub().returns(buildClusterFactoryMock)
         };
@@ -146,11 +162,11 @@ describe('Build Factory', () => {
         // Fixing mockery issue with duplicate file names
         // by re-registering data-schema with its own implementation
         mockery.registerMock('screwdriver-data-schema', schema);
-
         mockery.registerMock('screwdriver-build-bookend', bookendMock);
-
         mockery.registerMock('./jobFactory', jobFactory);
         mockery.registerMock('./stepFactory', stepFactory);
+        mockery.registerMock('./stageFactory', stageFactory);
+        mockery.registerMock('./stageBuildFactory', stageBuildFactory);
         mockery.registerMock('./userFactory', {
             getInstance: sinon.stub().returns(userFactoryMock)
         });
@@ -340,7 +356,6 @@ describe('Build Factory', () => {
                 image: 'node:4'
             }
         ];
-
         const commit = {
             url: 'foo',
             message: 'bar',
@@ -351,7 +366,6 @@ describe('Build Factory', () => {
                 avatar: 'moreStuff'
             }
         };
-
         const meta = {
             foo: 'bar',
             one: 1
@@ -363,6 +377,7 @@ describe('Build Factory', () => {
         });
 
         let saveConfig;
+        let jobMock;
 
         beforeEach(() => {
             scmMock.getCommitSha.resolves(sha);
@@ -377,10 +392,12 @@ describe('Build Factory', () => {
             });
             sandbox.useFakeTimers(dateNow);
 
-            jobFactoryMock.get.resolves({
-                permutations
-            });
-
+            jobMock = {
+                permutations,
+                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext }),
+                name: 'main'
+            };
+            jobFactoryMock.get.resolves(jobMock);
             saveConfig = {
                 table: 'builds',
                 params: {
@@ -408,12 +425,7 @@ describe('Build Factory', () => {
         it('ignores extraneous parameters', () => {
             const garbage = 'garbageData';
             const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
-                permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
-            };
 
-            jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
             delete saveConfig.params.commit;
 
@@ -433,13 +445,14 @@ describe('Build Factory', () => {
                 });
         });
 
-        it('do not set buildClusterName if multiBuildClusterEnabled is false', () => {
+        it('does not set buildClusterName if multiBuildClusterEnabled is false', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
-                permutations: permutationsWithAnnotations,
-                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext })
-            };
 
+            jobMock = {
+                permutations: permutationsWithAnnotations,
+                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext }),
+                name: 'main'
+            };
             factory.multiBuildClusterEnabled = false;
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
@@ -460,15 +473,10 @@ describe('Build Factory', () => {
                 });
         });
 
-        it('pick from screwdriver build cluster if no annotation passed in', () => {
+        it('picks from Screwdriver build cluster if no annotation passed in', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
-                permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
-            };
 
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
-            jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
             delete saveConfig.params.commit;
             saveConfig.params.buildClusterName = 'sd1';
@@ -488,13 +496,14 @@ describe('Build Factory', () => {
                 });
         });
 
-        it('pick build cluster based on annotations passed in', () => {
+        it('picks build cluster based on annotations passed in', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
-                permutations: permutationsWithAnnotations,
-                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext })
-            };
 
+            jobMock = {
+                permutations: permutationsWithAnnotations,
+                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext }),
+                name: 'main'
+            };
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
@@ -516,9 +525,10 @@ describe('Build Factory', () => {
                 });
         });
 
-        it('pick random screwdriver build cluster if annotation passed in is inactive', () => {
+        it('picks random Screwdriver build cluster if annotation passed in is inactive', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
+
+            jobMock = {
                 permutations: [
                     {
                         annotations: {
@@ -532,9 +542,9 @@ describe('Build Factory', () => {
                         image: 'node:4'
                     }
                 ],
-                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext })
+                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext }),
+                name: 'main'
             };
-
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
@@ -556,9 +566,10 @@ describe('Build Factory', () => {
                 });
         });
 
-        it('pick job build cluster even if pipeline level cluster annotations is passed in', () => {
+        it('picks job build cluster even if pipeline level cluster annotations is passed in', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
+
+            jobMock = {
                 permutations: [
                     {
                         annotations: {
@@ -581,9 +592,9 @@ describe('Build Factory', () => {
                         'screwdriver.cd/buildCluster': 'sd1',
                         'screwdriver.cd/prChain': 'fork'
                     }
-                })
+                }),
+                name: 'main'
             };
-
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
@@ -607,11 +618,12 @@ describe('Build Factory', () => {
 
         it('throws err if the pipeline is unauthorized to use the build cluster', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
-                permutations: permutationsWithAnnotations,
-                pipeline: Promise.resolve({ name: 'test/ui', scmUri, scmRepo, scmContext })
-            };
 
+            jobMock = {
+                permutations: permutationsWithAnnotations,
+                pipeline: Promise.resolve({ name: 'test/ui', scmUri, scmRepo, scmContext }),
+                name: 'main'
+            };
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
@@ -633,13 +645,14 @@ describe('Build Factory', () => {
                 });
         });
 
-        it('pick build cluster based on annotations passed in', () => {
+        it('picks build cluster based on annotations passed in', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
-                permutations: permutationsWithAnnotations,
-                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext })
-            };
 
+            jobMock = {
+                permutations: permutationsWithAnnotations,
+                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext }),
+                name: 'main'
+            };
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
@@ -663,11 +676,12 @@ describe('Build Factory', () => {
 
         it('throws err if the build cluster specified does not exist', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
-                permutations: permutationsWithAnnotations,
-                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext })
-            };
 
+            jobMock = {
+                permutations: permutationsWithAnnotations,
+                pipeline: Promise.resolve({ name: 'screwdriver/ui', scmUri, scmRepo, scmContext }),
+                name: 'main'
+            };
             buildClusterFactoryMock.get.resolves(null);
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
@@ -694,13 +708,13 @@ describe('Build Factory', () => {
 
         it('sets build cluster as providerName.region.executor.accountId if provider config is present', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
-                permutations: permutationsWithProvider,
-                pipeline: Promise.resolve({ name: 'screwdriver-cd/ui', scmUri, scmRepo, scmContext })
-            };
-
             const sdBuildClustersCopy = sdBuildClusters.slice();
 
+            jobMock = {
+                permutations: permutationsWithProvider,
+                pipeline: Promise.resolve({ name: 'screwdriver-cd/ui', scmUri, scmRepo, scmContext }),
+                name: 'main'
+            };
             sdBuildClustersCopy.push({
                 name: 'aws.us-west-2.sls.123456789012',
                 scmContext,
@@ -732,13 +746,13 @@ describe('Build Factory', () => {
         });
         it('throws err if pipeline scmOrganization is not allowed to use buildCluster', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
-                permutations: permutationsWithProvider,
-                pipeline: Promise.resolve({ name: 'screwdriver-cd/ui', scmUri, scmRepo, scmContext })
-            };
-
             const sdBuildClustersCopy = sdBuildClusters.slice();
 
+            jobMock = {
+                permutations: permutationsWithProvider,
+                pipeline: Promise.resolve({ name: 'screwdriver-cd/ui', scmUri, scmRepo, scmContext }),
+                name: 'main'
+            };
             sdBuildClustersCopy.push({
                 name: 'aws.us-west-2.sls.123456789012',
                 scmContext,
@@ -770,13 +784,8 @@ describe('Build Factory', () => {
                     assert.strictEqual(err.message, 'This pipeline is not authorized to use this build cluster.');
                 });
         });
-        it('pick build cluster from default group if buildClusterName not provided', () => {
+        it('picks build cluster from default group if buildClusterName not provided', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
-                permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
-            };
-
             const sdBuildClustersCopy = sdBuildClusters.slice();
 
             sdBuildClustersCopy.push({
@@ -789,7 +798,6 @@ describe('Build Factory', () => {
                 group: 'aws'
             });
             buildClusterFactoryMock.list.resolves(sdBuildClustersCopy);
-            jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
             delete saveConfig.params.commit;
             saveConfig.params.buildClusterName = 'sd1';
@@ -809,15 +817,15 @@ describe('Build Factory', () => {
                 });
         });
 
-        it('pick build cluster from aws group if buildClusterName is provided', () => {
+        it('picks build cluster from aws group if buildClusterName is provided', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
-                permutations: permutations3,
-                pipeline: Promise.resolve({ name: 'screwdriver-cd/ui', scmUri, scmRepo, scmContext })
-            };
-
             const sdBuildClustersCopy = sdBuildClusters.slice();
 
+            jobMock = {
+                permutations: permutations3,
+                pipeline: Promise.resolve({ name: 'screwdriver-cd/ui', scmUri, scmRepo, scmContext }),
+                name: 'main'
+            };
             sdBuildClustersCopy.push({
                 name: 'aws.us-east-2',
                 scmContext,
@@ -857,13 +865,7 @@ describe('Build Factory', () => {
                 });
         });
 
-        it('use username as displayName if displayLabel is not set', () => {
-            const jobMock = {
-                permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
-            };
-
-            jobFactoryMock.get.resolves(jobMock);
+        it('uses username as displayName if displayLabel is not set', () => {
             scmMock.getDisplayName.returns(null);
             saveConfig.params.cause = 'Started by user i_made_the_request';
             delete saveConfig.params.commit;
@@ -883,12 +885,7 @@ describe('Build Factory', () => {
         it('creates a new build in the datastore, looking up sha', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
             const causeMessage = `Started by ${displayName}`;
-            const jobMock = {
-                permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
-            };
 
-            jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
 
             return factory
@@ -937,12 +934,7 @@ describe('Build Factory', () => {
         it('creates a new build in the datastore with causeMessage', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
             const causeMessage = '[force start] Push out hotfix';
-            const jobMock = {
-                permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
-            };
 
-            jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
 
             return factory
@@ -990,12 +982,7 @@ describe('Build Factory', () => {
 
         it('creates a new build without starting', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
-                permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
-            };
 
-            jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
             saveConfig.params.status = 'CREATED';
 
@@ -1016,16 +1003,11 @@ describe('Build Factory', () => {
 
         it('adds a teardown command if one exists', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
-                permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
-            };
             const teardown = {
                 name: 'sd-teardown',
                 command: 'echo "hello"'
             };
 
-            jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
             bookendMock.getTeardownCommands.resolves([teardown]);
             bookendMock.getSetupCommands.resolves([]);
@@ -1043,12 +1025,6 @@ describe('Build Factory', () => {
         });
 
         it('creates a new build in the datastore, without looking up sha', () => {
-            const jobMock = {
-                permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
-            };
-
-            jobFactoryMock.get.resolves(jobMock);
             delete saveConfig.params.commit;
             delete saveConfig.params.parentBuildId;
 
@@ -1080,11 +1056,11 @@ describe('Build Factory', () => {
         });
 
         it('properly handles rejection due to missing pipeline model', () => {
-            const jobMock = {
+            jobMock = {
                 permutations,
-                pipeline: Promise.resolve(null)
+                pipeline: Promise.resolve(null),
+                name: 'main'
             };
-
             userFactoryMock.get.resolves({});
             jobFactoryMock.get.resolves(jobMock);
 
@@ -1095,11 +1071,6 @@ describe('Build Factory', () => {
         });
 
         it('creates a new build with a custom docker registry', () => {
-            const jobMock = {
-                permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
-            };
-
             factory = new BuildFactory({
                 datastore,
                 dockerRegistry: 'registry.com:1234',
@@ -1109,8 +1080,6 @@ describe('Build Factory', () => {
                 bookend: bookendMock
             });
 
-            jobFactoryMock.get.resolves(jobMock);
-
             return factory.create({ username, jobId, eventId, sha }).then(model => {
                 assert.strictEqual(model.container, 'registry.com:1234/library/node:4');
             });
@@ -1118,12 +1087,7 @@ describe('Build Factory', () => {
 
         it('combines environment from input config', () => {
             const user = { unsealToken: sinon.stub().resolves('foo') };
-            const jobMock = {
-                permutations,
-                pipeline: Promise.resolve({ scmUri, scmRepo, scmContext })
-            };
 
-            jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
             saveConfig.params.status = 'CREATED';
 
@@ -1155,11 +1119,12 @@ describe('Build Factory', () => {
                 configPipelineId: 2,
                 configPipeline: Promise.resolve({ spooky: 'ghost' })
             };
-            const jobMock = {
-                permutations,
-                pipeline: Promise.resolve(pipelineMock)
-            };
 
+            jobMock = {
+                permutations,
+                pipeline: Promise.resolve(pipelineMock),
+                name: 'main'
+            };
             userFactoryMock.get.resolves({});
             jobFactoryMock.get.resolves(jobMock);
 
@@ -1204,13 +1169,13 @@ describe('Build Factory', () => {
                 configPipelineId: 2,
                 configPipeline: Promise.resolve({ spooky: 'ghost' })
             };
-            const jobMock = {
-                permutations: permutationsWithProvider,
-                pipeline: Promise.resolve(pipelineMock)
-            };
-
             const sdBuildClustersCopy = sdBuildClusters.slice();
 
+            jobMock = {
+                permutations: permutationsWithProvider,
+                pipeline: Promise.resolve(pipelineMock),
+                name: 'main'
+            };
             sdBuildClustersCopy.push({
                 name: 'aws.us-west-2.sls.123456789012',
                 scmContext,
@@ -1267,13 +1232,13 @@ describe('Build Factory', () => {
                 executor: 'k8s-arm64'
             };
             const pMock = { name: 'screwdriver/ui', scmUri, scmRepo, scmContext };
-            const jobMock = {
-                permutations: permutations1,
-                pipeline: Promise.resolve(pMock)
-            };
-
             const user = { unsealToken: sinon.stub().resolves('foo') };
 
+            jobMock = {
+                permutations: permutations1,
+                pipeline: Promise.resolve(pMock),
+                name: 'main'
+            };
             jobFactoryMock.get.resolves(jobMock);
             userFactoryMock.get.resolves(user);
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
@@ -1320,9 +1285,10 @@ describe('Build Factory', () => {
             };
             const pMock = { name: 'screwdriver/ui', scmUri, scmRepo, scmContext };
 
-            const jobMock = {
+            jobMock = {
                 permutations: permutations2,
-                pipeline: Promise.resolve(pMock)
+                pipeline: Promise.resolve(pMock),
+                name: 'main'
             };
 
             const user = { unsealToken: sinon.stub().resolves('foo') };
@@ -1363,6 +1329,41 @@ describe('Build Factory', () => {
                         },
                         bookendKey
                     );
+                });
+        });
+        it('creates stageBuild if current job is stage setup', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+
+            jobMock = {
+                permutations,
+                pipeline: Promise.resolve({ id: 555, scmUri, scmRepo, scmContext }),
+                name: 'stage@deploy:setup'
+            };
+            const stageMock = {
+                id: 888
+            };
+            const stageConfig = { pipelineId: 555, name: 'deploy' };
+            const stageBuildConfig = { stageId: stageMock.id, eventId: 123456, status: 'CREATED' };
+
+            jobFactoryMock.get.resolves(jobMock);
+            userFactoryMock.get.resolves(user);
+            saveConfig.params.status = 'CREATED';
+            stageFactoryMock.get.resolves(stageMock);
+
+            return factory
+                .create({
+                    username,
+                    jobId,
+                    eventId,
+                    parentBuildId: 12345,
+                    start: false,
+                    meta
+                })
+                .then(() => {
+                    assert.notCalled(startStub);
+                    assert.calledWith(datastore.save, saveConfig);
+                    assert.calledWith(stageFactoryMock.get, stageConfig);
+                    assert.calledWith(stageBuildFactoryMock.create, stageBuildConfig);
                 });
         });
     });

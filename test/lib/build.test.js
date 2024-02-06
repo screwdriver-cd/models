@@ -8,6 +8,8 @@ const { SCM_STATE_MAP } = require('screwdriver-data-schema').plugins.scm;
 
 sinon.assert.expose(assert, { prefix: '' });
 
+const WORKFLOWGRAPH_WITH_STAGES = require('../data/workflowGraphWithStages.json');
+
 describe('Build Model', () => {
     const annotations = {};
     const freezeWindows = ['* * ? * 1', '0-59 0-23 * 1 ?'];
@@ -57,11 +59,15 @@ describe('Build Model', () => {
     let userFactoryMock;
     let jobFactoryMock;
     let pipelineFactoryMock;
+    let stageFactoryMock;
+    let stageBuildFactoryMock;
     let stepFactoryMock;
+    let templateFactoryMock;
     let scmMock;
     let tokenGen;
     let pipelineMock;
     let jobMock;
+    let templateMock;
 
     before(() => {
         mockery.enable({
@@ -98,9 +104,18 @@ describe('Build Model', () => {
         pipelineFactoryMock = {
             get: sinon.stub().resolves(null)
         };
+        stageFactoryMock = {
+            get: sinon.stub().resolves([])
+        };
+        stageBuildFactoryMock = {
+            get: sinon.stub().resolves({})
+        };
         stepFactoryMock = {
             list: sinon.stub().resolves([]),
             removeSteps: sinon.stub().resolves([])
+        };
+        templateFactoryMock = {
+            get: sinon.stub()
         };
 
         pipelineMock = {
@@ -108,7 +123,8 @@ describe('Build Model', () => {
             scmUri,
             scmContext,
             admin: Promise.resolve(adminUser),
-            token: Promise.resolve('foo')
+            token: Promise.resolve('foo'),
+            workflowGraph: WORKFLOWGRAPH_WITH_STAGES
         };
         jobMock = {
             id: jobId,
@@ -123,6 +139,11 @@ describe('Build Model', () => {
             updateCommitStatus: sinon.stub().resolves(null),
             addPrComment: sinon.stub().resolves(null)
         };
+        templateMock = {
+            id: 8888,
+            name: 'docker',
+            namespace: 'sd'
+        };
         tokenGen = sinon.stub().returns(token);
         const uF = {
             getInstance: sinon.stub().returns(userFactoryMock)
@@ -136,11 +157,23 @@ describe('Build Model', () => {
         const sF = {
             getInstance: sinon.stub().returns(stepFactoryMock)
         };
+        const stageF = {
+            getInstance: sinon.stub().returns(stageFactoryMock)
+        };
+        const stageBuildF = {
+            getInstance: sinon.stub().returns(stageBuildFactoryMock)
+        };
+        const tF = {
+            getInstance: sinon.stub().returns(templateFactoryMock)
+        };
 
         mockery.registerMock('./pipelineFactory', pF);
         mockery.registerMock('./userFactory', uF);
         mockery.registerMock('./jobFactory', jF);
         mockery.registerMock('./stepFactory', sF);
+        mockery.registerMock('./stageFactory', stageF);
+        mockery.registerMock('./stageBuildFactory', stageBuildF);
+        mockery.registerMock('./templateFactory', tF);
         mockery.registerMock('screwdriver-hashr', hashaMock);
 
         // eslint-disable-next-line global-require
@@ -1091,6 +1124,7 @@ describe('Build Model', () => {
         const prParentJobId = 1000;
         let pipelineMockB = {
             id: pipelineId,
+            name: 'd2lam/test',
             configPipelineId,
             scmUri,
             scmContext,
@@ -1120,6 +1154,8 @@ describe('Build Model', () => {
             isPR: () => false,
             parsePRJobName: sinon.stub().returns(null)
         };
+        let expectedExecutorStartConfig;
+        let expectedUpdateCommitStatusConfig;
 
         beforeEach(() => {
             sandbox = sinon.createSandbox();
@@ -1133,8 +1169,46 @@ describe('Build Model', () => {
                 name: 'main',
                 pipeline: Promise.resolve(pipelineMockB),
                 permutations: [{ annotations, freezeWindows, provider }],
-                isPR: () => false
+                isPR: () => false,
+                prNum: Promise.resolve(null)
             });
+            expectedExecutorStartConfig = {
+                build,
+                causeMessage,
+                eventId,
+                jobId,
+                jobName,
+                jobState,
+                jobArchived,
+                annotations,
+                provider,
+                freezeWindows,
+                blockedBy: [jobId],
+                apiUri,
+                buildId,
+                container,
+                token,
+                pipeline: {
+                    id: pipelineMockB.id,
+                    name: pipelineMockB.name,
+                    scmContext: pipelineMockB.scmContext,
+                    configPipelineId: pipelineMockB.configPipelineId
+                },
+                tokenGen,
+                pipelineId,
+                isPR: false,
+                prParentJobId
+            };
+            expectedUpdateCommitStatusConfig = {
+                token: 'foo',
+                scmUri,
+                scmContext,
+                sha,
+                jobName: 'main',
+                buildStatus: SCM_STATE_MAP.QUEUED,
+                url,
+                pipelineId
+            };
         });
 
         afterEach(() => {
@@ -1143,32 +1217,7 @@ describe('Build Model', () => {
 
         it('promises to start a build', () =>
             build.start().then(() => {
-                assert.calledWith(executorMock.start, {
-                    build,
-                    causeMessage,
-                    eventId,
-                    jobId,
-                    jobName,
-                    jobState,
-                    jobArchived,
-                    annotations,
-                    provider,
-                    freezeWindows,
-                    blockedBy: [jobId],
-                    apiUri,
-                    buildId,
-                    container,
-                    token,
-                    pipeline: {
-                        id: pipelineMockB.id,
-                        scmContext: pipelineMockB.scmContext,
-                        configPipelineId: pipelineMockB.configPipelineId
-                    },
-                    tokenGen,
-                    pipelineId,
-                    isPR: false,
-                    prParentJobId
-                });
+                assert.calledWith(executorMock.start, expectedExecutorStartConfig);
 
                 assert.calledWith(
                     tokenGen,
@@ -1185,49 +1234,22 @@ describe('Build Model', () => {
                     TEMPORAL_JWT_TIMEOUT
                 );
 
-                assert.calledWith(scmMock.updateCommitStatus, {
-                    token: 'foo',
-                    scmUri,
-                    scmContext,
-                    sha,
-                    jobName: 'main',
-                    buildStatus: SCM_STATE_MAP.QUEUED,
-                    url,
-                    pipelineId
-                });
+                assert.calledWith(scmMock.updateCommitStatus, expectedUpdateCommitStatusConfig);
             }));
 
-        it('passes buildClusterName to executor if it exists', () => {
-            build.buildClusterName = 'sd';
+        it('passes template info to executor if it exists', () => {
+            templateFactoryMock.get.resolves(templateMock);
+
+            build.templateId = templateMock.id;
+            expectedExecutorStartConfig.template = {
+                id: templateMock.id,
+                fullName: `${templateMock.namespace}/${templateMock.name}`,
+                name: templateMock.name,
+                namespace: templateMock.namespace
+            };
 
             return build.start().then(() => {
-                assert.calledWith(executorMock.start, {
-                    build,
-                    causeMessage,
-                    jobId,
-                    jobName,
-                    jobState,
-                    jobArchived,
-                    eventId,
-                    annotations,
-                    provider,
-                    freezeWindows,
-                    blockedBy: [jobId],
-                    apiUri,
-                    buildId,
-                    buildClusterName: 'sd',
-                    container,
-                    token,
-                    tokenGen,
-                    pipeline: {
-                        id: pipelineMockB.id,
-                        scmContext: pipelineMockB.scmContext,
-                        configPipelineId: pipelineMockB.configPipelineId
-                    },
-                    pipelineId,
-                    isPR: false,
-                    prParentJobId
-                });
+                assert.calledWith(executorMock.start, expectedExecutorStartConfig);
 
                 assert.calledWith(
                     tokenGen,
@@ -1244,51 +1266,45 @@ describe('Build Model', () => {
                     TEMPORAL_JWT_TIMEOUT
                 );
 
-                assert.calledWith(scmMock.updateCommitStatus, {
-                    token: 'foo',
-                    scmUri,
-                    scmContext,
-                    sha,
-                    jobName: 'main',
-                    buildStatus: SCM_STATE_MAP.QUEUED,
-                    url,
-                    pipelineId
-                });
+                assert.calledWith(scmMock.updateCommitStatus, expectedUpdateCommitStatusConfig);
             });
         });
 
-        it('passes causeMessage to executor if it exists', () =>
-            build
+        it('passes buildClusterName to executor if it exists', () => {
+            build.buildClusterName = 'sd';
+            expectedExecutorStartConfig.buildClusterName = 'sd';
+
+            return build.start().then(() => {
+                assert.calledWith(executorMock.start, expectedExecutorStartConfig);
+
+                assert.calledWith(
+                    tokenGen,
+                    buildId,
+                    {
+                        isPR: false,
+                        jobId,
+                        pipelineId,
+                        configPipelineId,
+                        eventId,
+                        prParentJobId
+                    },
+                    scmContext,
+                    TEMPORAL_JWT_TIMEOUT
+                );
+
+                assert.calledWith(scmMock.updateCommitStatus, expectedUpdateCommitStatusConfig);
+            });
+        });
+
+        it('passes causeMessage to executor if it exists', () => {
+            expectedExecutorStartConfig.causeMessage = '[force start] Push out hotfix';
+
+            return build
                 .start({
                     causeMessage: '[force start] Push out hotfix'
                 })
                 .then(() => {
-                    assert.calledWith(executorMock.start, {
-                        build,
-                        causeMessage: '[force start] Push out hotfix',
-                        jobId,
-                        jobName,
-                        jobState,
-                        jobArchived,
-                        eventId,
-                        annotations,
-                        provider,
-                        freezeWindows,
-                        blockedBy: [jobId],
-                        apiUri,
-                        buildId,
-                        container,
-                        token,
-                        tokenGen,
-                        pipeline: {
-                            id: pipelineMockB.id,
-                            scmContext: pipelineMockB.scmContext,
-                            configPipelineId: pipelineMockB.configPipelineId
-                        },
-                        pipelineId,
-                        isPR: false,
-                        prParentJobId
-                    });
+                    assert.calledWith(executorMock.start, expectedExecutorStartConfig);
 
                     assert.calledWith(
                         tokenGen,
@@ -1305,17 +1321,9 @@ describe('Build Model', () => {
                         TEMPORAL_JWT_TIMEOUT
                     );
 
-                    assert.calledWith(scmMock.updateCommitStatus, {
-                        token: 'foo',
-                        scmUri,
-                        scmContext,
-                        sha,
-                        jobName: 'main',
-                        buildStatus: SCM_STATE_MAP.QUEUED,
-                        url,
-                        pipelineId
-                    });
-                }));
+                    assert.calledWith(scmMock.updateCommitStatus, expectedUpdateCommitStatusConfig);
+                });
+        });
 
         it('get internal blockedby job Ids and pass to executor start', () => {
             const blocking1 = {
@@ -1339,6 +1347,7 @@ describe('Build Model', () => {
 
             pipelineMockB = {
                 id: pipelineId,
+                name: 'd2lam/test',
                 scmUri,
                 scmContext,
                 admin: Promise.resolve(adminUser),
@@ -1374,36 +1383,14 @@ describe('Build Model', () => {
                 ],
                 isPR: () => true,
                 prParentJobId,
-                parsePRJobName: sinon.stub().returns('main')
+                parsePRJobName: sinon.stub().returns('main'),
+                prNum: Promise.resolve(null)
             });
+            expectedExecutorStartConfig.blockedBy = [jobId, blocking1.id, blocking2.id, prJob.id];
+            expectedExecutorStartConfig.isPR = true;
 
             return build.start().then(() => {
-                assert.calledWith(executorMock.start, {
-                    build,
-                    causeMessage,
-                    jobId,
-                    jobName,
-                    jobState,
-                    jobArchived,
-                    eventId,
-                    blockedBy: [jobId, blocking1.id, blocking2.id, prJob.id],
-                    annotations,
-                    provider,
-                    freezeWindows,
-                    apiUri,
-                    buildId,
-                    container,
-                    token,
-                    tokenGen,
-                    pipeline: {
-                        id: pipelineMockB.id,
-                        scmContext: pipelineMockB.scmContext,
-                        configPipelineId: pipelineMockB.configPipelineId
-                    },
-                    pipelineId,
-                    isPR: true,
-                    prParentJobId
-                });
+                assert.calledWith(executorMock.start, expectedExecutorStartConfig);
             });
         });
 
@@ -1469,36 +1456,15 @@ describe('Build Model', () => {
                     }
                 ],
                 isPR: () => false,
-                parsePRJobName: sinon.stub().returns(null)
+                parsePRJobName: sinon.stub().returns(null),
+                prNum: Promise.resolve(null)
             });
 
+            expectedExecutorStartConfig.blockedBy = [jobId, internalJob.id, externalJob1.id, externalJob2.id];
+            expectedExecutorStartConfig.prParentJobId = undefined;
+
             return build.start().then(() => {
-                assert.calledWith(executorMock.start, {
-                    build,
-                    causeMessage,
-                    jobId,
-                    jobName,
-                    jobState,
-                    jobArchived,
-                    eventId,
-                    blockedBy: [jobId, internalJob.id, externalJob1.id, externalJob2.id],
-                    annotations,
-                    provider,
-                    freezeWindows,
-                    apiUri,
-                    buildId,
-                    container,
-                    token,
-                    tokenGen,
-                    pipeline: {
-                        id: pipelineMockB.id,
-                        scmContext: pipelineMockB.scmContext,
-                        configPipelineId: pipelineMockB.configPipelineId
-                    },
-                    pipelineId: pipelineMockB.id,
-                    isPR: false,
-                    prParentJobId: undefined
-                });
+                assert.calledWith(executorMock.start, expectedExecutorStartConfig);
             });
         });
 
@@ -1544,36 +1510,14 @@ describe('Build Model', () => {
                     }
                 ],
                 isPR: () => false,
-                parsePRJobName: sinon.stub().returns(null)
+                parsePRJobName: sinon.stub().returns(null),
+                prNum: Promise.resolve(null)
             });
+            expectedExecutorStartConfig.blockedBy = [jobId, internalJob.id, externalJob1.id];
+            expectedExecutorStartConfig.prParentJobId = undefined;
 
             return build.start().then(() => {
-                assert.calledWith(executorMock.start, {
-                    build,
-                    causeMessage,
-                    jobId,
-                    jobName,
-                    jobState,
-                    jobArchived,
-                    eventId,
-                    blockedBy: [jobId, internalJob.id, externalJob1.id],
-                    annotations,
-                    provider,
-                    freezeWindows,
-                    apiUri,
-                    buildId,
-                    container,
-                    token,
-                    tokenGen,
-                    pipeline: {
-                        id: pipelineMockB.id,
-                        scmContext: pipelineMockB.scmContext,
-                        configPipelineId: pipelineMockB.configPipelineId
-                    },
-                    pipelineId: pipelineMockB.id,
-                    isPR: false,
-                    prParentJobId: undefined
-                });
+                assert.calledWith(executorMock.start, expectedExecutorStartConfig);
             });
         });
 
@@ -1594,36 +1538,15 @@ describe('Build Model', () => {
                 archived: false,
                 pipeline: Promise.resolve(pipelineMockB),
                 permutations: [{ annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' }, provider }],
-                isPR: () => false
+                isPR: () => false,
+                prNum: Promise.resolve(null)
             });
+            expectedExecutorStartConfig.annotations = { 'beta.screwdriver.cd/executor:': 'k8s-vm' };
+            expectedExecutorStartConfig.prParentJobId = undefined;
+            expectedExecutorStartConfig.freezeWindows = [];
 
             return build.start().then(() => {
-                assert.calledWith(executorMock.start, {
-                    build,
-                    causeMessage,
-                    jobId,
-                    jobName,
-                    jobState,
-                    jobArchived,
-                    eventId,
-                    annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' },
-                    provider,
-                    freezeWindows: [],
-                    blockedBy: [jobId],
-                    apiUri,
-                    buildId,
-                    container,
-                    token,
-                    tokenGen,
-                    pipeline: {
-                        id: pipelineMockB.id,
-                        scmContext: pipelineMockB.scmContext,
-                        configPipelineId: pipelineMockB.configPipelineId
-                    },
-                    pipelineId: pipelineMockB.id,
-                    isPR: false,
-                    prParentJobId: undefined
-                });
+                assert.calledWith(executorMock.start, expectedExecutorStartConfig);
 
                 assert.calledWith(
                     tokenGen,
@@ -1639,16 +1562,7 @@ describe('Build Model', () => {
                     TEMPORAL_JWT_TIMEOUT
                 );
 
-                assert.calledWith(scmMock.updateCommitStatus, {
-                    token: 'foo',
-                    scmUri,
-                    scmContext,
-                    sha,
-                    jobName: 'main',
-                    buildStatus: SCM_STATE_MAP.QUEUED,
-                    url,
-                    pipelineId
-                });
+                assert.calledWith(scmMock.updateCommitStatus, expectedUpdateCommitStatusConfig);
             });
         });
 

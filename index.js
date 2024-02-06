@@ -11,12 +11,18 @@ const JobFactory = require('./lib/jobFactory');
 const PipelineFactory = require('./lib/pipelineFactory');
 const SecretFactory = require('./lib/secretFactory');
 const StageFactory = require('./lib/stageFactory');
+const StageBuildFactory = require('./lib/stageBuildFactory');
 const StepFactory = require('./lib/stepFactory');
 const TemplateFactory = require('./lib/templateFactory');
 const TemplateTagFactory = require('./lib/templateTagFactory');
 const TokenFactory = require('./lib/tokenFactory');
 const TriggerFactory = require('./lib/triggerFactory');
 const UserFactory = require('./lib/userFactory');
+const PipelineTemplateFactory = require('./lib/pipelineTemplateFactory');
+const PipelineTemplateVersionFactory = require('./lib/pipelineTemplateVersionFactory');
+const TemplateMetaFactory = require('./lib/templateMetaFactory');
+const PipelineTemplateVersion = require('./lib/pipelineTemplateVersion');
+const TemplateMeta = require('./lib/templateMeta');
 
 module.exports = {
     BannerFactory,
@@ -30,10 +36,16 @@ module.exports = {
     PipelineFactory,
     SecretFactory,
     StageFactory,
+    StageBuildFactory,
     StepFactory,
     TemplateFactory,
     TemplateTagFactory,
     TokenFactory,
     TriggerFactory,
-    UserFactory
+    UserFactory,
+    PipelineTemplateFactory,
+    PipelineTemplateVersionFactory,
+    TemplateMetaFactory,
+    PipelineTemplateVersion,
+    TemplateMeta
 };
