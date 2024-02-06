@@ -107,7 +107,8 @@ describe('PipelineTemplateVersion Factory', () => {
                 latestVersion: '2.1.2',
                 name: 'testPipelineTemplateVersion',
                 namespace,
-                update: sinon.stub().resolves()
+                update: sinon.stub().resolves(),
+                id: generatedId
             };
 
             templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
@@ -129,6 +130,14 @@ describe('PipelineTemplateVersion Factory', () => {
                 namespace
             });
             assert.calledOnce(datastore.scan);
+            assert.calledWith(datastore.scan, {
+                table: 'pipelineTemplateVersions',
+                params: {
+                    templateId: generatedId
+                },
+                sort: 'descending',
+                sortBy: 'createTime'
+            });
             assert.calledOnce(datastore.save);
             assert.notCalled(templateMetaFactoryMock.create);
             assert.notCalled(pipelineTemplateMetaMock.update);
