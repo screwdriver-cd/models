@@ -20,9 +20,8 @@ const TriggerFactory = require('./lib/triggerFactory');
 const UserFactory = require('./lib/userFactory');
 const PipelineTemplateFactory = require('./lib/pipelineTemplateFactory');
 const PipelineTemplateVersionFactory = require('./lib/pipelineTemplateVersionFactory');
-const TemplateMetaFactory = require('./lib/templateMetaFactory');
-const PipelineTemplateVersion = require('./lib/pipelineTemplateVersion');
-const TemplateMeta = require('./lib/templateMeta');
+const PipelineTemplateTagFactory = require('./lib/pipelineTemplateTagFactory');
+const JobTemplateTagFactory = require('./lib/jobTemplateTagFactory');
 
 module.exports = {
     BannerFactory,
@@ -45,7 +44,6 @@ module.exports = {
     UserFactory,
     PipelineTemplateFactory,
     PipelineTemplateVersionFactory,
-    TemplateMetaFactory,
-    PipelineTemplateVersion,
-    TemplateMeta
+    PipelineTemplateTagFactory,
+    JobTemplateTagFactory
 };
