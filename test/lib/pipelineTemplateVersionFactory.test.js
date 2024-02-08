@@ -22,6 +22,7 @@ describe('PipelineTemplateVersion Factory', () => {
     let PipelineTemplateVersion;
     let PipelineTemplateMeta;
     let templateMetaFactoryMock;
+    let templateTagFactoryMock;
 
     before(() => {
         mockery.enable({
@@ -38,6 +39,11 @@ describe('PipelineTemplateVersion Factory', () => {
         };
 
         templateMetaFactoryMock = {
+            get: sinon.stub(),
+            create: sinon.stub()
+        };
+
+        templateTagFactoryMock = {
             get: sinon.stub(),
             create: sinon.stub()
         };
@@ -405,11 +411,64 @@ describe('PipelineTemplateVersion Factory', () => {
                 name,
                 namespace
             });
-            assert.calledOnce(datastore.get);
+            assert.notCalled(templateTagFactoryMock.get);
+            assert.calledWith(datastore.get, {
+                table: 'pipelineTemplateVersions',
+                params: {
+                    templateId,
+                    version
+                }
+            });
             assert.isTrue(hasAllProperties(model, PipelineTemplateVersion, PipelineTemplateMeta));
         });
 
-        it('gets a pipeline template version and meta given templateId', async () => {
+        it('gets a pipeline template version and meta given name, namespace and tag', async () => {
+            const latestTagVersion = '2.1.2';
+            const pipelineTemplateMetaMock = {
+                name,
+                namespace,
+                id: templateId
+            };
+            const pipelineTemplateTagMock = {
+                tag,
+                version: latestTagVersion
+            };
+
+            templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
+            templateTagFactoryMock.get.resolves(pipelineTemplateTagMock);
+            datastore.get.resolves(returnValue);
+
+            const model = await factory.getWithMetadata(
+                {
+                    name,
+                    namespace,
+                    versionOrTag: tag
+                },
+                templateMetaFactoryMock,
+                templateTagFactoryMock
+            );
+
+            assert.calledWith(templateMetaFactoryMock.get, {
+                name,
+                namespace
+            });
+            assert.calledWith(templateTagFactoryMock.get, {
+                name,
+                namespace,
+                tag
+            });
+            assert.calledWith(datastore.get, {
+                table: 'pipelineTemplateVersions',
+                params: {
+                    templateId,
+                    version: latestTagVersion
+                }
+            });
+            assert.isTrue(hasAllProperties(model, PipelineTemplateVersion, PipelineTemplateMeta));
+        });
+
+        it('gets a pipeline template version and meta given name, namespace and versionOrTag', async () => {
+            const latestTemplateVersion = '2.1.2';
             const pipelineTemplateMetaMock = {
                 name,
                 namespace,
@@ -421,15 +480,26 @@ describe('PipelineTemplateVersion Factory', () => {
 
             const model = await factory.getWithMetadata(
                 {
-                    templateId
+                    name,
+                    namespace,
+                    versionOrTag: latestTemplateVersion
                 },
-                templateMetaFactoryMock
+                templateMetaFactoryMock,
+                templateTagFactoryMock
             );
 
             assert.calledWith(templateMetaFactoryMock.get, {
-                id: templateId
+                name,
+                namespace
             });
-            assert.calledOnce(datastore.get);
+            assert.notCalled(templateTagFactoryMock.get);
+            assert.calledWith(datastore.get, {
+                table: 'pipelineTemplateVersions',
+                params: {
+                    templateId,
+                    version: latestTemplateVersion
+                }
+            });
             assert.isTrue(hasAllProperties(model, PipelineTemplateVersion, PipelineTemplateMeta));
         });
 
