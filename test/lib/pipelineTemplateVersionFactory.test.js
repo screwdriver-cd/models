@@ -222,7 +222,7 @@ describe('PipelineTemplateVersion Factory', () => {
         });
     });
 
-    describe('list', async () => {
+    describe.only('list', async () => {
         const templateId = 1234135;
         const generatedVersionId = 2341351;
         let returnValue;
@@ -273,6 +273,60 @@ describe('PipelineTemplateVersion Factory', () => {
             assert.calledWith(templateMetaFactoryMock.get, {
                 name,
                 namespace
+            });
+            assert.calledWith(datastore.scan, {
+                table: 'pipelineTemplateVersions',
+                params: {
+                    templateId
+                }
+            });
+            assert.calledOnce(datastore.scan);
+            models.forEach(model => {
+                assert.instanceOf(model, PipelineTemplateVersion);
+            });
+        });
+
+        it('list all pipeline template versions with sort and pagination', async () => {
+            const pipelineTemplateMetaMock = {
+                name,
+                namespace,
+                id: templateId
+            };
+
+            templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
+            datastore.scan.resolves(returnValue);
+
+            const models = await factory.list(
+                {
+                    params: {
+                        name,
+                        namespace
+                    },
+                    paginate: {
+                        count: 3,
+                        page: 2
+                    },
+                    sort: 'ascending',
+                    sortBy: 'version'
+                },
+                templateMetaFactoryMock
+            );
+
+            assert.calledWith(templateMetaFactoryMock.get, {
+                name,
+                namespace
+            });
+            assert.calledWith(datastore.scan, {
+                table: 'pipelineTemplateVersions',
+                params: {
+                    templateId
+                },
+                paginate: {
+                    count: 3,
+                    page: 2
+                },
+                sort: 'ascending',
+                sortBy: 'version'
             });
             assert.calledOnce(datastore.scan);
             models.forEach(model => {
