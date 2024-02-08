@@ -222,7 +222,7 @@ describe('PipelineTemplateVersion Factory', () => {
         });
     });
 
-    describe.only('list', async () => {
+    describe('list', async () => {
         const templateId = 1234135;
         const generatedVersionId = 2341351;
         let returnValue;
