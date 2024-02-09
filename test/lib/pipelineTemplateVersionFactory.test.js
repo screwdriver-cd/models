@@ -275,6 +275,12 @@ describe('PipelineTemplateVersion Factory', () => {
                 namespace
             });
             assert.calledOnce(datastore.scan);
+            assert.calledWith(datastore.scan, {
+                table: 'pipelineTemplateVersions',
+                params: {
+                    templateId
+                }
+            });
             models.forEach(model => {
                 assert.instanceOf(model, PipelineTemplateVersion);
             });
