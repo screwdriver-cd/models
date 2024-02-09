@@ -982,16 +982,44 @@ describe('Build Model', () => {
             stepsMock = [step0Mock, step1Mock, step2Mock];
             datastore.remove.resolves({});
             stepFactoryMock.list.resolves(stepsMock);
+            jobFactoryMock.get.resolves(jobMock);
         });
 
-        it('remove build and build steps', () => {
+        it('removes build and build steps', () => {
             return build.remove().then(() => {
                 assert.calledOnce(stepFactoryMock.removeSteps); // remove steps in one shot
                 assert.calledOnce(datastore.remove); // remove the build
             });
         });
 
-        it('fail if removeSteps returns error', () => {
+        it('removes build and build steps and stageBuild', () => {
+            const stageBuildMock = {
+                remove: sinon.stub().resolves({})
+            };
+
+            jobFactoryMock.get.resolves({
+                id: jobId,
+                name: 'stage@main:setup',
+                pipeline: Promise.resolve({
+                    id: pipelineId,
+                    configPipelineId,
+                    scmUri,
+                    scmContext,
+                    admin: Promise.resolve(adminUser),
+                    token: Promise.resolve('foo')
+                }),
+                isPR: sinon.stub().returns(false)
+            });
+            stageBuildFactoryMock.get.resolves(stageBuildMock);
+
+            return build.remove().then(() => {
+                assert.calledOnce(stepFactoryMock.removeSteps); // remove steps in one shot
+                assert.calledOnce(datastore.remove); // remove the build
+                assert.calledOnce(stageBuildMock.remove); // remove the build
+            });
+        });
+
+        it('fails if removeSteps returns error', () => {
             stepFactoryMock.removeSteps.rejects(new Error('error removing step'));
 
             return build
