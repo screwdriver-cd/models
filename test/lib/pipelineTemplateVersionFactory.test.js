@@ -285,6 +285,30 @@ describe('PipelineTemplateVersion Factory', () => {
                 assert.instanceOf(model, PipelineTemplateVersion);
             });
         });
+
+        it('list all pipeline template versions for given templateId', async () => {
+            datastore.scan.resolves(returnValue);
+            const models = await factory.list(
+                {
+                    params: {
+                        templateId
+                    }
+                },
+                templateMetaFactoryMock
+            );
+
+            assert.notCalled(templateMetaFactoryMock.get);
+            assert.calledOnce(datastore.scan);
+            assert.calledWith(datastore.scan, {
+                table: 'pipelineTemplateVersions',
+                params: {
+                    templateId
+                }
+            });
+            models.forEach(model => {
+                assert.instanceOf(model, PipelineTemplateVersion);
+            });
+        });
     });
 
     describe('get', async () => {
