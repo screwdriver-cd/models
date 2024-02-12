@@ -262,10 +262,8 @@ describe('PipelineTemplateVersion Factory', () => {
 
             const models = await factory.list(
                 {
-                    params: {
-                        name,
-                        namespace
-                    }
+                    name,
+                    namespace
                 },
                 templateMetaFactoryMock
             );
