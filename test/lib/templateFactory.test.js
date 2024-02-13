@@ -1193,7 +1193,7 @@ describe('Template Factory', () => {
                         aggregationField: 'templateId'
                     });
 
-                    assert.calledWith(jobFactoryMock.getPipelineUsageCountForTemplates, [1, 3, 2], [1, 2, 3]);
+                    assert.calledWith(jobFactoryMock.getPipelineUsageCountForTemplates, [1, 3, 2]);
                     i += 1;
                 });
             });
@@ -1238,7 +1238,7 @@ describe('Template Factory', () => {
                     aggregationField: 'templateId'
                 });
 
-                assert.calledWith(jobFactoryMock.getPipelineUsageCountForTemplates, [4], [1, 2, 3]);
+                assert.calledWith(jobFactoryMock.getPipelineUsageCountForTemplates, [4]);
             });
         });
 
@@ -1324,7 +1324,7 @@ describe('Template Factory', () => {
                         aggregationField: 'templateId'
                     });
 
-                    assert.calledWith(jobFactoryMock.getPipelineUsageCountForTemplates, [1, 3], [1, 2, 3]);
+                    assert.calledWith(jobFactoryMock.getPipelineUsageCountForTemplates, [1, 3]);
                 });
             });
 
