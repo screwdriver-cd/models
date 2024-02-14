@@ -1140,8 +1140,8 @@ describe('Template Factory', () => {
         it('should list templates with metrics when namespace is passed in', () => {
             expected = [returnValue[0], returnValue[1], returnValue[2]];
             datastore.scan.resolves(expected);
-            jobFactoryMock.list.resolves(jobsCount);
-            buildFactoryMock.list.onFirstCall().resolves(buildsCount);
+            buildFactoryMock.list.resolves(buildsCount);
+            jobFactoryMock.list.onFirstCall().resolves(jobsCount);
             jobFactoryMock.getPipelineUsageCountForTemplates.resolves(pipelineJobs);
 
             return factory.listWithMetrics(config).then(templates => {
