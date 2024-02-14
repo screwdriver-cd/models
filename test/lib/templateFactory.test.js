@@ -1141,7 +1141,7 @@ describe('Template Factory', () => {
             expected = [returnValue[0], returnValue[1], returnValue[2]];
             datastore.scan.resolves(expected);
             jobFactoryMock.list.resolves(jobsCount);
-            buildFactoryMock.list.resolves(buildsCount);
+            buildFactoryMock.list.onFirstCall().resolves(buildsCount);
             jobFactoryMock.getPipelineUsageCountForTemplates.resolves(pipelineJobs);
 
             return factory.listWithMetrics(config).then(templates => {
@@ -1180,7 +1180,7 @@ describe('Template Factory', () => {
             expected = [returnValue[3]];
             datastore.scan.resolves(expected);
             buildFactoryMock.list.resolves(buildsCount);
-            jobFactoryMock.list.resolves(jobsCount);
+            jobFactoryMock.list.onFirstCall().resolves(jobsCount);
             jobFactoryMock.getPipelineUsageCountForTemplates.resolves(pipelineJobs);
 
             delete config.namespace;
@@ -1220,7 +1220,7 @@ describe('Template Factory', () => {
                 expected = [returnValue[0], returnValue[1]];
                 datastore.scan.resolves(expected);
                 buildFactoryMock.list.resolves(buildsCount);
-                jobFactoryMock.list.resolves(jobsCount);
+                jobFactoryMock.list.onFirstCall().resolves(jobsCount);
                 jobFactoryMock.getPipelineUsageCountForTemplates.resolves(pipelineJobs);
             });
 
