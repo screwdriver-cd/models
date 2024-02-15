@@ -1598,6 +1598,10 @@ describe('Pipeline Model', () => {
             };
         });
 
+        afterEach(() => {
+            prJob.update.reset();
+        });
+
         it('update PR config', () => {
             jobFactoryMock.list.resolves([mainJob]); // pipeline jobs
             jobFactoryMock.getPullRequestJobsForPipelineSync.resolves([prJob]); // pull request jobs
@@ -3100,12 +3104,27 @@ describe('Pipeline Model', () => {
             triggerFactoryMock.list.resolves([trigger]);
         });
 
+        afterEach(() => {
+            eventFactoryMock.list.reset();
+            jobFactoryMock.list.reset();
+            secretFactoryMock.list.reset();
+            tokenFactoryMock.list.reset();
+            collectionFactoryMock.list.reset();
+            triggerFactoryMock.list.reset();
+            publishJob.remove.reset();
+            mainJob.remove.reset();
+            blahJob.remove.reset();
+            secret.remove.reset();
+            token.remove.reset();
+            trigger.remove.reset();
+        });
+
         it('removes secrets, stages and stageBuilds, tokens, and triggers', () =>
             pipeline.remove().then(() => {
                 assert.calledOnce(secretFactoryMock.list);
                 assert.calledOnce(secret.remove);
                 assert.calledOnce(stageFactoryMock.list);
-                assert.calledTwice(stageBuildFactoryMock.list);
+                assert.calledOnce(stageBuildFactoryMock.list);
                 assert.calledOnce(tokenFactoryMock.list);
                 assert.calledOnce(token.remove);
                 assert.calledWith(triggerFactoryMock.list, { params: { dest: [] } });
