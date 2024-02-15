@@ -78,6 +78,7 @@ describe('Pipeline Model', () => {
     let childPipelineMock;
     let buildClusterFactory;
     let stageFactoryMock;
+    let stageBuildFactoryMock;
 
     const dateNow = 1111111111;
     const scmUri = 'github.com:12345:master';
@@ -128,6 +129,7 @@ describe('Pipeline Model', () => {
     };
 
     let stageMocks;
+    let stageBuildMocks;
 
     const decorateJobMock = job => {
         const decorated = hoek.clone(job);
@@ -151,9 +153,8 @@ describe('Pipeline Model', () => {
     const decorateStageMock = stage => {
         const decorated = hoek.clone(stage);
 
-        sinon.stub(decorated, 'update').callsFake(async () => {
-            return decorated;
-        });
+        decorated.update = sinon.stub().returns(decorated);
+        decorated.remove = sinon.stub().resolves(null);
 
         return decorated;
     };
@@ -164,6 +165,22 @@ describe('Pipeline Model', () => {
         }
 
         return decorateStageMock(s);
+    };
+
+    const decorateStageBuildMock = stageBuild => {
+        const decorated = hoek.clone(stageBuild);
+
+        decorated.remove = sinon.stub().resolves(null);
+
+        return decorated;
+    };
+
+    const getStageBuildMocks = sb => {
+        if (Array.isArray(sb)) {
+            return sb.map(decorateStageBuildMock);
+        }
+
+        return decorateStageBuildMock(sb);
     };
 
     before(() => {
@@ -323,8 +340,7 @@ describe('Pipeline Model', () => {
                 pipelineId: 123,
                 description: 'Old stage',
                 jobIds: [1, 2],
-                archived: false,
-                update() {}
+                archived: false
             },
             {
                 id: 8888,
@@ -332,8 +348,20 @@ describe('Pipeline Model', () => {
                 pipelineId: 123,
                 description: 'Canary deployment',
                 jobIds: [3, 4],
-                archived: false,
-                update() {}
+                archived: false
+            }
+        ]);
+
+        stageBuildMocks = getStageBuildMocks([
+            {
+                id: 555,
+                stageId: 123,
+                eventId: 888
+            },
+            {
+                id: 8888,
+                stageId: 123,
+                eventId: 888
             }
         ]);
 
@@ -348,6 +376,9 @@ describe('Pipeline Model', () => {
             get: sinon.stub().resolves({ id: 8888, name: 'canary' }),
             list: sinon.stub().resolves(stageMocks),
             create: sinon.stub().resolves({ id: 8889, name: 'deploy' })
+        };
+        stageBuildFactoryMock = {
+            list: sinon.stub().resolves(stageBuildMocks)
         };
         buildClusterFactory = {
             getInstance: sinon.stub().returns(buildClusterFactoryMock)
@@ -388,6 +419,9 @@ describe('Pipeline Model', () => {
         mockery.registerMock('./buildClusterFactory', buildClusterFactory);
         mockery.registerMock('./stageFactory', {
             getInstance: sinon.stub().returns(stageFactoryMock)
+        });
+        mockery.registerMock('./stageBuildFactory', {
+            getInstance: sinon.stub().returns(stageBuildFactoryMock)
         });
 
         // eslint-disable-next-line global-require
@@ -991,7 +1025,8 @@ describe('Pipeline Model', () => {
                     description: 'Old stage',
                     jobIds: [1, 2],
                     archived: true,
-                    update: stageMocks[0].update
+                    update: stageMocks[0].update,
+                    remove: stageMocks[0].remove
                 });
                 assert.calledOnce(stageMocks[1].update);
                 assert.deepEqual(stageMocks[1], {
@@ -1004,7 +1039,8 @@ describe('Pipeline Model', () => {
                     teardown: 6,
                     archived: false,
                     requires: ['~pr', '~commit', '~sd@12345:test'],
-                    update: stageMocks[1].update
+                    update: stageMocks[1].update,
+                    remove: stageMocks[1].remove
                 });
             });
         });
@@ -3083,20 +3119,14 @@ describe('Pipeline Model', () => {
             trigger.remove.reset();
         });
 
-        it('remove secrets', () =>
+        it('removes secrets, stages and stageBuilds, tokens, and triggers', () =>
             pipeline.remove().then(() => {
                 assert.calledOnce(secretFactoryMock.list);
                 assert.calledOnce(secret.remove);
-            }));
-
-        it('remove tokens', () =>
-            pipeline.remove().then(() => {
+                assert.calledOnce(stageFactoryMock.list);
+                assert.calledOnce(stageBuildFactoryMock.list);
                 assert.calledOnce(tokenFactoryMock.list);
                 assert.calledOnce(token.remove);
-            }));
-
-        it('remove triggers', () =>
-            pipeline.remove().then(() => {
                 assert.calledWith(triggerFactoryMock.list, { params: { dest: [] } });
                 assert.calledThrice(jobFactoryMock.list);
                 assert.calledOnce(triggerFactoryMock.list);
