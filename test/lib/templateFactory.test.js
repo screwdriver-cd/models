@@ -995,7 +995,7 @@ describe('Template Factory', () => {
             jobsCount = [
                 {
                     templateId: 1,
-                    count: 3
+                    count: 1
                 },
                 {
                     templateId: 2,
@@ -1008,10 +1008,6 @@ describe('Template Factory', () => {
                 {
                     templateId: 4,
                     count: 2
-                },
-                {
-                    templateId: 5,
-                    count: 7
                 }
             ];
 
@@ -1065,7 +1061,7 @@ describe('Template Factory', () => {
                     version: '1.0.1',
                     metrics: {
                         jobs: {
-                            count: 3
+                            count: 1
                         },
                         builds: {
                             count: 4
@@ -1169,7 +1165,7 @@ describe('Template Factory', () => {
                     });
 
                     assert.calledWith(jobFactoryMock.list, {
-                        params: { templateId: [1, 3, 2] },
+                        params: { templateId: [1, 3, 2], archived: false },
                         readOnly: true,
                         aggregationField: 'templateId'
                     });
@@ -1207,7 +1203,7 @@ describe('Template Factory', () => {
                 });
 
                 assert.calledWith(jobFactoryMock.list, {
-                    params: { templateId: [4] },
+                    params: { templateId: [4], archived: false },
                     readOnly: true,
                     aggregationField: 'templateId'
                 });
@@ -1253,7 +1249,7 @@ describe('Template Factory', () => {
                     });
 
                     assert.calledWith(jobFactoryMock.list, {
-                        params: { templateId: [returnValue[0].id, returnValue[1].id] },
+                        params: { templateId: [returnValue[0].id, returnValue[1].id], archived: false },
                         readOnly: true,
                         aggregationField: 'templateId'
                     });
@@ -1265,6 +1261,7 @@ describe('Template Factory', () => {
                         startTime,
                         endTime
                     });
+
                     assert.calledWith(datastore.scan, {
                         table: 'templates',
                         params: { name: 'testTemplate', namespace: 'namespace', version: '1.0.2' }
@@ -1279,7 +1276,7 @@ describe('Template Factory', () => {
                     });
 
                     assert.calledWith(jobFactoryMock.list, {
-                        params: { templateId: [1, 3] },
+                        params: { templateId: [1, 3], archived: false },
                         readOnly: true,
                         aggregationField: 'templateId'
                     });
@@ -1312,7 +1309,7 @@ describe('Template Factory', () => {
                     });
 
                     assert.calledWith(jobFactoryMock.list, {
-                        params: { templateId: [returnValue[0].id, returnValue[1].id] },
+                        params: { templateId: [returnValue[0].id, returnValue[1].id], archived: false },
                         readOnly: true,
                         aggregationField: 'templateId'
                     });
@@ -1350,7 +1347,7 @@ describe('Template Factory', () => {
                     });
 
                     assert.calledWith(jobFactoryMock.list, {
-                        params: { templateId: [returnValue[0].id, returnValue[1].id] },
+                        params: { templateId: [returnValue[0].id, returnValue[1].id], archived: false },
                         readOnly: true,
                         aggregationField: 'templateId'
                     });
@@ -1520,7 +1517,7 @@ describe('Template Factory', () => {
                     table: 'templates'
                 });
                 assert.calledWith(jobFactoryMock.list, {
-                    params: { templateId: 1 },
+                    params: { templateId: 1, archived: false },
                     readOnly: true,
                     aggregationField: 'pipelineId'
                 });
@@ -1555,7 +1552,7 @@ describe('Template Factory', () => {
                     table: 'templates'
                 });
                 assert.calledWith(jobFactoryMock.list, {
-                    params: { templateId: 1 },
+                    params: { templateId: 1, archived: false },
                     readOnly: true,
                     aggregationField: 'pipelineId'
                 });
