@@ -3108,6 +3108,8 @@ describe('Pipeline Model', () => {
             eventFactoryMock.list.reset();
             jobFactoryMock.list.reset();
             secretFactoryMock.list.reset();
+            stageFactoryMock.list.reset();
+            stageBuildFactoryMock.list.reset();
             tokenFactoryMock.list.reset();
             collectionFactoryMock.list.reset();
             triggerFactoryMock.list.reset();
@@ -3132,6 +3134,23 @@ describe('Pipeline Model', () => {
                 assert.calledOnce(triggerFactoryMock.list);
                 assert.calledOnce(trigger.remove);
             }));
+
+        it('does not remove stage or stageBuilds if stages does not exist', () => {
+            stageFactoryMock.list.resolves([]);
+
+            return pipeline.remove().then(() => {
+                assert.calledOnce(secretFactoryMock.list);
+                assert.calledOnce(secret.remove);
+                assert.calledOnce(stageFactoryMock.list);
+                assert.notCalled(stageBuildFactoryMock.list);
+                assert.calledOnce(tokenFactoryMock.list);
+                assert.calledOnce(token.remove);
+                assert.calledWith(triggerFactoryMock.list, { params: { dest: [] } });
+                assert.calledThrice(jobFactoryMock.list);
+                assert.calledOnce(triggerFactoryMock.list);
+                assert.calledOnce(trigger.remove);
+            });
+        });
 
         it('remove jobs recursively', () => {
             const nonArchivedMatcher = sinon.match(function (value) {
