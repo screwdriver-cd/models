@@ -1,9 +1,9 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
+const rewiremock = require('rewiremock/node');
 
 sinon.assert.expose(assert, { prefix: '' });
 const WORKFLOWGRAPH_WITH_STAGES = require('../data/workflowGraphWithStages.json');
@@ -19,13 +19,6 @@ describe('Event Model', () => {
     let createConfig;
     let mockStages;
     let mockStageBuild;
-
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
 
     beforeEach(() => {
         mockStages = [
@@ -54,23 +47,19 @@ describe('Event Model', () => {
             list: sinon.stub().resolves([mockStageBuild])
         };
 
-        mockery.registerMock('./buildFactory', {
+        rewiremock('../../lib/buildFactory').with({
             getInstance: sinon.stub().returns(buildFactoryMock)
         });
-
-        mockery.registerMock('./stageFactory', {
+        rewiremock('../../lib/stageFactory').with({
             getInstance: sinon.stub().returns(stageFactoryMock)
         });
-
-        mockery.registerMock('./stageBuildFactory', {
+        rewiremock('../../lib/stageBuildFactory').with({
             getInstance: sinon.stub().returns(stageBuildFactoryMock)
         });
+        rewiremock.enable();
 
         // eslint-disable-next-line global-require
         EventModel = require('../../lib/event');
-
-        // eslint-disable-next-line global-require
-        BaseModel = require('../../lib/base');
 
         createConfig = {
             id: 1234,
@@ -83,15 +72,16 @@ describe('Event Model', () => {
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
+        rewiremock.disable();
     });
 
     it('is constructed properly', () => {
+        rewiremock.disable();
+        // eslint-disable-next-line global-require
+        EventModel = require('../../lib/event');
+        // eslint-disable-next-line global-require
+        BaseModel = require('../../lib/base');
+        event = new EventModel(createConfig);
         assert.instanceOf(event, EventModel);
         assert.instanceOf(event, BaseModel);
         schema.models.event.allKeys.forEach(key => {

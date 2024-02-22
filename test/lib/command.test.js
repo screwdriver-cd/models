@@ -1,7 +1,6 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
 
@@ -13,13 +12,6 @@ describe('Command Model', () => {
     let command;
     let BaseModel;
     let createConfig;
-
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
 
     beforeEach(() => {
         datastore = {};
@@ -53,16 +45,6 @@ describe('Command Model', () => {
             pipelineId: '8765'
         };
         command = new CommandModel(createConfig);
-    });
-
-    afterEach(() => {
-        datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
     });
 
     it('is constructed properly', () => {

@@ -1,7 +1,7 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
+const rewiremock = require('rewiremock/node');
 const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -15,13 +15,6 @@ describe('User Factory', () => {
     let tokenFactoryMock;
     let factory;
     let User;
-
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
 
     beforeEach(() => {
         datastore = {
@@ -40,11 +33,11 @@ describe('User Factory', () => {
             get: sinon.stub()
         };
 
-        mockery.registerMock('screwdriver-hashr', hashaMock);
-        mockery.registerMock('@hapi/iron', ironMock);
-        mockery.registerMock('./tokenFactory', {
+        rewiremock('@hapi/iron').with(ironMock);
+        rewiremock('../../lib/tokenFactory').with({
             getInstance: sinon.stub().returns(tokenFactoryMock)
         });
+        rewiremock.enable();
 
         // eslint-disable-next-line global-require
         User = require('../../lib/user');
@@ -56,12 +49,7 @@ describe('User Factory', () => {
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
+        rewiremock.disable();
     });
 
     describe('createClass', () => {

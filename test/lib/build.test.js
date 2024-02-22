@@ -1,10 +1,10 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
 const { SCM_STATE_MAP } = require('screwdriver-data-schema').plugins.scm;
+const rewiremock = require('rewiremock/node');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -52,7 +52,6 @@ describe('Build Model', () => {
     let BuildModel;
     let datastore;
     let executorMock;
-    let hashaMock;
     let build;
     let config;
     let BaseModel;
@@ -69,13 +68,6 @@ describe('Build Model', () => {
     let jobMock;
     let templateMock;
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         datastore = {
             get: sinon.stub(),
@@ -83,9 +75,6 @@ describe('Build Model', () => {
             scan: sinon.stub(),
             update: sinon.stub(),
             remove: sinon.stub()
-        };
-        hashaMock = {
-            sha1: sinon.stub()
         };
         executorMock = {
             start: sinon.stub(),
@@ -167,19 +156,17 @@ describe('Build Model', () => {
             getInstance: sinon.stub().returns(templateFactoryMock)
         };
 
-        mockery.registerMock('./pipelineFactory', pF);
-        mockery.registerMock('./userFactory', uF);
-        mockery.registerMock('./jobFactory', jF);
-        mockery.registerMock('./stepFactory', sF);
-        mockery.registerMock('./stageFactory', stageF);
-        mockery.registerMock('./stageBuildFactory', stageBuildF);
-        mockery.registerMock('./templateFactory', tF);
-        mockery.registerMock('screwdriver-hashr', hashaMock);
+        rewiremock('../../lib/pipelineFactory').with(pF);
+        rewiremock('../../lib/userFactory').with(uF);
+        rewiremock('../../lib/jobFactory').with(jF);
+        rewiremock('../../lib/stepFactory').with(sF);
+        rewiremock('../../lib/stageFactory').with(stageF);
+        rewiremock('../../lib/stageBuildFactory').with(stageBuildF);
+        rewiremock('../../lib/templateFactory').with(tF);
+        rewiremock.enable();
 
         // eslint-disable-next-line global-require
         BuildModel = require('../../lib/build');
-        // eslint-disable-next-line global-require
-        BaseModel = require('../../lib/base');
 
         config = {
             datastore,
@@ -204,15 +191,17 @@ describe('Build Model', () => {
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
+        rewiremock.disable();
     });
 
     it('extends base class', () => {
+        rewiremock.disable();
+        // eslint-disable-next-line global-require
+        BuildModel = require('../../lib/build');
+        build = new BuildModel(config);
+        // eslint-disable-next-line global-require
+        BaseModel = require('../../lib/base');
+
         assert.instanceOf(build, BaseModel);
         assert.isFunction(build.start);
         assert.isFunction(build.stop);

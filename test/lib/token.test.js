@@ -1,9 +1,9 @@
 'use strict';
 
 const { assert } = require('chai');
-const sinon = require('sinon');
-const mockery = require('mockery');
 const hoek = require('@hapi/hoek');
+const rewiremock = require('rewiremock/node');
+const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -18,10 +18,6 @@ describe('Token Model', () => {
     let token;
 
     before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
         datastore = {
             update: sinon.stub()
         };
@@ -29,16 +25,16 @@ describe('Token Model', () => {
             generateValue: sinon.stub(),
             hashValue: sinon.stub()
         };
-        mockery.registerMock('./generateToken', generateTokenMock);
+    });
 
-        // Lazy load Token Model so it registers the mocks
+    beforeEach(() => {
+        rewiremock('../../lib/generateToken').with(generateTokenMock);
+        rewiremock.enable();
         /* eslint-disable global-require */
         BaseModel = require('../../lib/base');
         TokenModel = require('../../lib/token');
         /* eslint-enable global-require */
-    });
 
-    beforeEach(() => {
         datastore.update.resolves({});
 
         createConfig = {
@@ -54,9 +50,8 @@ describe('Token Model', () => {
         token = new TokenModel(createConfig);
     });
 
-    after(() => {
-        mockery.deregisterAll();
-        mockery.disable();
+    afterEach(() => {
+        rewiremock.disable();
     });
 
     it('is constructed properly for user token', () => {

@@ -2,7 +2,6 @@
 
 const { assert } = require('chai');
 const sinon = require('sinon');
-const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -15,10 +14,6 @@ describe('Step Model', () => {
     let step;
 
     before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
         datastore = {
             update: sinon.stub(),
             remove: sinon.stub().resolves(null)
@@ -39,11 +34,6 @@ describe('Step Model', () => {
             message: 'Screwdriver step message'
         };
         step = new StepModel(createConfig);
-    });
-
-    after(() => {
-        mockery.deregisterAll();
-        mockery.disable();
     });
 
     it('is constructed properly', () => {

@@ -1,7 +1,6 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
 const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -34,13 +33,6 @@ describe('Collection Factory', () => {
     let factory;
     let Collection;
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         datastore = {
             save: sinon.stub(),
@@ -53,15 +45,6 @@ describe('Collection Factory', () => {
         /* eslint-disable global-require */
 
         factory = new CollectionFactory({ datastore });
-    });
-
-    afterEach(() => {
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.deregisterAll();
-        mockery.disable();
     });
 
     describe('createClass', () => {
@@ -156,6 +139,10 @@ describe('Collection Factory', () => {
             /* eslint-enable global-require */
         });
 
+        it('should throw an error when config not supplied', () => {
+            assert.throw(CollectionFactory.getInstance, Error, 'No datastore provided to CollectionFactory');
+        });
+
         it('should get an instance', () => {
             const f1 = CollectionFactory.getInstance(config);
             const f2 = CollectionFactory.getInstance(config);
@@ -164,10 +151,6 @@ describe('Collection Factory', () => {
             assert.instanceOf(f2, CollectionFactory);
 
             assert.equal(f1, f2);
-        });
-
-        it('should throw an error when config not supplied', () => {
-            assert.throw(CollectionFactory.getInstance, Error, 'No datastore provided to CollectionFactory');
         });
     });
 });

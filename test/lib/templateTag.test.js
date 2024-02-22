@@ -2,7 +2,6 @@
 
 const { assert } = require('chai');
 const sinon = require('sinon');
-const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -13,13 +12,6 @@ describe('TemplateTag Model', () => {
     let datastore;
     let createConfig;
     let templateTag;
-
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
 
     beforeEach(() => {
         datastore = {
@@ -44,12 +36,6 @@ describe('TemplateTag Model', () => {
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
     });
 
     it('is constructed properly', () => {

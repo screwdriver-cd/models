@@ -1,7 +1,6 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
 const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -22,13 +21,6 @@ describe('CommandTag Factory', () => {
     let factory;
     let CommandTag;
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         datastore = {
             save: sinon.stub(),
@@ -46,12 +38,6 @@ describe('CommandTag Factory', () => {
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
     });
 
     describe('createClass', () => {
@@ -102,6 +88,10 @@ describe('CommandTag Factory', () => {
             config = { datastore };
         });
 
+        it('should throw when config not supplied', () => {
+            assert.throw(CommandTagFactory.getInstance, Error, 'No datastore provided to CommandTagFactory');
+        });
+
         it('should get an instance', () => {
             const f1 = CommandTagFactory.getInstance(config);
             const f2 = CommandTagFactory.getInstance(config);
@@ -110,10 +100,6 @@ describe('CommandTag Factory', () => {
             assert.instanceOf(f2, CommandTagFactory);
 
             assert.equal(f1, f2);
-        });
-
-        it('should throw when config not supplied', () => {
-            assert.throw(CommandTagFactory.getInstance, Error, 'No datastore provided to CommandTagFactory');
         });
     });
 });

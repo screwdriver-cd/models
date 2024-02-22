@@ -39,10 +39,10 @@
     "mocha": "^10.1.0",
     "mocha-multi-reporters": "^1.5.1",
     "mocha-sonarqube-reporter": "^1.0.2",
-    "mockery": "^2.1.0",
     "nyc": "^15.1.0",
     "path": "^0.12.7",
     "rewire": "^6.0.0",
+    "rewiremock": "^3.14.4",
     "sinon": "^15.0.0"
   },
   "dependencies": {

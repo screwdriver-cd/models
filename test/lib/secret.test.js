@@ -1,8 +1,8 @@
 'use strict';
 
 const { assert } = require('chai');
+const rewiremock = require('rewiremock/node');
 const sinon = require('sinon');
-const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -16,13 +16,6 @@ describe('Secret Model', () => {
     let createConfig;
     let secret;
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         datastore = {
             update: sinon.stub()
@@ -33,13 +26,12 @@ describe('Secret Model', () => {
             defaults: {}
         };
 
-        mockery.registerMock('@hapi/iron', ironMock);
-
         // eslint-disable-next-line global-require
         BaseModel = require('../../lib/base');
 
-        // eslint-disable-next-line global-require
-        SecretModel = require('../../lib/secret');
+        SecretModel = rewiremock.proxy('../../lib/secret', {
+            '@hapi/iron': ironMock
+        });
 
         createConfig = {
             datastore,
@@ -55,12 +47,6 @@ describe('Secret Model', () => {
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
     });
 
     it('is constructed properly', () => {

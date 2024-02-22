@@ -1,7 +1,7 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
+const rewiremock = require('rewiremock/node');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
 
@@ -29,13 +29,6 @@ describe('Pipeline Factory', () => {
     };
     let pipelineConfig;
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         datastore = {
             save: sinon.stub(),
@@ -52,16 +45,15 @@ describe('Pipeline Factory', () => {
             get: sinon.stub()
         };
 
-        // Fixing mockery issue with duplicate file names
-        // by re-registering data-schema with its own implementation
-        mockery.registerMock('screwdriver-data-schema', schema);
-        mockery.registerMock('./pipeline', Pipeline);
-        mockery.registerMock('./userFactory', {
+        rewiremock('screwdriver-data-schema').with(schema);
+        rewiremock('../../lib/pipeline').with(Pipeline);
+        rewiremock('../../lib/userFactory').with({
             getInstance: sinon.stub().returns(userFactoryMock)
         });
-        mockery.registerMock('./tokenFactory', {
+        rewiremock('../../lib/tokenFactory').with({
             getInstance: sinon.stub().returns(tokenFactoryMock)
         });
+        rewiremock.enable();
 
         // eslint-disable-next-line global-require
         PipelineFactory = require('../../lib/pipelineFactory');
@@ -82,12 +74,7 @@ describe('Pipeline Factory', () => {
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
+        rewiremock.disable();
     });
 
     describe('createClass', () => {

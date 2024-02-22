@@ -1,7 +1,7 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
+const rewiremock = require('rewiremock/node');
 const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -57,13 +57,6 @@ describe('Trigger Factory', () => {
         }
     ];
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         datastore = {
             save: sinon.stub(),
@@ -112,10 +105,10 @@ describe('Trigger Factory', () => {
             }
         };
 
-        mockery.registerMock('./pipelineFactory', {
+        rewiremock('../../lib/pipelineFactory').with({
             getInstance: sinon.stub().returns(pipelineFactoryMock)
         });
-
+        rewiremock.enable();
         // eslint-disable-next-line global-require
         Trigger = require('../../lib/trigger');
         // eslint-disable-next-line global-require
@@ -126,12 +119,7 @@ describe('Trigger Factory', () => {
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
+        rewiremock.disable();
     });
 
     describe('createClass', () => {

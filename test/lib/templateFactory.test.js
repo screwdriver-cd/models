@@ -1,7 +1,7 @@
 'use strict';
 
 const { assert, expect } = require('chai');
-const mockery = require('mockery');
+const rewiremock = require('rewiremock/node');
 const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -34,13 +34,6 @@ describe('Template Factory', () => {
     let pipelineFactoryMock;
     let eventFactoryMock;
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         datastore = {
             save: sinon.stub(),
@@ -65,21 +58,22 @@ describe('Template Factory', () => {
             list: sinon.stub()
         };
 
-        mockery.registerMock('./templateTagFactory', {
+        rewiremock('../../lib/templateTagFactory').with({
             getInstance: sinon.stub().returns(templateTagFactoryMock)
         });
-        mockery.registerMock('./jobFactory', {
+        rewiremock('../../lib/jobFactory').with({
             getInstance: sinon.stub().returns(jobFactoryMock)
         });
-        mockery.registerMock('./buildFactory', {
+        rewiremock('../../lib/buildFactory').with({
             getInstance: sinon.stub().returns(buildFactoryMock)
         });
-        mockery.registerMock('./pipelineFactory', {
+        rewiremock('../../lib/pipelineFactory').with({
             getInstance: sinon.stub().returns(pipelineFactoryMock)
         });
-        mockery.registerMock('./eventFactory', {
+        rewiremock('../../lib/eventFactory').with({
             getInstance: sinon.stub().returns(eventFactoryMock)
         });
+        rewiremock.enable();
 
         /* eslint-disable global-require */
         Template = require('../../lib/template');
@@ -91,12 +85,7 @@ describe('Template Factory', () => {
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
+        rewiremock.disable();
     });
 
     describe('createClass', () => {
