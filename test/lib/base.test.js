@@ -1,7 +1,7 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
+const rewiremock = require('rewiremock/node');
 const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -14,13 +14,6 @@ describe('Base Model', () => {
     let config;
     let scm;
     let multiBuildClusterEnabled;
-
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
 
     beforeEach(() => {
         scm = {
@@ -42,10 +35,10 @@ describe('Base Model', () => {
                 }
             }
         };
-        mockery.registerMock('screwdriver-data-schema', schemaMock);
 
-        // eslint-disable-next-line global-require
-        BaseModel = require('../../lib/base');
+        BaseModel = rewiremock.proxy('../../lib/base', {
+            'screwdriver-data-schema': schemaMock
+        });
 
         config = {
             datastore,
@@ -61,12 +54,6 @@ describe('Base Model', () => {
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
     });
 
     describe('constructor', () => {

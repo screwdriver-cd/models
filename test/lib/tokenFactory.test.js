@@ -1,7 +1,7 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
+const rewiremock = require('rewiremock/node');
 const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -36,10 +36,6 @@ describe('Token Factory', () => {
     let Token;
 
     before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
         generateTokenMock = {
             generateValue: sinon.stub(),
             hashValue: sinon.stub()
@@ -47,8 +43,6 @@ describe('Token Factory', () => {
 
         generateTokenMock.generateValue.resolves(randomBytes);
         generateTokenMock.hashValue.resolves(hash);
-
-        mockery.registerMock('./generateToken', generateTokenMock);
     });
 
     beforeEach(() => {
@@ -56,7 +50,8 @@ describe('Token Factory', () => {
             save: sinon.stub(),
             get: sinon.stub()
         };
-
+        rewiremock('../../lib/generateToken').with(generateTokenMock);
+        rewiremock.enable();
         /* eslint-disable global-require */
         Token = require('../../lib/token');
         TokenFactory = require('../../lib/tokenFactory');
@@ -66,12 +61,7 @@ describe('Token Factory', () => {
     });
 
     afterEach(() => {
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.deregisterAll();
-        mockery.disable();
+        rewiremock.disable();
     });
 
     describe('createClass', () => {

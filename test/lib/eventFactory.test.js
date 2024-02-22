@@ -3,8 +3,9 @@
 const { assert } = require('chai');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
-const mockery = require('mockery');
 const rewire = require('rewire');
+const rewiremock = require('rewiremock/node');
+
 const PARSED_YAML = require('../data/parserWithWorkflowGraph.json');
 
 let updateStub;
@@ -45,13 +46,6 @@ describe('Event Factory', () => {
     let pipelineMock;
     let scm;
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         datastore = {
             save: sinon.stub()
@@ -76,20 +70,18 @@ describe('Event Factory', () => {
             getDisplayName: sinon.stub()
         };
 
-        // Fixing mockery issue with duplicate file names
-        // by re-registering data-schema with its own implementation
-        mockery.registerMock('screwdriver-data-schema', schema);
-
-        mockery.registerMock('./pipelineFactory', {
+        rewiremock('../../lib/pipelineFactory').with({
             getInstance: sinon.stub().returns(pipelineFactoryMock)
         });
-        mockery.registerMock('./jobFactory', {
+        rewiremock('../../lib/jobFactory').with({
             getInstance: sinon.stub().returns(jobFactoryMock)
         });
-        mockery.registerMock('./buildFactory', {
+        rewiremock('../../lib/buildFactory').with({
             getInstance: sinon.stub().returns(buildFactoryMock)
         });
-        mockery.registerMock('./event', Event);
+        rewiremock('screwdriver-data-schema').with(schema);
+        rewiremock('../../lib/event').with(Event);
+        rewiremock.enable();
 
         // eslint-disable-next-line global-require
         EventFactory = require('../../lib/eventFactory');
@@ -99,12 +91,7 @@ describe('Event Factory', () => {
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
+        rewiremock.disable();
     });
 
     describe('createClass', () => {

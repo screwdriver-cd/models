@@ -1,7 +1,7 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
+const rewiremock = require('rewiremock/node');
 const sinon = require('sinon');
 
 /* eslint max-classes-per-file: ["error", 2] */
@@ -24,13 +24,6 @@ describe('Base Factory', () => {
     let factory;
     let schema;
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         scm = {};
         datastore = {
@@ -49,22 +42,15 @@ describe('Base Factory', () => {
             }
         };
 
-        mockery.registerMock('screwdriver-data-schema', schema);
-
-        // eslint-disable-next-line global-require
-        BaseFactory = require('../../lib/baseFactory');
+        BaseFactory = rewiremock.proxy('../../lib/baseFactory', {
+            'screwdriver-data-schema': schema
+        });
 
         factory = new BaseFactory('base', { datastore, scm });
     });
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
     });
 
     describe('createClass', () => {

@@ -1,7 +1,6 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
 const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -23,13 +22,6 @@ describe('Banner Factory', () => {
     let factory;
     let Banner;
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         datastore = {
             save: sinon.stub(),
@@ -42,15 +34,6 @@ describe('Banner Factory', () => {
         /* eslint-disable global-require */
 
         factory = new BannerFactory({ datastore });
-    });
-
-    afterEach(() => {
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.deregisterAll();
-        mockery.disable();
     });
 
     describe('createClass', () => {
@@ -169,6 +152,10 @@ describe('Banner Factory', () => {
             /* eslint-enable global-require */
         });
 
+        it('should throw an error when config not supplied', () => {
+            assert.throws(() => BannerFactory.getInstance(), 'No datastore provided to BannerFactory');
+        });
+
         it('should get an instance', () => {
             const f1 = BannerFactory.getInstance(config);
             const f2 = BannerFactory.getInstance(config);
@@ -177,10 +164,6 @@ describe('Banner Factory', () => {
             assert.instanceOf(f2, BannerFactory);
 
             assert.equal(f1, f2);
-        });
-
-        it('should throw an error when config not supplied', () => {
-            assert.throw(BannerFactory.getInstance, Error, 'No datastore provided to BannerFactory');
         });
     });
 });

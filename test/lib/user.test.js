@@ -1,7 +1,7 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
+const rewiremock = require('rewiremock/node');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
 
@@ -15,19 +15,11 @@ describe('User Model', () => {
     let UserModel;
     let datastore;
     let scmMock;
-    let hashaMock;
     let ironMock;
     let tokenFactoryMock;
     let user;
     let BaseModel;
     let createConfig;
-
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
 
     beforeEach(() => {
         datastore = {
@@ -39,9 +31,6 @@ describe('User Model', () => {
             getPermissions: sinon.stub(),
             getDisplayName: sinon.stub()
         };
-        hashaMock = {
-            sha1: sinon.stub()
-        };
         ironMock = {
             seal: sinon.stub(),
             unseal: sinon.stub(),
@@ -51,11 +40,11 @@ describe('User Model', () => {
             list: sinon.stub()
         };
 
-        mockery.registerMock('screwdriver-hashr', hashaMock);
-        mockery.registerMock('@hapi/iron', ironMock);
-        mockery.registerMock('./tokenFactory', {
+        rewiremock('@hapi/iron').with(ironMock);
+        rewiremock('../../lib/tokenFactory').with({
             getInstance: sinon.stub().returns(tokenFactoryMock)
         });
+        rewiremock.enable();
 
         /* eslint-disable global-require */
         UserModel = require('../../lib/user');
@@ -75,15 +64,16 @@ describe('User Model', () => {
     });
 
     afterEach(() => {
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
+        rewiremock.disable();
     });
 
     it('is constructed properly', () => {
+        rewiremock.disable();
+        /* eslint-disable global-require */
+        UserModel = require('../../lib/user');
+        BaseModel = require('../../lib/base');
+        /* eslint-enable global-require */
+        user = new UserModel(createConfig);
         assert.instanceOf(user, UserModel);
         assert.instanceOf(user, BaseModel);
         schema.models.user.allKeys.forEach(key => {

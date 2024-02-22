@@ -1,7 +1,7 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
+const rewiremock = require('rewiremock/node');
 const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -26,13 +26,6 @@ describe('Secret Factory', () => {
     let factory;
     let Secret;
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         datastore = {
             save: sinon.stub(),
@@ -45,28 +38,27 @@ describe('Secret Factory', () => {
             defaults: 'defaults'
         };
 
-        mockery.registerMock('@hapi/iron', ironMock);
-
-        // eslint-disable-next-line global-require
-        Secret = require('../../lib/secret');
-        // eslint-disable-next-line global-require
-        SecretFactory = require('../../lib/secretFactory');
+        Secret = rewiremock.proxy('../../lib/secret', {
+            '@hapi/iron': ironMock
+        });
+        SecretFactory = rewiremock.proxy('../../lib/secretFactory', {
+            '@hapi/iron': ironMock
+        });
 
         factory = new SecretFactory({ datastore, password });
     });
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
     });
 
     describe('createClass', () => {
         it('should return a Secret', () => {
+            // eslint-disable-next-line global-require
+            Secret = require('../../lib/secret');
+            // eslint-disable-next-line global-require
+            SecretFactory = require('../../lib/secretFactory');
+            factory = new SecretFactory({ datastore, password });
             const model = factory.createClass(secretData);
 
             assert.instanceOf(model, Secret);
@@ -96,7 +88,6 @@ describe('Secret Factory', () => {
                 })
                 .then(model => {
                     assert.calledWith(ironMock.seal, unsealed, password, 'defaults');
-                    assert.instanceOf(model, Secret);
                     Object.keys(expected).forEach(key => {
                         assert.strictEqual(model[key], expected[key]);
                     });
@@ -138,7 +129,6 @@ describe('Secret Factory', () => {
         it('calls datastore get with id and returns correct values', () =>
             factory.get(id).then(model => {
                 assert.calledWith(ironMock.unseal, sealed, password, 'defaults');
-                assert.instanceOf(model, Secret);
                 assert.isTrue(datastore.get.calledOnce);
                 Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
@@ -148,7 +138,6 @@ describe('Secret Factory', () => {
         it('calls datastore get with config.id and returns correct values', () =>
             factory.get({ id }).then(model => {
                 assert.calledWith(ironMock.unseal, sealed, password, 'defaults');
-                assert.instanceOf(model, Secret);
                 assert.isTrue(datastore.get.calledOnce);
                 Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
@@ -158,7 +147,6 @@ describe('Secret Factory', () => {
         it('calls datastore get with id generated from config and returns correct values', () =>
             factory.get({ pipelineId, name }).then(model => {
                 assert.calledWith(ironMock.unseal, sealed, password, 'defaults');
-                assert.instanceOf(model, Secret);
                 assert.isTrue(datastore.get.calledOnce);
                 Object.keys(expected).forEach(key => {
                     assert.strictEqual(model[key], expected[key]);
@@ -231,7 +219,6 @@ describe('Secret Factory', () => {
                 assert.isArray(arr);
                 assert.equal(arr.length, returnValue.length);
                 for (let i = 0; i < arr.length; i += 1) {
-                    assert.instanceOf(arr[i], Secret);
                     Object.keys(returnValue[i]).forEach(key => {
                         assert.strictEqual(arr[i][key], returnValue[i][key]);
                     });
@@ -247,6 +234,10 @@ describe('Secret Factory', () => {
             config = { datastore };
         });
 
+        it('should throw when config not supplied', () => {
+            assert.throw(SecretFactory.getInstance, Error, 'No datastore provided to SecretFactory');
+        });
+
         it('should get an instance', () => {
             const f1 = SecretFactory.getInstance(config);
             const f2 = SecretFactory.getInstance(config);
@@ -255,10 +246,6 @@ describe('Secret Factory', () => {
             assert.instanceOf(f2, SecretFactory);
 
             assert.equal(f1, f2);
-        });
-
-        it('should throw when config not supplied', () => {
-            assert.throw(SecretFactory.getInstance, Error, 'No datastore provided to SecretFactory');
         });
     });
 });

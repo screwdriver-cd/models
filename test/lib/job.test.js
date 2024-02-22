@@ -1,12 +1,13 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
 const hoek = require('@hapi/hoek');
 const rewire = require('rewire');
 const dayjs = require('dayjs');
+const rewiremock = require('rewiremock/node');
+
 const MAX_METRIC_GET_COUNT = 1000;
 const FAKE_MAX_METRIC_GET_COUNT = 5;
 
@@ -132,13 +133,6 @@ describe('Job Model', () => {
         ]
     });
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         datastore = {
             update: sinon.stub(),
@@ -164,23 +158,19 @@ describe('Job Model', () => {
 
         tokenGen = sinon.stub().returns(token);
 
-        mockery.registerMock('./pipelineFactory', {
+        rewiremock('../../lib/pipelineFactory').with({
             getInstance: sinon.stub().returns(pipelineFactoryMock)
         });
-
-        mockery.registerMock('./jobFactory', {
+        rewiremock('../../lib/jobFactory').with({
             getInstance: sinon.stub().returns(jobFactoryMock)
         });
-
-        mockery.registerMock('./buildFactory', {
+        rewiremock('../../lib/buildFactory').with({
             getInstance: sinon.stub().returns(buildFactoryMock)
         });
+        rewiremock.enable();
 
         // eslint-disable-next-line global-require
         JobModel = require('../../lib/job');
-
-        // eslint-disable-next-line global-require
-        BaseModel = require('../../lib/base');
 
         config = {
             datastore,
@@ -202,16 +192,17 @@ describe('Job Model', () => {
     });
 
     afterEach(() => {
+        rewiremock.disable();
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
     });
 
     it('is constructed properly', () => {
+        rewiremock.disable();
+        // eslint-disable-next-line global-require
+        JobModel = require('../../lib/job');
+        // eslint-disable-next-line global-require
+        BaseModel = require('../../lib/base');
+        job = new JobModel(config);
         assert.instanceOf(job, BaseModel);
         assert.isFunction(job.update);
         assert.isUndefined(job.apiUri);

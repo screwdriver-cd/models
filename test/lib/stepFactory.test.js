@@ -1,7 +1,6 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
 const sinon = require('sinon');
 const { DELETE_STEPS_QUERY, getQueries } = require('../../lib/rawQueries');
 
@@ -24,13 +23,6 @@ describe('Step Factory', () => {
     let factory;
     let Step;
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         datastore = {
             save: sinon.stub(),
@@ -44,15 +36,6 @@ describe('Step Factory', () => {
         /* eslint-disable global-require */
 
         factory = new StepFactory({ datastore });
-    });
-
-    afterEach(() => {
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.deregisterAll();
-        mockery.disable();
     });
 
     describe('createClass', () => {
@@ -108,6 +91,10 @@ describe('Step Factory', () => {
             /* eslint-enable global-require */
         });
 
+        it('should throw an error when config not supplied', () => {
+            assert.throw(StepFactory.getInstance, Error, 'No datastore provided to StepFactory');
+        });
+
         it('should get an instance', () => {
             const f1 = StepFactory.getInstance(config);
             const f2 = StepFactory.getInstance(config);
@@ -116,10 +103,6 @@ describe('Step Factory', () => {
             assert.instanceOf(f2, StepFactory);
 
             assert.equal(f1, f2);
-        });
-
-        it('should throw an error when config not supplied', () => {
-            assert.throw(StepFactory.getInstance, Error, 'No datastore provided to StepFactory');
         });
     });
 

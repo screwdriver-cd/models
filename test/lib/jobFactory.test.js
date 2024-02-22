@@ -1,9 +1,10 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
 const sinon = require('sinon');
 const schema = require('screwdriver-data-schema');
+const rewiremock = require('rewiremock/node');
+
 const { getQueries, PR_JOBS_FOR_PIPELINE_SYNC } = require('../../lib/rawQueries');
 
 class Job {
@@ -25,13 +26,6 @@ describe('Job Factory', () => {
     let apiUri;
     const tokenGen = sinon.stub();
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         datastore = {
             save: sinon.stub(),
@@ -48,14 +42,12 @@ describe('Job Factory', () => {
         };
         apiUri = 'https://notify.com/some/endpoint';
 
-        // Fixing mockery issue with duplicate file names
-        // by re-registering data-schema with its own implementation
-        mockery.registerMock('screwdriver-data-schema', schema);
-        mockery.registerMock('./job', Job);
-
-        mockery.registerMock('./pipelineFactory', {
+        rewiremock('screwdriver-data-schema').with(schema);
+        rewiremock('../../lib/job').with(Job);
+        rewiremock('../../lib/pipelineFactory').with({
             getInstance: sinon.stub().returns(pipelineFactoryMock)
         });
+        rewiremock.enable();
 
         // eslint-disable-next-line global-require
         JobFactory = require('../../lib/jobFactory');
@@ -67,12 +59,7 @@ describe('Job Factory', () => {
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
+        rewiremock.disable();
     });
 
     describe('createClass', () => {

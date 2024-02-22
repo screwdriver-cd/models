@@ -1,7 +1,7 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
+const rewiremock = require('rewiremock/node');
 const schema = require('screwdriver-data-schema');
 const sinon = require('sinon');
 const { STATUS_QUERY, LATEST_BUILD_QUERY, getQueries } = require('../../lib/rawQueries');
@@ -97,13 +97,6 @@ describe('Build Factory', () => {
         scmOrganizations: ['screwdriver']
     };
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         bookendMock = {
             getSetupCommands: sinon.stub(),
@@ -159,19 +152,18 @@ describe('Build Factory', () => {
         startStub = sinon.stub();
         getStepsStub = sinon.stub();
 
-        // Fixing mockery issue with duplicate file names
-        // by re-registering data-schema with its own implementation
-        mockery.registerMock('screwdriver-data-schema', schema);
-        mockery.registerMock('screwdriver-build-bookend', bookendMock);
-        mockery.registerMock('./jobFactory', jobFactory);
-        mockery.registerMock('./stepFactory', stepFactory);
-        mockery.registerMock('./stageFactory', stageFactory);
-        mockery.registerMock('./stageBuildFactory', stageBuildFactory);
-        mockery.registerMock('./userFactory', {
+        rewiremock('screwdriver-data-schema').with(schema);
+        rewiremock('../../lib/jobFactory').with(jobFactory);
+        rewiremock('../../lib/stepFactory').with(stepFactory);
+        rewiremock('../../lib/stageFactory').with(stageFactory);
+
+        rewiremock('../../lib/stageBuildFactory').with(stageBuildFactory);
+        rewiremock('../../lib/userFactory').with({
             getInstance: sinon.stub().returns(userFactoryMock)
         });
-        mockery.registerMock('./buildClusterFactory', buildClusterFactory);
-        mockery.registerMock('./build', Build);
+        rewiremock('../../lib/buildClusterFactory').with(buildClusterFactory);
+        rewiremock('../../lib/build').with(Build);
+        rewiremock.enable();
 
         // eslint-disable-next-line global-require
         BuildFactory = require('../../lib/buildFactory');
@@ -191,12 +183,7 @@ describe('Build Factory', () => {
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
+        rewiremock.disable();
     });
 
     describe('constructor', () => {

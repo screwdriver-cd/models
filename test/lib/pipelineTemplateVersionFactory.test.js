@@ -1,7 +1,6 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
 const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -22,13 +21,6 @@ describe('PipelineTemplateVersion Factory', () => {
     let PipelineTemplateVersion;
     let PipelineTemplateMeta;
     let templateMetaFactoryMock;
-
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
 
     beforeEach(() => {
         datastore = {
@@ -54,12 +46,6 @@ describe('PipelineTemplateVersion Factory', () => {
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
     });
 
     describe('createClass', () => {
@@ -485,6 +471,14 @@ describe('PipelineTemplateVersion Factory', () => {
             config = { datastore };
         });
 
+        it('should throw when config not supplied', () => {
+            assert.throw(
+                PipelineTemplateVersionFactory.getInstance,
+                Error,
+                'No datastore provided to PipelineTemplateVersionFactory'
+            );
+        });
+
         it('should get an instance', () => {
             const f1 = PipelineTemplateVersionFactory.getInstance(config);
             const f2 = PipelineTemplateVersionFactory.getInstance(config);
@@ -493,14 +487,6 @@ describe('PipelineTemplateVersion Factory', () => {
             assert.instanceOf(f2, PipelineTemplateVersionFactory);
 
             assert.equal(f1, f2);
-        });
-
-        it('should throw when config not supplied', () => {
-            assert.throw(
-                PipelineTemplateVersionFactory.getInstance,
-                Error,
-                'No datastore provided to PipelineTemplateVersionFactory'
-            );
         });
     });
 });

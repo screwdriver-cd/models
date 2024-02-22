@@ -2,7 +2,6 @@
 
 const { assert } = require('chai');
 const sinon = require('sinon');
-const mockery = require('mockery');
 const schema = require('screwdriver-data-schema');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -15,10 +14,6 @@ describe('Collection Model', () => {
     let collection;
 
     before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
         datastore = {
             update: sinon.stub(),
             remove: sinon.stub().resolves(null)
@@ -42,11 +37,6 @@ describe('Collection Model', () => {
             pipelineIds: [12, 34, 56]
         };
         collection = new CollectionModel(createConfig);
-    });
-
-    after(() => {
-        mockery.deregisterAll();
-        mockery.disable();
     });
 
     it('is constructed properly', () => {

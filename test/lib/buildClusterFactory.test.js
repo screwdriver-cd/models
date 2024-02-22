@@ -1,7 +1,6 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
 const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -31,13 +30,6 @@ describe('BuildCluster Factory', () => {
     let factory;
     let BuildCluster;
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         datastore = {
             save: sinon.stub(),
@@ -50,15 +42,6 @@ describe('BuildCluster Factory', () => {
         /* eslint-disable global-require */
 
         factory = new BuildClusterFactory({ datastore });
-    });
-
-    afterEach(() => {
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.deregisterAll();
-        mockery.disable();
     });
 
     describe('createClass', () => {
@@ -145,6 +128,10 @@ describe('BuildCluster Factory', () => {
             /* eslint-enable global-require */
         });
 
+        it('should throw an error when config not supplied', () => {
+            assert.throw(BuildClusterFactory.getInstance, Error, 'No datastore provided to BuildClusterFactory');
+        });
+
         it('should get an instance', () => {
             const f1 = BuildClusterFactory.getInstance(config);
             const f2 = BuildClusterFactory.getInstance(config);
@@ -153,10 +140,6 @@ describe('BuildCluster Factory', () => {
             assert.instanceOf(f2, BuildClusterFactory);
 
             assert.equal(f1, f2);
-        });
-
-        it('should throw an error when config not supplied', () => {
-            assert.throw(BuildClusterFactory.getInstance, Error, 'No datastore provided to BuildClusterFactory');
         });
     });
 });

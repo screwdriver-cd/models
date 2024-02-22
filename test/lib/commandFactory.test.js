@@ -1,8 +1,8 @@
 'use strict';
 
 const { assert } = require('chai');
-const mockery = require('mockery');
 const sinon = require('sinon');
+const rewiremock = require('rewiremock/node');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -37,13 +37,6 @@ describe('Command Factory', () => {
     let factory;
     let Command;
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         datastore = {
             save: sinon.stub(),
@@ -55,9 +48,10 @@ describe('Command Factory', () => {
             get: sinon.stub()
         };
 
-        mockery.registerMock('./commandTagFactory', {
+        rewiremock('../../lib/commandTagFactory').with({
             getInstance: sinon.stub().returns(commandTagFactoryMock)
         });
+        rewiremock.enable();
 
         /* eslint-disable global-require */
         Command = require('../../lib/command');
@@ -69,12 +63,7 @@ describe('Command Factory', () => {
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
+        rewiremock.disable();
     });
 
     describe('createClass', () => {

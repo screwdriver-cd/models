@@ -3,12 +3,12 @@
 const fs = require('fs');
 const path = require('path');
 const { assert } = require('chai');
-const mockery = require('mockery');
 const sinon = require('sinon');
 const hoek = require('@hapi/hoek');
 const schema = require('screwdriver-data-schema');
 const rewire = require('rewire');
 const dayjs = require('dayjs');
+const rewiremock = require('rewiremock/node');
 
 sinon.assert.expose(assert, { prefix: '' });
 const YAML_WITH_PROVIDER_FILE_PATH = '../data/yamlWithProviderPath.yaml';
@@ -58,7 +58,6 @@ function loadData(name) {
 describe('Pipeline Model', () => {
     let PipelineModel;
     let datastore;
-    let hashaMock;
     let pipeline;
     let BaseModel;
     let parserMock;
@@ -183,13 +182,6 @@ describe('Pipeline Model', () => {
         return decorateStageBuildMock(sb);
     };
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
     beforeEach(() => {
         publishJob = getJobMocks({
             id: 99999,
@@ -259,9 +251,6 @@ describe('Pipeline Model', () => {
             save: sinon.stub(),
             update: sinon.stub(),
             remove: sinon.stub().resolves(null)
-        };
-        hashaMock = {
-            sha1: sinon.stub()
         };
         jobFactoryMock = {
             create: sinon.stub(),
@@ -384,50 +373,48 @@ describe('Pipeline Model', () => {
             getInstance: sinon.stub().returns(buildClusterFactoryMock)
         };
 
-        mockery.registerMock('./jobFactory', {
-            getInstance: sinon.stub().returns(jobFactoryMock)
-        });
-        mockery.registerMock('./eventFactory', {
-            getInstance: sinon.stub().returns(eventFactoryMock)
-        });
-        mockery.registerMock('./buildFactory', {
-            getInstance: sinon.stub().returns(buildFactoryMock)
-        });
-        mockery.registerMock('./userFactory', {
-            getInstance: sinon.stub().returns(userFactoryMock)
-        });
-        mockery.registerMock('./secretFactory', {
-            getInstance: sinon.stub().returns(secretFactoryMock)
-        });
-        mockery.registerMock('./templateFactory', {
-            getInstance: sinon.stub().returns(templateFactoryMock)
-        });
-        mockery.registerMock('./triggerFactory', {
-            getInstance: sinon.stub().returns(triggerFactoryMock)
-        });
-        mockery.registerMock('screwdriver-hashr', hashaMock);
-        mockery.registerMock('screwdriver-config-parser', parserMock);
-        mockery.registerMock('./pipelineFactory', {
-            getInstance: sinon.stub().returns(pipelineFactoryMock)
-        });
-        mockery.registerMock('./collectionFactory', {
-            getInstance: sinon.stub().returns(collectionFactoryMock)
-        });
-        mockery.registerMock('./tokenFactory', {
-            getInstance: sinon.stub().returns(tokenFactoryMock)
-        });
-        mockery.registerMock('./buildClusterFactory', buildClusterFactory);
-        mockery.registerMock('./stageFactory', {
-            getInstance: sinon.stub().returns(stageFactoryMock)
-        });
-        mockery.registerMock('./stageBuildFactory', {
+        rewiremock('../../lib/stageBuildFactory').with({
             getInstance: sinon.stub().returns(stageBuildFactoryMock)
         });
+        rewiremock('../../lib/stageFactory').with({
+            getInstance: sinon.stub().returns(stageFactoryMock)
+        });
+        rewiremock('../../lib/buildClusterFactory').with(buildClusterFactory);
+        rewiremock('../../lib/tokenFactory').with({
+            getInstance: sinon.stub().returns(tokenFactoryMock)
+        });
+        rewiremock('../../lib/collectionFactory').with({
+            getInstance: sinon.stub().returns(collectionFactoryMock)
+        });
+        rewiremock('../../lib/pipelineFactory').with({
+            getInstance: sinon.stub().returns(pipelineFactoryMock)
+        });
+        rewiremock('screwdriver-config-parser').with(parserMock);
+        rewiremock('../../lib/triggerFactory').with({
+            getInstance: sinon.stub().returns(triggerFactoryMock)
+        });
+        rewiremock('../../lib/jobFactory').with({
+            getInstance: sinon.stub().returns(jobFactoryMock)
+        });
+        rewiremock('../../lib/eventFactory').with({
+            getInstance: sinon.stub().returns(eventFactoryMock)
+        });
+        rewiremock('../../lib/buildFactory').with({
+            getInstance: sinon.stub().returns(buildFactoryMock)
+        });
+        rewiremock('../../lib/userFactory').with({
+            getInstance: sinon.stub().returns(userFactoryMock)
+        });
+        rewiremock('../../lib/secretFactory').with({
+            getInstance: sinon.stub().returns(secretFactoryMock)
+        });
+        rewiremock('../../lib/templateFactory').with({
+            getInstance: sinon.stub().returns(templateFactoryMock)
+        });
+        rewiremock.enable();
 
         // eslint-disable-next-line global-require
         PipelineModel = require('../../lib/pipeline');
-        // eslint-disable-next-line global-require
-        BaseModel = require('../../lib/base');
 
         pipelineConfig = {
             datastore,
@@ -450,15 +437,16 @@ describe('Pipeline Model', () => {
 
     afterEach(() => {
         datastore = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
+        rewiremock.disable();
     });
 
     it('extends base class', () => {
+        rewiremock.disable();
+        // eslint-disable-next-line global-require
+        PipelineModel = require('../../lib/pipeline');
+        // eslint-disable-next-line global-require
+        BaseModel = require('../../lib/base');
+        pipeline = new PipelineModel(pipelineConfig);
         assert.instanceOf(pipeline, PipelineModel);
         assert.instanceOf(pipeline, BaseModel);
 
