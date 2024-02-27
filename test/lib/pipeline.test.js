@@ -80,7 +80,7 @@ describe('Pipeline Model', () => {
     let stageBuildFactoryMock;
     let pipelineTemplateVersionFactoryMock;
     let pipelineTemplateTagFactoryMock;
-    let templateMetaFactoryMock;
+    let pipelineTemplateFactoryMock;
 
     const dateNow = 1111111111;
     const scmUri = 'github.com:12345:master';
@@ -277,7 +277,7 @@ describe('Pipeline Model', () => {
         templateFactoryMock = {};
         pipelineTemplateVersionFactoryMock = {};
         pipelineTemplateTagFactoryMock = {};
-        templateMetaFactoryMock = {};
+        pipelineTemplateFactoryMock = {};
         triggerFactoryMock = {
             list: sinon.stub(),
             create: sinon.stub()
@@ -423,8 +423,8 @@ describe('Pipeline Model', () => {
         rewiremock('../../lib/pipelineTemplateTagFactory').with({
             getInstance: sinon.stub().returns(pipelineTemplateTagFactoryMock)
         });
-        rewiremock('../../lib/templateMetaFactory').with({
-            getInstance: sinon.stub().returns(templateMetaFactoryMock)
+        rewiremock('../../lib/pipelineTemplateFactory').with({
+            getInstance: sinon.stub().returns(pipelineTemplateFactoryMock)
         });
         rewiremock.enable();
 
@@ -637,7 +637,7 @@ describe('Pipeline Model', () => {
                 buildClusterFactory: buildClusterFactoryMock,
                 pipelineTemplateVersionFactory: pipelineTemplateVersionFactoryMock,
                 pipelineTemplateTagFactory: pipelineTemplateTagFactoryMock,
-                templateMetaFactory: templateMetaFactoryMock,
+                pipelineTemplateFactory: pipelineTemplateFactoryMock,
                 notificationsValidationErr: true
             };
             parserMock.withArgs(parserConfig).resolves(PARSED_YAML);
@@ -1584,7 +1584,7 @@ describe('Pipeline Model', () => {
                 buildClusterFactory: buildClusterFactoryMock,
                 pipelineTemplateVersionFactory: pipelineTemplateVersionFactoryMock,
                 pipelineTemplateTagFactory: pipelineTemplateTagFactoryMock,
-                templateMetaFactory: templateMetaFactoryMock,
+                pipelineTemplateFactory: pipelineTemplateFactoryMock,
                 notificationsValidationErr: true
             };
             datastore.update.resolves(null);
@@ -1955,7 +1955,7 @@ describe('Pipeline Model', () => {
                 buildClusterFactory: buildClusterFactoryMock,
                 pipelineTemplateVersionFactory: pipelineTemplateVersionFactoryMock,
                 pipelineTemplateTagFactory: pipelineTemplateTagFactoryMock,
-                templateMetaFactory: templateMetaFactoryMock,
+                pipelineTemplateFactory: pipelineTemplateFactoryMock,
                 notificationsValidationErr: true
             };
             datastore.update.resolves(null);
@@ -2580,7 +2580,7 @@ describe('Pipeline Model', () => {
                 buildClusterFactory: buildClusterFactoryMock,
                 pipelineTemplateVersionFactory: pipelineTemplateVersionFactoryMock,
                 pipelineTemplateTagFactory: pipelineTemplateTagFactoryMock,
-                templateMetaFactory: templateMetaFactoryMock,
+                pipelineTemplateFactory: pipelineTemplateFactoryMock,
                 notificationsValidationErr: true
             };
             scmMock.getFile.resolves(SCM_CONTEXT_GITHUB);
@@ -2630,7 +2630,7 @@ describe('Pipeline Model', () => {
                 buildClusterFactory: buildClusterFactoryMock,
                 pipelineTemplateVersionFactory: pipelineTemplateVersionFactoryMock,
                 pipelineTemplateTagFactory: pipelineTemplateTagFactoryMock,
-                templateMetaFactory: templateMetaFactoryMock,
+                pipelineTemplateFactory: pipelineTemplateFactoryMock,
                 notificationsValidationErr: true
             };
             scmMock.getFile.onCall(0).resolves(loadData(YAML_WITH_PROVIDER_FILE_PATH));
