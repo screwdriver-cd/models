@@ -1176,6 +1176,41 @@ describe('Pipeline Model', () => {
             });
         });
 
+        it('stores templateVersionId to pipeline', () => {
+            const templateVersionIdMock = 123;
+            const configMock = { ...PARSED_YAML, templateVersionId: templateVersionIdMock };
+
+            delete parserConfig.buildFactory;
+
+            parserMock.withArgs(parserConfig).resolves(configMock);
+            jobs = [];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+
+            return pipeline.sync(null).then(() => {
+                assert.equal(pipeline.templateVersionId, templateVersionIdMock);
+            });
+        });
+
+        it('removes templateVersionId if not using pipeline template', () => {
+            const configMock = { ...PARSED_YAML };
+
+            delete parserConfig.buildFactory;
+
+            parserMock.withArgs(parserConfig).resolves(configMock);
+            jobs = [];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+
+            return pipeline.sync(null).then(() => {
+                assert.equal(pipeline.templateVersionId, null);
+            });
+        });
+
         it('creates new jobs', () => {
             jobs = [];
             jobFactoryMock.list.resolves(jobs);
