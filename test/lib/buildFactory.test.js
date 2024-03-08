@@ -391,7 +391,6 @@ describe('Build Factory', () => {
                     eventId,
                     parentBuildId: 12345,
                     cause: 'Started by user github:i_made_the_request',
-                    commit,
                     createTime: isoTime,
                     number: dateNow,
                     status: 'QUEUED',
