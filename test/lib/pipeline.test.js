@@ -265,7 +265,8 @@ describe('Pipeline Model', () => {
             list: sinon.stub()
         };
         buildFactoryMock = {
-            list: sinon.stub()
+            list: sinon.stub(),
+            getLatestBuilds: sinon.stub()
         };
         userFactoryMock = {
             get: sinon.stub(),
@@ -2583,6 +2584,118 @@ describe('Pipeline Model', () => {
 
             return pipeline
                 .getEvents()
+                .then(() => {
+                    assert.fail('Should not get here');
+                })
+                .catch(err => {
+                    assert.instanceOf(err, Error);
+                    assert.equal(err.message, 'cannotgetit');
+                });
+        });
+    });
+
+    describe('get builds', () => {
+        const builds = [
+            {
+                id: '777'
+            },
+            {
+                id: '778'
+            },
+            {
+                id: '779'
+            }
+        ];
+        const events = [
+            {
+                id: '12345f642bbfd1886623964b4cff12db59869e5d',
+                getBuilds: sinon.stub().resolves(builds)
+            },
+            {
+                id: '12855123cc7f1b808aac07feff24d7d5362cc215',
+                getBuilds: sinon.stub().resolves(builds)
+            }
+        ];
+        const groupEventId = 999;
+
+        it('gets a list of builds by groupEventId', () => {
+            const expected = {
+                params: { groupEventId }
+            };
+
+            eventFactoryMock.list.resolves(events);
+
+            return pipeline.getBuilds({ params: { groupEventId } }).then(result => {
+                assert.calledWith(eventFactoryMock.list, expected);
+                assert.deepEqual(result, builds.concat(builds));
+            });
+        });
+
+        it('returns empty array when no events found for groupEventId', () => {
+            const expected = {
+                params: { groupEventId }
+            };
+
+            eventFactoryMock.list.resolves([]);
+
+            return pipeline.getBuilds({ params: { groupEventId } }).then(result => {
+                assert.calledWith(eventFactoryMock.list, expected);
+                assert.deepEqual(result, []);
+            });
+        });
+
+        it('gets latest builds', () => {
+            const expected = {
+                groupEventId
+            };
+
+            buildFactoryMock.getLatestBuilds.resolves(builds);
+
+            return pipeline
+                .getBuilds({
+                    params: {
+                        groupEventId,
+                        latest: true
+                    }
+                })
+                .then(result => {
+                    assert.calledWith(buildFactoryMock.getLatestBuilds, expected);
+                    assert.notCalled(buildFactoryMock.list);
+                    assert.deepEqual(result, builds);
+                });
+        });
+
+        it('gets a list of builds', () => {
+            const expected = {
+                params: { pipelineId: 123 }
+            };
+
+            buildFactoryMock.list.resolves(builds);
+
+            return pipeline.getBuilds({}).then(result => {
+                assert.calledWith(buildFactoryMock.list, expected);
+                assert.deepEqual(result, builds);
+            });
+        });
+
+        it('gets a list of builds and does not pass through latest when groupEventId not set', () => {
+            const expected = {
+                params: { pipelineId: 123 }
+            };
+
+            buildFactoryMock.list.resolves(builds);
+
+            return pipeline.getBuilds({ params: { latest: true } }).then(result => {
+                assert.calledWith(buildFactoryMock.list, expected);
+                assert.deepEqual(result, builds);
+            });
+        });
+
+        it('rejects with errors', () => {
+            buildFactoryMock.list.rejects(new Error('cannotgetit'));
+
+            return pipeline
+                .getBuilds()
                 .then(() => {
                     assert.fail('Should not get here');
                 })
