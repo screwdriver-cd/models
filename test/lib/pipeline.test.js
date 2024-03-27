@@ -2665,9 +2665,10 @@ describe('Pipeline Model', () => {
                 });
         });
 
-        it('gets a list of builds', () => {
+        it('gets a list of builds with default pagination', () => {
             const expected = {
-                params: { pipelineId: 123 }
+                params: { pipelineId: 123 },
+                paginate: { count: 50, page: 1 }
             };
 
             buildFactoryMock.list.resolves(builds);
@@ -2680,12 +2681,13 @@ describe('Pipeline Model', () => {
 
         it('gets a list of builds and does not pass through latest when groupEventId not set', () => {
             const expected = {
-                params: { pipelineId: 123 }
+                params: { pipelineId: 123 },
+                paginate: { count: 300, page: 2 }
             };
 
             buildFactoryMock.list.resolves(builds);
 
-            return pipeline.getBuilds({ params: { latest: true } }).then(result => {
+            return pipeline.getBuilds({ params: { latest: true }, paginate: { count: 300, page: 2 } }).then(result => {
                 assert.calledWith(buildFactoryMock.list, expected);
                 assert.deepEqual(result, builds);
             });
