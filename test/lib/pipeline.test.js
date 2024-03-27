@@ -2668,7 +2668,8 @@ describe('Pipeline Model', () => {
         it('gets a list of builds with default pagination', () => {
             const expected = {
                 params: { pipelineId: 123 },
-                paginate: { count: 50, page: 1 }
+                paginate: { count: 10 },
+                sort: 'descending'
             };
 
             buildFactoryMock.list.resolves(builds);
@@ -2682,7 +2683,8 @@ describe('Pipeline Model', () => {
         it('gets a list of builds and does not pass through latest when groupEventId not set', () => {
             const expected = {
                 params: { pipelineId: 123 },
-                paginate: { count: 300, page: 2 }
+                paginate: { count: 300, page: 2 },
+                sort: 'descending'
             };
 
             buildFactoryMock.list.resolves(builds);
