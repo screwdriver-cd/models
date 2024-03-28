@@ -7,7 +7,7 @@ sinon.assert.expose(assert, { prefix: '' });
 
 describe('PipelineTemplateVersion Factory', () => {
     const namespace = 'namespace';
-    const name = 'testPipelineTemplateVersion';
+    const name = 'testPipelineTemplateName';
     const version = '1.3';
     const tag = 'latest';
     const metaData = {
@@ -19,7 +19,6 @@ describe('PipelineTemplateVersion Factory', () => {
     let datastore;
     let factory;
     let PipelineTemplateVersion;
-    let PipelineTemplateMeta;
     let templateMetaFactoryMock;
 
     beforeEach(() => {
@@ -36,8 +35,6 @@ describe('PipelineTemplateVersion Factory', () => {
 
         // eslint-disable-next-line global-require
         PipelineTemplateVersion = require('../../lib/pipelineTemplateVersion');
-        // eslint-disable-next-line global-require
-        PipelineTemplateMeta = require('../../lib/pipelineTemplate');
         // eslint-disable-next-line global-require
         PipelineTemplateVersionFactory = require('../../lib/pipelineTemplateVersionFactory');
 
@@ -378,33 +375,42 @@ describe('PipelineTemplateVersion Factory', () => {
     describe('getWithMetadata', async () => {
         const templateId = 1234135;
         const generatedVersionId = 2341351;
-        let returnValue;
-        const hasAllProperties = (obj, class1, class2) => {
-            const allProps = Object.getOwnPropertyNames(class1.prototype).concat(
-                Object.getOwnPropertyNames(class2.prototype)
-            );
+        let templateVersionMock;
 
-            return allProps.every(prop => prop in obj);
+        const pipelineTemplateMetaMock = {
+            id: templateId,
+            name,
+            namespace,
+            maintainer: 'test-user@email.com',
+            pipelineId: 123,
+            latestVersion: '2.1.2',
+            trustedSinceVersion: '2.1.0'
         };
 
+        const pipelineTemplateMetaToBeCopied = Object.keys(pipelineTemplateMetaMock)
+            .filter(key => ['pipelineId', 'namespace', 'name', 'maintainer', 'latestVersion'].includes(key))
+            .reduce((subset, key) => {
+                subset[key] = pipelineTemplateMetaMock[key];
+
+                return subset;
+            }, {});
+
         beforeEach(() => {
-            returnValue = {
+            templateVersionMock = {
                 id: generatedVersionId + 3,
-                name,
                 version: '2.1.2',
-                templateId
+                templateId,
+                config: {},
+                createTime: '2024-03-26T23:41:55.567Z',
+                description: 'Some description'
             };
         });
 
         it('gets a pipeline template version and meta given name, version and namespace', async () => {
-            const pipelineTemplateMetaMock = {
-                name,
-                namespace,
-                id: templateId
-            };
-
             templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
-            datastore.get.resolves(returnValue);
+            datastore.get.resolves(templateVersionMock);
+
+            const expectedTemplateVersionWithMetadata = { ...templateVersionMock, ...pipelineTemplateMetaToBeCopied };
 
             const model = await factory.getWithMetadata(
                 {
@@ -420,18 +426,17 @@ describe('PipelineTemplateVersion Factory', () => {
                 namespace
             });
             assert.calledOnce(datastore.get);
-            assert.isTrue(hasAllProperties(model, PipelineTemplateVersion, PipelineTemplateMeta));
+
+            assert.instanceOf(model, PipelineTemplateVersion);
+            Object.keys(key => {
+                assert.equal(model[key], expectedTemplateVersionWithMetadata[key]);
+            });
         });
 
         it('gets a pipeline template version and meta given templateId', async () => {
-            const pipelineTemplateMetaMock = {
-                name,
-                namespace,
-                id: templateId
-            };
-
             templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
-            datastore.get.resolves(returnValue);
+            datastore.get.resolves(templateVersionMock);
+            const expectedTemplateVersionWithMetadata = { ...pipelineTemplateMetaToBeCopied, ...templateVersionMock };
 
             const model = await factory.getWithMetadata(
                 {
@@ -444,7 +449,10 @@ describe('PipelineTemplateVersion Factory', () => {
                 id: templateId
             });
             assert.calledOnce(datastore.get);
-            assert.isTrue(hasAllProperties(model, PipelineTemplateVersion, PipelineTemplateMeta));
+            assert.instanceOf(model, PipelineTemplateVersion);
+            Object.keys(key => {
+                assert.equal(model[key], expectedTemplateVersionWithMetadata[key]);
+            });
         });
 
         it('Returns null if pipeline template does not exist', async () => {
@@ -460,6 +468,23 @@ describe('PipelineTemplateVersion Factory', () => {
 
             assert.calledOnce(templateMetaFactoryMock.get);
             assert.notCalled(datastore.get);
+            assert.isNull(model);
+        });
+
+        it('Returns null if pipeline template version does not exist', async () => {
+            templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
+            datastore.get.resolves(null);
+
+            const model = await factory.get(
+                {
+                    name,
+                    namespace
+                },
+                templateMetaFactoryMock
+            );
+
+            assert.calledOnce(templateMetaFactoryMock.get);
+            assert.calledOnce(datastore.get);
             assert.isNull(model);
         });
     });
