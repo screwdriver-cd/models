@@ -2618,6 +2618,13 @@ describe('Pipeline Model', () => {
         ];
         const groupEventId = 999;
 
+        beforeEach(() => {
+            getUserPermissionMocks({ username: 'janedoe', push: true });
+            getUserPermissionMocks({ username: 'johnsmith', push: true });
+            pipeline.admins = { janedoe: true, johnsmith: true };
+            scmMock.getOpenedPRs.resolves([pr3Info, pr10Info]);
+        });
+
         it('gets a list of builds by groupEventId', () => {
             const expected = {
                 params: { groupEventId }
@@ -2667,11 +2674,12 @@ describe('Pipeline Model', () => {
 
         it('gets a list of builds with default pagination', () => {
             const expected = {
-                params: { pipelineId: 123 },
+                params: { jobId: [99999, 99998, 99996, 99997] },
                 paginate: { count: 10 },
                 sort: 'descending'
             };
 
+            jobFactoryMock.list.resolves([publishJob, mainJob, pr10, pr3]);
             buildFactoryMock.list.resolves(builds);
 
             return pipeline.getBuilds({}).then(result => {
@@ -2682,11 +2690,12 @@ describe('Pipeline Model', () => {
 
         it('gets a list of builds and does not pass through latest when groupEventId not set', () => {
             const expected = {
-                params: { pipelineId: 123 },
+                params: { jobId: [99999, 99998, 99996, 99997] },
                 paginate: { count: 300, page: 2 },
                 sort: 'descending'
             };
 
+            jobFactoryMock.list.resolves([publishJob, mainJob, pr10, pr3]);
             buildFactoryMock.list.resolves(builds);
 
             return pipeline.getBuilds({ params: { latest: true }, paginate: { count: 300, page: 2 } }).then(result => {
@@ -2696,6 +2705,7 @@ describe('Pipeline Model', () => {
         });
 
         it('rejects with errors', () => {
+            jobFactoryMock.list.resolves([publishJob, mainJob, pr10, pr3]);
             buildFactoryMock.list.rejects(new Error('cannotgetit'));
 
             return pipeline
