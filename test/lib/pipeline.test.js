@@ -396,7 +396,9 @@ describe('Pipeline Model', () => {
         rewiremock('../../lib/pipelineFactory').with({
             getInstance: sinon.stub().returns(pipelineFactoryMock)
         });
-        rewiremock('screwdriver-config-parser').with(parserMock);
+        rewiremock('screwdriver-config-parser').with({
+            parsePipelineYaml: parserMock
+        });
         rewiremock('../../lib/triggerFactory').with({
             getInstance: sinon.stub().returns(triggerFactoryMock)
         });
