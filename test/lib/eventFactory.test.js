@@ -175,6 +175,11 @@ describe('Event Factory', () => {
                         { name: '~commit' },
                         { name: 'main' },
                         { name: 'disabledJob' },
+                        { name: 'stage@integration:setup' },
+                        { name: 'int-deploy' },
+                        { name: 'int-test' },
+                        { name: 'int-certify' },
+                        { name: 'stage@integration:teardown' },
                         { name: 'publish' },
                         { name: '~sd@123:main' },
                         { name: '~commit:branch' },
@@ -189,6 +194,11 @@ describe('Event Factory', () => {
                         { src: '~pr', dest: 'main' },
                         { src: '~commit', dest: 'main' },
                         { src: 'main', dest: 'disabledJob' },
+                        { src: 'main', dest: 'stage@integration:setup' },
+                        { src: 'stage@integration:setup', dest: 'int-deploy' },
+                        { src: 'int-deploy', dest: 'int-test' },
+                        { src: 'int-test', dest: 'int-certify' },
+                        { src: 'int-certify', dest: 'stage@integration:teardown' },
                         { src: '~pr', dest: 'publish' },
                         { src: '~pr', dest: 'pr-only' },
                         { src: '~commit', dest: 'only-commit' },
@@ -221,6 +231,11 @@ describe('Event Factory', () => {
                         { name: '~commit' },
                         { name: 'main' },
                         { name: 'disabledJob' },
+                        { name: 'stage@integration:setup' },
+                        { name: 'int-deploy' },
+                        { name: 'int-test' },
+                        { name: 'int-certify' },
+                        { name: 'stage@integration:teardown' },
                         { name: 'publish' },
                         { name: '~sd@123:main' },
                         { name: '~commit:branch' },
@@ -235,6 +250,11 @@ describe('Event Factory', () => {
                         { src: '~pr', dest: 'main' },
                         { src: '~commit', dest: 'main' },
                         { src: 'main', dest: 'disabledJob' },
+                        { src: 'main', dest: 'stage@integration:setup' },
+                        { src: 'stage@integration:setup', dest: 'int-deploy' },
+                        { src: 'int-deploy', dest: 'int-test' },
+                        { src: 'int-test', dest: 'int-certify' },
+                        { src: 'int-certify', dest: 'stage@integration:teardown' },
                         { src: '~pr', dest: 'publish' },
                         { src: '~pr', dest: 'pr-only' },
                         { src: '~commit', dest: 'only-commit' },
@@ -385,6 +405,66 @@ describe('Event Factory', () => {
                         state: 'ENABLED',
                         parsePRJobName: sinon.stub().returns('main'),
                         isPR: sinon.stub().returns(true)
+                    },
+                    {
+                        id: 11,
+                        pipelineId: 8765,
+                        name: 'stage@integration:setup',
+                        permutations: [
+                            {
+                                requires: ['main']
+                            }
+                        ],
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
+                    },
+                    {
+                        id: 12,
+                        pipelineId: 8765,
+                        name: 'int-deploy',
+                        permutations: [
+                            {
+                                requires: ['stage@integration:setup']
+                            }
+                        ],
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
+                    },
+                    {
+                        id: 13,
+                        pipelineId: 8765,
+                        name: 'int-test',
+                        permutations: [
+                            {
+                                requires: ['int-deploy']
+                            }
+                        ],
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
+                    },
+                    {
+                        id: 14,
+                        pipelineId: 8765,
+                        name: 'int-certify',
+                        permutations: [
+                            {
+                                requires: ['int-test']
+                            }
+                        ],
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
+                    },
+                    {
+                        id: 15,
+                        pipelineId: 8765,
+                        name: 'stage@integration:teardown',
+                        permutations: [
+                            {
+                                requires: ['int-certify']
+                            }
+                        ],
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
                     }
                 ];
 
@@ -1140,6 +1220,46 @@ describe('Event Factory', () => {
                     assert.notCalled(syncedPipelineMock.syncPR);
                     assert.calledOnce(pipelineMock.sync);
                     assert.notCalled(buildFactoryMock.create);
+                });
+            });
+
+            it('should create build, if startFrom is a stage setup job name', () => {
+                config.startFrom = 'stage@integration:setup';
+
+                return eventFactory.create(config).then(model => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.calledOnce(buildFactoryMock.create);
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 11
+                        })
+                    );
+                });
+            });
+
+            it('should create build for stage setup job, if startFrom is a stage name', () => {
+                config.startFrom = 'stage@integration';
+
+                return eventFactory.create(config).then(model => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.calledOnce(buildFactoryMock.create);
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 11
+                        })
+                    );
                 });
             });
 
