@@ -123,6 +123,11 @@ describe('Event Factory', () => {
         const displayName = 'github';
         // const lastEventId = 'xzy1234';
         const scmContext = 'github:github.com';
+        const scmRepo = {
+            branch: 'master',
+            url: 'https://github.com/org/name/tree/master',
+            name: 'org/name'
+        };
         const creator = {
             avatar: 'https://avatars.githubusercontent.com/u/2042?v=3',
             name: 'St John',
@@ -223,6 +228,7 @@ describe('Event Factory', () => {
                 id: pipelineId,
                 scmUri: 'github.com:1234:branch',
                 scmContext,
+                scmRepo,
                 token: Promise.resolve('foo'),
                 lastEventId: null,
                 workflowGraph: {
@@ -1751,6 +1757,7 @@ describe('Event Factory', () => {
                 assert.calledWith(scm.decorateCommit, {
                     scmUri: 'github.com:1234:branch',
                     scmContext,
+                    scmRepo,
                     sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
                     token: 'foo'
                 });
@@ -1784,6 +1791,7 @@ describe('Event Factory', () => {
                 assert.calledWith(scm.decorateCommit, {
                     scmUri: 'github.com:1234:branch',
                     scmContext,
+                    scmRepo,
                     sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
                     token: 'foo'
                 });
@@ -1813,6 +1821,7 @@ describe('Event Factory', () => {
                 assert.calledWith(scm.decorateCommit, {
                     scmUri: 'github.com:1234:branch',
                     scmContext,
+                    scmRepo,
                     sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
                     token: 'foo'
                 });
@@ -2876,6 +2885,7 @@ describe('Event Factory', () => {
                 assert.notCalled(syncedPipelineMock.syncPRs);
                 assert.calledWith(scm.decorateCommit, {
                     scmContext,
+                    scmRepo,
                     scmUri: 'github.com:1234:branch',
                     sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
                     token: 'foo'
