@@ -88,9 +88,9 @@ describe('Pipeline Model', () => {
     const testId = 123;
     const admins = { batman: true, robin: true };
     const scmRepo = {
-        name: 'foo/bar',
-        branch: 'master',
-        url: 'https://github.com/foo/bar/tree/master'
+        branch: 'branch',
+        url: 'https://host/owner/repo/tree/branch',
+        name: 'owner/repo'
     };
     let jobs;
     let pipelineConfig;
@@ -439,11 +439,7 @@ describe('Pipeline Model', () => {
             id: testId,
             scmUri,
             scmContext,
-            scmRepo: {
-                branch: 'branch',
-                url: 'https://host/owner/repo/tree/branch',
-                name: 'owner/repo'
-            },
+            scmRepo,
             createTime: dateNow,
             admins,
             scm: scmMock,
@@ -513,6 +509,7 @@ describe('Pipeline Model', () => {
                     scmUri,
                     scmContext,
                     token: 'foo',
+                    scmRepo,
                     actions: [],
                     webhookUrl: 'https://api.screwdriver.cd/v4/webhooks'
                 });
@@ -530,6 +527,7 @@ describe('Pipeline Model', () => {
                     scmUri,
                     scmContext: 'gitlab:gitlab.com',
                     token: 'tokenRO',
+                    scmRepo: pipeline.scmRepo,
                     actions: [],
                     webhookUrl: 'https://api.screwdriver.cd/v4/webhooks'
                 });
@@ -2892,7 +2890,7 @@ describe('Pipeline Model', () => {
                 params: {
                     admins: { d2lam: true },
                     id: testId,
-                    name: 'foo/bar',
+                    name: 'owner/repo',
                     scmContext,
                     scmRepo,
                     scmUri
@@ -2935,7 +2933,7 @@ describe('Pipeline Model', () => {
                 params: {
                     admins: { d2lam: true },
                     id: testId,
-                    name: 'foo/bar',
+                    name: 'owner/repo',
                     scmContext,
                     scmRepo,
                     scmUri,
@@ -2988,7 +2986,7 @@ describe('Pipeline Model', () => {
                     params: {
                         admins: { d2lam: true },
                         id: testId,
-                        name: 'foo/bar',
+                        name: 'owner/repo',
                         scmContext,
                         scmRepo,
                         scmUri,
@@ -3041,7 +3039,7 @@ describe('Pipeline Model', () => {
                     params: {
                         admins: { d2lam: true },
                         id: testId,
-                        name: 'foo/bar',
+                        name: 'owner/repo',
                         scmContext,
                         scmRepo,
                         scmUri,
@@ -3102,7 +3100,7 @@ describe('Pipeline Model', () => {
                         scmRepo: {
                             branch: 'master',
                             name: 'screwdriver/ui',
-                            url: 'https://github.com/foo/bar/tree/master'
+                            url: 'https://github.com/owner/repo/tree/master'
                         },
                         scmUri,
                         annotations: { 'screwdriver.cd/buildCluster': 'iOS' }
@@ -3127,7 +3125,7 @@ describe('Pipeline Model', () => {
                 scmMock.decorateUrl.resolves({
                     branch: 'master',
                     name: 'screwdriver/ui',
-                    url: 'https://github.com/foo/bar/tree/master'
+                    url: 'https://github.com/owner/repo/tree/master'
                 });
                 pipeline.scmUri = scmUri;
                 pipeline.scmContext = scmContext;
@@ -3211,7 +3209,7 @@ describe('Pipeline Model', () => {
                 params: {
                     admins: { d2lam: true },
                     id: testId,
-                    name: 'foo/bar',
+                    name: 'owner/repo',
                     scmContext,
                     scmRepo
                 },

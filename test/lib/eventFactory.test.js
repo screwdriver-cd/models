@@ -1853,7 +1853,8 @@ describe('Event Factory', () => {
                     scmUri: 'github.com:1234:branch',
                     scmContext,
                     sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
-                    token: 'foo'
+                    token: 'foo',
+                    scmRepo
                 });
                 assert.strictEqual(syncedPipelineMock.lastEventId, model.id);
                 assert.strictEqual(config.prInfo.url, model.pr.url);
@@ -1886,7 +1887,8 @@ describe('Event Factory', () => {
                     scmUri: 'github.com:1234:branch',
                     scmContext,
                     sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f',
-                    token: 'foo'
+                    token: 'foo',
+                    scmRepo
                 });
                 assert.strictEqual(syncedPipelineMock.lastEventId, model.id);
                 assert.strictEqual(config.prInfo.url, model.pr.url);
