@@ -11,6 +11,11 @@ describe('User Model', () => {
     const password = 'password';
     const token = 'token';
     const scmContext = 'github:github.com';
+    const scmRepo = {
+        branch: 'master',
+        url: 'https://github.com/org/name/tree/master',
+        name: 'org/name'
+    };
     const settings = { displayJobNameLength: 25 };
     let UserModel;
     let datastore;
@@ -156,11 +161,12 @@ describe('User Model', () => {
         });
 
         it('promises to get permissions', () =>
-            user.getPermissions(scmUri).then(data => {
+            user.getPermissions(scmUri, scmContext, scmRepo).then(data => {
                 assert.calledWith(scmMock.getPermissions, {
                     token: '12345',
                     scmUri,
-                    scmContext
+                    scmContext,
+                    scmRepo
                 });
                 assert.deepEqual(data, repo.permissions);
             }));

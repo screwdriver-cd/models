@@ -38,6 +38,11 @@ describe('Build Model', () => {
     const configPipelineId = 1233;
     const scmUri = 'github.com:12345:master';
     const scmContext = 'github:github.com';
+    const scmRepo = {
+        branch: 'master',
+        url: 'https://github.com/org/name/tree/master',
+        name: 'org/name'
+    };
     const token = 'equivalentToOneQuarter';
     const url = `${uiUri}/pipelines/${pipelineId}/builds/${buildId}`;
     const meta = {
@@ -111,6 +116,7 @@ describe('Build Model', () => {
             id: pipelineId,
             scmUri,
             scmContext,
+            scmRepo,
             admin: Promise.resolve(adminUser),
             token: Promise.resolve('foo'),
             workflowGraph: WORKFLOWGRAPH_WITH_STAGES
@@ -229,6 +235,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'main',
                     buildStatus: SCM_STATE_MAP.QUEUED,
@@ -278,6 +285,7 @@ describe('Build Model', () => {
                     configPipelineId,
                     scmUri,
                     scmContext,
+                    scmRepo,
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
@@ -314,6 +322,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'PR-5:main',
                     buildStatus: SCM_STATE_MAP.FAILURE,
@@ -324,6 +333,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     jobName: 'PR-5:main',
                     scmContext,
+                    scmRepo,
                     scmUri,
                     pipelineId,
                     comments: [
@@ -350,6 +360,7 @@ describe('Build Model', () => {
                     configPipelineId,
                     scmUri,
                     scmContext,
+                    scmRepo,
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
@@ -397,6 +408,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'PR-5:main',
                     buildStatus: 'FAILURE',
@@ -407,6 +419,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'PR-5:main',
                     buildStatus: 'SUCCESS',
@@ -419,6 +432,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'PR-5:main',
                     buildStatus: 'FAILURE',
@@ -439,6 +453,7 @@ describe('Build Model', () => {
                     configPipelineId,
                     scmUri,
                     scmContext,
+                    scmRepo,
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
@@ -484,6 +499,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'PR-5:main',
                     buildStatus: SCM_STATE_MAP.FAILURE,
@@ -494,6 +510,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'PR-5:main',
                     buildStatus: SCM_STATE_MAP.SUCCESS,
@@ -506,6 +523,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'PR-5:main',
                     buildStatus: SCM_STATE_MAP.FAILURE,
@@ -549,6 +567,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'main',
                     buildStatus: SCM_STATE_MAP.ABORTED,
@@ -593,6 +612,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'main',
                     buildStatus: SCM_STATE_MAP.ABORTED,
@@ -616,6 +636,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'main',
                     buildStatus: SCM_STATE_MAP.RUNNING,
@@ -638,6 +659,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'main',
                     buildStatus: SCM_STATE_MAP.UNSTABLE,
@@ -688,6 +710,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'main',
                     url,
@@ -717,6 +740,7 @@ describe('Build Model', () => {
                     configPipelineId,
                     scmUri,
                     scmContext,
+                    scmRepo,
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
@@ -756,6 +780,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'PR-5:main',
                     buildStatus: SCM_STATE_MAP.FAILURE,
@@ -775,6 +800,7 @@ describe('Build Model', () => {
                     configPipelineId,
                     scmUri,
                     scmContext,
+                    scmRepo,
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
@@ -795,6 +821,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'PR-5:main',
                     buildStatus: SCM_STATE_MAP.FAILURE,
@@ -805,6 +832,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'PR-5:main',
                     buildStatus: SCM_STATE_MAP.FAILURE,
@@ -827,6 +855,7 @@ describe('Build Model', () => {
                     configPipelineId,
                     scmUri,
                     scmContext,
+                    scmRepo,
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
@@ -847,6 +876,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'PR-5:main',
                     buildStatus: SCM_STATE_MAP.FAILURE,
@@ -857,6 +887,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'PR-5:main',
                     buildStatus: SCM_STATE_MAP.FAILURE,
@@ -879,6 +910,7 @@ describe('Build Model', () => {
                     configPipelineId,
                     scmUri,
                     scmContext,
+                    scmRepo,
                     admin: Promise.resolve(adminUser),
                     token: Promise.resolve('foo')
                 }),
@@ -924,6 +956,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     scmUri,
                     scmContext,
+                    scmRepo,
                     sha,
                     jobName: 'PR-5:main',
                     buildStatus: SCM_STATE_MAP.FAILURE,
@@ -934,6 +967,7 @@ describe('Build Model', () => {
                     token: 'foo',
                     jobName: 'PR-5:main',
                     scmContext,
+                    scmRepo,
                     scmUri,
                     pipelineId,
                     comments: [
@@ -1145,6 +1179,7 @@ describe('Build Model', () => {
             configPipelineId,
             scmUri,
             scmContext,
+            scmRepo,
             admin: Promise.resolve(adminUser),
             token: Promise.resolve('foo')
         };
@@ -1220,6 +1255,7 @@ describe('Build Model', () => {
                 token: 'foo',
                 scmUri,
                 scmContext,
+                scmRepo,
                 sha,
                 jobName: 'main',
                 buildStatus: SCM_STATE_MAP.QUEUED,
@@ -1405,6 +1441,7 @@ describe('Build Model', () => {
             });
             expectedExecutorStartConfig.blockedBy = [jobId, blocking1.id, blocking2.id, prJob.id];
             expectedExecutorStartConfig.isPR = true;
+            expectedExecutorStartConfig.pipeline.configPipelineId = pipelineMockB.configPipelineId;
 
             return build.start().then(() => {
                 assert.calledWith(executorMock.start, expectedExecutorStartConfig);
@@ -1437,6 +1474,7 @@ describe('Build Model', () => {
 
             pipelineMockB = {
                 id: pipelineId,
+                name: expectedExecutorStartConfig.pipeline.name,
                 scmUri,
                 scmContext,
                 configPipelineId,
@@ -1479,6 +1517,7 @@ describe('Build Model', () => {
 
             expectedExecutorStartConfig.blockedBy = [jobId, internalJob.id, externalJob1.id, externalJob2.id];
             expectedExecutorStartConfig.prParentJobId = undefined;
+            expectedExecutorStartConfig.pipeline.configPipelineId = pipelineMockB.configPipelineId;
 
             return build.start().then(() => {
                 assert.calledWith(executorMock.start, expectedExecutorStartConfig);
@@ -1491,6 +1530,7 @@ describe('Build Model', () => {
 
             pipelineMockB = {
                 id: pipelineId,
+                name: expectedExecutorStartConfig.pipeline.name,
                 scmUri,
                 scmContext,
                 configPipelineId,
@@ -1532,6 +1572,7 @@ describe('Build Model', () => {
             });
             expectedExecutorStartConfig.blockedBy = [jobId, internalJob.id, externalJob1.id];
             expectedExecutorStartConfig.prParentJobId = undefined;
+            expectedExecutorStartConfig.pipeline.configPipelineId = pipelineMockB.configPipelineId;
 
             return build.start().then(() => {
                 assert.calledWith(executorMock.start, expectedExecutorStartConfig);
@@ -1541,9 +1582,11 @@ describe('Build Model', () => {
         it('promises to start a build with the executor specified in job annotations', () => {
             pipelineMockB = {
                 id: pipelineId,
+                name: expectedExecutorStartConfig.pipeline.name,
                 configPipelineId,
                 scmUri,
                 scmContext,
+                scmRepo,
                 admin: Promise.resolve(adminUser),
                 token: Promise.resolve('foo')
             };

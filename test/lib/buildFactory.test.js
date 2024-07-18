@@ -899,7 +899,8 @@ describe('Build Factory', () => {
                         token: 'foo',
                         sha,
                         scmUri,
-                        scmContext
+                        scmContext,
+                        scmRepo
                     });
                     assert.calledWith(bookendMock.getSetupCommands, {
                         pipeline: { scmUri, scmRepo, scmContext },
@@ -948,7 +949,8 @@ describe('Build Factory', () => {
                         token: 'foo',
                         sha,
                         scmUri,
-                        scmContext
+                        scmContext,
+                        scmRepo
                     });
                     assert.calledWith(bookendMock.getSetupCommands, {
                         pipeline: { scmUri, scmRepo, scmContext },
