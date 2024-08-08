@@ -180,11 +180,11 @@ describe('Event Factory', () => {
                         { name: '~commit' },
                         { name: 'main' },
                         { name: 'disabledJob' },
-                        { name: 'stage@integration:setup' },
-                        { name: 'int-deploy' },
-                        { name: 'int-test' },
-                        { name: 'int-certify' },
-                        { name: 'stage@integration:teardown' },
+                        { name: 'stage@integration:setup', stageName: 'integration' },
+                        { name: 'int-deploy', stageName: 'integration' },
+                        { name: 'int-test', stageName: 'integration' },
+                        { name: 'int-certify', stageName: 'integration' },
+                        { name: 'stage@integration:teardown', stageName: 'integration' },
                         { name: 'publish' },
                         { name: '~sd@123:main' },
                         { name: '~commit:branch' },
@@ -237,11 +237,11 @@ describe('Event Factory', () => {
                         { name: '~commit' },
                         { name: 'main' },
                         { name: 'disabledJob' },
-                        { name: 'stage@integration:setup' },
-                        { name: 'int-deploy' },
-                        { name: 'int-test' },
-                        { name: 'int-certify' },
-                        { name: 'stage@integration:teardown' },
+                        { name: 'stage@integration:setup', stageName: 'integration' },
+                        { name: 'int-deploy', stageName: 'integration' },
+                        { name: 'int-test', stageName: 'integration' },
+                        { name: 'int-certify', stageName: 'integration' },
+                        { name: 'stage@integration:teardown', stageName: 'integration' },
                         { name: 'publish' },
                         { name: '~sd@123:main' },
                         { name: '~commit:branch' },
@@ -1251,6 +1251,26 @@ describe('Event Factory', () => {
 
             it('should create build for stage setup job, if startFrom is a stage name', () => {
                 config.startFrom = 'stage@integration';
+
+                return eventFactory.create(config).then(model => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.calledOnce(buildFactoryMock.create);
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 11
+                        })
+                    );
+                });
+            });
+
+            it('should create build for stage setup job, if startFrom is a stage name', () => {
+                config.startFrom = 'int-test';
 
                 return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
