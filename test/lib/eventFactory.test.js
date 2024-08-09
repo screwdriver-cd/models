@@ -1269,7 +1269,7 @@ describe('Event Factory', () => {
                 });
             });
 
-            it('should create build for stage setup job, if startFrom is a stage name', () => {
+            it('should create build for stage setup job, if startFrom is a job in the middle of a stage', () => {
                 config.startFrom = 'int-test';
 
                 return eventFactory.create(config).then(model => {
