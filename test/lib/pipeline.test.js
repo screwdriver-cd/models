@@ -915,6 +915,7 @@ describe('Pipeline Model', () => {
             jobFactoryMock.create.withArgs(externalMock).resolves(externalModelMock);
             pipelineFactoryMock.get.resolves({
                 id: testId,
+                name: 'foo/bar',
                 update: sinon.stub().resolves(null),
                 remove: sinon.stub().resolves(null),
                 workflowGraph: { nodes: [{ name: '~pr' }, { name: '~commit' }, { name: 'main', id: 3 }] }
@@ -928,7 +929,7 @@ describe('Pipeline Model', () => {
                         { name: '~commit' },
                         { name: 'main', id: 1 },
                         { name: 'publish', id: 2 },
-                        { name: 'sd@123:main', id: 3 }
+                        { name: 'sd@123:main', displayName: 'foo/bar@main', id: 3 }
                     ],
                     edges: [
                         { src: '~pr', dest: 'main' },
