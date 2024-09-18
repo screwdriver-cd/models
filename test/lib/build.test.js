@@ -1597,11 +1597,11 @@ describe('Build Model', () => {
                 state: 'ENABLED',
                 archived: false,
                 pipeline: Promise.resolve(pipelineMockB),
-                permutations: [{ annotations: { 'beta.screwdriver.cd/executor:': 'k8s-vm' }, provider }],
+                permutations: [{ annotations: { 'beta.screwdriver.cd/executor:': 'k8s-test' }, provider }],
                 isPR: () => false,
                 prNum: Promise.resolve(null)
             });
-            expectedExecutorStartConfig.annotations = { 'beta.screwdriver.cd/executor:': 'k8s-vm' };
+            expectedExecutorStartConfig.annotations = { 'beta.screwdriver.cd/executor:': 'k8s-test' };
             expectedExecutorStartConfig.prParentJobId = undefined;
             expectedExecutorStartConfig.freezeWindows = [];
 
