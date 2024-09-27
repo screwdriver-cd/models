@@ -2621,7 +2621,7 @@ describe('Event Factory', () => {
             pipelineMock.sync = sinon.stub().resolves(pipelineWithParameter);
 
             return eventFactory.create(config).then(model => {
-                assert.equal(model.meta.parameters.user.value, 'batman');
+                assert.deepEqual(model.meta.parameters.user, { value: 'batman', default: 'adong' });
             });
         });
 
@@ -2642,7 +2642,7 @@ describe('Event Factory', () => {
             pipelineMock.sync = sinon.stub().resolves(pipelineWithParameter);
 
             return eventFactory.create(config).then(model => {
-                assert.equal(model.meta.parameters.user.value, 'adong');
+                assert.deepEqual(model.meta.parameters.user, { value: 'adong', default: 'adong' });
             });
         });
 
@@ -2658,7 +2658,7 @@ describe('Event Factory', () => {
             config.startFrom = 'main';
 
             return eventFactory.create(config).then(model => {
-                assert.equal(model.meta.parameters.user.value, 'adong');
+                assert.deepEqual(model.meta.parameters.user, { value: 'adong', default: 'adong' });
                 assert.equal(config.meta.parameters.user.value, 'adong');
             });
         });
@@ -2678,7 +2678,7 @@ describe('Event Factory', () => {
             config.startFrom = 'main';
 
             return eventFactory.create(config).then(model => {
-                assert.equal(model.meta.parameters.user.value, 'adong');
+                assert.deepEqual(model.meta.parameters.user, { value: 'adong', default: 'adong' });
                 assert.equal(config.meta.parameters.user.value, 'adong');
             });
         });
@@ -2695,7 +2695,7 @@ describe('Event Factory', () => {
             config.startFrom = 'main';
 
             return eventFactory.create(config).then(model => {
-                assert.equal(model.meta.parameters.user.value, 'adong');
+                assert.deepEqual(model.meta.parameters.user, { value: 'adong', default: 'adong' });
                 assert.equal(config.meta.parameters.user.value, 'adong');
             });
         });
@@ -2715,7 +2715,7 @@ describe('Event Factory', () => {
             config.startFrom = 'main';
 
             return eventFactory.create(config).then(model => {
-                assert.equal(model.meta.parameters.user.value, 'adong');
+                assert.deepEqual(model.meta.parameters.user, { value: 'adong', default: 'adong' });
                 assert.equal(config.meta.parameters.user.value, 'adong');
             });
         });
@@ -2813,34 +2813,43 @@ describe('Event Factory', () => {
                     assert.deepEqual(model.meta.parameters, {
                         component: {
                             car: {
-                                value: 'Audi'
+                                value: 'Audi',
+                                default: 'Audi'
                             },
                             color: {
-                                value: 'white'
+                                value: 'white',
+                                default: 'white'
                             },
                             cuisine: {
-                                value: 'Italian'
+                                value: 'Italian',
+                                default: 'Italian'
                             },
                             music: {
-                                value: 'jazz'
+                                value: 'jazz',
+                                default: 'jazz'
                             }
                         },
                         publish: {
                             car: {
-                                value: 'Ferrari'
+                                value: 'Ferrari',
+                                default: 'Ferrari'
                             },
                             color: {
-                                value: 'red'
+                                value: 'red',
+                                default: 'red'
                             },
                             cuisine: {
-                                value: 'Japanese'
+                                value: 'Japanese',
+                                default: 'Japanese'
                             },
                             sports: {
-                                value: 'cricket'
+                                value: 'cricket',
+                                default: 'cricket'
                             }
                         },
                         user: {
-                            value: 'ironman'
+                            value: 'ironman',
+                            default: 'ironman'
                         }
                     });
                 });
@@ -2865,34 +2874,43 @@ describe('Event Factory', () => {
                     assert.deepEqual(model.meta.parameters, {
                         component: {
                             car: {
-                                value: 'Audi'
+                                value: 'Audi',
+                                default: 'Audi'
                             },
                             color: {
-                                value: 'blue'
+                                value: 'blue',
+                                default: 'white'
                             },
                             cuisine: {
-                                value: 'Indian'
+                                value: 'Indian',
+                                default: 'Italian'
                             },
                             music: {
-                                value: 'jazz'
+                                value: 'jazz',
+                                default: 'jazz'
                             }
                         },
                         publish: {
                             car: {
-                                value: 'McLaren'
+                                value: 'McLaren',
+                                default: 'Ferrari'
                             },
                             color: {
-                                value: 'red'
+                                value: 'red',
+                                default: 'red'
                             },
                             cuisine: {
-                                value: 'Japanese'
+                                value: 'Japanese',
+                                default: 'Japanese'
                             },
                             sports: {
-                                value: 'baseball'
+                                value: 'baseball',
+                                default: 'cricket'
                             }
                         },
                         user: {
-                            value: 'batman'
+                            value: 'batman',
+                            default: 'ironman'
                         }
                     });
                 });
