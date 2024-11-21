@@ -1403,7 +1403,7 @@ describe('Template Factory', () => {
                         name: 'nathom/sd-uses-template',
                         url: 'https://github.com/test/repo/tree/main/pipe3',
                         rootDir: 'pipe3',
-                        private: false
+                        private: true
                     },
                     lastRun: '2023-08-31T18:18:37.501Z',
                     admins: { nathom: true }
@@ -1461,11 +1461,29 @@ describe('Template Factory', () => {
                         name: 'nathom/sd-uses-template',
                         url: 'https://github.com/test/repo/tree/main/pipe3',
                         rootDir: 'pipe3',
-                        private: false
+                        private: true
                     },
+                    settings: { public: true },
                     createTime: '2023-08-17T18:18:37.501Z',
                     admins: { nathom: true },
                     lastEventId: 1
+                },
+
+                {
+                    id: 3,
+                    name: 'nathom/sd-uses-template',
+                    scmUri: 'github.com:672032066:main:pipe4',
+                    scmContext: 'github:github.com',
+                    scmRepo: {
+                        branch: 'main',
+                        name: 'nathom/sd-uses-template',
+                        url: 'https://github.com/test/repo/tree/main/pipe4',
+                        rootDir: 'pipe4',
+                        private: true
+                    },
+                    createTime: '2023-08-17T18:18:37.501Z',
+                    admins: { nathom: true },
+                    lastEventId: 3
                 }
             ];
 
