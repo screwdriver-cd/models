@@ -195,8 +195,8 @@ describe('Pipeline Model', () => {
         testJob = getJobMocks({
             id: 100,
             name: 'test',
-            description: 'test job',
-            templateId: 5,
+            description: 'original test job',
+            templateId: 1,
             archived: false
         });
 
@@ -1684,7 +1684,9 @@ describe('Pipeline Model', () => {
                         {
                             commands: [{ command: 'npm test', name: 'test' }],
                             image: 'node:10',
-                            requires: ['~pr']
+                            requires: ['~pr'],
+                            templateId: 5,
+                            description: 'test job'
                         }
                     ],
                     pipelineId: testId,
@@ -1800,7 +1802,9 @@ describe('Pipeline Model', () => {
                         {
                             commands: [{ command: 'npm test', name: 'test' }],
                             image: 'node:10',
-                            requires: ['~pr']
+                            requires: ['~pr'],
+                            templateId: 5,
+                            description: 'test job'
                         }
                     ],
                     pipelineId: testId,
@@ -1975,10 +1979,14 @@ describe('Pipeline Model', () => {
                         {
                             commands: [{ command: 'npm test', name: 'test' }],
                             image: 'node:10',
-                            requires: ['~pr', '~pr:testBranch']
+                            requires: ['~pr', '~pr:testBranch'],
+                            templateId: 5,
+                            description: 'test job'
                         }
                     ],
-                    pipelineId: testId
+                    pipelineId: testId,
+                    templateId: 5,
+                    description: 'test job'
                 });
             });
         });
@@ -2047,8 +2055,8 @@ describe('Pipeline Model', () => {
                     pipelineId: testId,
                     name: 'PR-2:main',
                     prParentJobId: 99998,
-                    templateId: undefined,
-                    description: undefined
+                    templateId: null,
+                    description: null
                 });
             });
         });
