@@ -65,7 +65,9 @@
                         "command": "npm test"
                     }
                 ],
-                "requires": ["~pr"]
+                "requires": ["~pr"],
+                "templateId": 5,
+                "description": "test job"
             }
         ],
         "publish": [
