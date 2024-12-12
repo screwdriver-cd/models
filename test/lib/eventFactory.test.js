@@ -179,6 +179,8 @@ describe('Event Factory', () => {
                         { name: '~pr' },
                         { name: '~commit' },
                         { name: 'main' },
+                        { name: 'firstVirtual' },
+                        { name: 'secondVirtual' },
                         { name: 'disabledJob' },
                         { name: 'stage@integration:setup', stageName: 'integration' },
                         { name: 'int-deploy', stageName: 'integration' },
@@ -198,6 +200,8 @@ describe('Event Factory', () => {
                         { src: '~sd@123:main', dest: 'main' },
                         { src: '~pr', dest: 'main' },
                         { src: '~commit', dest: 'main' },
+                        { src: '~commit', dest: 'firstVirtual' },
+                        { src: '~commit', dest: 'secondVirtual' },
                         { src: 'main', dest: 'disabledJob' },
                         { src: 'main', dest: 'stage@integration:setup' },
                         { src: 'stage@integration:setup', dest: 'int-deploy' },
@@ -236,6 +240,8 @@ describe('Event Factory', () => {
                         { name: '~pr' },
                         { name: '~commit' },
                         { name: 'main' },
+                        { name: 'firstVirtual' },
+                        { name: 'secondVirtual' },
                         { name: 'disabledJob' },
                         { name: 'stage@integration:setup', stageName: 'integration' },
                         { name: 'int-deploy', stageName: 'integration' },
@@ -255,6 +261,8 @@ describe('Event Factory', () => {
                         { src: '~sd@123:main', dest: 'main' },
                         { src: '~pr', dest: 'main' },
                         { src: '~commit', dest: 'main' },
+                        { src: '~commit', dest: 'firstVirtual' },
+                        { src: '~commit', dest: 'secondVirtual' },
                         { src: 'main', dest: 'disabledJob' },
                         { src: 'main', dest: 'stage@integration:setup' },
                         { src: 'stage@integration:setup', dest: 'int-deploy' },
@@ -467,6 +475,38 @@ describe('Event Factory', () => {
                         permutations: [
                             {
                                 requires: ['int-certify']
+                            }
+                        ],
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
+                    },
+
+                    {
+                        id: 16,
+                        pipelineId: 8765,
+                        name: 'firstVirtual',
+                        permutations: [
+                            {
+                                requires: ['~commit', '~pr'],
+                                annotations: {
+                                    'screwdriver.cd/virtualJob': true
+                                }
+                            }
+                        ],
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
+                    },
+                    {
+                        id: 17,
+                        pipelineId: 8765,
+                        name: 'secondVirtual',
+                        permutations: [
+                            {
+                                requires: ['~commit', '~pr'],
+                                freezeWindows: ['* 10-21 ? * *'],
+                                annotations: {
+                                    'screwdriver.cd/virtualJob': true
+                                }
                             }
                         ],
                         state: 'ENABLED',
@@ -901,12 +941,59 @@ describe('Event Factory', () => {
                 return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
+                    assert.callCount(buildFactoryMock.create, 6);
                     assert.calledWith(
                         buildFactoryMock.create,
                         sinon.match({
                             parentBuildId: 12345,
                             eventId: model.id,
-                            jobId: 1
+                            jobId: 1,
+                            start: true
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 5,
+                            start: true
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 6,
+                            start: true
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 7,
+                            start: true
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 16,
+                            start: false // should skip execution of virtual job without freeze windows
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 17,
+                            start: true
                         })
                     );
                     assert.calledOnce(pipelineMock.sync);
