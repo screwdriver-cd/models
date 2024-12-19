@@ -689,6 +689,7 @@ describe('Build Factory', () => {
                         'Cluster specified in screwdriver.cd/buildCluster iOS ' +
                             `for scmContext ${scmContext} and group default does not exist.`
                     );
+                    assert.strictEqual(err.statusCode, 400);
                 });
         });
 
