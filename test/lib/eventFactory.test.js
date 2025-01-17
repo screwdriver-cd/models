@@ -2864,14 +2864,14 @@ describe('Event Factory', () => {
                                 requires: ['~commit', '~pr'],
                                 sourcePaths: ['src/test'],
                                 parameters: {
-                                    color: 'white',
+                                    color: 'blue',
                                     cuisine: {
                                         value: 'Italian'
                                     },
-                                    car: ['Audi', 'Tesla'],
                                     music: {
                                         value: ['jazz', 'rock']
-                                    }
+                                    },
+                                    hobby: 'hiking'
                                 }
                             }
                         ],
@@ -2998,6 +2998,38 @@ describe('Event Factory', () => {
                         user: {
                             value: 'batman',
                             default: 'ironman'
+                        }
+                    });
+                });
+            });
+
+            it('should use PR job parameters for PR builds', () => {
+                config.startFrom = '~pr';
+                config.prRef = 'branch';
+                config.prNum = 3;
+                config.prTitle = 'Update screwdriver.yaml';
+
+                afterSyncedPRPipelineMock.getJobs.resolves(jobsMock);
+
+                return eventFactory.create(config).then(model => {
+                    assert.deepEqual(model.meta.parameters, {
+                        component: {
+                            color: {
+                                value: 'blue',
+                                default: 'blue'
+                            },
+                            cuisine: {
+                                value: 'Italian',
+                                default: 'Italian'
+                            },
+                            music: {
+                                value: 'jazz',
+                                default: 'jazz'
+                            },
+                            hobby: {
+                                value: 'hiking',
+                                default: 'hiking'
+                            }
                         }
                     });
                 });
