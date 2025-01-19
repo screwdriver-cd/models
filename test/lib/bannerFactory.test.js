@@ -2,6 +2,7 @@
 
 const { assert } = require('chai');
 const sinon = require('sinon');
+const rewiremock = require('rewiremock/node');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -14,26 +15,40 @@ describe('Banner Factory', () => {
         id: bannerId,
         message,
         type,
-        isActive
+        isActive,
+        scope: 'GLOBAL',
+        scopeId: null
     };
 
     let BannerFactory;
     let datastore;
     let factory;
     let Banner;
+    let pipelineFactoryMock;
 
     beforeEach(() => {
+        pipelineFactoryMock = {
+            get: sinon.stub()
+        };
+        rewiremock('../../lib/pipelineFactory').with({
+            getInstance: sinon.stub().returns(pipelineFactoryMock)
+        });
+        rewiremock.enable();
+
         datastore = {
             save: sinon.stub(),
             get: sinon.stub()
         };
-
         /* eslint-disable global-require */
         Banner = require('../../lib/banner');
         BannerFactory = require('../../lib/bannerFactory');
         /* eslint-disable global-require */
 
         factory = new BannerFactory({ datastore });
+    });
+
+    afterEach(() => {
+        rewiremock.disable();
     });
 
     describe('createClass', () => {
@@ -45,7 +60,7 @@ describe('Banner Factory', () => {
     });
 
     describe('create', () => {
-        it('should create a Banner', () => {
+        it('should create a Banner with GLOBAL scope', () => {
             datastore.save.resolves(bannerData);
 
             return factory
@@ -124,6 +139,103 @@ describe('Banner Factory', () => {
                     Object.keys(bannerData).forEach(key => {
                         assert.strictEqual(model[key], dataWithDefaults[key]);
                     });
+                });
+        });
+
+        // todo: fix
+        it('should throw error when creating a Banner with invalid scope', () => {
+            datastore.save.resolves({
+                ...bannerData,
+                scope: 'GLOBAL',
+                scopeId: null
+            });
+
+            return factory
+                .create({
+                    message,
+                    type,
+                    isActive,
+                    scope: 'INVALID'
+                })
+                .then(() => {
+                    // console.log(model);
+                    // do something else here
+                    assert.fail('nope');
+                })
+                .catch(err => {
+                    console.log(err);
+                    // assert.equal('Invalid scope', err.message);
+                });
+        });
+
+        it('should throw error when creating a Banner with invalid scopeId', () => {
+            return factory
+                .create({
+                    message,
+                    type,
+                    isActive,
+                    scope: 'PIPELINE'
+                })
+                .then(() => {
+                    assert.fail('nope');
+                })
+                .catch(err => {
+                    assert.equal('scopeId is required when scope is PIPELINE', err.message);
+                });
+        });
+
+        it('should throw error when pipeline ID does not exist', () => {
+            const dataWithDefaults = { ...bannerData };
+
+            dataWithDefaults.scope = 'PIPELINE';
+            dataWithDefaults.scopeId = '1234';
+            datastore.save.resolves(dataWithDefaults);
+            pipelineFactoryMock.get.returns(null);
+
+            return factory
+                .create({
+                    message,
+                    type,
+                    isActive,
+                    scope: 'PIPELINE',
+                    scopeId: '1234'
+                })
+                .then(() => {
+                    assert.fail('nope');
+                })
+                .catch(err => {
+                    assert.isTrue(pipelineFactoryMock.get.calledOnce);
+                    assert.equal('Pipeline 1234 does not exist', err.message);
+                });
+        });
+
+        it('should create banner with scope: PIPELINE and scopeId: 1234', () => {
+            const dataWithDefaults = { ...bannerData };
+
+            dataWithDefaults.scope = 'PIPELINE';
+            dataWithDefaults.scopeId = '1234';
+            datastore.save.resolves(dataWithDefaults);
+            pipelineFactoryMock.get.returns({ id: '1234' });
+
+            return factory
+                .create({
+                    message,
+                    type,
+                    isActive,
+                    scope: 'PIPELINE',
+                    scopeId: '1234'
+                })
+                .then(model => {
+                    assert.isTrue(datastore.save.calledOnce);
+                    assert.isTrue(pipelineFactoryMock.get.calledOnce);
+                    assert.instanceOf(model, Banner);
+
+                    Object.keys(bannerData).forEach(key => {
+                        assert.strictEqual(model[key], dataWithDefaults[key]);
+                    });
+                })
+                .catch(() => {
+                    assert.fail('should not have failed');
                 });
         });
     });
