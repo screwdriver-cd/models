@@ -142,32 +142,6 @@ describe('Banner Factory', () => {
                 });
         });
 
-        // todo: fix
-        it('should throw error when creating a Banner with invalid scope', () => {
-            datastore.save.resolves({
-                ...bannerData,
-                scope: 'GLOBAL',
-                scopeId: null
-            });
-
-            return factory
-                .create({
-                    message,
-                    type,
-                    isActive,
-                    scope: 'INVALID'
-                })
-                .then(() => {
-                    // console.log(model);
-                    // do something else here
-                    assert.fail('nope');
-                })
-                .catch(err => {
-                    console.log(err);
-                    // assert.equal('Invalid scope', err.message);
-                });
-        });
-
         it('should throw error when creating a Banner with invalid scopeId', () => {
             return factory
                 .create({
