@@ -558,7 +558,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
                     },
                     {
                         id: 5,
@@ -570,7 +571,8 @@ describe('Event Factory', () => {
                             }
                         ],
                         state: 'ENABLED',
-                        parsePRJobName: sinon.stub().returns('main')
+                        parsePRJobName: sinon.stub().returns('main'),
+                        isPR: sinon.stub().returns(true)
                     },
                     {
                         id: 6,
@@ -583,7 +585,8 @@ describe('Event Factory', () => {
                         ],
                         state: 'ENABLED',
                         parsePRJobName: sinon.stub().returns('outdated'),
-                        archived: true
+                        archived: true,
+                        isPR: sinon.stub().returns(true)
                     },
                     {
                         id: 2,
@@ -594,7 +597,8 @@ describe('Event Factory', () => {
                             }
                         ],
                         state: 'DISABLED',
-                        archived: true
+                        archived: true,
+                        isPR: sinon.stub().returns(false)
                     },
                     {
                         id: 7,
@@ -606,7 +610,8 @@ describe('Event Factory', () => {
                             }
                         ],
                         state: 'ENABLED',
-                        parsePRJobName: sinon.stub().returns('main')
+                        parsePRJobName: sinon.stub().returns('main'),
+                        isPR: sinon.stub().returns(false)
                     },
                     {
                         id: 3,
@@ -616,7 +621,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr']
                             }
                         ],
-                        state: 'DISABLED'
+                        state: 'DISABLED',
+                        isPR: sinon.stub().returns(false)
                     },
                     {
                         id: 6,
@@ -627,7 +633,8 @@ describe('Event Factory', () => {
                             }
                         ],
                         state: 'ENABLED',
-                        parsePRJobName: sinon.stub().returns('publish')
+                        parsePRJobName: sinon.stub().returns('publish'),
+                        isPR: sinon.stub().returns(true)
                     },
                     {
                         id: 8,
@@ -638,7 +645,8 @@ describe('Event Factory', () => {
                             }
                         ],
                         state: 'ENABLED',
-                        parsePRJobName: sinon.stub().returns('pr-only')
+                        parsePRJobName: sinon.stub().returns('pr-only'),
+                        isPR: sinon.stub().returns(true)
                     }
                 ];
 
@@ -708,7 +716,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr:branch']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
                     },
                     {
                         id: 5,
@@ -720,7 +729,8 @@ describe('Event Factory', () => {
                             }
                         ],
                         state: 'ENABLED',
-                        parsePRJobName: sinon.stub().returns('main')
+                        parsePRJobName: sinon.stub().returns('main'),
+                        isPR: sinon.stub().returns(true)
                     },
                     {
                         id: 6,
@@ -733,7 +743,8 @@ describe('Event Factory', () => {
                         ],
                         state: 'ENABLED',
                         archived: true,
-                        parsePRJobName: sinon.stub().returns('outdated')
+                        parsePRJobName: sinon.stub().returns('outdated'),
+                        isPR: sinon.stub().returns(true)
                     },
                     {
                         id: 7,
@@ -745,7 +756,8 @@ describe('Event Factory', () => {
                             }
                         ],
                         state: 'ENABLED',
-                        parsePRJobName: sinon.stub().returns('main')
+                        parsePRJobName: sinon.stub().returns('main'),
+                        isPR: sinon.stub().returns(true)
                     },
                     {
                         id: 8,
@@ -756,7 +768,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr:branch']
                             }
                         ],
-                        state: 'DISABLED'
+                        state: 'DISABLED',
+                        isPR: sinon.stub().returns(false)
                     },
                     {
                         id: 9,
@@ -768,7 +781,8 @@ describe('Event Factory', () => {
                             }
                         ],
                         state: 'ENABLED',
-                        parsePRJobName: sinon.stub().returns('pr-branch')
+                        parsePRJobName: sinon.stub().returns('pr-branch'),
+                        isPR: sinon.stub().returns(true)
                     }
                 ];
 
@@ -824,7 +838,8 @@ describe('Event Factory', () => {
                             }
                         ],
                         state: 'ENABLED',
-                        parsePRJobName: sinon.stub().returns('main')
+                        parsePRJobName: sinon.stub().returns('main'),
+                        isPR: sinon.stub().returns(true)
                     },
                     {
                         id: 2,
@@ -836,7 +851,8 @@ describe('Event Factory', () => {
                             }
                         ],
                         state: 'ENABLED',
-                        parsePRJobName: sinon.stub().returns('pr-branch')
+                        parsePRJobName: sinon.stub().returns('pr-branch'),
+                        isPR: sinon.stub().returns(true)
                     },
                     {
                         id: 3,
@@ -847,7 +863,8 @@ describe('Event Factory', () => {
                                 requires: ['~commit', '~pr', '~sd@123:main', '~commit:branch', '~pr:branch']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
                     },
                     {
                         id: 4,
@@ -858,7 +875,8 @@ describe('Event Factory', () => {
                                 requires: ['~pr']
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
                     }
                 ];
 
@@ -2830,7 +2848,8 @@ describe('Event Factory', () => {
                                 }
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
                     },
                     {
                         id: 2,
@@ -2852,7 +2871,8 @@ describe('Event Factory', () => {
                                 }
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
                     },
                     {
                         id: 3,
@@ -2864,18 +2884,21 @@ describe('Event Factory', () => {
                                 requires: ['~commit', '~pr'],
                                 sourcePaths: ['src/test'],
                                 parameters: {
-                                    color: 'white',
+                                    color: 'blue',
                                     cuisine: {
                                         value: 'Italian'
                                     },
-                                    car: ['Audi', 'Tesla'],
                                     music: {
                                         value: ['jazz', 'rock']
-                                    }
+                                    },
+                                    hobby: 'hiking'
                                 }
                             }
                         ],
-                        state: 'ENABLED'
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(true),
+                        parsePRJobName: sinon.stub().returns('component'),
+                        prNum: 3
                     }
                 ];
 
@@ -2998,6 +3021,38 @@ describe('Event Factory', () => {
                         user: {
                             value: 'batman',
                             default: 'ironman'
+                        }
+                    });
+                });
+            });
+
+            it('should use PR job parameters for PR builds', () => {
+                config.startFrom = '~pr';
+                config.prRef = 'branch';
+                config.prNum = 3;
+                config.prTitle = 'Update screwdriver.yaml';
+
+                afterSyncedPRPipelineMock.getJobs.resolves(jobsMock);
+
+                return eventFactory.create(config).then(model => {
+                    assert.deepEqual(model.meta.parameters, {
+                        component: {
+                            color: {
+                                value: 'blue',
+                                default: 'blue'
+                            },
+                            cuisine: {
+                                value: 'Italian',
+                                default: 'Italian'
+                            },
+                            music: {
+                                value: 'jazz',
+                                default: 'jazz'
+                            },
+                            hobby: {
+                                value: 'hiking',
+                                default: 'hiking'
+                            }
                         }
                     });
                 });
