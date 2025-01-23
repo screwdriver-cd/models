@@ -15,7 +15,8 @@ describe('Banner Factory', () => {
         id: bannerId,
         message,
         type,
-        isActive
+        isActive,
+        scope: 'GLOBAL'
     };
 
     let BannerFactory;
@@ -59,9 +60,7 @@ describe('Banner Factory', () => {
 
     describe('create', () => {
         it('should create a Banner with GLOBAL scope', () => {
-            const dataWithGlobalScope = { ...bannerData, scope: 'GLOBAL' };
-
-            datastore.save.resolves(dataWithGlobalScope);
+            datastore.save.resolves(bannerData);
 
             return factory
                 .create({
@@ -89,7 +88,8 @@ describe('Banner Factory', () => {
             return factory
                 .create({
                     message,
-                    isActive
+                    isActive,
+                    scope: 'GLOBAL'
                 })
                 .then(model => {
                     assert.isTrue(datastore.save.calledOnce);
@@ -110,7 +110,8 @@ describe('Banner Factory', () => {
             return factory
                 .create({
                     message,
-                    type
+                    type,
+                    scope: 'GLOBAL'
                 })
                 .then(model => {
                     assert.isTrue(datastore.save.calledOnce);
@@ -131,7 +132,8 @@ describe('Banner Factory', () => {
 
             return factory
                 .create({
-                    message
+                    message,
+                    scope: 'GLOBAL'
                 })
                 .then(model => {
                     assert.isTrue(datastore.save.calledOnce);
