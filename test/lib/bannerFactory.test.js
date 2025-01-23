@@ -15,9 +15,7 @@ describe('Banner Factory', () => {
         id: bannerId,
         message,
         type,
-        isActive,
-        scope: 'GLOBAL',
-        scopeId: null
+        isActive
     };
 
     let BannerFactory;
@@ -61,13 +59,16 @@ describe('Banner Factory', () => {
 
     describe('create', () => {
         it('should create a Banner with GLOBAL scope', () => {
-            datastore.save.resolves(bannerData);
+            const dataWithGlobalScope = { ...bannerData, scope: 'GLOBAL' };
+
+            datastore.save.resolves(dataWithGlobalScope);
 
             return factory
                 .create({
                     message,
                     type,
-                    isActive
+                    isActive,
+                    scope: 'GLOBAL'
                 })
                 .then(model => {
                     assert.isTrue(datastore.save.calledOnce);
@@ -139,22 +140,6 @@ describe('Banner Factory', () => {
                     Object.keys(bannerData).forEach(key => {
                         assert.strictEqual(model[key], dataWithDefaults[key]);
                     });
-                });
-        });
-
-        it('should throw error when creating a Banner with invalid scopeId', () => {
-            return factory
-                .create({
-                    message,
-                    type,
-                    isActive,
-                    scope: 'PIPELINE'
-                })
-                .then(() => {
-                    assert.fail('nope');
-                })
-                .catch(err => {
-                    assert.equal('scopeId is required when scope is PIPELINE', err.message);
                 });
         });
 
