@@ -943,6 +943,7 @@ describe('Event Factory', () => {
 
                 return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
+                    assert.equal(model.builds, null);
                     assert.notCalled(jobFactoryMock.create);
                     assert.notCalled(buildFactoryMock.create);
                     assert.calledOnce(pipelineMock.sync);
