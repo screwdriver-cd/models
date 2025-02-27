@@ -690,6 +690,40 @@ describe('Job Model', () => {
                 assert.calledOnce(datastore.update);
             });
         });
+
+        it('merges admin annotation if it exits when updating job', async () => {
+            const oldJob = { ...job };
+            const overrideAnnotation = {
+                'screwdriver.cd/sdAdminBuildClusterOverride': 'aws'
+            };
+            const multipleAnnotations = {
+                'screwdriver.cd/buildPeriodically': 'H 9 * * *',
+                ...overrideAnnotation
+            };
+
+            oldJob.permutations = [
+                {
+                    annotations: multipleAnnotations
+                }
+            ];
+            oldJob.state = 'ENABLED';
+            oldJob.archived = false;
+            jobFactoryMock.get.resolves(oldJob);
+
+            job.state = 'ENABLED';
+            job.archived = false;
+            job.permutations = [
+                {
+                    annotations: overrideAnnotation
+                }
+            ];
+            datastore.update.resolves(job);
+
+            const response = await job.update();
+
+            assert.calledOnce(datastore.update);
+            assert.deepEqual(response.permutations[0].annotations, overrideAnnotation);
+        });
     });
 
     describe('remove', () => {

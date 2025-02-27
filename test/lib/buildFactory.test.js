@@ -852,6 +852,122 @@ describe('Build Factory', () => {
                 });
         });
 
+        describe('sdAdminBuildClusterOverride', () => {
+            const overrideClusterName = 'aws.ap-south-1';
+
+            beforeEach(() => {
+                const user = { unsealToken: sinon.stub().resolves('foo') };
+                const sdBuildClustersCopy = sdBuildClusters.slice();
+                const permutations4 = { ...permutations3 };
+
+                permutations4[0].annotations['screwdriver.cd/sdAdminBuildClusterOverride'] = overrideClusterName;
+
+                jobMock = {
+                    permutations: permutations4,
+                    pipeline: Promise.resolve({ name: 'screwdriver-cd/models', scmUri, scmRepo, scmContext }),
+                    name: 'main'
+                };
+                sdBuildClustersCopy.push({
+                    name: overrideClusterName,
+                    scmContext,
+                    scmOrganizations: ['screwdriver-cd'],
+                    weightage: 90,
+                    isActive: true,
+                    managedByScrewdriver: true,
+                    group: 'aws'
+                });
+
+                buildClusterFactoryMock.list.resolves(sdBuildClustersCopy);
+                jobFactoryMock.get.resolves(jobMock);
+                userFactoryMock.get.resolves(user);
+                delete saveConfig.params.commit;
+                saveConfig.params.buildClusterName = overrideClusterName;
+            });
+
+            afterEach(() => {
+                jobFactoryMock.get.reset();
+                buildClusterFactoryMock.list.reset();
+                userFactoryMock.get.reset();
+                datastore.save.reset();
+            });
+
+            it('picks build cluster from sd admin override if job annotation exits', async () => {
+                await factory.create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    parentBuildId: 12345,
+                    meta
+                });
+
+                assert.callCount(stepFactoryMock.create, steps.length);
+                assert.calledWith(datastore.save, saveConfig);
+            });
+
+            it('picks build cluster from sd admin override even if no annotation exits', async () => {
+                const permutations4 = { ...permutations3 };
+
+                permutations4[0].annotations = {
+                    'screwdriver.cd/sdAdminBuildClusterOverride': overrideClusterName
+                };
+
+                jobMock = {
+                    permutations: permutations4,
+                    pipeline: Promise.resolve({ name: 'screwdriver-cd/models', scmUri, scmRepo, scmContext }),
+                    name: 'main'
+                };
+                jobFactoryMock.get.resolves(jobMock);
+
+                await factory.create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    parentBuildId: 12345,
+                    meta
+                });
+
+                assert.callCount(stepFactoryMock.create, steps.length);
+                assert.calledWith(datastore.save, saveConfig);
+            });
+
+            it('picks build cluster from sd admin override if pipeline annotation exits', async () => {
+                const permutations4 = { ...permutations3 };
+
+                permutations4[0].annotations = {
+                    'screwdriver.cd/sdAdminBuildClusterOverride': overrideClusterName
+                };
+
+                jobMock = {
+                    permutations: permutations4,
+                    pipeline: Promise.resolve({
+                        name: 'screwdriver-cd/models',
+                        scmUri,
+                        scmRepo,
+                        scmContext,
+                        annotations: {
+                            'screwdriver.cd/buildCluster': 'sd1'
+                        }
+                    }),
+                    name: 'main'
+                };
+                jobFactoryMock.get.resolves(jobMock);
+
+                await factory.create({
+                    username,
+                    jobId,
+                    eventId,
+                    sha,
+                    parentBuildId: 12345,
+                    meta
+                });
+
+                assert.callCount(stepFactoryMock.create, steps.length);
+                assert.calledWith(datastore.save, saveConfig);
+            });
+        });
+
         it('uses username as displayName if displayLabel is not set', () => {
             scmMock.getDisplayName.returns(null);
             saveConfig.params.cause = 'Started by user i_made_the_request';
