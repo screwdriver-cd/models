@@ -1024,4 +1024,131 @@ describe('Job Model', () => {
                 });
         });
     });
+
+    describe('updateJobBuildCluster', () => {
+        it('update a job without if annotation not present in db', async () => {
+            const oldJob = { ...job };
+            const overrideAnnotation = {
+                'screwdriver.cd/sdAdminBuildClusterOverride': 'aws'
+            };
+
+            job.permutations = [
+                {
+                    annotations: {
+                        ...overrideAnnotation
+                    }
+                }
+            ];
+            jobFactoryMock.get.resolves(oldJob);
+            datastore.update.resolves(job);
+            pipelineFactoryMock.get.resolves({
+                ...pipelineMock,
+                id: 9876
+            });
+
+            const result = await job.updateBuildCluster();
+
+            assert.calledOnce(datastore.update);
+            assert.deepEqual(result.permutations[0].annotations, overrideAnnotation);
+        });
+
+        it('update a job if annotation present in db but deleted in current instance', async () => {
+            const oldJob = { ...job };
+            const overrideAnnotation = {
+                'screwdriver.cd/sdAdminBuildClusterOverride': 'aws'
+            };
+
+            oldJob.permutations = [
+                {
+                    annotations: {
+                        ...overrideAnnotation
+                    }
+                }
+            ];
+            jobFactoryMock.get.resolves(oldJob);
+            job.permutations = [
+                {
+                    annotations: {}
+                }
+            ];
+            datastore.update.resolves(job);
+            pipelineFactoryMock.get.resolves({
+                ...pipelineMock,
+                id: 9876
+            });
+
+            const result = await job.updateBuildCluster();
+
+            assert.calledOnce(datastore.update);
+            assert.deepEqual(result.permutations[0].annotations, {});
+        });
+
+        it('update a job if annotation present in db but different in current instance', async () => {
+            const oldJob = { ...job };
+            const overrideAnnotation = {
+                'screwdriver.cd/sdAdminBuildClusterOverride': 'aws'
+            };
+
+            oldJob.permutations = [
+                {
+                    annotations: {
+                        ...overrideAnnotation
+                    }
+                }
+            ];
+            jobFactoryMock.get.resolves(oldJob);
+            job.permutations = [
+                {
+                    annotations: {
+                        'screwdriver.cd/sdAdminBuildClusterOverride': 'gcp'
+                    }
+                }
+            ];
+            datastore.update.resolves(job);
+            pipelineFactoryMock.get.resolves({
+                ...pipelineMock,
+                id: 9876
+            });
+
+            const result = await job.updateBuildCluster();
+
+            assert.calledOnce(datastore.update);
+            assert.deepEqual(result.permutations[0].annotations, {
+                'screwdriver.cd/sdAdminBuildClusterOverride': 'gcp'
+            });
+        });
+
+        it('do not update job for any other annotations', async () => {
+            const oldJob = { ...job };
+            const overrideAnnotation = {
+                'screwdriver.cd/buildPeriodically': 'H 5 * * *'
+            };
+
+            oldJob.permutations = [
+                {
+                    annotations: {
+                        ...overrideAnnotation
+                    }
+                }
+            ];
+            jobFactoryMock.get.resolves(oldJob);
+            job.permutations = [
+                {
+                    annotations: {
+                        'screwdriver.cd/buildPeriodically': 'H 9 * * *'
+                    }
+                }
+            ];
+            datastore.update.resolves(job);
+            pipelineFactoryMock.get.resolves({
+                ...pipelineMock,
+                id: 9876
+            });
+
+            const result = await job.updateBuildCluster();
+
+            assert.notCalled(datastore.update);
+            assert.isNull(result);
+        });
+    });
 });
