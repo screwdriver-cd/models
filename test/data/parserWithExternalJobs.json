@@ -3,6 +3,7 @@
         "main": [
             {
                 "image": "node:4",
+                "requires": ["~pr", "~commit", "sd@123:bar"],
                 "commands": [
                     {
                         "name": "init",
@@ -20,6 +21,7 @@
             },
             {
                 "image": "node:5",
+                "requires": ["~pr", "~commit", "sd@123:bar"],
                 "commands": [
                     {
                         "name": "init",
@@ -37,6 +39,7 @@
             },
             {
                 "image": "node:6",
+                "requires": ["~pr", "~commit", "sd@123:bar"],
                 "commands": [
                     {
                         "name": "init",
@@ -78,16 +81,24 @@
         ]
     },
     "workflowGraph": {
-        "nodes": [{ "name": "~pr" }, { "name": "~commit" }, { "name": "main", "id": 3 }],
-        "edges": []
+        "nodes": [
+            { "name": "~pr" },
+            { "name": "~commit" },
+            { "name": "main" },
+            { "name": "publish" },
+            { "name": "sd@123:foo" },
+            { "name": "sd@123:bar" }
+        ],
+        "edges": [
+            { "src": "~pr", "dest": "main" },
+            { "src": "~commit", "dest": "main" },
+            { "src": "main", "dest": "publish" },
+            { "src": "publish", "dest": "sd@123:foo" },
+            { "src": "sd@123:bar", "dest": "main" }
+        ]
     },
     "annotations": {
         "beta.screwdriver.cd/executor" : "screwdriver-executor-vm",
         "screwdriver.cd/chainPR" : true
-    },
-    "subscribe": {
-        "scmUrls": [{
-            "git@github.com:baz/foo.git": ["~commit", "~tags", "~release"]
-        }]
     }
 }

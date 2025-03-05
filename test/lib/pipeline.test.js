@@ -17,6 +17,7 @@ const SHARED_PROVIDER_YAML = '../data/sharedProvider.yaml';
 const PROVIDER_YAML = '../data/provider.yaml';
 const PARSED_YAML_WITH_PROVIDER = require('../data/parserWithProvider.json');
 const PARSED_YAML = require('../data/parser.json');
+const PARSED_YAML_WITH_EXTERNAL_JOBS = require('../data/parserWithExternalJobs.json');
 const PARSED_YAML_WITH_PRJOB = require('../data/parserWithPRjob.json');
 const PARSED_YAML_WITH_STAGES = require('../data/parserWithStages.json');
 const PARSED_YAML_WITH_REQUIRES = require('../data/parserWithRequires.json');
@@ -565,6 +566,8 @@ describe('Pipeline Model', () => {
         let aMock;
         let bMock;
         let externalMock;
+        let upstreamMock;
+        let downstreamMock;
         let mainModelMock;
         let publishModelMock;
         let setupModelMock;
@@ -574,6 +577,8 @@ describe('Pipeline Model', () => {
         let setupModelMock2;
         let teardownModelMock2;
         let externalModelMock;
+        let upstreamModelMock;
+        let downstreamModelMock;
         let stageSetupMock;
         let stageTeardownMock;
         let stageSetupMock2;
@@ -721,7 +726,20 @@ describe('Pipeline Model', () => {
                 name: 'main',
                 state: 'ENABLED'
             };
-
+            downstreamModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 3,
+                name: 'foo',
+                state: 'ENABLED'
+            };
+            upstreamModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 4,
+                name: 'bar',
+                state: 'ENABLED'
+            };
             publishMock = {
                 pipelineId: testId,
                 name: 'publish',
@@ -792,6 +810,36 @@ describe('Pipeline Model', () => {
             externalMock = {
                 pipelineId: testId,
                 name: 'main',
+                permutations: [
+                    {
+                        commands: [
+                            { command: 'npm run bump', name: 'bump' },
+                            { command: 'npm publish --tag $NODE_TAG', name: 'publish' },
+                            { command: 'git push origin --tags', name: 'tag' }
+                        ],
+                        environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
+                        image: 'node:4'
+                    }
+                ]
+            };
+            downstreamMock = {
+                pipelineId: testId,
+                name: 'foo',
+                permutations: [
+                    {
+                        commands: [
+                            { command: 'npm run bump', name: 'bump' },
+                            { command: 'npm publish --tag $NODE_TAG', name: 'publish' },
+                            { command: 'git push origin --tags', name: 'tag' }
+                        ],
+                        environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
+                        image: 'node:4'
+                    }
+                ]
+            };
+            upstreamMock = {
+                pipelineId: testId,
+                name: 'bar',
                 permutations: [
                     {
                         commands: [
@@ -932,13 +980,72 @@ describe('Pipeline Model', () => {
                         { name: '~commit' },
                         { name: 'main', id: 1 },
                         { name: 'publish', id: 2 },
-                        { name: 'sd@123:main', displayName: 'org/repo#branch:main', id: 3 }
+                        { name: 'sd@123:main', id: 3 }
                     ],
                     edges: [
                         { src: '~pr', dest: 'main' },
                         { src: '~commit', dest: 'main' },
                         { src: 'main', dest: 'publish' },
                         { src: 'publish', dest: 'sd@123:main' }
+                    ]
+                });
+            });
+        });
+
+        it('stores workflowGraph to pipeline with external jobs', () => {
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML_WITH_EXTERNAL_JOBS);
+            mainMock.permutations.forEach(p => {
+                p.requires = ['~pr', '~commit', 'sd@123:bar'];
+            });
+
+            sinon.spy(pipeline, 'update');
+            jobFactoryMock.list.resolves([]);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainModelMock);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishModelMock);
+            jobFactoryMock.create.withArgs(upstreamMock).resolves(upstreamModelMock);
+            jobFactoryMock.create.withArgs(downstreamMock).resolves(downstreamModelMock);
+
+            const mainTriggerMock = [
+                {
+                    src: 'sd@123:bar',
+                    dest: `sd@12345:main`,
+                    remove: sinon.stub().resolves(null)
+                }
+            ];
+
+            triggerFactoryMock.list.onCall(0).resolves(mainTriggerMock);
+            triggerFactoryMock.list.onCall(1).resolves([]);
+
+            pipelineFactoryMock.get.resolves({
+                id: testId,
+                scmRepo: {
+                    branch: 'branch',
+                    name: 'org/repo'
+                },
+                update: sinon.stub().resolves(null),
+                remove: sinon.stub().resolves(null),
+                workflowGraph: {
+                    nodes: [{ name: '~pr' }, { name: '~commit' }, { name: 'foo', id: 3 }, { name: 'bar', id: 4 }]
+                }
+            });
+
+            return pipeline.sync().then(() => {
+                assert.calledOnce(pipeline.update);
+                assert.deepEqual(pipeline.workflowGraph, {
+                    nodes: [
+                        { name: '~pr' },
+                        { name: '~commit' },
+                        { name: 'main', id: 1 },
+                        { name: 'publish', id: 2 },
+                        { name: 'sd@123:foo', id: 3 },
+                        { name: 'sd@123:bar', remoteName: 'org/repo#branch:bar', id: 4 }
+                    ],
+                    edges: [
+                        { src: '~pr', dest: 'main' },
+                        { src: '~commit', dest: 'main' },
+                        { src: 'main', dest: 'publish' },
+                        { src: 'publish', dest: 'sd@123:foo' },
+                        { src: 'sd@123:bar', dest: 'main' }
                     ]
                 });
             });
