@@ -558,6 +558,20 @@ describe('Pipeline Model', () => {
                 }
             );
         });
+
+        it('does not addWebhooks if the pipeline is being deleted', () => {
+            pipeline.state = 'DELETING';
+
+            return pipeline
+                .addWebhooks()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'This pipeline is being deleted.');
+                });
+        });
     });
 
     describe('sync', () => {
@@ -1551,6 +1565,22 @@ describe('Pipeline Model', () => {
             });
         });
 
+        it('does not update child pipelines if it is being deleted', () => {
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true });
+            pipelineFactoryMock.get.withArgs({ scmUri: 'foo' }).resolves(childPipelineMock);
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+
+            childPipelineMock.state = 'DELETING';
+
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.notCalled(pipelineFactoryMock.update);
+                assert.notCalled(childPipelineMock.sync);
+            });
+        });
+
         it('does not update child pipelines if does not belong to this parent', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
@@ -1705,6 +1735,20 @@ describe('Pipeline Model', () => {
                 assert.notCalled(childPipelineMock.sync);
                 assert.notCalled(childPipelineMock.update);
             });
+        });
+
+        it('does not sync if the pipeline is being deleted', () => {
+            pipeline.state = 'DELETING';
+
+            return pipeline
+                .sync()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'This pipeline is being deleted.');
+                });
         });
     });
 
@@ -2097,6 +2141,20 @@ describe('Pipeline Model', () => {
                 });
             });
         });
+
+        it('does not syncPR if the pipeline is being deleted', () => {
+            pipeline.state = 'DELETING';
+
+            return pipeline
+                .syncPR()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'This pipeline is being deleted.');
+                });
+        });
     });
 
     describe('syncPRs', () => {
@@ -2185,6 +2243,20 @@ describe('Pipeline Model', () => {
             return pipeline.syncPRs().then(() => {
                 assert.notCalled(jobFactoryMock.create);
             });
+        });
+
+        it('does not syncPRs if pipeline is being deleted', () => {
+            pipeline.state = 'DELETING';
+
+            return pipeline
+                .syncPRs()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'This pipeline is being deleted.');
+                });
         });
     });
 
@@ -3396,6 +3468,8 @@ describe('Pipeline Model', () => {
         };
 
         beforeEach(() => {
+            pipeline.update = sinon.stub();
+            buildFactoryMock.list.resolves([]);
             eventFactoryMock.list.resolves([]);
             jobFactoryMock.list.resolves([]);
             collectionFactoryMock.list.resolves([collection]);
@@ -3430,9 +3504,11 @@ describe('Pipeline Model', () => {
                 assert.calledOnce(tokenFactoryMock.list);
                 assert.calledOnce(token.remove);
                 assert.calledWith(triggerFactoryMock.list, { params: { dest: [] } });
-                assert.calledThrice(jobFactoryMock.list);
+                assert.callCount(jobFactoryMock.list, 4);
                 assert.calledOnce(triggerFactoryMock.list);
                 assert.calledOnce(trigger.remove);
+                assert.calledOnce(datastore.remove); // delete self
+                assert.strictEqual(pipeline.state, 'DELETING');
             }));
 
         it('does not remove stage or stageBuilds if stages does not exist', () => {
@@ -3446,7 +3522,7 @@ describe('Pipeline Model', () => {
                 assert.calledOnce(tokenFactoryMock.list);
                 assert.calledOnce(token.remove);
                 assert.calledWith(triggerFactoryMock.list, { params: { dest: [] } });
-                assert.calledThrice(jobFactoryMock.list);
+                assert.callCount(jobFactoryMock.list, 4);
                 assert.calledOnce(triggerFactoryMock.list);
                 assert.calledOnce(trigger.remove);
             });
@@ -3454,25 +3530,29 @@ describe('Pipeline Model', () => {
 
         it('remove jobs recursively', () => {
             const nonArchivedMatcher = sinon.match(function (value) {
-                return value && value.params && !value.params.archived;
+                return value && value.params && value.params.archived === false;
             });
             const archivedMatcher = sinon.match(function (value) {
-                return value && value.params && value.params.archived;
+                return value && value.params && value.params.archived === true;
             });
-            let i;
 
-            for (i = 0; i < 4; i += 1) {
-                jobFactoryMock.list.withArgs(nonArchivedMatcher).onCall(i).resolves([publishJob, mainJob]);
-            }
-            jobFactoryMock.list.withArgs(nonArchivedMatcher).onCall(i).resolves([]);
+            // Get jobs to check wheather builds are running
+            jobFactoryMock.list.withArgs(nonArchivedMatcher).onCall(0).resolves([]);
 
-            for (i = 0; i < 2; i += 1) {
-                jobFactoryMock.list.withArgs(archivedMatcher).onCall(i).resolves([blahJob]);
-            }
-            jobFactoryMock.list.withArgs(archivedMatcher).onCall(i).resolves([]);
+            // Get jobs when remove triggers
+            jobFactoryMock.list.withArgs(nonArchivedMatcher).onCall(1).resolves([]);
+
+            // Get jobs to remove
+            jobFactoryMock.list.withArgs(nonArchivedMatcher).onCall(2).resolves([publishJob, mainJob]);
+            jobFactoryMock.list.withArgs(nonArchivedMatcher).onCall(3).resolves([publishJob, mainJob]);
+            jobFactoryMock.list.withArgs(nonArchivedMatcher).onCall(4).resolves([publishJob, mainJob]);
+            jobFactoryMock.list.withArgs(nonArchivedMatcher).onCall(5).resolves([]);
+            jobFactoryMock.list.withArgs(archivedMatcher).onCall(0).resolves([blahJob]);
+            jobFactoryMock.list.withArgs(archivedMatcher).onCall(1).resolves([blahJob]);
+            jobFactoryMock.list.withArgs(archivedMatcher).onCall(2).resolves([]);
 
             return pipeline.remove().then(() => {
-                assert.callCount(jobFactoryMock.list, 8);
+                assert.callCount(jobFactoryMock.list, 9);
 
                 // Delete all the jobs
                 assert.callCount(publishJob.remove, 3);
@@ -3482,6 +3562,34 @@ describe('Pipeline Model', () => {
                 // Delete the pipeline
                 assert.calledOnce(datastore.remove);
             });
+        });
+
+        it('does not remove pipeline when it has running builds', () => {
+            buildFactoryMock.list.resolves([{ status: 'RUNNING' }]);
+
+            return pipeline
+                .remove()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'Some builds are still running.');
+                });
+        });
+
+        it('does not remove pipeline when it is being deleted', () => {
+            pipeline.state = 'DELETING';
+
+            return pipeline
+                .remove()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(err => {
+                    assert.isOk(err);
+                    assert.equal(err.message, 'This pipeline is being deleted.');
+                });
         });
 
         it('fail if getJobs returns error', () => {
