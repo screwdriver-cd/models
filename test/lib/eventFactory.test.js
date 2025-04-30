@@ -30,6 +30,7 @@ class Event {
         this.meta = config.meta;
         this.sha = config.sha;
         this.type = config.type;
+        this.status = config.status;
         this.update = updateStub.resolves(this);
     }
 }
@@ -1586,6 +1587,7 @@ describe('Event Factory', () => {
 
                 return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
+                    assert.equal(model.status, 'CREATED');
                     assert.notCalled(jobFactoryMock.create);
                     assert.notCalled(syncedPipelineMock.syncPR);
                     assert.calledOnce(pipelineMock.sync);
@@ -1639,6 +1641,7 @@ describe('Event Factory', () => {
 
                 return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
+                    assert.equal(model.status, 'CREATED');
                     assert.notCalled(jobFactoryMock.create);
                     assert.notCalled(syncedPipelineMock.syncPR);
                     assert.calledOnce(pipelineMock.sync);
@@ -1814,6 +1817,7 @@ describe('Event Factory', () => {
 
                 return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
+                    assert.equal(model.status, 'CREATED');
                     assert.deepEqual(model.configPipelineSha, 'configpipelinesha');
                     assert.calledWith(pipelineMock.sync, 'configpipelinesha');
                     assert.calledWith(
@@ -2008,6 +2012,7 @@ describe('Event Factory', () => {
 
                 return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
+                    assert.equal(model.status, 'CREATED');
                     assert.notCalled(jobFactoryMock.create);
                     assert.called(jobFactoryMock.list);
                     assert.calledWith(
@@ -2027,6 +2032,7 @@ describe('Event Factory', () => {
         it('should create an Event', () =>
             eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
+                assert.equal(model.status, 'CREATED');
                 assert.calledWith(scm.decorateAuthor, {
                     username: 'stjohn',
                     scmContext,
@@ -2061,6 +2067,7 @@ describe('Event Factory', () => {
 
             return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
+                assert.equal(model.status, 'CREATED');
                 assert.calledWith(scm.decorateAuthor, {
                     username: 'stjohn',
                     scmContext,
@@ -2126,6 +2133,7 @@ describe('Event Factory', () => {
 
             return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
+                assert.equal(model.status, 'CREATED');
                 assert.notCalled(scm.decorateAuthor);
                 assert.calledWith(scm.decorateCommit, {
                     scmUri: 'github.com:1234:branch',
@@ -2160,6 +2168,7 @@ describe('Event Factory', () => {
 
             return eventFactory.create(config).then(model => {
                 assert.instanceOf(model, Event);
+                assert.equal(model.status, 'CREATED');
                 assert.notCalled(scm.decorateAuthor);
                 assert.calledWith(scm.decorateCommit, {
                     scmUri: 'github.com:1234:branch',
