@@ -194,7 +194,9 @@ describe('Event Factory', () => {
                         { name: '~pr:branch' },
                         { name: '~pr:/^.*$/' },
                         { name: '~tag' },
-                        { name: '~release' }
+                        { name: '~release' },
+                        { name: 'prClosedJob' },
+                        { name: '~pr-closed' }
                     ],
                     edges: [
                         { src: '~sd@123:main', dest: 'main' },
@@ -218,7 +220,8 @@ describe('Event Factory', () => {
                         { src: '~pr:branch', dest: 'pr-branch' },
                         { src: '~pr:/^.*$/', dest: 'pr-wild' },
                         { src: '~tag', dest: 'main' },
-                        { src: '~release', dest: 'main' }
+                        { src: '~release', dest: 'main' },
+                        { src: '~pr-closed', dest: 'prClosedJob' }
                     ]
                 },
                 causeMessage: 'Started by github:stjohn',
@@ -255,7 +258,9 @@ describe('Event Factory', () => {
                         { name: '~pr:branch' },
                         { name: '~pr:/^.*$/' },
                         { name: '~tag' },
-                        { name: '~release' }
+                        { name: '~release' },
+                        { name: 'prClosedJob' },
+                        { name: '~pr-closed' }
                     ],
                     edges: [
                         { src: '~sd@123:main', dest: 'main' },
@@ -279,7 +284,8 @@ describe('Event Factory', () => {
                         { src: '~pr:branch', dest: 'pr-branch' },
                         { src: '~pr:/^.*$/', dest: 'pr-wild' },
                         { src: '~tag', dest: 'main' },
-                        { src: '~release', dest: 'main' }
+                        { src: '~release', dest: 'main' },
+                        { src: '~pr-closed', dest: 'prClosedJob' }
                     ]
                 },
                 getConfiguration: sinon.stub().resolves(PARSED_YAML),
@@ -507,6 +513,18 @@ describe('Event Factory', () => {
                                 annotations: {
                                     'screwdriver.cd/virtualJob': true
                                 }
+                            }
+                        ],
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
+                    },
+                    {
+                        id: 18,
+                        pipelineId: 8765,
+                        name: 'prClosedJob',
+                        permutations: [
+                            {
+                                requires: ['~pr-closed']
                             }
                         ],
                         state: 'ENABLED',
@@ -1631,6 +1649,140 @@ describe('Event Factory', () => {
                             parentBuildId: 12345,
                             eventId: model.id,
                             jobId: 1
+                        })
+                    );
+                });
+            });
+
+            it('should create build if startFrom is ~pr-closed', () => {
+                const prClosedWorkflow = {
+                    nodes: [
+                        { name: '~pr-closed' },
+                        { name: '~cleanup' },
+                        { name: '~pr-closed:release' },
+                        { name: 'release-cleanup' }
+                    ],
+                    edges: [
+                        { src: '~pr-closed', dest: 'cleanup' },
+                        { src: '~pr-closed:branchName', dest: 'release-cleanup' }
+                    ]
+                };
+
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'cleanup',
+                        permutations: [
+                            {
+                                requires: ['~pr-closed']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 2,
+                        pipelineId: 8765,
+                        name: 'release-cleanup',
+                        permutations: [
+                            {
+                                requires: ['~pr-closed:release']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    }
+                ];
+
+                syncedPipelineMock.workflowGraph = prClosedWorkflow;
+                syncedPipelineMock.getJobs = sinon.stub().resolves(jobsMock);
+                syncedPipelineMock.update = sinon.stub().resolves({
+                    getJobs: sinon.stub().resolves(jobsMock),
+                    branch: Promise.resolve('main')
+                });
+
+                config.startFrom = '~pr-closed';
+                config.causeMessage = 'PR-1 closed by user';
+
+                return eventFactory.create(config).then(model => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.calledWith(pipelineMock.sync, sinon.match(sha, undefined));
+                    assert.calledOnce(buildFactoryMock.create);
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 1
+                        })
+                    );
+                });
+            });
+
+            it('should create build if startFrom is ~pr-closed:release', () => {
+                const prClosedWorkflow = {
+                    nodes: [
+                        { name: '~pr-closed' },
+                        { name: '~cleanup' },
+                        { name: '~pr-closed:release' },
+                        { name: 'release-cleanup' }
+                    ],
+                    edges: [
+                        { src: '~pr-closed', dest: 'cleanup' },
+                        { src: '~pr-closed:release', dest: 'release-cleanup' }
+                    ]
+                };
+
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'cleanup',
+                        permutations: [
+                            {
+                                requires: ['~pr-closed']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 2,
+                        pipelineId: 8765,
+                        name: 'release-cleanup',
+                        permutations: [
+                            {
+                                requires: ['~pr-closed:release']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    }
+                ];
+
+                syncedPipelineMock.workflowGraph = prClosedWorkflow;
+                syncedPipelineMock.getJobs = sinon.stub().resolves(jobsMock);
+                syncedPipelineMock.update = sinon.stub().resolves({
+                    getJobs: sinon.stub().resolves(jobsMock),
+                    branch: Promise.resolve('release')
+                });
+
+                config.startFrom = '~pr-closed:release';
+                config.causeMessage = 'PR-1 closed by user on branch release';
+
+                return eventFactory.create(config).then(model => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.calledWith(pipelineMock.sync, sinon.match(sha, undefined));
+                    assert.calledOnce(buildFactoryMock.create);
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 2
                         })
                     );
                 });
