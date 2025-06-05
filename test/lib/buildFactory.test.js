@@ -1471,6 +1471,47 @@ describe('Build Factory', () => {
                     assert.calledWith(stageBuildFactoryMock.create, stageBuildConfig);
                 });
         });
+
+        it('creates a new build if the job was updated', () => {
+            const user = { unsealToken: sinon.stub().resolves('foo') };
+            const pMock = {
+                name: 'screwdriver/ui',
+                scmUri,
+                scmRepo,
+                scmContext,
+                getConfiguration: sinon.stub()
+            };
+            const latestJob = {
+                permutations: permutations2,
+                pipeline: Promise.resolve(pMock),
+                name: 'main',
+                sha: 'latest-sha'
+            };
+
+            permutations[0].templateId = 123;
+            saveConfig.params.templateId = 123;
+
+            userFactoryMock.get.resolves(user);
+            jobFactoryMock.get.resolves(latestJob);
+            pMock.getConfiguration.resolves({ jobs: { main: permutations } });
+
+            return factory
+                .create({
+                    username,
+                    configPipelineSha: 'old-sha',
+                    scmContext,
+                    jobId,
+                    eventId,
+                    prRef,
+                    parentBuildId: 12345,
+                    meta
+                })
+                .then(model => {
+                    assert.instanceOf(model, Build);
+                    assert.calledWith(pMock.getConfiguration, { ref: 'old-sha' });
+                    assert.calledWith(datastore.save, saveConfig);
+                });
+        });
     });
 
     describe('list', () => {
