@@ -117,7 +117,8 @@ describe('Build Model', () => {
             get: sinon.stub()
         };
         buildFactoryMock = {
-            get: sinon.stub()
+            get: sinon.stub(),
+            list: sinon.stub().resolves([])
         };
 
         pipelineMock = {
@@ -2034,45 +2035,55 @@ describe('Build Model', () => {
                 creator: { username: 'St John' }
             });
             // Mock parent builds with metadata
-            buildFactoryMock.get.withArgs(8000).resolves({
-                jobId: 800,
-                endTime: new Date('2025-01-01T08:00:00.000Z'),
-                meta: {
-                    meta1: 'set by second newest parent build', // Overwritten by the newest parent build
-                    meta2: 'set by second newest parent build', // Remains
-                    parameters: { param1: 'set by second newest parent build' } // Remains
-                }
-            });
-            buildFactoryMock.get.withArgs(8001).resolves({
-                jobId: 801,
-                endTime: new Date('2025-01-01T09:00:00.000Z'),
-                meta: {
-                    meta1: 'set by the newest parent build' // Remains
-                }
-            });
-            // Mock parent external builds with metadata
-            buildFactoryMock.get.withArgs(9000).resolves({
-                jobId: 900,
-                endTime: new Date('2025-01-01T10:00:00.000Z'),
-                meta: {
-                    meta5: 'set by the external parent build 1', // Overwritten by the newest parent external build
-                    parameters: { param2: 'set by external parent build 1' } // This should be deleted
-                }
-            });
-            buildFactoryMock.get.withArgs(9001).resolves({
-                jobId: 901,
-                endTime: new Date('2025-01-01T11:00:00.000Z'),
-                meta: {
-                    meta5: 'set by the external parent build 2' // Remains
-                }
-            });
-            buildFactoryMock.get.withArgs(9002).resolves({
-                jobId: 902,
-                endTime: new Date('2025-01-01T10:30:00.000Z'),
-                meta: {
-                    meta5: 'set by the external parent build 3' // Overwritten by the newest parent external build
-                }
-            });
+            buildFactoryMock.list
+                .withArgs({
+                    params: { id: build.parentBuildId }
+                })
+                .resolves([
+                    {
+                        id: 8000,
+                        jobId: 800,
+                        endTime: '2025-01-01T08:00:00.000Z',
+                        meta: {
+                            meta1: 'set by second newest parent build', // Overwritten by the newest parent build
+                            meta2: 'set by second newest parent build', // Remains
+                            parameters: { param1: 'set by second newest parent build' } // Remains
+                        }
+                    },
+                    {
+                        id: 8001,
+                        jobId: 801,
+                        endTime: '2025-01-01T09:00:00.000Z',
+                        meta: {
+                            meta1: 'set by the newest parent build' // Remains
+                        }
+                    },
+                    {
+                        id: 9000,
+                        jobId: 900,
+                        endTime: '2025-01-01T10:00:00.000Z',
+                        meta: {
+                            meta5: 'set by the external parent build 1', // Overwritten by the newest parent external build
+                            parameters: { param2: 'set by external parent build 1' } // This should be deleted
+                        }
+                    },
+                    {
+                        id: 9001,
+                        jobId: 901,
+                        endTime: '2025-01-01T11:00:00.000Z',
+                        meta: {
+                            meta5: 'set by the external parent build 2' // Remains
+                        }
+                    },
+                    {
+                        id: 9002,
+                        jobId: 902,
+                        endTime: '2025-01-01T10:30:00.000Z',
+                        meta: {
+                            meta5: 'set by the external parent build 3' // Overwritten by the newest parent external build
+                        }
+                    }
+                ]);
             // Mock job of the parent build
             jobFactoryMock.get.withArgs(800).resolves({
                 pipelineId: 1234
@@ -2144,13 +2155,20 @@ describe('Build Model', () => {
                 creator: { username: 'St John' }
             });
             // Mock parent builds with parameter
-            buildFactoryMock.get.withArgs(8000).resolves({
-                jobId: 800,
-                endTime: new Date('2025-01-01T08:00:00.000Z'),
-                meta: {
-                    parameters: { param1: 'set by source event' } // Overwritten by own build
-                }
-            });
+            buildFactoryMock.list
+                .withArgs({
+                    params: { id: build.parentBuildId }
+                })
+                .resolves([
+                    {
+                        id: 8000,
+                        jobId: 800,
+                        endTime: '2025-01-01T08:00:00.000Z',
+                        meta: {
+                            parameters: { param1: 'set by source event' } // Overwritten by own build
+                        }
+                    }
+                ]);
             // Mock job of the parent build executed by source event
             jobFactoryMock.get.withArgs(800).resolves({
                 pipelineId: 1234
