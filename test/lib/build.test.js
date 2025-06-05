@@ -1983,7 +1983,7 @@ describe('Build Model', () => {
             jobFactoryMock.get.withArgs(777).resolves({
                 id: 777,
                 name: 'thisJob',
-                pipeline: Promise.resolve(pipelineMock)
+                pipelineId: 1234
             });
         });
 
