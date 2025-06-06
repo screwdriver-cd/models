@@ -45,6 +45,7 @@ const MAX_METRIC_GET_COUNT = 1000;
 const FAKE_MAX_METRIC_GET_COUNT = 5;
 const SCM_CONTEXT_GITHUB = 'github:github.com';
 const SCM_CONTEXT_GITLAB = 'gitlab:gitlab.com';
+const DEFAULT_COMMIT_SHA = 'aebcdcbdb267ad4395a40aa8b8908f44babd4a18';
 
 /**
  * Load sample data from disk
@@ -326,7 +327,8 @@ describe('Pipeline Model', () => {
             getOpenedPRs: sinon.stub(),
             getPrInfo: sinon.stub(),
             getScmContext: sinon.stub(),
-            getReadOnlyInfo: sinon.stub().returns({})
+            getReadOnlyInfo: sinon.stub().returns({}),
+            getCommitSha: sinon.stub()
         };
         parserMock = sinon.stub();
 
@@ -609,6 +611,7 @@ describe('Pipeline Model', () => {
             scmMock.getReadOnlyInfo
                 .withArgs({ scmContext: SCM_CONTEXT_GITLAB })
                 .returns({ enabled: true, username: 'sd-buildbot', accessToken: 'tokenRO' });
+            scmMock.getCommitSha.resolves(DEFAULT_COMMIT_SHA);
             pipelineFactoryMock.scm.parseUrl
                 .withArgs(
                     sinon.match({
@@ -682,77 +685,88 @@ describe('Pipeline Model', () => {
                 update: sinon.stub(),
                 id: 1,
                 name: 'main',
-                state: 'ENABLED'
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
             };
             publishModelMock = {
                 isPR: sinon.stub().returns(false),
                 update: sinon.stub(),
                 id: 2,
                 name: 'publish',
-                state: 'ENABLED'
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
             };
             setupModelMock = {
                 isPR: sinon.stub().returns(false),
                 update: sinon.stub(),
                 id: 5,
                 name: 'stage@canary:setup',
-                state: 'ENABLED'
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
             };
             teardownModelMock = {
                 isPR: sinon.stub().returns(false),
                 update: sinon.stub(),
                 id: 6,
                 name: 'stage@canary:teardown',
-                state: 'ENABLED'
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
             };
             aModelMock = {
                 isPR: sinon.stub().returns(false),
                 update: sinon.stub(),
                 id: 3,
                 name: 'A',
-                state: 'ENABLED'
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
             };
             bModelMock = {
                 isPR: sinon.stub().returns(false),
                 update: sinon.stub(),
                 id: 4,
                 name: 'B',
-                state: 'ENABLED'
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
             };
             setupModelMock2 = {
                 isPR: sinon.stub().returns(false),
                 update: sinon.stub(),
                 id: 7,
                 name: 'stage@deploy:setup',
-                state: 'ENABLED'
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
             };
             teardownModelMock2 = {
                 isPR: sinon.stub().returns(false),
                 update: sinon.stub(),
                 id: 8,
                 name: 'stage@deploy:teardown',
-                state: 'ENABLED'
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
             };
             externalModelMock = {
                 isPR: sinon.stub().returns(false),
                 update: sinon.stub(),
                 id: 3,
                 name: 'main',
-                state: 'ENABLED'
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
             };
             downstreamModelMock = {
                 isPR: sinon.stub().returns(false),
                 update: sinon.stub(),
                 id: 3,
                 name: 'foo',
-                state: 'ENABLED'
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
             };
             upstreamModelMock = {
                 isPR: sinon.stub().returns(false),
                 update: sinon.stub(),
                 id: 4,
                 name: 'bar',
-                state: 'ENABLED'
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
             };
             publishMock = {
                 pipelineId: testId,
@@ -767,7 +781,8 @@ describe('Pipeline Model', () => {
                         environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
                         image: 'node:4'
                     }
-                ]
+                ],
+                sha: DEFAULT_COMMIT_SHA
             };
             mainMock = {
                 pipelineId: testId,
@@ -797,7 +812,8 @@ describe('Pipeline Model', () => {
                         environment: { NODE_ENV: 'test', NODE_VERSION: '6' },
                         image: 'node:6'
                     }
-                ]
+                ],
+                sha: DEFAULT_COMMIT_SHA
             };
             aMock = {
                 pipelineId: testId,
@@ -808,7 +824,8 @@ describe('Pipeline Model', () => {
                         environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
                         image: 'node:4'
                     }
-                ]
+                ],
+                sha: DEFAULT_COMMIT_SHA
             };
             bMock = {
                 pipelineId: testId,
@@ -819,7 +836,8 @@ describe('Pipeline Model', () => {
                         environment: { NODE_ENV: 'test', NODE_VERSION: '4' },
                         image: 'node:4'
                     }
-                ]
+                ],
+                sha: DEFAULT_COMMIT_SHA
             };
             externalMock = {
                 pipelineId: testId,
@@ -834,7 +852,8 @@ describe('Pipeline Model', () => {
                         environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
                         image: 'node:4'
                     }
-                ]
+                ],
+                sha: DEFAULT_COMMIT_SHA
             };
             downstreamMock = {
                 pipelineId: testId,
@@ -849,7 +868,8 @@ describe('Pipeline Model', () => {
                         environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
                         image: 'node:4'
                     }
-                ]
+                ],
+                sha: DEFAULT_COMMIT_SHA
             };
             upstreamMock = {
                 pipelineId: testId,
@@ -864,7 +884,8 @@ describe('Pipeline Model', () => {
                         environment: { NODE_ENV: 'test', NODE_TAG: 'latest' },
                         image: 'node:4'
                     }
-                ]
+                ],
+                sha: DEFAULT_COMMIT_SHA
             };
             stageSetupMock = {
                 pipelineId: testId,
@@ -874,7 +895,8 @@ describe('Pipeline Model', () => {
                         commands: [{ name: 'announce', command: 'post banner' }],
                         image: 'node:4'
                     }
-                ]
+                ],
+                sha: DEFAULT_COMMIT_SHA
             };
             stageTeardownMock = {
                 pipelineId: testId,
@@ -884,7 +906,8 @@ describe('Pipeline Model', () => {
                         commands: [{ name: 'publish', command: 'publish blog' }],
                         image: 'node:4'
                     }
-                ]
+                ],
+                sha: DEFAULT_COMMIT_SHA
             };
             stageSetupMock2 = {
                 pipelineId: testId,
@@ -894,7 +917,8 @@ describe('Pipeline Model', () => {
                         commands: [{ name: 'announce', command: 'post banner' }],
                         image: 'node:4'
                     }
-                ]
+                ],
+                sha: DEFAULT_COMMIT_SHA
             };
             stageTeardownMock2 = {
                 pipelineId: testId,
@@ -904,7 +928,8 @@ describe('Pipeline Model', () => {
                         commands: [{ name: 'publish', command: 'publish blog' }],
                         image: 'node:4'
                     }
-                ]
+                ],
+                sha: DEFAULT_COMMIT_SHA
             };
         });
 
@@ -1223,8 +1248,8 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('gets job config from the given ref/sha if passed in', () => {
-            const ref = 'shafromoldevent';
+        it('gets job config from the given sha if passed in', () => {
+            const sha = 'shafromoldevent';
             // deep clone PARSED_YAML
             const YAML_FROM_SHA = JSON.parse(JSON.stringify(PARSED_YAML));
 
@@ -1234,17 +1259,21 @@ describe('Pipeline Model', () => {
                     command: 'echo old step from a specific sha'
                 }
             ];
-            scmMock.getFile.withArgs(sinon.match({ ref })).resolves('yamlcontentfromsha');
+            scmMock.getFile.withArgs(sinon.match({ ref: sha })).resolves('yamlcontentfromsha');
             parserConfig.yaml = 'yamlcontentfromsha';
             parserMock.withArgs(parserConfig).resolves(YAML_FROM_SHA);
             publishMock.permutations[0].commands = YAML_FROM_SHA.jobs.publish[0].commands;
             jobs = [];
+            mainMock.sha = sha;
+            mainModelMock.sha = sha;
+            publishMock.sha = sha;
+            publishModelMock.sha = sha;
             jobFactoryMock.list.resolves(jobs);
             jobFactoryMock.create.withArgs(mainMock).resolves(mainModelMock);
             jobFactoryMock.create.withArgs(publishMock).resolves(publishModelMock);
 
-            return pipeline.sync(ref).then(() => {
-                assert.calledWith(scmMock.getFile, sinon.match({ ref }));
+            return pipeline.sync(sha).then(() => {
+                assert.calledWith(scmMock.getFile, sinon.match({ ref: sha }));
                 assert.calledTwice(jobFactoryMock.create);
                 assert.calledWith(jobFactoryMock.create, publishMock);
             });
