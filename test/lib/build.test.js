@@ -72,6 +72,8 @@ describe('Build Model', () => {
     let pipelineMock;
     let jobMock;
     let templateMock;
+    let eventFactoryMock;
+    let buildFactoryMock;
 
     beforeEach(() => {
         datastore = {
@@ -110,6 +112,13 @@ describe('Build Model', () => {
         };
         templateFactoryMock = {
             get: sinon.stub()
+        };
+        eventFactoryMock = {
+            get: sinon.stub()
+        };
+        buildFactoryMock = {
+            get: sinon.stub(),
+            list: sinon.stub().resolves([])
         };
 
         pipelineMock = {
@@ -161,6 +170,12 @@ describe('Build Model', () => {
         const tF = {
             getInstance: sinon.stub().returns(templateFactoryMock)
         };
+        const eF = {
+            getInstance: sinon.stub().returns(eventFactoryMock)
+        };
+        const bF = {
+            getInstance: sinon.stub().returns(buildFactoryMock)
+        };
 
         rewiremock('../../lib/pipelineFactory').with(pF);
         rewiremock('../../lib/userFactory').with(uF);
@@ -169,6 +184,8 @@ describe('Build Model', () => {
         rewiremock('../../lib/stageFactory').with(stageF);
         rewiremock('../../lib/stageBuildFactory').with(stageBuildF);
         rewiremock('../../lib/templateFactory').with(tF);
+        rewiremock('../../lib/eventFactory').with(eF);
+        rewiremock('../../lib/buildFactory').with(bF);
         rewiremock.enable();
 
         // eslint-disable-next-line global-require
@@ -1262,6 +1279,7 @@ describe('Build Model', () => {
                 url,
                 pipelineId
             };
+            build.initMeta = sinon.stub().resolves();
         });
 
         afterEach(() => {
@@ -1288,6 +1306,7 @@ describe('Build Model', () => {
                 );
 
                 assert.calledWith(scmMock.updateCommitStatus, expectedUpdateCommitStatusConfig);
+                assert.calledOnce(build.initMeta);
             }));
 
         it('passes template info to executor if it exists', () => {
@@ -1944,5 +1963,234 @@ describe('Build Model', () => {
                     token
                 });
             }));
+    });
+
+    describe('initMeta', () => {
+        beforeEach(() => {
+            build.meta = {
+                meta: {
+                    remainMeta: 'This meta should not be deleted',
+                    // This should be deleted
+                    summary: {
+                        coverage: 'Coverage increased by 15%',
+                        markdown: 'This markdown comment is **bold** and *italic*'
+                    }
+                }
+            };
+            // Stub build.update to ensure it's only executed in initMeta()
+            build.update = sinon.stub().resolves();
+            // Mock the job associated with the build
+            jobFactoryMock.get.withArgs(777).resolves({
+                id: 777,
+                name: 'thisJob',
+                pipelineId: 1234
+            });
+        });
+
+        it('sets default metadata when starting the pipeline without any specific metadata', () => {
+            // Mock event without metadata
+            eventFactoryMock.get.withArgs(555).resolves({
+                creator: { username: 'St John' }
+            });
+
+            const expected = {
+                meta: { remainMeta: 'This meta should not be deleted' },
+                build: {
+                    pipelineId: '1234',
+                    eventId: '555',
+                    jobId: '777',
+                    buildId: '9876',
+                    jobName: 'thisJob',
+                    sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f'
+                },
+                event: { creator: 'St John' }
+            };
+
+            return build.initMeta().then(() => {
+                assert.calledOnce(build.update);
+                assert.deepEqual(build.meta, expected);
+            });
+        });
+
+        it('merges metadata giving precedence to the latest parent builds, event, and parent event', () => {
+            build.parentBuildId = [8000, 8001, 9000, 9001, 9002];
+
+            // Mock parent event with metadata
+            eventFactoryMock.get.withArgs(444).resolves({
+                meta: {
+                    meta1: 'set by parent event', // Overwritten by parent build
+                    meta2: 'set by parent event', // Overwritten by parent build
+                    meta3: 'set by parent event', // Overwritten by own event
+                    meta4: 'set by parent event' // Remains
+                }
+            });
+            // Mock own event with metadata
+            eventFactoryMock.get.withArgs(555).resolves({
+                parentEventId: 444,
+                meta: {
+                    meta1: 'set by own event', // Overwritten by parent build
+                    meta2: 'set by own event', // Overwritten by parent build
+                    meta3: 'set by own event' // Remains
+                },
+                creator: { username: 'St John' }
+            });
+            // Mock parent builds with metadata
+            buildFactoryMock.list
+                .withArgs({
+                    params: { id: build.parentBuildId }
+                })
+                .resolves([
+                    {
+                        id: 8000,
+                        jobId: 800,
+                        endTime: '2025-01-01T08:00:00.000Z',
+                        meta: {
+                            meta1: 'set by second newest parent build', // Overwritten by the newest parent build
+                            meta2: 'set by second newest parent build', // Remains
+                            parameters: { param1: 'set by second newest parent build' } // Remains
+                        }
+                    },
+                    {
+                        id: 8001,
+                        jobId: 801,
+                        endTime: '2025-01-01T09:00:00.000Z',
+                        meta: {
+                            meta1: 'set by the newest parent build' // Remains
+                        }
+                    },
+                    {
+                        id: 9000,
+                        jobId: 900,
+                        endTime: '2025-01-01T10:00:00.000Z',
+                        meta: {
+                            meta5: 'set by the external parent build 1', // Overwritten by the newest parent external build
+                            parameters: { param2: 'set by external parent build 1' } // This should be deleted
+                        }
+                    },
+                    {
+                        id: 9001,
+                        jobId: 901,
+                        endTime: '2025-01-01T11:00:00.000Z',
+                        meta: {
+                            meta5: 'set by the external parent build 2' // Remains
+                        }
+                    },
+                    {
+                        id: 9002,
+                        jobId: 902,
+                        endTime: '2025-01-01T10:30:00.000Z',
+                        meta: {
+                            meta5: 'set by the external parent build 3' // Overwritten by the newest parent external build
+                        }
+                    }
+                ]);
+            // Mock job of the parent build
+            jobFactoryMock.get.withArgs(800).resolves({
+                pipelineId: 1234
+            });
+            jobFactoryMock.get.withArgs(801).resolves({
+                pipelineId: 1234
+            });
+            // Mock job of the parent external build
+            jobFactoryMock.get.withArgs(900).resolves({
+                pipelineId: 2345,
+                name: 'externalJob1'
+            });
+            jobFactoryMock.get.withArgs(901).resolves({
+                pipelineId: 2345,
+                name: 'externalJob2'
+            });
+            jobFactoryMock.get.withArgs(902).resolves({
+                pipelineId: 2346,
+                name: 'externalJob1'
+            });
+
+            const expected = {
+                meta: { remainMeta: 'This meta should not be deleted' },
+                meta1: 'set by the newest parent build',
+                meta2: 'set by second newest parent build',
+                meta3: 'set by own event',
+                meta4: 'set by parent event',
+                parameters: { param1: 'set by second newest parent build' },
+                sd: {
+                    2345: {
+                        externalJob1: { meta5: 'set by the external parent build 1' },
+                        externalJob2: { meta5: 'set by the external parent build 2' }
+                    },
+                    2346: { externalJob1: { meta5: 'set by the external parent build 3' } }
+                },
+                meta5: 'set by the external parent build 2',
+                build: {
+                    pipelineId: '1234',
+                    eventId: '555',
+                    jobId: '777',
+                    buildId: '9876',
+                    jobName: 'thisJob',
+                    sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f'
+                },
+                event: { creator: 'St John' }
+            };
+
+            return build.initMeta().then(() => {
+                assert.deepEqual(build.meta, expected);
+            });
+        });
+
+        it('restarts build with parameters changed from the previous event', () => {
+            build.parentBuildId = [8000];
+            build.meta.parameters = { param1: 'set by restart event' }; // Remains
+
+            // Mock parent event with parameter
+            eventFactoryMock.get.withArgs(444).resolves({
+                meta: {
+                    parameters: { param1: 'set by source event' } // Overwritten by own build
+                }
+            });
+            // Mock own event with parameter
+            eventFactoryMock.get.withArgs(555).resolves({
+                parentEventId: 444,
+                meta: {
+                    parameters: { param1: 'set by restart event' } // Overwritten by own build
+                },
+                creator: { username: 'St John' }
+            });
+            // Mock parent builds with parameter
+            buildFactoryMock.list
+                .withArgs({
+                    params: { id: build.parentBuildId }
+                })
+                .resolves([
+                    {
+                        id: 8000,
+                        jobId: 800,
+                        endTime: '2025-01-01T08:00:00.000Z',
+                        meta: {
+                            parameters: { param1: 'set by source event' } // Overwritten by own build
+                        }
+                    }
+                ]);
+            // Mock job of the parent build executed by source event
+            jobFactoryMock.get.withArgs(800).resolves({
+                pipelineId: 1234
+            });
+
+            const expected = {
+                meta: { remainMeta: 'This meta should not be deleted' },
+                parameters: { param1: 'set by restart event' },
+                build: {
+                    pipelineId: '1234',
+                    eventId: '555',
+                    jobId: '777',
+                    buildId: '9876',
+                    jobName: 'thisJob',
+                    sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f'
+                },
+                event: { creator: 'St John' }
+            };
+
+            return build.initMeta().then(() => {
+                assert.deepEqual(build.meta, expected);
+            });
+        });
     });
 });
