@@ -1845,6 +1845,274 @@ describe('Pipeline Model', () => {
             });
         });
 
+        it('update PR config with PR stage', () => {
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML_WITH_STAGES);
+            const mainModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 1,
+                name: 'main',
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
+            };
+            const publishModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 2,
+                name: 'publish',
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
+            };
+            const setupModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 5,
+                name: 'stage@canary:setup',
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
+            };
+            const teardownModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 6,
+                name: 'stage@canary:teardown',
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
+            };
+            const aModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 3,
+                name: 'A',
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
+            };
+            const bModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 4,
+                name: 'B',
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
+            };
+            const setupModelMock2 = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 7,
+                name: 'stage@deploy:setup',
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
+            };
+            const teardownModelMock2 = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 8,
+                name: 'stage@deploy:teardown',
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
+            };
+            const pipelineJobs = [
+                mainModelMock,
+                publishModelMock,
+                aModelMock,
+                bModelMock,
+                setupModelMock,
+                teardownModelMock,
+                setupModelMock2,
+                teardownModelMock2
+            ];
+            const mainPRMock = {
+                name: 'PR-1:main'
+            };
+            const setupPRMock = {
+                name: 'PR-1:stage@canary:setup'
+            };
+            const teardownPRMock = {
+                name: 'PR-1:stage@canary:teardown'
+            };
+
+            jobFactoryMock.list.resolves(pipelineJobs); // pipeline jobs
+            jobFactoryMock.getPullRequestJobsForPipelineSync.resolves([]); // no pull request jobs
+
+            jobFactoryMock.create
+                .withArgs(
+                    sinon.match({
+                        pipelineId: testId,
+                        name: 'PR-1:main'
+                    })
+                )
+                .resolves(mainPRMock);
+            jobFactoryMock.create
+                .withArgs(
+                    sinon.match({
+                        pipelineId: testId,
+                        name: 'PR-1:stage@canary:setup'
+                    })
+                )
+                .resolves(setupPRMock);
+            jobFactoryMock.create
+                .withArgs(
+                    sinon.match({
+                        pipelineId: testId,
+                        name: 'PR-1:stage@canary:teardown'
+                    })
+                )
+                .resolves(teardownPRMock);
+
+            scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
+
+            return pipeline.syncPR(1).then(() => {
+                assert.calledWith(scmMock.getFile, expectedGetFile);
+                assert.calledThrice(jobFactoryMock.create);
+                assert.calledWith(jobFactoryMock.create, sinon.match({ name: 'PR-1:main' }));
+                assert.calledWith(jobFactoryMock.create, sinon.match({ name: 'PR-1:stage@canary:setup' }));
+                assert.calledWith(jobFactoryMock.create, sinon.match({ name: 'PR-1:stage@canary:teardown' }));
+                assert.calledOnce(stageFactoryMock.create);
+                assert.calledWith(stageFactoryMock.create, sinon.match({ name: 'PR-1:canary', pipelineId: testId }));
+            });
+        });
+
+        it('update PR config with PR stage with chainPR', () => {
+            pipeline.chainPR = true;
+
+            parserMock.withArgs(parserConfig).resolves(PARSED_YAML_WITH_STAGES);
+            const mainModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 1,
+                name: 'main',
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
+            };
+            const publishModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 2,
+                name: 'publish',
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
+            };
+            const setupModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 5,
+                name: 'stage@canary:setup',
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
+            };
+            const teardownModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 6,
+                name: 'stage@canary:teardown',
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
+            };
+            const aModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 3,
+                name: 'A',
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
+            };
+            const bModelMock = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 4,
+                name: 'B',
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
+            };
+            const setupModelMock2 = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 7,
+                name: 'stage@deploy:setup',
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
+            };
+            const teardownModelMock2 = {
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub(),
+                id: 8,
+                name: 'stage@deploy:teardown',
+                state: 'ENABLED',
+                sha: DEFAULT_COMMIT_SHA
+            };
+            const pipelineJobs = [
+                mainModelMock,
+                publishModelMock,
+                aModelMock,
+                bModelMock,
+                setupModelMock,
+                teardownModelMock,
+                setupModelMock2,
+                teardownModelMock2
+            ];
+            const mainPRMock = {
+                name: 'PR-1:main'
+            };
+            const publishPRMock = {
+                name: 'PR-1:publish'
+            };
+            const setupPRMock = {
+                name: 'PR-1:stage@canary:setup'
+            };
+            const teardownPRMock = {
+                name: 'PR-1:stage@canary:teardown'
+            };
+
+            jobFactoryMock.list.resolves(pipelineJobs); // pipeline jobs
+            jobFactoryMock.getPullRequestJobsForPipelineSync.resolves([]); // no pull request jobs
+
+            jobFactoryMock.create
+                .withArgs(
+                    sinon.match({
+                        pipelineId: testId,
+                        name: 'PR-1:main'
+                    })
+                )
+                .resolves(mainPRMock);
+            jobFactoryMock.create
+                .withArgs(
+                    sinon.match({
+                        pipelineId: testId,
+                        name: 'PR-1:publish'
+                    })
+                )
+                .resolves(publishPRMock);
+            jobFactoryMock.create
+                .withArgs(
+                    sinon.match({
+                        pipelineId: testId,
+                        name: 'PR-1:stage@canary:setup'
+                    })
+                )
+                .resolves(setupPRMock);
+            jobFactoryMock.create
+                .withArgs(
+                    sinon.match({
+                        pipelineId: testId,
+                        name: 'PR-1:stage@canary:teardown'
+                    })
+                )
+                .resolves(teardownPRMock);
+
+            scmMock.getOpenedPRs.resolves([{ name: 'PR-1', ref: 'abc' }]);
+
+            return pipeline.syncPR(1).then(() => {
+                assert.calledWith(scmMock.getFile, expectedGetFile);
+                assert.callCount(jobFactoryMock.create, 4);
+                assert.calledWith(jobFactoryMock.create, sinon.match({ name: 'PR-1:main' }));
+                assert.calledWith(jobFactoryMock.create, sinon.match({ name: 'PR-1:publish' }));
+                assert.calledWith(jobFactoryMock.create, sinon.match({ name: 'PR-1:stage@canary:setup' }));
+                assert.calledWith(jobFactoryMock.create, sinon.match({ name: 'PR-1:stage@canary:teardown' }));
+                assert.calledOnce(stageFactoryMock.create);
+                assert.calledWith(stageFactoryMock.create, sinon.match({ name: 'PR-1:canary', pipelineId: testId }));
+            });
+        });
+
         it('update PR config for multiple PR jobs and create missing PR jobs', () => {
             const clonedYAML = JSON.parse(JSON.stringify(PARSED_YAML_PR));
 
