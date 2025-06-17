@@ -1972,7 +1972,7 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('DEBUG update PR config with PR stage with chainPR', () => {
+        it('update PR config with PR stage with chainPR', () => {
             pipeline.chainPR = true;
 
             parserMock.withArgs(parserConfig).resolves(PARSED_YAML_WITH_STAGES);
