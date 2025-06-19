@@ -3765,7 +3765,6 @@ describe('Pipeline Model', () => {
         };
 
         beforeEach(() => {
-            pipeline.update = sinon.stub();
             datastore.update.resolves();
             buildFactoryMock.list.resolves([]);
             eventFactoryMock.list.resolves([]);
