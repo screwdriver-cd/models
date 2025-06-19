@@ -3766,6 +3766,7 @@ describe('Pipeline Model', () => {
 
         beforeEach(() => {
             pipeline.update = sinon.stub();
+            datastore.update.resolves();
             buildFactoryMock.list.resolves([]);
             eventFactoryMock.list.resolves([]);
             jobFactoryMock.list.resolves([]);
@@ -3806,6 +3807,7 @@ describe('Pipeline Model', () => {
                 assert.calledOnce(trigger.remove);
                 assert.calledOnce(datastore.remove); // delete self
                 assert.strictEqual(pipeline.state, 'DELETING');
+                assert.calledOnce(datastore.update);
             }));
 
         it('does not remove stage or stageBuilds if stages does not exist', () => {
