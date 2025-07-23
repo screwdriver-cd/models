@@ -272,6 +272,7 @@ describe('Pipeline Model', () => {
         };
         userFactoryMock = {
             get: sinon.stub(),
+            list: sinon.stub(),
             getPermissions: sinon.stub()
         };
         secretFactoryMock = {
@@ -2584,21 +2585,61 @@ describe('Pipeline Model', () => {
     });
 
     describe('getFirstAdmin', () => {
+        const anotherSCMContext = 'github:git.screwdriver.com';
+
+        const adminUserFromAnotherSCMContext = {
+            id: 88,
+            unsealToken: sinon.stub().resolves('foo'),
+            username: 'ironMan'
+        };
+
         beforeEach(() => {
             scmMock.getReadOnlyInfo
                 .withArgs({ scmContext: SCM_CONTEXT_GITLAB })
                 .returns({ enabled: true, username: 'sd-buildbot', accessToken: 'tokenRO' });
-            getUserPermissionMocks({ username: 'batman', push: false });
-            getUserPermissionMocks({ username: 'robin', push: true });
+            getUserPermissionMocks({ username: 'batman', push: false, id: 66 });
+            getUserPermissionMocks({ username: 'robin', push: true, id: 77 });
+
             pipeline.admins = { batman: true, robin: true };
+            pipeline.adminUserIds = [77, 88];
             pipeline.update = sinon.stub().resolves('foo');
+
+            userFactoryMock.list
+                .withArgs({
+                    page: 1,
+                    count: 1,
+                    params: { id: [77, 88], scmContext: anotherSCMContext }
+                })
+                .resolves([adminUserFromAnotherSCMContext]);
         });
 
-        it('has an admin robin', () => {
+        it('has an admin robin when scmContext is not specified', () => {
             const admin = pipeline.getFirstAdmin();
 
             return admin.then(realAdmin => {
                 assert.equal(realAdmin.username, 'robin');
+                assert.callCount(userFactoryMock.get, 3);
+                assert.callCount(userFactoryMock.list, 0);
+            });
+        });
+
+        it('has an admin robin when scmContext is same as the pipeline scmContext', () => {
+            const admin = pipeline.getFirstAdmin({ scmContext });
+
+            return admin.then(realAdmin => {
+                assert.equal(realAdmin.username, 'robin');
+                assert.callCount(userFactoryMock.get, 3);
+                assert.callCount(userFactoryMock.list, 0);
+            });
+        });
+
+        it('has an admin ironman when scmContext specified is not same as the pipeline scmContext', () => {
+            const admin = pipeline.getFirstAdmin({ scmContext: anotherSCMContext });
+
+            return admin.then(realAdmin => {
+                assert.equal(realAdmin, adminUserFromAnotherSCMContext);
+                assert.calledOnce(userFactoryMock.list);
+                assert.callCount(userFactoryMock.get, 0);
             });
         });
 
@@ -2618,6 +2659,8 @@ describe('Pipeline Model', () => {
 
             return admin.then(realAdmin => {
                 assert.equal(realAdmin.username, 'robin');
+                assert.callCount(userFactoryMock.get, 2);
+                assert.callCount(userFactoryMock.list, 0);
             });
         });
 
@@ -2634,6 +2677,30 @@ describe('Pipeline Model', () => {
                     assert.isOk(e);
                     assert.equal(e.message, 'Pipeline has no admin');
                     assert.equal(e.output.statusCode, 403);
+                    assert.callCount(userFactoryMock.get, 2);
+                    assert.callCount(userFactoryMock.list, 0);
+                });
+        });
+
+        it('has no admin for the specified scmContext which is not same as the pipeline scmContext', () => {
+            userFactoryMock.list
+                .withArgs({
+                    page: 1,
+                    count: 1,
+                    params: { id: [77, 88], scmContext: anotherSCMContext }
+                })
+                .resolves([]);
+
+            return pipeline
+                .getFirstAdmin({ scmContext: anotherSCMContext })
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(e => {
+                    assert.isOk(e);
+                    assert.equal(e.message, `Pipeline has no admins from the scmContext ${anotherSCMContext}`);
+                    assert.calledOnce(userFactoryMock.list);
+                    assert.callCount(userFactoryMock.get, 0);
                 });
         });
 
