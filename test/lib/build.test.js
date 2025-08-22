@@ -1983,7 +1983,8 @@ describe('Build Model', () => {
             jobFactoryMock.get.withArgs(777).resolves({
                 id: 777,
                 name: 'thisJob',
-                pipelineId: 1234
+                pipelineId: 1234,
+                permutations: [{}]
             });
         });
 
@@ -2177,6 +2178,91 @@ describe('Build Model', () => {
             const expected = {
                 meta: { remainMeta: 'This meta should not be deleted' },
                 parameters: { param1: 'set by restart event' },
+                build: {
+                    pipelineId: '1234',
+                    eventId: '555',
+                    jobId: '777',
+                    buildId: '9876',
+                    jobName: 'thisJob',
+                    sha: 'ccc49349d3cffbd12ea9e3d41521480b4aa5de5f'
+                },
+                event: { creator: 'St John' }
+            };
+
+            return build.initMeta().then(() => {
+                assert.deepEqual(build.meta, expected);
+            });
+        });
+
+        it('delete local version of external meta and retain sd meta when the build is virtual and succeeded', () => {
+            jobFactoryMock.get.withArgs(777).resolves({
+                id: 777,
+                name: 'thisJob',
+                pipelineId: 1234,
+                permutations: [{ annotations: { 'screwdriver.cd/virtualJob': true } }]
+            });
+            build.status = 'SUCCESS';
+            build.parentBuildId = [8000, 8001];
+            build.meta.sd = {
+                9999: { foo: 'bar' }, // Delete
+                1212: { foo: 'bar' } // Delete
+            };
+
+            // Mock own event with metadata
+            eventFactoryMock.get.withArgs(555).resolves({
+                meta: {
+                    sd: {
+                        release: { id: 111, name: 'test-release', author: 'test-author' },
+                        tag: { name: 'test-tag' },
+                        pr: { name: 'test-name', merged: false, number: 222 },
+                        2345: { foo: 'bar' }, // Delete
+                        5678: { foo: 'bar' } // Delete
+                    }
+                },
+                creator: { username: 'St John' }
+            });
+
+            // Mock parent builds with metadata
+            buildFactoryMock.list
+                .withArgs({
+                    params: { id: build.parentBuildId }
+                })
+                .resolves([
+                    {
+                        id: 8000,
+                        jobId: 800,
+                        endTime: '2025-01-01T08:00:00.000Z',
+                        meta: {
+                            foo: 'set by the parent build 1'
+                        }
+                    },
+                    {
+                        id: 8001,
+                        jobId: 801,
+                        endTime: '2025-01-01T09:00:00.000Z',
+                        meta: {
+                            foo: 'set by the parent build 2'
+                        }
+                    }
+                ]);
+            // Mock job of the parent external build
+            jobFactoryMock.get.withArgs(800).resolves({
+                pipelineId: 2345,
+                name: 'externalJob1'
+            });
+            jobFactoryMock.get.withArgs(801).resolves({
+                pipelineId: 5678,
+                name: 'externalJob2'
+            });
+
+            const expected = {
+                meta: { remainMeta: 'This meta should not be deleted' },
+                sd: {
+                    release: { id: 111, name: 'test-release', author: 'test-author' },
+                    tag: { name: 'test-tag' },
+                    pr: { name: 'test-name', merged: false, number: 222 }
+                },
+                foo: 'set by the parent build 2',
                 build: {
                     pipelineId: '1234',
                     eventId: '555',
