@@ -3193,6 +3193,7 @@ describe('Event Factory', () => {
                 config.prRef = 'branch';
                 config.prNum = 3;
                 config.prTitle = 'Update screwdriver.yaml';
+                config.type = 'pr';
 
                 afterSyncedPRPipelineMock.getJobs.resolves(jobsMock);
 
@@ -3215,6 +3216,58 @@ describe('Event Factory', () => {
                                 value: 'hiking',
                                 default: 'hiking'
                             }
+                        }
+                    });
+                });
+            });
+
+            it('should use job parameters for PR closed builds', () => {
+                config.startFrom = '~pr-closed';
+                config.prNum = 3;
+                config.prTitle = 'Update screwdriver.yaml';
+                config.type = 'pipeline';
+
+                return eventFactory.create(config).then(model => {
+                    assert.deepEqual(model.meta.parameters, {
+                        component: {
+                            car: {
+                                value: 'Audi',
+                                default: 'Audi'
+                            },
+                            color: {
+                                value: 'white',
+                                default: 'white'
+                            },
+                            cuisine: {
+                                value: 'Italian',
+                                default: 'Italian'
+                            },
+                            music: {
+                                value: 'jazz',
+                                default: 'jazz'
+                            }
+                        },
+                        publish: {
+                            car: {
+                                value: 'Ferrari',
+                                default: 'Ferrari'
+                            },
+                            color: {
+                                value: 'red',
+                                default: 'red'
+                            },
+                            cuisine: {
+                                value: 'Japanese',
+                                default: 'Japanese'
+                            },
+                            sports: {
+                                value: 'cricket',
+                                default: 'cricket'
+                            }
+                        },
+                        user: {
+                            value: 'ironman',
+                            default: 'ironman'
                         }
                     });
                 });
