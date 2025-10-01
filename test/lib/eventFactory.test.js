@@ -7,6 +7,7 @@ const rewire = require('rewire');
 const rewiremock = require('rewiremock/node');
 
 const PARSED_YAML = require('../data/parserWithWorkflowGraph.json');
+const { getQueries, PIPELINE_TYPE_BUILD_EVENTS_QUERY } = require('../../lib/rawQueries');
 
 let updateStub;
 
@@ -49,7 +50,8 @@ describe('Event Factory', () => {
 
     beforeEach(() => {
         datastore = {
-            save: sinon.stub()
+            save: sinon.stub(),
+            query: sinon.stub()
         };
         pipelineFactoryMock = {
             get: sinon.stub(),
@@ -3403,6 +3405,66 @@ describe('Event Factory', () => {
                 Error,
                 'No datastore provided to EventFactory'
             );
+        });
+    });
+
+    describe('getPipelineTypeBuildsEvent', () => {
+        let config;
+        let returnValue;
+        let queryConfig;
+
+        beforeEach(() => {
+            sinon.stub(EventFactory.prototype, 'query').resolves();
+            config = {
+                pipelineId: '12345'
+            };
+
+            const rows = [
+                {
+                    id: 1,
+                    pipelineId: 1,
+                    creator: 'commiter',
+                    parentEventId: 5,
+                    groupEventId: 2,
+                    causeMessage: 'Manually started by commiter'
+                },
+                {
+                    id: 2,
+                    pipelineId: 1,
+                    status: 'commiter2',
+                    parentEventId: 5,
+                    groupEventId: 2,
+                    causeMessage: 'Manually started by commiter'
+                }
+            ];
+
+            const pgResult = {
+                command: 'SELECT',
+                rowCount: rows.length,
+                rows
+            };
+
+            returnValue = [rows, pgResult];
+
+            queryConfig = {
+                queries: getQueries('', PIPELINE_TYPE_BUILD_EVENTS_QUERY),
+                readOnly: true,
+                replacements: {
+                    pipelineId: config.pipelineId
+                },
+                rawResponse: true
+            };
+        });
+
+        it('returns pipeline type build events', () => {
+            eventFactory.query.resolves(returnValue);
+
+            return eventFactory.getPipelineTypeBuildEvents(config.pipelineId).then(events => {
+                assert.calledWith(eventFactory.query, queryConfig);
+                events.forEach(e => {
+                    assert.instanceOf(e, Event);
+                });
+            });
         });
     });
 });
