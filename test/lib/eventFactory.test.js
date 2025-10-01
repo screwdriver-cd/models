@@ -1791,6 +1791,82 @@ describe('Event Factory', () => {
                 });
             });
 
+            it('should create build with base branch if require is ~pr-closed:main', () => {
+                const prClosedWorkflow = {
+                    nodes: [
+                        { name: '~pr-closed' },
+                        { name: '~cleanup' },
+                        { name: '~pr-closed:main' },
+                        { name: 'target' }
+                    ],
+                    edges: [
+                        { src: '~pr-closed', dest: 'cleanup' },
+                        { src: '~pr-closed:main', dest: 'target' }
+                    ]
+                };
+
+                jobsMock = [
+                    {
+                        id: 1,
+                        pipelineId: 8765,
+                        name: 'cleanup',
+                        permutations: [
+                            {
+                                requires: ['~pr-closed']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    },
+                    {
+                        id: 2,
+                        pipelineId: 8765,
+                        name: 'target',
+                        permutations: [
+                            {
+                                requires: ['~pr-closed:main']
+                            }
+                        ],
+                        state: 'ENABLED'
+                    }
+                ];
+
+                syncedPipelineMock.workflowGraph = prClosedWorkflow;
+                syncedPipelineMock.getJobs = sinon.stub().resolves(jobsMock);
+                syncedPipelineMock.update = sinon.stub().resolves({
+                    getJobs: sinon.stub().resolves(jobsMock),
+                    branch: Promise.resolve('release')
+                });
+
+                config.startFrom = '~pr-closed';
+                config.baseBranch = 'main';
+                config.causeMessage = 'PR-1 closed by user on branch release';
+
+                return eventFactory.create(config).then(model => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.calledWith(pipelineMock.sync, sinon.match(sha, undefined));
+                    assert.calledTwice(buildFactoryMock.create);
+                    assert.calledWith(
+                        buildFactoryMock.create.firstCall,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 1
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create.secondCall,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 2
+                        })
+                    );
+                });
+            });
+
             it('should throw error if startFrom job does not exist', () => {
                 config.startFrom = 'doesnnotexist';
 
