@@ -287,6 +287,7 @@ describe('Build Model', () => {
 
             stepsMock = [step0Mock, step1Mock, step2Mock];
 
+            executorMock.startTimer.resolves(null);
             executorMock.stop.resolves(null);
             datastore.update.resolves({});
             jobFactoryMock.get.resolves(jobMock);
@@ -1009,6 +1010,26 @@ describe('Build Model', () => {
                 });
             });
         });
+
+        it('Failed to update by executor error', () => {
+            const expectedError = new Error('500 Reason "Internal server error"');
+
+            executorMock.startTimer.rejects(expectedError);
+
+            build.status = 'RUNNING';
+
+            return build
+                .update()
+                .then(() => {
+                    assert.fail('This should not fail the test');
+                })
+                .catch(err => {
+                    assert.deepEqual(err, expectedError);
+                    assert.strictEqual(build.status, 'FAILURE');
+                    assert.strictEqual(build.statusMessage, 'Failed to start build by executor error');
+                    assert.strictEqual(build.statusMessageType, 'ERROR');
+                });
+        });
     });
 
     describe('remove', () => {
@@ -1645,8 +1666,9 @@ describe('Build Model', () => {
             });
         });
 
-        it('rejects when the executor fails', () => {
-            const expectedError = new Error('brokenGun');
+        it('Failed to start by executor error', () => {
+            datastore.update.resolves({});
+            const expectedError = new Error('500 Reason "Internal server error"');
 
             executorMock.start.rejects(expectedError);
 
@@ -1657,6 +1679,9 @@ describe('Build Model', () => {
                 })
                 .catch(err => {
                     assert.deepEqual(err, expectedError);
+                    assert.strictEqual(build.status, 'FAILURE');
+                    assert.strictEqual(build.statusMessage, 'Failed to start build by executor error');
+                    assert.strictEqual(build.statusMessageType, 'ERROR');
                 });
         });
     });
