@@ -2090,7 +2090,7 @@ describe('Build Model', () => {
                         endTime: '2025-01-01T10:00:00.000Z',
                         meta: {
                             meta5: 'set by the external parent build 1', // Overwritten by the newest parent external build
-                            parameters: { param2: 'set by external parent build 1' } // This should be deleted
+                            parameters: { param2: 'set by external parent build 1' } // This should be deleted in meta.parameters, but remains under meta.sd.2345.
                         }
                     },
                     {
@@ -2140,7 +2140,12 @@ describe('Build Model', () => {
                 parameters: { param1: 'set by second newest parent build' },
                 sd: {
                     2345: {
-                        externalJob1: { meta5: 'set by the external parent build 1' },
+                        externalJob1: {
+                            meta5: 'set by the external parent build 1',
+                            parameters: {
+                                param2: 'set by external parent build 1'
+                            }
+                        },
                         externalJob2: { meta5: 'set by the external parent build 2' }
                     },
                     2346: { externalJob1: { meta5: 'set by the external parent build 3' } }
