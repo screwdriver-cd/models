@@ -2630,6 +2630,50 @@ describe('Event Factory', () => {
             });
         });
 
+        it('should start build if changed file matches a glob (*.md)', () => {
+            jobsMock = [
+                {
+                    id: 1,
+                    pipelineId: 8765,
+                    name: 'main',
+                    permutations: [
+                        {
+                            requires: ['~pr'],
+                            sourcePaths: ['*.md']
+                        }
+                    ],
+                    state: 'ENABLED',
+                    isPR: sinon.stub().returns(false)
+                }
+            ];
+            syncedPipelineMock.update = sinon.stub().resolves({
+                getJobs: sinon.stub().resolves(jobsMock),
+                branch: Promise.resolve('branch')
+            });
+            config.startFrom = 'main';
+            config.webhooks = true;
+            config.changedFiles = ['README.md', 'index.js'];
+
+            return eventFactory.create(config).then(model => {
+                assert.instanceOf(model, Event);
+                assert.calledOnce(buildFactoryMock.create);
+
+                assert.deepEqual(buildFactoryMock.create.args[0][0].environment, { SD_SOURCE_PATH: '*.md' });
+
+                assert.calledWith(
+                    buildFactoryMock.create.firstCall,
+                    sinon.match({
+                        meta: {
+                            commit: {
+                                ...commit,
+                                changedFiles: 'README.md,index.js'
+                            }
+                        }
+                    })
+                );
+            });
+        });
+
         it('should start build from ~tag even if changed file is not in rootDir', () => {
             jobsMock = [
                 {
