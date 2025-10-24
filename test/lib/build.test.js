@@ -1680,6 +1680,7 @@ describe('Build Model', () => {
                 })
                 .catch(err => {
                     assert.deepEqual(err, expectedError);
+                    assert.calledOnce(executorMock.stop);
                     assert.strictEqual(build.status, 'FAILURE');
                     assert.strictEqual(build.statusMessage, 'Failed to start build by executor error');
                     assert.strictEqual(build.statusMessageType, 'ERROR');
