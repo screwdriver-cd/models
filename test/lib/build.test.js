@@ -1666,11 +1666,12 @@ describe('Build Model', () => {
             });
         });
 
-        it('Failed to start by executor error', () => {
+        it('Update build status to FAILURE when failed to start by executor error', () => {
             datastore.update.resolves({});
             const expectedError = new Error('500 Reason "Internal server error"');
 
             executorMock.start.rejects(expectedError);
+            executorMock.stop.resolves();
 
             return build
                 .start()
@@ -1681,6 +1682,29 @@ describe('Build Model', () => {
                     assert.deepEqual(err, expectedError);
                     assert.strictEqual(build.status, 'FAILURE');
                     assert.strictEqual(build.statusMessage, 'Failed to start build by executor error');
+                    assert.strictEqual(build.statusMessageType, 'ERROR');
+                });
+        });
+
+        it('Update build status to UNSTABLE when failed to stop the build having some executor error', () => {
+            datastore.update.resolves({});
+            const expectedError = new Error('500 Reason "Internal server error"');
+
+            executorMock.start.rejects(expectedError);
+            executorMock.stop.rejects(new Error('Test: failed to stop builds'));
+
+            return build
+                .start()
+                .then(() => {
+                    assert.fail('This should not fail the test');
+                })
+                .catch(err => {
+                    assert.deepEqual(err, expectedError);
+                    assert.strictEqual(build.status, 'UNSTABLE');
+                    assert.strictEqual(
+                        build.statusMessage,
+                        'This build may have failed to started since the executor was unstable'
+                    );
                     assert.strictEqual(build.statusMessageType, 'ERROR');
                 });
         });
