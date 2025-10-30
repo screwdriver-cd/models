@@ -2068,6 +2068,7 @@ describe('Build Model', () => {
 
             // Mock parent event with metadata
             eventFactoryMock.get.withArgs(444).resolves({
+                pipelineId: 1234,
                 meta: {
                     meta1: 'set by parent event', // Overwritten by parent build
                     meta2: 'set by parent event', // Overwritten by parent build
@@ -2078,6 +2079,7 @@ describe('Build Model', () => {
             // Mock own event with metadata
             eventFactoryMock.get.withArgs(555).resolves({
                 parentEventId: 444,
+                pipelineId: 1234,
                 meta: {
                     meta1: 'set by own event', // Overwritten by parent build
                     meta2: 'set by own event', // Overwritten by parent build
@@ -2110,12 +2112,13 @@ describe('Build Model', () => {
                         }
                     },
                     {
+                        // Those should not be merged to meta, but remains under meta.sd.*
                         id: 9000,
                         jobId: 900,
                         endTime: '2025-01-01T10:00:00.000Z',
                         meta: {
-                            meta5: 'set by the external parent build 1', // Overwritten by the newest parent external build
-                            parameters: { param2: 'set by external parent build 1' } // This should be deleted in meta.parameters, but remains under meta.sd.2345.
+                            meta5: 'set by the external parent build 1',
+                            parameters: { param2: 'set by external parent build 1' }
                         }
                     },
                     {
@@ -2123,7 +2126,7 @@ describe('Build Model', () => {
                         jobId: 901,
                         endTime: '2025-01-01T11:00:00.000Z',
                         meta: {
-                            meta5: 'set by the external parent build 2' // Remains
+                            meta5: 'set by the external parent build 2'
                         }
                     },
                     {
@@ -2131,7 +2134,7 @@ describe('Build Model', () => {
                         jobId: 902,
                         endTime: '2025-01-01T10:30:00.000Z',
                         meta: {
-                            meta5: 'set by the external parent build 3' // Overwritten by the newest parent external build
+                            meta5: 'set by the external parent build 3'
                         }
                     }
                 ]);
@@ -2175,7 +2178,6 @@ describe('Build Model', () => {
                     },
                     2346: { externalJob1: { meta5: 'set by the external parent build 3' } }
                 },
-                meta5: 'set by the external parent build 2',
                 build: {
                     pipelineId: '1234',
                     eventId: '555',
@@ -2317,7 +2319,6 @@ describe('Build Model', () => {
                     tag: { name: 'test-tag' },
                     pr: { name: 'test-name', merged: false, number: 222 }
                 },
-                foo: 'set by the parent build 2',
                 build: {
                     pipelineId: '1234',
                     eventId: '555',
