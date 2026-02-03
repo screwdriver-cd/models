@@ -206,18 +206,15 @@ describe('Pipeline Model', () => {
     };
 
     const getChildPipelineMock = config => {
-        const childPipeline = {
+        return {
             ...config,
-            state: 'ACTIVE',
+            state: config.state || 'ACTIVE',
             id: Date.now(),
             configPipelineId: testId,
             remove: sinon.stub().resolves(null),
-            sync: sinon.stub().resolves(null)
+            sync: sinon.stub().resolves(null),
+            update: sinon.stub().resolves(null)
         };
-
-        childPipeline.update = sinon.stub().resolves(pipeline);
-
-        return childPipeline;
     };
 
     beforeEach(() => {
@@ -286,17 +283,6 @@ describe('Pipeline Model', () => {
                 rootDir: ''
             }
         };
-
-        console.log(
-            [
-                childPipelineGitLabFooConfig,
-                childPipelineGitLabBarConfig,
-                childPipelineGitLabBazConfig,
-                childPipelineGitHubFooConfig,
-                childPipelineGitHubBarConfig,
-                childPipelineGitHubBazConfig
-            ].length
-        );
 
         publishJob = getJobMocks({
             id: 99999,
@@ -423,6 +409,7 @@ describe('Pipeline Model', () => {
         tokenFactoryMock = {
             list: sinon.stub()
         };
+
         scmMock = {
             addWebhook: sinon.stub(),
             getWebhookEventsMapping: sinon.stub().returns({ pr: 'pull_request' }),
@@ -435,6 +422,24 @@ describe('Pipeline Model', () => {
             getReadOnlyInfo: sinon.stub().returns({}),
             getCommitSha: sinon.stub()
         };
+
+        [
+            childPipelineGitHubFooConfig,
+            childPipelineGitHubBarConfig,
+            childPipelineGitHubBazConfig,
+            childPipelineGitLabFooConfig,
+            childPipelineGitLabBarConfig,
+            childPipelineGitLabBazConfig
+        ].forEach(cp => {
+            scmMock.decorateUrl
+                .withArgs(
+                    sinon.match({
+                        scmUri: cp.scmUri
+                    })
+                )
+                .resolves(cp.scmRepo);
+        });
+
         parserMock = sinon.stub();
 
         stageMocks = getStageMocks([
@@ -1640,7 +1645,7 @@ describe('Pipeline Model', () => {
                         scmUri: 'gitLab.com:ownerfoo:main'
                     })
                 );
-                assert.calledOnce(childPipelineFooMock.update);
+                assert.notCalled(childPipelineFooMock.update);
                 assert.equal(childPipelineFooMock.state, 'INACTIVE');
                 assert.calledOnce(childPipelineBazMock.update);
                 assert.equal(childPipelineBazMock.state, 'INACTIVE');
@@ -1673,7 +1678,7 @@ describe('Pipeline Model', () => {
                 assert.deepEqual(p.childPipelines.scmUrls, [SCM_URL_GITLAB_FOO, SCM_URL_GITLAB_BAR]);
                 assert.calledWith(parserMock, { ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } });
                 assert.notCalled(pipelineFactoryMock.create);
-                assert.calledOnce(childPipelineFooMock.update);
+                assert.notCalled(childPipelineFooMock.update);
                 assert.equal(childPipelineFooMock.state, 'INACTIVE');
                 assert.calledOnce(childPipelineBazMock.update);
                 assert.equal(childPipelineBazMock.state, 'INACTIVE');
@@ -1877,6 +1882,95 @@ describe('Pipeline Model', () => {
                     assert.isOk(err);
                     assert.equal(err.message, 'This pipeline is being deleted.');
                 });
+        });
+
+        it('migrates child pipelines from another SCM to parent pipeline SCM', () => {
+            const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
+            const childPipelineFooMock = getChildPipelineMock({ ...childPipelineGitLabFooConfig, state: 'ACTIVE' });
+            const childPipelineBarMock = getChildPipelineMock({ ...childPipelineGitLabBarConfig, state: 'ACTIVE' });
+            const childPipelineBazMock = getChildPipelineMock({ ...childPipelineGitLabBazConfig, state: 'INACTIVE' });
+
+            parsedYaml.childPipelines = {
+                scmUrls: [SCM_URL_GITHUB_FOO, SCM_URL_GITHUB_BAR, SCM_URL_GITHUB_BAZ]
+            };
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true });
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            parserMock.withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } }).resolves(parsedYaml);
+            scmMock.getReadOnlyInfo.withArgs({ scmContext: SCM_CONTEXT_GITLAB }).returns({ enabled: false });
+            pipelineFactoryMock.list
+                .withArgs({ params: { configPipelineId: testId } })
+                .resolves([childPipelineFooMock, childPipelineBarMock, childPipelineBazMock]);
+            pipeline.childPipelines = {
+                scmUrls: [SCM_URL_GITLAB_FOO, SCM_URL_GITLAB_BAR]
+            };
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.deepEqual(p.childPipelines.scmUrls, [
+                    SCM_URL_GITHUB_FOO,
+                    SCM_URL_GITHUB_BAR,
+                    SCM_URL_GITHUB_BAZ
+                ]);
+                assert.calledWith(parserMock, { ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } });
+                assert.notCalled(pipelineFactoryMock.create);
+                assert.calledOnce(childPipelineFooMock.sync);
+                assert.equal(childPipelineFooMock.state, 'ACTIVE');
+                assert.calledOnce(childPipelineBarMock.sync);
+                assert.equal(childPipelineBarMock.state, 'ACTIVE');
+                assert.calledOnce(childPipelineBazMock.sync);
+                assert.equal(childPipelineBazMock.state, 'ACTIVE');
+            });
+        });
+
+        it('should create a new child pipeline when a child pipeline from another SCM is unavailable to migrate to parent pipeline SCM', () => {
+            const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
+            const childPipelineBarMock = getChildPipelineMock({ ...childPipelineGitLabBarConfig, state: 'ACTIVE' });
+            const childPipelineBazMock = getChildPipelineMock({ ...childPipelineGitLabBazConfig, state: 'INACTIVE' });
+
+            parsedYaml.childPipelines = {
+                scmUrls: [SCM_URL_GITHUB_FOO, SCM_URL_GITHUB_BAR, SCM_URL_GITHUB_BAZ]
+            };
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true });
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            parserMock.withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } }).resolves(parsedYaml);
+            scmMock.getReadOnlyInfo.withArgs({ scmContext: SCM_CONTEXT_GITLAB }).returns({ enabled: false });
+            pipelineFactoryMock.list
+                .withArgs({ params: { configPipelineId: testId } })
+                .resolves([childPipelineBarMock, childPipelineBazMock]);
+            pipeline.childPipelines = {
+                scmUrls: [SCM_URL_GITLAB_BAR]
+            };
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.deepEqual(p.childPipelines.scmUrls, [
+                    SCM_URL_GITHUB_FOO,
+                    SCM_URL_GITHUB_BAR,
+                    SCM_URL_GITHUB_BAZ
+                ]);
+                assert.calledWith(parserMock, { ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } });
+                assert.calledOnce(pipelineFactoryMock.create);
+                assert.calledWith(
+                    pipelineFactoryMock.create,
+                    sinon.match({
+                        admins: pipeline.admins,
+                        adminUserIds: pipeline.adminUserIds,
+                        configPipelineId: pipeline.id,
+                        scmContext: SCM_CONTEXT_GITHUB,
+                        scmUri: childPipelineGitHubFooConfig.scmUri
+                    })
+                );
+                assert.calledOnce(childPipelineBarMock.sync);
+                assert.equal(childPipelineBarMock.state, 'ACTIVE');
+                assert.calledOnce(childPipelineBazMock.sync);
+                assert.equal(childPipelineBazMock.state, 'ACTIVE');
+            });
         });
     });
 
