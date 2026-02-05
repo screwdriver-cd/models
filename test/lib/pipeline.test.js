@@ -1585,6 +1585,8 @@ describe('Pipeline Model', () => {
                 .withArgs({ params: { configPipelineId: testId } })
                 .resolves([childPipelineFooMock, childPipelineBazMock]);
 
+            pipelineFactoryMock.get.withArgs({ scmUri: childPipelineGitHubBarConfig.scmUri }).resolves(null);
+
             pipeline.childPipelines = {
                 scmUrls: [SCM_URL_GITHUB_BAZ]
             };
@@ -1630,6 +1632,8 @@ describe('Pipeline Model', () => {
             pipeline.childPipelines = {
                 scmUrls: [SCM_URL_GITHUB_BAZ]
             };
+            pipelineFactoryMock.get.withArgs({ scmUri: childPipelineGitLabFooConfig.scmUri }).resolves(null);
+            pipelineFactoryMock.get.withArgs({ scmUri: childPipelineGitLabBarConfig.scmUri }).resolves(null);
 
             return pipeline.sync().then(p => {
                 assert.equal(p.id, testId);
@@ -1905,6 +1909,9 @@ describe('Pipeline Model', () => {
             pipeline.childPipelines = {
                 scmUrls: [SCM_URL_GITLAB_FOO, SCM_URL_GITLAB_BAR]
             };
+            pipelineFactoryMock.get.withArgs({ scmUri: childPipelineGitHubFooConfig.scmUri }).resolves(null);
+            pipelineFactoryMock.get.withArgs({ scmUri: childPipelineGitHubBarConfig.scmUri }).resolves(null);
+            pipelineFactoryMock.get.withArgs({ scmUri: childPipelineGitHubBazConfig.scmUri }).resolves(null);
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
             return pipeline.sync().then(p => {
@@ -1945,6 +1952,9 @@ describe('Pipeline Model', () => {
             pipeline.childPipelines = {
                 scmUrls: [SCM_URL_GITLAB_BAR]
             };
+            pipelineFactoryMock.get.withArgs({ scmUri: childPipelineGitHubFooConfig.scmUri }).resolves(null);
+            pipelineFactoryMock.get.withArgs({ scmUri: childPipelineGitHubBarConfig.scmUri }).resolves(null);
+            pipelineFactoryMock.get.withArgs({ scmUri: childPipelineGitHubBazConfig.scmUri }).resolves(null);
             buildClusterFactoryMock.list.resolves(sdBuildClusters);
 
             return pipeline.sync().then(p => {
