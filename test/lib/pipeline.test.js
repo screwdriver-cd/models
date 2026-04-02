@@ -1719,6 +1719,36 @@ describe('Pipeline Model', () => {
             });
         });
 
+        it('preserves DISABLED state of child pipeline during sync', () => {
+            const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
+            const childPipelineFooMock = getChildPipelineMock({ ...childPipelineGitHubFooConfig, state: 'DISABLED' });
+
+            parsedYaml.childPipelines = {
+                scmUrls: [SCM_URL_GITHUB_FOO]
+            };
+
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true });
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            parserMock.withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } }).resolves(parsedYaml);
+
+            pipelineFactoryMock.list
+                .withArgs({ params: { configPipelineId: testId } })
+                .resolves([childPipelineFooMock]);
+
+            pipeline.childPipelines = {
+                scmUrls: [SCM_URL_GITHUB_FOO]
+            };
+
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.notCalled(childPipelineFooMock.sync);
+                assert.calledOnce(childPipelineFooMock.update);
+                assert.equal(childPipelineFooMock.state, 'DISABLED');
+            });
+        });
+
         it('does not update child pipelines if does not belong to this parent', () => {
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
