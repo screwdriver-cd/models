@@ -184,6 +184,7 @@ describe('Event Factory', () => {
                         { name: 'main' },
                         { name: 'firstVirtual' },
                         { name: 'secondVirtual' },
+                        { name: 'thirdVirtual' },
                         { name: 'disabledJob' },
                         { name: 'stage@integration:setup', stageName: 'integration' },
                         { name: 'int-deploy', stageName: 'integration' },
@@ -207,6 +208,7 @@ describe('Event Factory', () => {
                         { src: '~commit', dest: 'main' },
                         { src: '~commit', dest: 'firstVirtual' },
                         { src: '~commit', dest: 'secondVirtual' },
+                        { src: '~commit', dest: 'thirdVirtual' },
                         { src: 'main', dest: 'disabledJob' },
                         { src: 'main', dest: 'stage@integration:setup' },
                         { src: 'stage@integration:setup', dest: 'int-deploy' },
@@ -248,6 +250,7 @@ describe('Event Factory', () => {
                         { name: 'main' },
                         { name: 'firstVirtual' },
                         { name: 'secondVirtual' },
+                        { name: 'thirdVirtual' },
                         { name: 'disabledJob' },
                         { name: 'stage@integration:setup', stageName: 'integration' },
                         { name: 'int-deploy', stageName: 'integration' },
@@ -271,6 +274,7 @@ describe('Event Factory', () => {
                         { src: '~commit', dest: 'main' },
                         { src: '~commit', dest: 'firstVirtual' },
                         { src: '~commit', dest: 'secondVirtual' },
+                        { src: '~commit', dest: 'thirdVirtual' },
                         { src: 'main', dest: 'disabledJob' },
                         { src: 'main', dest: 'stage@integration:setup' },
                         { src: 'stage@integration:setup', dest: 'int-deploy' },
@@ -523,6 +527,22 @@ describe('Event Factory', () => {
                     },
                     {
                         id: 18,
+                        pipelineId: 8765,
+                        name: 'thirdVirtual',
+                        permutations: [
+                            {
+                                requires: ['~commit', '~pr'],
+                                blockedBy: ['~main'],
+                                annotations: {
+                                    'screwdriver.cd/virtualJob': true
+                                }
+                            }
+                        ],
+                        state: 'ENABLED',
+                        isPR: sinon.stub().returns(false)
+                    },
+                    {
+                        id: 19,
                         pipelineId: 8765,
                         name: 'prClosedJob',
                         permutations: [
@@ -981,7 +1001,7 @@ describe('Event Factory', () => {
                 return eventFactory.create(config).then(model => {
                     assert.instanceOf(model, Event);
                     assert.notCalled(jobFactoryMock.create);
-                    assert.callCount(buildFactoryMock.create, 6);
+                    assert.callCount(buildFactoryMock.create, 7);
                     assert.calledWith(
                         buildFactoryMock.create,
                         sinon.match({
@@ -1033,6 +1053,15 @@ describe('Event Factory', () => {
                             parentBuildId: 12345,
                             eventId: model.id,
                             jobId: 17,
+                            start: true
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 18,
                             start: true
                         })
                     );
