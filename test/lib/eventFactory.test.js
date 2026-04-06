@@ -1044,6 +1044,83 @@ describe('Event Factory', () => {
                             parentBuildId: 12345,
                             eventId: model.id,
                             jobId: 16,
+                            start: true // virtual job should start if the event start from webhook
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 17,
+                            start: true
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 18,
+                            start: true
+                        })
+                    );
+                    assert.calledOnce(pipelineMock.sync);
+                    assert.notCalled(syncedPipelineMock.syncPR);
+                });
+            });
+
+            it('should create commit builds when it was not started from webhook', () => {
+                config.startFrom = '~commit';
+                config.webhooks = false;
+                syncedPipelineMock.id = 123566;
+
+                return eventFactory.create(config).then(model => {
+                    assert.instanceOf(model, Event);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.callCount(buildFactoryMock.create, 7);
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 1,
+                            start: true
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 5,
+                            start: true
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 6,
+                            start: true
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 7,
+                            start: true
+                        })
+                    );
+                    assert.calledWith(
+                        buildFactoryMock.create,
+                        sinon.match({
+                            parentBuildId: 12345,
+                            eventId: model.id,
+                            jobId: 16,
                             start: false // should skip execution of virtual job without freeze windows
                         })
                     );
