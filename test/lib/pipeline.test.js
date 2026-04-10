@@ -40,6 +40,9 @@ const EXTERNAL_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML, {
 const NON_CHAINPR_PARSED_YAML = hoek.applyToDefaults(PARSED_YAML_PR, {
     annotations: { 'screwdriver.cd/chainPR': false }
 });
+const PASSED_YAML_WITH_BUILDCLUSTER = hoek.applyToDefaults(PARSED_YAML, {
+    annotations: { 'screwdriver.cd/buildCluster': 'sd1' }
+});
 const DEFAULT_PAGE = 1;
 const MAX_METRIC_GET_COUNT = 1000;
 const FAKE_MAX_METRIC_GET_COUNT = 5;
@@ -1387,6 +1390,26 @@ describe('Pipeline Model', () => {
         });
 
         it('store annotations with buildCluster to pipeline', () => {
+            const configMock = { ...PASSED_YAML_WITH_BUILDCLUSTER };
+
+            parserMock.withArgs(parserConfig).resolves(configMock);
+
+            jobs = [];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+
+            return pipeline.sync().then(() => {
+                assert.deepEqual(pipeline.annotations, {
+                    'beta.screwdriver.cd/executor': 'screwdriver-executor-vm',
+                    'screwdriver.cd/chainPR': true,
+                    'screwdriver.cd/buildCluster': 'sd1'
+                });
+            });
+        });
+
+        it('keep annotations with buildCluster to pipeline', () => {
             jobs = [];
             jobFactoryMock.list.resolves(jobs);
             jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
@@ -1402,6 +1425,50 @@ describe('Pipeline Model', () => {
                     'screwdriver.cd/buildCluster': 'sd1'
                 });
             });
+        });
+
+        it('initialize buildCluster when it has invalid config implicitly', () => {
+            jobs = [];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+            buildClusterFactoryMock.list.resolves(sdBuildClusters);
+
+            pipeline.annotations = { 'screwdriver.cd/buildCluster': 'invalid-cluster' };
+
+            return pipeline.sync().then(() => {
+                assert.deepEqual(pipeline.annotations, {
+                    'beta.screwdriver.cd/executor': 'screwdriver-executor-vm',
+                    'screwdriver.cd/chainPR': true,
+                    'screwdriver.cd/buildCluster': 'sd1'
+                });
+            });
+        });
+
+        it('throw error when the buildCluster setting is invalid on yaml', () => {
+            const configMock = { ...PASSED_YAML_WITH_BUILDCLUSTER };
+
+            parserMock.withArgs(parserConfig).resolves(configMock);
+
+            jobs = [];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.withArgs(publishMock).resolves(publishMock);
+            jobFactoryMock.create.withArgs(mainMock).resolves(mainMock);
+            buildClusterFactoryMock.list.resolves([]);
+
+            return pipeline
+                .sync()
+                .then(() => {
+                    assert.fail('should not get here');
+                })
+                .catch(e => {
+                    assert.isOk(e);
+                    assert.equal(
+                        e.message,
+                        'Cluster specified in screwdriver.cd/buildCluster sd1 for scmContext github:github.com and group default does not exist.'
+                    );
+                    assert.notCalled(datastore.update);
+                });
         });
 
         it('stores chainPR to pipeline', () => {
