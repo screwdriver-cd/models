@@ -47,6 +47,7 @@ const DEFAULT_PAGE = 1;
 const MAX_METRIC_GET_COUNT = 1000;
 const FAKE_MAX_METRIC_GET_COUNT = 5;
 const SCM_CONTEXT_GITHUB = 'github:github.com';
+const SCM_CONTEXT_GHEC = 'github:enterprise-cloud.com';
 const SCM_CONTEXT_GITLAB = 'gitlab:gitlab.com';
 const DEFAULT_COMMIT_SHA = 'aebcdcbdb267ad4395a40aa8b8908f44babd4a18';
 
@@ -1986,6 +1987,93 @@ describe('Pipeline Model', () => {
                 assert.deepEqual(p.childPipelines.scmUrls, [SCM_URL_GITLAB_FOO]);
                 assert.equal(childPipelineGitLabFooMock.state, 'ACTIVE');
                 assert.calledOnce(childPipelineGitLabFooMock.sync);
+            });
+        });
+
+        it('syncs child pipelines for a GHEC-style parent context when the child scmUrl host is github.com', () => {
+            const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
+            const ghecBuildClusters = sdBuildClusters.map(cluster => ({ ...cluster, scmContext: SCM_CONTEXT_GHEC }));
+
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true }, SCM_CONTEXT_GHEC);
+            getUserPermissionMocks({ username: 'robin', push: true }, SCM_CONTEXT_GHEC);
+            parsedYaml.childPipelines = {
+                scmUrls: [SCM_URL_GITHUB_FOO]
+            };
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            parserMock.withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } }).resolves(parsedYaml);
+            pipelineFactoryMock.list.withArgs({ params: { configPipelineId: testId } }).resolves([]);
+            pipelineFactoryMock.get.withArgs({ scmUri: childPipelineGitHubFooConfig.scmUri }).resolves(null);
+            buildClusterFactoryMock.list.resolves(ghecBuildClusters);
+
+            pipeline.scmContext = SCM_CONTEXT_GHEC;
+            scmMock.getScmContext.withArgs({ hostname: 'github.com' }).returns(undefined);
+            scmMock.getReadOnlyInfo.withArgs({ scmContext: SCM_CONTEXT_GHEC }).returns({ enabled: false });
+
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.deepEqual(p.childPipelines.scmUrls, [SCM_URL_GITHUB_FOO]);
+                assert.calledWith(
+                    pipelineFactoryMock.scm.parseUrl,
+                    sinon.match({
+                        scmContext: SCM_CONTEXT_GHEC,
+                        checkoutUrl: SCM_URL_GITHUB_FOO
+                    })
+                );
+                assert.calledOnce(pipelineFactoryMock.create);
+                assert.calledWith(
+                    pipelineFactoryMock.create,
+                    sinon.match({
+                        admins: pipeline.admins,
+                        adminUserIds: pipeline.adminUserIds,
+                        configPipelineId: pipeline.id,
+                        scmContext: SCM_CONTEXT_GHEC,
+                        scmUri: childPipelineGitHubFooConfig.scmUri
+                    })
+                );
+            });
+        });
+
+        it('skips child pipelines for a GHEC-style parent context when the scmUrl cannot be parsed by the parent context', () => {
+            const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
+            const ghecBuildClusters = sdBuildClusters.map(cluster => ({ ...cluster, scmContext: SCM_CONTEXT_GHEC }));
+
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true }, SCM_CONTEXT_GHEC);
+            getUserPermissionMocks({ username: 'robin', push: true }, SCM_CONTEXT_GHEC);
+            parsedYaml.childPipelines = {
+                scmUrls: [SCM_URL_GITHUB_FOO]
+            };
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            parserMock.withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } }).resolves(parsedYaml);
+            pipelineFactoryMock.list.withArgs({ params: { configPipelineId: testId } }).resolves([]);
+            buildClusterFactoryMock.list.resolves(ghecBuildClusters);
+
+            pipeline.scmContext = SCM_CONTEXT_GHEC;
+            scmMock.getScmContext.withArgs({ hostname: 'github.com' }).returns(undefined);
+            scmMock.getReadOnlyInfo.withArgs({ scmContext: SCM_CONTEXT_GHEC }).returns({ enabled: false });
+            pipelineFactoryMock.scm.parseUrl
+                .withArgs(
+                    sinon.match({
+                        scmContext: SCM_CONTEXT_GHEC,
+                        checkoutUrl: SCM_URL_GITHUB_FOO
+                    })
+                )
+                .rejects(new Error('This checkoutUrl is not supported for your current login host.'));
+
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.deepEqual(p.childPipelines.scmUrls, [SCM_URL_GITHUB_FOO]);
+                assert.calledWith(
+                    pipelineFactoryMock.scm.parseUrl,
+                    sinon.match({
+                        scmContext: SCM_CONTEXT_GHEC,
+                        checkoutUrl: SCM_URL_GITHUB_FOO
+                    })
+                );
+                assert.notCalled(pipelineFactoryMock.create);
             });
         });
 
