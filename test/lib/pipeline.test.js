@@ -1993,6 +1993,9 @@ describe('Pipeline Model', () => {
         it('syncs child pipelines for a GHEC-style parent context when the child scmUrl host is github.com', () => {
             const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
             const ghecBuildClusters = sdBuildClusters.map(cluster => ({ ...cluster, scmContext: SCM_CONTEXT_GHEC }));
+            const validationError = new Error('"value" is required');
+
+            validationError.name = 'ValidationError';
 
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
@@ -2008,7 +2011,7 @@ describe('Pipeline Model', () => {
             buildClusterFactoryMock.list.resolves(ghecBuildClusters);
 
             pipeline.scmContext = SCM_CONTEXT_GHEC;
-            scmMock.getScmContext.withArgs({ hostname: 'github.com' }).returns(undefined);
+            scmMock.getScmContext.withArgs({ hostname: 'github.com' }).returns(validationError);
             scmMock.getReadOnlyInfo.withArgs({ scmContext: SCM_CONTEXT_GHEC }).returns({ enabled: false });
 
             return pipeline.sync().then(p => {
@@ -2038,6 +2041,9 @@ describe('Pipeline Model', () => {
         it('skips child pipelines for a GHEC-style parent context when the scmUrl cannot be parsed by the parent context', () => {
             const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
             const ghecBuildClusters = sdBuildClusters.map(cluster => ({ ...cluster, scmContext: SCM_CONTEXT_GHEC }));
+            const validationError = new Error('"value" is required');
+
+            validationError.name = 'ValidationError';
 
             jobs = [mainJob, publishJob];
             jobFactoryMock.list.resolves(jobs);
@@ -2052,7 +2058,7 @@ describe('Pipeline Model', () => {
             buildClusterFactoryMock.list.resolves(ghecBuildClusters);
 
             pipeline.scmContext = SCM_CONTEXT_GHEC;
-            scmMock.getScmContext.withArgs({ hostname: 'github.com' }).returns(undefined);
+            scmMock.getScmContext.withArgs({ hostname: 'github.com' }).returns(validationError);
             scmMock.getReadOnlyInfo.withArgs({ scmContext: SCM_CONTEXT_GHEC }).returns({ enabled: false });
             pipelineFactoryMock.scm.parseUrl
                 .withArgs(
