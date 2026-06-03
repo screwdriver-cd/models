@@ -107,6 +107,68 @@ describe('Event Factory', () => {
         });
     });
 
+    describe('getLatestCommitEvent', () => {
+        const pipelineId = 123;
+
+        it('passes scmUri/scmContext/token to getCommitSha', async () => {
+            const pipeline = {
+                scmContext: 'github:github.com',
+                scmUri: 'github.com:123:master',
+                scmRepo: {
+                    branch: 'master',
+                    name: 'foo/bar',
+                    rootDir: 'dir1',
+                    url: 'https://github.com/foo/bar/tree/master/dir1'
+                },
+                token: Promise.resolve('token')
+            };
+
+            pipelineFactoryMock.get.resolves(pipeline);
+
+            await eventFactory._getCommitSha(pipelineId);
+
+            assert.calledWith(pipelineFactoryMock.scm.getCommitSha, {
+                scmContext: pipeline.scmContext,
+                scmUri: pipeline.scmUri,
+                token: 'token'
+            });
+        });
+
+        it('lists pipeline events by latest scm sha and returns latest one', async () => {
+            const listStub = sinon.stub(eventFactory, 'list');
+            const commitShaStub = sinon.stub(eventFactory, '_getCommitSha').resolves('abc123');
+            const latestEvent = eventFactory.createClass({ id: 100 });
+
+            listStub.resolves([latestEvent]);
+
+            const result = await eventFactory.getLatestCommitEvent({ pipelineId });
+
+            assert.calledWith(commitShaStub, pipelineId);
+            assert.calledWith(listStub, {
+                params: {
+                    pipelineId,
+                    type: 'pipeline',
+                    sha: 'abc123'
+                },
+                sort: 'descending',
+                sortBy: 'id',
+                paginate: {
+                    count: 1
+                }
+            });
+            assert.equal(result, latestEvent);
+        });
+
+        it('returns null when no matching event exists', async () => {
+            sinon.stub(eventFactory, '_getCommitSha').resolves('abc123');
+            sinon.stub(eventFactory, 'list').resolves([]);
+
+            const result = await eventFactory.getLatestCommitEvent({ pipelineId });
+
+            assert.isNull(result);
+        });
+    });
+
     describe('create', () => {
         let sandbox;
 
