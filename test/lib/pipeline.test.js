@@ -2083,6 +2083,225 @@ describe('Pipeline Model', () => {
             });
         });
 
+        it('re-points an existing old-SCM child to a GHEC parent context when the corrected scmUrl repo name matches', () => {
+            const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
+            const ghecBuildClusters = sdBuildClusters.map(cluster => ({ ...cluster, scmContext: SCM_CONTEXT_GHEC }));
+            const validationError = new Error('"value" is required');
+
+            validationError.name = 'ValidationError';
+
+            // existing child still on the old SCM (GitLab), same repo name as the corrected url
+            const childPipelineFooMock = getChildPipelineMock({ ...childPipelineGitLabFooConfig, state: 'ACTIVE' });
+
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true }, SCM_CONTEXT_GHEC);
+            getUserPermissionMocks({ username: 'robin', push: true }, SCM_CONTEXT_GHEC);
+            parsedYaml.childPipelines = {
+                scmUrls: [SCM_URL_GITHUB_FOO]
+            };
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            parserMock.withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } }).resolves(parsedYaml);
+            pipelineFactoryMock.list
+                .withArgs({ params: { configPipelineId: testId } })
+                .resolves([childPipelineFooMock]);
+            pipelineFactoryMock.get.withArgs({ scmUri: childPipelineGitHubFooConfig.scmUri }).resolves(null);
+            buildClusterFactoryMock.list.resolves(ghecBuildClusters);
+
+            pipeline.scmContext = SCM_CONTEXT_GHEC;
+            pipeline.childPipelines = { scmUrls: [SCM_URL_GITLAB_FOO] };
+            scmMock.getScmContext.withArgs({ hostname: 'github.com' }).returns(validationError);
+            scmMock.getReadOnlyInfo.withArgs({ scmContext: SCM_CONTEXT_GHEC }).returns({ enabled: false });
+
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                // existing child re-pointed, not duplicated
+                assert.notCalled(pipelineFactoryMock.create);
+                assert.calledOnce(childPipelineFooMock.sync);
+                assert.notCalled(childPipelineFooMock.update);
+                assert.equal(childPipelineFooMock.scmContext, SCM_CONTEXT_GHEC);
+                assert.equal(childPipelineFooMock.scmUri, childPipelineGitHubFooConfig.scmUri);
+                assert.equal(childPipelineFooMock.state, 'ACTIVE');
+            });
+        });
+
+        it('preserves DISABLED state when re-pointing an old-SCM child to a GHEC parent context', () => {
+            const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
+            const ghecBuildClusters = sdBuildClusters.map(cluster => ({ ...cluster, scmContext: SCM_CONTEXT_GHEC }));
+            const validationError = new Error('"value" is required');
+
+            validationError.name = 'ValidationError';
+
+            const childPipelineFooMock = getChildPipelineMock({ ...childPipelineGitLabFooConfig, state: 'DISABLED' });
+
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true }, SCM_CONTEXT_GHEC);
+            getUserPermissionMocks({ username: 'robin', push: true }, SCM_CONTEXT_GHEC);
+            parsedYaml.childPipelines = {
+                scmUrls: [SCM_URL_GITHUB_FOO]
+            };
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            parserMock.withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } }).resolves(parsedYaml);
+            pipelineFactoryMock.list
+                .withArgs({ params: { configPipelineId: testId } })
+                .resolves([childPipelineFooMock]);
+            pipelineFactoryMock.get.withArgs({ scmUri: childPipelineGitHubFooConfig.scmUri }).resolves(null);
+            buildClusterFactoryMock.list.resolves(ghecBuildClusters);
+
+            pipeline.scmContext = SCM_CONTEXT_GHEC;
+            pipeline.childPipelines = { scmUrls: [SCM_URL_GITLAB_FOO] };
+            scmMock.getScmContext.withArgs({ hostname: 'github.com' }).returns(validationError);
+            scmMock.getReadOnlyInfo.withArgs({ scmContext: SCM_CONTEXT_GHEC }).returns({ enabled: false });
+
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.notCalled(pipelineFactoryMock.create);
+                assert.notCalled(childPipelineFooMock.sync);
+                assert.calledOnce(childPipelineFooMock.update);
+                assert.equal(childPipelineFooMock.scmContext, SCM_CONTEXT_GHEC);
+                assert.equal(childPipelineFooMock.state, 'DISABLED');
+            });
+        });
+
+        it('deactivates an old-SCM child and creates a new one when the corrected scmUrl repo name does not match', () => {
+            const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
+            const ghecBuildClusters = sdBuildClusters.map(cluster => ({ ...cluster, scmContext: SCM_CONTEXT_GHEC }));
+            const validationError = new Error('"value" is required');
+
+            validationError.name = 'ValidationError';
+
+            // existing child name owner/bar does not match the corrected url owner/foo
+            const childPipelineBarMock = getChildPipelineMock({ ...childPipelineGitLabBarConfig, state: 'ACTIVE' });
+
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true }, SCM_CONTEXT_GHEC);
+            getUserPermissionMocks({ username: 'robin', push: true }, SCM_CONTEXT_GHEC);
+            parsedYaml.childPipelines = {
+                scmUrls: [SCM_URL_GITHUB_FOO]
+            };
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            parserMock.withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } }).resolves(parsedYaml);
+            pipelineFactoryMock.list
+                .withArgs({ params: { configPipelineId: testId } })
+                .resolves([childPipelineBarMock]);
+            pipelineFactoryMock.get.withArgs({ scmUri: childPipelineGitHubFooConfig.scmUri }).resolves(null);
+            buildClusterFactoryMock.list.resolves(ghecBuildClusters);
+
+            pipeline.scmContext = SCM_CONTEXT_GHEC;
+            pipeline.childPipelines = { scmUrls: [SCM_URL_GITLAB_BAR] };
+            scmMock.getScmContext.withArgs({ hostname: 'github.com' }).returns(validationError);
+            scmMock.getReadOnlyInfo.withArgs({ scmContext: SCM_CONTEXT_GHEC }).returns({ enabled: false });
+
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                // no repo-name match: the unmatched old child is deactivated, a new GHEC child created
+                assert.calledOnce(pipelineFactoryMock.create);
+                assert.calledWith(
+                    pipelineFactoryMock.create,
+                    sinon.match({
+                        scmContext: SCM_CONTEXT_GHEC,
+                        scmUri: childPipelineGitHubFooConfig.scmUri
+                    })
+                );
+                assert.calledOnce(childPipelineBarMock.update);
+                assert.equal(childPipelineBarMock.state, 'INACTIVE');
+            });
+        });
+
+        it('does not orphan other children when one scmUrl fails to resolve during reconciliation', () => {
+            const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
+            const ghecBuildClusters = sdBuildClusters.map(cluster => ({ ...cluster, scmContext: SCM_CONTEXT_GHEC }));
+            const validationError = new Error('"value" is required');
+
+            validationError.name = 'ValidationError';
+
+            // old child with a repo name matching neither corrected url -> must still be deactivated
+            const childPipelineBazMock = getChildPipelineMock({ ...childPipelineGitLabBazConfig, state: 'ACTIVE' });
+
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true }, SCM_CONTEXT_GHEC);
+            getUserPermissionMocks({ username: 'robin', push: true }, SCM_CONTEXT_GHEC);
+            parsedYaml.childPipelines = {
+                scmUrls: [SCM_URL_GITHUB_FOO, SCM_URL_GITHUB_BAR]
+            };
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            parserMock.withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } }).resolves(parsedYaml);
+            pipelineFactoryMock.list
+                .withArgs({ params: { configPipelineId: testId } })
+                .resolves([childPipelineBazMock]);
+            pipelineFactoryMock.get.withArgs({ scmUri: childPipelineGitHubBarConfig.scmUri }).resolves(null);
+            buildClusterFactoryMock.list.resolves(ghecBuildClusters);
+
+            pipeline.scmContext = SCM_CONTEXT_GHEC;
+            pipeline.childPipelines = { scmUrls: [SCM_URL_GITLAB_BAZ] };
+            scmMock.getScmContext.withArgs({ hostname: 'github.com' }).returns(validationError);
+            scmMock.getReadOnlyInfo.withArgs({ scmContext: SCM_CONTEXT_GHEC }).returns({ enabled: false });
+            // the first url fails to decorate inside reconciliation; the second must still be processed
+            scmMock.decorateUrl
+                .withArgs(sinon.match({ scmUri: childPipelineGitHubFooConfig.scmUri }))
+                .rejects(new Error('repo no longer exists'));
+
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                // BAR still created despite FOO failing earlier in the loop
+                assert.calledOnce(pipelineFactoryMock.create);
+                assert.calledWith(
+                    pipelineFactoryMock.create,
+                    sinon.match({
+                        scmContext: SCM_CONTEXT_GHEC,
+                        scmUri: childPipelineGitHubBarConfig.scmUri
+                    })
+                );
+                // removed old-SCM child still deactivated, not orphaned
+                assert.calledOnce(childPipelineBazMock.update);
+                assert.equal(childPipelineBazMock.state, 'INACTIVE');
+            });
+        });
+
+        it('deactivates an eligible child instead of orphaning it when its only corrected scmUrl fails to resolve', () => {
+            const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
+            const ghecBuildClusters = sdBuildClusters.map(cluster => ({ ...cluster, scmContext: SCM_CONTEXT_GHEC }));
+            const validationError = new Error('"value" is required');
+
+            validationError.name = 'ValidationError';
+
+            // would have migrated to the corrected url, but resolution fails -> must be deactivated, not orphaned
+            const childPipelineFooMock = getChildPipelineMock({ ...childPipelineGitLabFooConfig, state: 'ACTIVE' });
+
+            jobs = [mainJob, publishJob];
+            jobFactoryMock.list.resolves(jobs);
+            getUserPermissionMocks({ username: 'batman', push: true, admin: true }, SCM_CONTEXT_GHEC);
+            getUserPermissionMocks({ username: 'robin', push: true }, SCM_CONTEXT_GHEC);
+            parsedYaml.childPipelines = {
+                scmUrls: [SCM_URL_GITHUB_FOO]
+            };
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            parserMock.withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } }).resolves(parsedYaml);
+            pipelineFactoryMock.list
+                .withArgs({ params: { configPipelineId: testId } })
+                .resolves([childPipelineFooMock]);
+            pipelineFactoryMock.get.withArgs({ scmUri: childPipelineGitHubFooConfig.scmUri }).resolves(null);
+            buildClusterFactoryMock.list.resolves(ghecBuildClusters);
+
+            pipeline.scmContext = SCM_CONTEXT_GHEC;
+            pipeline.childPipelines = { scmUrls: [SCM_URL_GITLAB_FOO] };
+            scmMock.getScmContext.withArgs({ hostname: 'github.com' }).returns(validationError);
+            scmMock.getReadOnlyInfo.withArgs({ scmContext: SCM_CONTEXT_GHEC }).returns({ enabled: false });
+            scmMock.decorateUrl
+                .withArgs(sinon.match({ scmUri: childPipelineGitHubFooConfig.scmUri }))
+                .rejects(new Error('repo no longer exists'));
+
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.notCalled(pipelineFactoryMock.create);
+                assert.calledOnce(childPipelineFooMock.update);
+                assert.equal(childPipelineFooMock.state, 'INACTIVE');
+            });
+        });
+
         it('does not sync child pipelines if the YAML has errors', () => {
             scmMock.getFile.resolves('yamlcontentwithscmurls');
             parserMock
