@@ -4417,7 +4417,8 @@ describe('Pipeline Model', () => {
                     id: testId,
                     name: 'owner/repo',
                     scmContext,
-                    scmRepo
+                    scmRepo,
+                    scmUri
                 },
                 table: 'pipelines'
             };
@@ -4446,6 +4447,50 @@ describe('Pipeline Model', () => {
                 });
                 assert.calledWith(datastore.update, expected);
                 assert.ok(p);
+            });
+        });
+
+        it('persists the full SCM identity unit together so a migration cannot half-update the row', () => {
+            // Regression: scmRepo/name are re-derived from (scmUri, scmContext) on every
+            // update, but scmUri used to be written only when explicitly reassigned. After
+            // an SCM migration this could persist scmRepo on the new SCM while leaving
+            // scmUri/scmContext on the old one. scmUri, scmContext, scmRepo and name must
+            // be written in a single datastore update.
+            const newScmUri = 'enterprise-cloud.com:12345:master';
+            const newScmRepo = {
+                branch: 'master',
+                url: 'https://enterprise-cloud.com/owner/repo/tree/master',
+                name: 'owner/repo'
+            };
+
+            userFactoryMock.get
+                .withArgs({
+                    username: 'd2lam',
+                    scmContext: SCM_CONTEXT_GHEC
+                })
+                .resolves({
+                    unsealToken: sinon.stub().resolves('foo'),
+                    getPermissions: sinon.stub().resolves({
+                        push: true
+                    })
+                });
+            scmMock.decorateUrl.resolves(newScmRepo);
+            datastore.update.resolves({});
+
+            pipeline.scmUri = newScmUri;
+            pipeline.scmContext = SCM_CONTEXT_GHEC;
+            pipeline.admins = {
+                d2lam: true
+            };
+
+            return pipeline.update().then(() => {
+                assert.calledOnce(datastore.update);
+                const { params } = datastore.update.getCall(0).args[0];
+
+                assert.strictEqual(params.scmUri, newScmUri);
+                assert.strictEqual(params.scmContext, SCM_CONTEXT_GHEC);
+                assert.deepEqual(params.scmRepo, newScmRepo);
+                assert.strictEqual(params.name, newScmRepo.name);
             });
         });
     });
