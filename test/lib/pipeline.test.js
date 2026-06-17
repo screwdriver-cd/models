@@ -210,7 +210,7 @@ describe('Pipeline Model', () => {
     };
 
     const getChildPipelineMock = config => {
-        return {
+        const mock = {
             ...config,
             state: config.state || 'ACTIVE',
             id: Date.now(),
@@ -219,6 +219,15 @@ describe('Pipeline Model', () => {
             sync: sinon.stub().resolves(null),
             update: sinon.stub().resolves(null)
         };
+
+        // Mirror the real Pipeline.deactivate(): merge overrides and set state to INACTIVE.
+        mock.deactivate = sinon.stub().callsFake(configOverrides => {
+            Object.assign(mock, configOverrides, { state: 'INACTIVE' });
+
+            return Promise.resolve(mock);
+        });
+
+        return mock;
     };
 
     beforeEach(() => {
@@ -1676,7 +1685,7 @@ describe('Pipeline Model', () => {
                 );
                 assert.calledOnce(childPipelineFooMock.sync);
                 assert.equal(childPipelineFooMock.state, 'ACTIVE');
-                assert.calledOnce(childPipelineBazMock.update);
+                assert.calledOnce(childPipelineBazMock.deactivate);
                 assert.equal(childPipelineBazMock.state, 'INACTIVE');
             });
         });
@@ -1719,7 +1728,7 @@ describe('Pipeline Model', () => {
                 );
                 assert.notCalled(childPipelineFooMock.update);
                 assert.equal(childPipelineFooMock.state, 'INACTIVE');
-                assert.calledOnce(childPipelineBazMock.update);
+                assert.calledOnce(childPipelineBazMock.deactivate);
                 assert.equal(childPipelineBazMock.state, 'INACTIVE');
             });
         });
@@ -1752,7 +1761,7 @@ describe('Pipeline Model', () => {
                 assert.notCalled(pipelineFactoryMock.create);
                 assert.notCalled(childPipelineFooMock.update);
                 assert.equal(childPipelineFooMock.state, 'INACTIVE');
-                assert.calledOnce(childPipelineBazMock.update);
+                assert.calledOnce(childPipelineBazMock.deactivate);
                 assert.equal(childPipelineBazMock.state, 'INACTIVE');
             });
         });
@@ -1908,7 +1917,7 @@ describe('Pipeline Model', () => {
             return pipeline.sync().then(p => {
                 assert.equal(p.id, testId);
                 assert.equal(p.childPipelines, null);
-                assert.calledOnce(childPipelineBarMock.update);
+                assert.calledOnce(childPipelineBarMock.deactivate);
                 assert.equal(childPipelineBarMock.state, 'INACTIVE');
             });
         });
@@ -1932,7 +1941,7 @@ describe('Pipeline Model', () => {
             return pipeline.sync().then(p => {
                 assert.equal(p.id, testId);
                 assert.equal(p.childPipelines, null);
-                assert.calledOnce(childPipelineBazMock.update);
+                assert.calledOnce(childPipelineBazMock.deactivate);
                 assert.equal(childPipelineBazMock.state, 'INACTIVE');
             });
         });
@@ -2205,7 +2214,7 @@ describe('Pipeline Model', () => {
                         scmUri: childPipelineGitHubFooConfig.scmUri
                     })
                 );
-                assert.calledOnce(childPipelineBarMock.update);
+                assert.calledOnce(childPipelineBarMock.deactivate);
                 assert.equal(childPipelineBarMock.state, 'INACTIVE');
             });
         });
@@ -2256,7 +2265,7 @@ describe('Pipeline Model', () => {
                     })
                 );
                 // removed old-SCM child still deactivated, not orphaned
-                assert.calledOnce(childPipelineBazMock.update);
+                assert.calledOnce(childPipelineBazMock.deactivate);
                 assert.equal(childPipelineBazMock.state, 'INACTIVE');
             });
         });
@@ -2297,7 +2306,7 @@ describe('Pipeline Model', () => {
             return pipeline.sync().then(p => {
                 assert.equal(p.id, testId);
                 assert.notCalled(pipelineFactoryMock.create);
-                assert.calledOnce(childPipelineFooMock.update);
+                assert.calledOnce(childPipelineFooMock.deactivate);
                 assert.equal(childPipelineFooMock.state, 'INACTIVE');
             });
         });
@@ -4447,6 +4456,43 @@ describe('Pipeline Model', () => {
                 assert.calledWith(datastore.update, expected);
                 assert.ok(p);
             });
+        });
+    });
+
+    describe('deactivate', () => {
+        it('persists INACTIVE state without re-decorating the SCM url', () => {
+            // The pipeline's SCM context may be unreachable (e.g. the parent migrated away), so
+            // decorateUrl would throw. deactivate() must still persist the state, unlike update().
+            scmMock.decorateUrl.rejects(new Error('repo no longer exists'));
+            datastore.update.resolves({});
+
+            return pipeline.deactivate().then(() => {
+                assert.notCalled(scmMock.decorateUrl);
+                assert.calledOnce(datastore.update);
+
+                const { params } = datastore.update.getCall(0).args[0];
+
+                assert.strictEqual(params.state, 'INACTIVE');
+                assert.strictEqual(pipeline.state, 'INACTIVE');
+            });
+        });
+
+        it('merges config overrides before persisting', () => {
+            scmMock.decorateUrl.rejects(new Error('should not be called'));
+            datastore.update.resolves({});
+
+            return pipeline
+                .deactivate({ admins: { batman: true }, adminUserIds: [44], configPipelineId: 999 })
+                .then(() => {
+                    assert.notCalled(scmMock.decorateUrl);
+
+                    const { params } = datastore.update.getCall(0).args[0];
+
+                    assert.strictEqual(params.state, 'INACTIVE');
+                    assert.deepEqual(params.admins, { batman: true });
+                    assert.deepEqual(params.adminUserIds, [44]);
+                    assert.strictEqual(params.configPipelineId, 999);
+                });
         });
     });
 
