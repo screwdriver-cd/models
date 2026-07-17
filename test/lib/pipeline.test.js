@@ -9,6 +9,7 @@ const schema = require('screwdriver-data-schema');
 const rewire = require('rewire');
 const dayjs = require('dayjs');
 const rewiremock = require('rewiremock/node');
+const yamlParser = require('js-yaml');
 
 sinon.assert.expose(assert, { prefix: '' });
 const YAML_WITH_PROVIDER_FILE_PATH = '../data/yamlWithProviderPath.yaml';
@@ -3994,6 +3995,9 @@ describe('Pipeline Model', () => {
         });
 
         it('gets pipeline config with provider config', () => {
+            const loadAllSpy = sinon.spy(yamlParser, 'loadAll');
+            const loadSpy = sinon.spy(yamlParser, 'load');
+
             getFileConfig = {
                 scmUri,
                 scmContext,
@@ -4021,22 +4025,32 @@ describe('Pipeline Model', () => {
             scmMock.getFile.onCall(2).resolves(loadData(PROVIDER_YAML));
             parserMock.withArgs(parserConfig).resolves(PARSED_YAML_WITH_PROVIDER);
 
-            return pipeline.getConfiguration({ ref: 'bar' }).then(config => {
-                assert.calledWith(parserMock, parserConfig);
-                assert.deepEqual(config, PARSED_YAML_WITH_PROVIDER);
-                assert.calledWith(scmMock.getFile.thirdCall, {
-                    scmUri: 'github.com:12345:master',
-                    scmContext: 'github:github.com',
-                    path: 'git@github.com:screwdriver-cd/provider.git:configuration/aws/provider.yaml',
-                    token: 'foo',
-                    scmRepo: {
-                        branch: 'branch',
-                        url: 'https://host/owner/repo/tree/branch',
-                        name: 'owner/repo'
-                    }
+            return pipeline
+                .getConfiguration({ ref: 'bar' })
+                .then(config => {
+                    assert.calledWith(loadAllSpy, loadData(YAML_WITH_PROVIDER_FILE_PATH), {
+                        maxTotalMergeKeys: 11000
+                    });
+                    assert.alwaysCalledWithMatch(loadSpy, sinon.match.string, { maxTotalMergeKeys: 11000 });
+                    assert.calledWith(parserMock, parserConfig);
+                    assert.deepEqual(config, PARSED_YAML_WITH_PROVIDER);
+                    assert.calledWith(scmMock.getFile.thirdCall, {
+                        scmUri: 'github.com:12345:master',
+                        scmContext: 'github:github.com',
+                        path: 'git@github.com:screwdriver-cd/provider.git:configuration/aws/provider.yaml',
+                        token: 'foo',
+                        scmRepo: {
+                            branch: 'branch',
+                            url: 'https://host/owner/repo/tree/branch',
+                            name: 'owner/repo'
+                        }
+                    });
+                    assert.calledWith(scmMock.getFile.firstCall, getFileConfig);
+                })
+                .finally(() => {
+                    loadAllSpy.restore();
+                    loadSpy.restore();
                 });
-                assert.calledWith(scmMock.getFile.firstCall, getFileConfig);
-            });
         });
 
         it('gets pipeline config from an alternate ref', () => {
