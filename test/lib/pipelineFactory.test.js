@@ -314,4 +314,13 @@ describe('Pipeline Factory', () => {
             assert.isTrue(factory.getNotificationsValidationErrFlag());
         });
     });
+
+    describe('getMaxTotalMergeKeys', () => {
+        it('returns the configured maximum total number of YAML merge keys', () => {
+            pipelineConfig.maxTotalMergeKeys = 11000;
+            factory = new PipelineFactory(pipelineConfig);
+
+            assert.strictEqual(factory.getMaxTotalMergeKeys(), 11000);
+        });
+    });
 });
