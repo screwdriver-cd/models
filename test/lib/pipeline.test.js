@@ -491,7 +491,7 @@ describe('Pipeline Model', () => {
 
         pipelineFactoryMock.getExternalJoinFlag.returns(false);
         pipelineFactoryMock.getNotificationsValidationErrFlag.returns(true);
-        pipelineFactoryMock.getMaxTotalMergeKeys.returns(11000);
+        pipelineFactoryMock.getMaxTotalMergeKeys.returns(10000);
 
         buildClusterFactoryMock = {
             list: sinon.stub().resolves([]),
@@ -768,7 +768,7 @@ describe('Pipeline Model', () => {
                 pipelineTemplateTagFactory: pipelineTemplateTagFactoryMock,
                 pipelineTemplateFactory: pipelineTemplateFactoryMock,
                 notificationsValidationErr: true,
-                maxTotalMergeKeys: 11000
+                maxTotalMergeKeys: 10000
             };
             parserMock.withArgs(parserConfig).resolves(PARSED_YAML);
             parserMock
@@ -2470,7 +2470,7 @@ describe('Pipeline Model', () => {
                 pipelineTemplateTagFactory: pipelineTemplateTagFactoryMock,
                 pipelineTemplateFactory: pipelineTemplateFactoryMock,
                 notificationsValidationErr: true,
-                maxTotalMergeKeys: 11000
+                maxTotalMergeKeys: 10000
             };
             datastore.update.resolves(null);
             scmMock.getFile.resolves(SCM_CONTEXT_GITHUB);
@@ -3132,7 +3132,7 @@ describe('Pipeline Model', () => {
                 pipelineTemplateTagFactory: pipelineTemplateTagFactoryMock,
                 pipelineTemplateFactory: pipelineTemplateFactoryMock,
                 notificationsValidationErr: true,
-                maxTotalMergeKeys: 11000
+                maxTotalMergeKeys: 10000
             };
             datastore.update.resolves(null);
             scmMock.getFile.resolves(SCM_CONTEXT_GITHUB);
@@ -3964,7 +3964,7 @@ describe('Pipeline Model', () => {
                 pipelineTemplateTagFactory: pipelineTemplateTagFactoryMock,
                 pipelineTemplateFactory: pipelineTemplateFactoryMock,
                 notificationsValidationErr: true,
-                maxTotalMergeKeys: 11000
+                maxTotalMergeKeys: 10000
             };
             scmMock.getFile.resolves(SCM_CONTEXT_GITHUB);
             parserMock.withArgs(parserConfig).resolves(PARSED_YAML);
@@ -4018,7 +4018,7 @@ describe('Pipeline Model', () => {
                 pipelineTemplateTagFactory: pipelineTemplateTagFactoryMock,
                 pipelineTemplateFactory: pipelineTemplateFactoryMock,
                 notificationsValidationErr: true,
-                maxTotalMergeKeys: 11000
+                maxTotalMergeKeys: 10000
             };
             scmMock.getFile.onCall(0).resolves(loadData(YAML_WITH_PROVIDER_FILE_PATH));
             scmMock.getFile.onCall(1).resolves(loadData(SHARED_PROVIDER_YAML));
@@ -4029,9 +4029,9 @@ describe('Pipeline Model', () => {
                 .getConfiguration({ ref: 'bar' })
                 .then(config => {
                     assert.calledWith(loadAllSpy, loadData(YAML_WITH_PROVIDER_FILE_PATH), {
-                        maxTotalMergeKeys: 11000
+                        maxTotalMergeKeys: 10000
                     });
-                    assert.alwaysCalledWithMatch(loadSpy, sinon.match.string, { maxTotalMergeKeys: 11000 });
+                    assert.alwaysCalledWithMatch(loadSpy, sinon.match.string, { maxTotalMergeKeys: 10000 });
                     assert.calledWith(parserMock, parserConfig);
                     assert.deepEqual(config, PARSED_YAML_WITH_PROVIDER);
                     assert.calledWith(scmMock.getFile.thirdCall, {

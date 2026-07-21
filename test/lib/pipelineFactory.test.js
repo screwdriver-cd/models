@@ -317,10 +317,10 @@ describe('Pipeline Factory', () => {
 
     describe('getMaxTotalMergeKeys', () => {
         it('returns the configured maximum total number of YAML merge keys', () => {
-            pipelineConfig.maxTotalMergeKeys = 11000;
+            pipelineConfig.maxTotalMergeKeys = 10000;
             factory = new PipelineFactory(pipelineConfig);
 
-            assert.strictEqual(factory.getMaxTotalMergeKeys(), 11000);
+            assert.strictEqual(factory.getMaxTotalMergeKeys(), 10000);
         });
     });
 });
