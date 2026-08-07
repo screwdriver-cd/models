@@ -2490,6 +2490,7 @@ describe('Event Factory', () => {
             config.configPipelineSha = 'configpipelinesha';
             config.sha = 'configsha';
             config.prRef = 'branch';
+            config.type = 'pr';
             config.prNum = 20;
 
             return eventFactory.create(config).then(model => {
@@ -3094,6 +3095,15 @@ describe('Event Factory', () => {
             });
         });
 
+        it('should create using latest sha if config does not have target sha', () => {
+            config.sha = null;
+
+            return eventFactory.create(config).then(model => {
+                assert.calledWith(pipelineMock.sync, null);
+                assert.instanceOf(model, Event);
+            });
+        });
+
         it('should create using parentEvent workflowGraph and job configs', () => {
             config.parentEventId = 222;
             config.workflowGraph = {
@@ -3103,6 +3113,27 @@ describe('Event Factory', () => {
             expected.workflowGraph = config.workflowGraph;
             expected.parentEventId = config.parentEventId;
             syncedPipelineMock.workflowGraph = config.workflowGraph;
+
+            return eventFactory.create(config).then(model => {
+                assert.calledWith(pipelineMock.sync, config.sha);
+                assert.instanceOf(model, Event);
+                Object.keys(expected).forEach(key => {
+                    if (key === 'workflowGraph') {
+                        assert.deepEqual(model[key], expected[key]);
+                    } else if (key === 'parentEventId') {
+                        assert.deepEqual(model[key], 222);
+                    }
+                });
+            });
+        });
+
+        it('should create using parentEvent workflowGraph and job configs on fresh run', () => {
+            const expectedWorkflowGraph = {
+                nodes: [{ name: '~commit' }, { name: 'testJob' }],
+                edges: [{ src: '~commit', dest: 'testJob' }]
+            };
+            expected.workflowGraph = expectedWorkflowGraph;
+            syncedPipelineMock.workflowGraph = expectedWorkflowGraph;
 
             return eventFactory.create(config).then(model => {
                 assert.calledWith(pipelineMock.sync, config.sha);
