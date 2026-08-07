@@ -3132,6 +3132,7 @@ describe('Event Factory', () => {
                 nodes: [{ name: '~commit' }, { name: 'testJob' }],
                 edges: [{ src: '~commit', dest: 'testJob' }]
             };
+
             expected.workflowGraph = expectedWorkflowGraph;
             syncedPipelineMock.workflowGraph = expectedWorkflowGraph;
 
