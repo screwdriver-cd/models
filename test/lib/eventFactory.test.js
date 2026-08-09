@@ -3149,6 +3149,30 @@ describe('Event Factory', () => {
             });
         });
 
+        it('should create using configPipelineSha on fresh run', () => {
+            const expectedWorkflowGraph = {
+                nodes: [{ name: '~commit' }, { name: 'testJob' }],
+                edges: [{ src: '~commit', dest: 'testJob' }]
+            };
+
+            config.configPipelineSha = 'configpipelinesha';
+
+            expected.workflowGraph = expectedWorkflowGraph;
+            syncedPipelineMock.workflowGraph = expectedWorkflowGraph;
+
+            return eventFactory.create(config).then(model => {
+                assert.calledWith(pipelineMock.sync, config.configPipelineSha);
+                assert.instanceOf(model, Event);
+                Object.keys(expected).forEach(key => {
+                    if (key === 'workflowGraph') {
+                        assert.deepEqual(model[key], expected[key]);
+                    } else if (key === 'parentEventId') {
+                        assert.deepEqual(model[key], 222);
+                    }
+                });
+            });
+        });
+
         it('should have parameters if create with parameters', () => {
             const pipelineWithParameter = {
                 parameters: {
