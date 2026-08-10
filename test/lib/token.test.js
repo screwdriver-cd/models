@@ -118,7 +118,10 @@ describe('Token Model', () => {
             id: 6789,
             name: 'Mobile client auth token',
             description: 'For the mobile app',
-            lastUsed: '2017-05-10T01:49:59.327Z'
+            lastUsed: '2017-05-10T01:49:59.327Z',
+            issuerId: undefined,
+            expiresAt: undefined,
+            options: undefined
         };
         const value = 'tokenValue';
 
