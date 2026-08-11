@@ -10,6 +10,13 @@ const rewire = require('rewire');
 const dayjs = require('dayjs');
 const rewiremock = require('rewiremock/node');
 const yamlParser = require('js-yaml');
+const YAML_SCHEMA = yamlParser.CORE_SCHEMA.withTags(
+    yamlParser.binaryTag,
+    yamlParser.mergeTag,
+    yamlParser.omapTag,
+    yamlParser.pairsTag,
+    yamlParser.timestampTag
+);
 
 sinon.assert.expose(assert, { prefix: '' });
 const YAML_WITH_PROVIDER_FILE_PATH = '../data/yamlWithProviderPath.yaml';
@@ -4029,9 +4036,13 @@ describe('Pipeline Model', () => {
                 .getConfiguration({ ref: 'bar' })
                 .then(config => {
                     assert.calledWith(loadAllSpy, loadData(YAML_WITH_PROVIDER_FILE_PATH), {
+                        schema: YAML_SCHEMA,
                         maxTotalMergeKeys: 10000
                     });
-                    assert.alwaysCalledWithMatch(loadSpy, sinon.match.string, { maxTotalMergeKeys: 10000 });
+                    assert.alwaysCalledWithMatch(loadSpy, sinon.match.string, {
+                        schema: YAML_SCHEMA,
+                        maxTotalMergeKeys: 10000
+                    });
                     assert.calledWith(parserMock, parserConfig);
                     assert.deepEqual(config, PARSED_YAML_WITH_PROVIDER);
                     assert.calledWith(scmMock.getFile.thirdCall, {
