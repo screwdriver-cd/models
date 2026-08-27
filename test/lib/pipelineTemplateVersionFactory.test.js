@@ -646,9 +646,10 @@ describe('PipelineTemplateVersion Factory', () => {
             assert.calledOnce(datastore.get);
 
             assert.instanceOf(model, PipelineTemplateVersion);
-            Object.keys(key => {
+            Object.keys(expectedTemplateVersionWithMetadata).forEach(key => {
                 assert.equal(model[key], expectedTemplateVersionWithMetadata[key]);
             });
+            assert.notProperty(model, 'trustedSinceVersion');
         });
 
         it('gets a pipeline template version and meta given templateId', async () => {
@@ -668,15 +669,16 @@ describe('PipelineTemplateVersion Factory', () => {
             });
             assert.calledOnce(datastore.get);
             assert.instanceOf(model, PipelineTemplateVersion);
-            Object.keys(key => {
+            Object.keys(expectedTemplateVersionWithMetadata).forEach(key => {
                 assert.equal(model[key], expectedTemplateVersionWithMetadata[key]);
             });
+            assert.notProperty(model, 'trustedSinceVersion');
         });
 
         it('Returns null if pipeline template does not exist', async () => {
             templateMetaFactoryMock.get.resolves(null);
 
-            const model = await factory.get(
+            const model = await factory.getWithMetadata(
                 {
                     name,
                     namespace
@@ -693,7 +695,7 @@ describe('PipelineTemplateVersion Factory', () => {
             templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
             datastore.get.resolves(null);
 
-            const model = await factory.get(
+            const model = await factory.getWithMetadata(
                 {
                     name,
                     namespace
