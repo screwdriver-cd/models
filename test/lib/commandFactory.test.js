@@ -720,6 +720,15 @@ describe('Command Factory', () => {
             });
         });
 
+        it('should return undefined if no command exists for a given namespace with no version or tag', () => {
+            fullCommandName = `${commandNamespace}/${commandName}`;
+            datastore.scan.resolves([]);
+
+            return factory.getCommand(fullCommandName).then(model => {
+                assert.isUndefined(model);
+            });
+        });
+
         it('should return null if no command returned by list', () => {
             datastore.scan.resolves([]);
 
