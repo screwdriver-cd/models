@@ -657,6 +657,8 @@ describe('Pipeline Model', () => {
                 () => assert.fail('should not get here'),
                 err => {
                     assert.instanceOf(err, Error);
+                    assert.equal(err.isBoom, true);
+                    assert.equal(err.output.statusCode, 403);
                     assert.equal(err.message, 'Pipeline has no repository admins');
                 }
             );
