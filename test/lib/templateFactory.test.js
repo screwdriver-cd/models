@@ -1763,6 +1763,15 @@ describe('Template Factory', () => {
             });
         });
 
+        it('should return null if no template exists for a given name with no version or tag', () => {
+            fullTemplateName = templateName;
+            datastore.scan.resolves([]);
+
+            return factory.getTemplate(fullTemplateName).then(model => {
+                assert.isNull(model);
+            });
+        });
+
         it('should return null if no template returned by list', () => {
             datastore.scan.resolves([]);
 

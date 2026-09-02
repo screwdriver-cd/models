@@ -20,6 +20,7 @@ describe('PipelineTemplateVersion Factory', () => {
     let factory;
     let PipelineTemplateVersion;
     let templateMetaFactoryMock;
+    let pipelineTemplateTagFactoryMock;
 
     beforeEach(() => {
         datastore = {
@@ -31,6 +32,9 @@ describe('PipelineTemplateVersion Factory', () => {
         templateMetaFactoryMock = {
             get: sinon.stub(),
             create: sinon.stub()
+        };
+        pipelineTemplateTagFactoryMock = {
+            get: sinon.stub()
         };
 
         // eslint-disable-next-line global-require
@@ -372,6 +376,220 @@ describe('PipelineTemplateVersion Factory', () => {
         });
     });
 
+    describe('getTemplate with a resolved version', () => {
+        const templateId = 1234135;
+        const metadataFields = ['pipelineId', 'namespace', 'name', 'maintainer', 'latestVersion'];
+        const pipelineTemplateMetaMock = {
+            id: templateId,
+            pipelineId: 123,
+            namespace,
+            name,
+            maintainer: 'test-user@email.com',
+            latestVersion: '2.0.0',
+            trustedSinceVersion: '1.0.0'
+        };
+        let versionRecords;
+
+        beforeEach(() => {
+            versionRecords = [
+                { id: 1, templateId, version: '1.2.3' },
+                { id: 2, templateId, version: '1.2.20' },
+                { id: 3, templateId, version: '1.3.1' },
+                { id: 4, templateId, version: '2.0.0' },
+                { id: 5, templateId, version: '10.0.0' }
+            ];
+            templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
+        });
+
+        it('gets an exact version with template metadata', async () => {
+            datastore.get.resolves(versionRecords[0]);
+
+            const model = await factory.getTemplate(
+                `${namespace}/${name}@1.2.3`,
+                templateMetaFactoryMock,
+                pipelineTemplateTagFactoryMock
+            );
+
+            assert.calledOnce(templateMetaFactoryMock.get);
+            assert.calledWith(templateMetaFactoryMock.get, { namespace, name });
+            assert.calledOnce(datastore.get);
+            assert.calledWith(datastore.get, {
+                table: 'pipelineTemplateVersions',
+                params: { templateId, version: '1.2.3' }
+            });
+            assert.notCalled(pipelineTemplateTagFactoryMock.get);
+            assert.notCalled(datastore.scan);
+            assert.instanceOf(model, PipelineTemplateVersion);
+            metadataFields.forEach(fieldName => {
+                assert.strictEqual(model[fieldName], pipelineTemplateMetaMock[fieldName]);
+            });
+            assert.notProperty(model, 'trustedSinceVersion');
+        });
+
+        it('resolves a tag to an exact version with template metadata', async () => {
+            pipelineTemplateTagFactoryMock.get.resolves({ version: '2.0.0' });
+            datastore.get.resolves(versionRecords[3]);
+
+            const model = await factory.getTemplate(
+                `${namespace}/${name}@${tag}`,
+                templateMetaFactoryMock,
+                pipelineTemplateTagFactoryMock
+            );
+
+            assert.calledOnce(templateMetaFactoryMock.get);
+            assert.calledOnce(pipelineTemplateTagFactoryMock.get);
+            assert.calledWith(pipelineTemplateTagFactoryMock.get, { namespace, name, tag });
+            assert.calledOnce(datastore.get);
+            assert.calledWith(datastore.get, {
+                table: 'pipelineTemplateVersions',
+                params: { templateId, version: '2.0.0' }
+            });
+            assert.notCalled(datastore.scan);
+            assert.instanceOf(model, PipelineTemplateVersion);
+            metadataFields.forEach(fieldName => {
+                assert.strictEqual(model[fieldName], pipelineTemplateMetaMock[fieldName]);
+            });
+            assert.notProperty(model, 'trustedSinceVersion');
+        });
+
+        it('resolves a major version with template metadata', async () => {
+            datastore.scan.resolves(versionRecords);
+
+            const model = await factory.getTemplate(
+                `${namespace}/${name}@1`,
+                templateMetaFactoryMock,
+                pipelineTemplateTagFactoryMock
+            );
+
+            assert.calledOnce(templateMetaFactoryMock.get);
+            assert.calledOnce(datastore.scan);
+            assert.calledWith(datastore.scan, {
+                table: 'pipelineTemplateVersions',
+                params: { templateId }
+            });
+            assert.notCalled(pipelineTemplateTagFactoryMock.get);
+            assert.notCalled(datastore.get);
+            assert.instanceOf(model, PipelineTemplateVersion);
+            assert.strictEqual(model.version, '1.3.1');
+            metadataFields.forEach(fieldName => {
+                assert.strictEqual(model[fieldName], pipelineTemplateMetaMock[fieldName]);
+            });
+            assert.notProperty(model, 'trustedSinceVersion');
+        });
+
+        it('resolves a minor version with template metadata', async () => {
+            datastore.scan.resolves(versionRecords);
+
+            const model = await factory.getTemplate(
+                `${namespace}/${name}@1.2`,
+                templateMetaFactoryMock,
+                pipelineTemplateTagFactoryMock
+            );
+
+            assert.calledOnce(templateMetaFactoryMock.get);
+            assert.calledOnce(datastore.scan);
+            assert.notCalled(pipelineTemplateTagFactoryMock.get);
+            assert.notCalled(datastore.get);
+            assert.instanceOf(model, PipelineTemplateVersion);
+            assert.strictEqual(model.version, '1.2.20');
+            metadataFields.forEach(fieldName => {
+                assert.strictEqual(model[fieldName], pipelineTemplateMetaMock[fieldName]);
+            });
+            assert.notProperty(model, 'trustedSinceVersion');
+        });
+    });
+
+    describe('getTemplate with no resolved version', () => {
+        const templateId = 1234135;
+        const pipelineTemplateMetaMock = {
+            id: templateId,
+            namespace,
+            name
+        };
+
+        beforeEach(() => {
+            templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
+        });
+
+        it('returns null without version lookup when template metadata does not exist', async () => {
+            templateMetaFactoryMock.get.resolves(null);
+
+            const model = await factory.getTemplate(
+                `${namespace}/${name}@1.2.3`,
+                templateMetaFactoryMock,
+                pipelineTemplateTagFactoryMock
+            );
+
+            assert.isNull(model);
+            assert.calledOnce(templateMetaFactoryMock.get);
+            assert.notCalled(pipelineTemplateTagFactoryMock.get);
+            assert.notCalled(datastore.get);
+            assert.notCalled(datastore.scan);
+        });
+
+        it('returns null when an exact version does not exist', async () => {
+            datastore.get.resolves(null);
+
+            const model = await factory.getTemplate(
+                `${namespace}/${name}@1.2.3`,
+                templateMetaFactoryMock,
+                pipelineTemplateTagFactoryMock
+            );
+
+            assert.isNull(model);
+            assert.calledOnce(templateMetaFactoryMock.get);
+            assert.calledOnce(datastore.get);
+            assert.notCalled(pipelineTemplateTagFactoryMock.get);
+            assert.notCalled(datastore.scan);
+        });
+
+        it('returns null without version lookup when a tag does not exist', async () => {
+            pipelineTemplateTagFactoryMock.get.resolves(null);
+
+            const model = await factory.getTemplate(
+                `${namespace}/${name}@${tag}`,
+                templateMetaFactoryMock,
+                pipelineTemplateTagFactoryMock
+            );
+
+            assert.isNull(model);
+            assert.calledOnce(templateMetaFactoryMock.get);
+            assert.calledOnce(pipelineTemplateTagFactoryMock.get);
+            assert.notCalled(datastore.get);
+            assert.notCalled(datastore.scan);
+        });
+
+        it('returns null when no partial version matches', async () => {
+            datastore.scan.resolves([{ id: 4, templateId, version: '2.0.0' }]);
+
+            const model = await factory.getTemplate(
+                `${namespace}/${name}@1.2`,
+                templateMetaFactoryMock,
+                pipelineTemplateTagFactoryMock
+            );
+
+            assert.isNull(model);
+            assert.calledOnce(templateMetaFactoryMock.get);
+            assert.calledOnce(datastore.scan);
+            assert.notCalled(pipelineTemplateTagFactoryMock.get);
+            assert.notCalled(datastore.get);
+        });
+
+        it('returns null without version lookup when version is omitted', async () => {
+            const model = await factory.getTemplate(
+                `${namespace}/${name}`,
+                templateMetaFactoryMock,
+                pipelineTemplateTagFactoryMock
+            );
+
+            assert.isNull(model);
+            assert.calledOnce(templateMetaFactoryMock.get);
+            assert.notCalled(pipelineTemplateTagFactoryMock.get);
+            assert.notCalled(datastore.get);
+            assert.notCalled(datastore.scan);
+        });
+    });
+
     describe('getWithMetadata', async () => {
         const templateId = 1234135;
         const generatedVersionId = 2341351;
@@ -428,9 +646,10 @@ describe('PipelineTemplateVersion Factory', () => {
             assert.calledOnce(datastore.get);
 
             assert.instanceOf(model, PipelineTemplateVersion);
-            Object.keys(key => {
+            Object.keys(expectedTemplateVersionWithMetadata).forEach(key => {
                 assert.equal(model[key], expectedTemplateVersionWithMetadata[key]);
             });
+            assert.notProperty(model, 'trustedSinceVersion');
         });
 
         it('gets a pipeline template version and meta given templateId', async () => {
@@ -450,15 +669,16 @@ describe('PipelineTemplateVersion Factory', () => {
             });
             assert.calledOnce(datastore.get);
             assert.instanceOf(model, PipelineTemplateVersion);
-            Object.keys(key => {
+            Object.keys(expectedTemplateVersionWithMetadata).forEach(key => {
                 assert.equal(model[key], expectedTemplateVersionWithMetadata[key]);
             });
+            assert.notProperty(model, 'trustedSinceVersion');
         });
 
         it('Returns null if pipeline template does not exist', async () => {
             templateMetaFactoryMock.get.resolves(null);
 
-            const model = await factory.get(
+            const model = await factory.getWithMetadata(
                 {
                     name,
                     namespace
@@ -475,7 +695,7 @@ describe('PipelineTemplateVersion Factory', () => {
             templateMetaFactoryMock.get.resolves(pipelineTemplateMetaMock);
             datastore.get.resolves(null);
 
-            const model = await factory.get(
+            const model = await factory.getWithMetadata(
                 {
                     name,
                     namespace
