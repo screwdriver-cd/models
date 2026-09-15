@@ -2329,6 +2329,10 @@ describe('Pipeline Model', () => {
             parserMock
                 .withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } })
                 .resolves(PARSED_YAML_WITH_ERRORS);
+            // This pipeline has no *active* job, so it is exempt from the
+            // "refuse to sync onto an established pipeline" guard below and this
+            // test can exercise the child-pipeline behavior it's actually about.
+            mainJob.archived = true;
             jobs = [mainJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
@@ -2341,6 +2345,57 @@ describe('Pipeline Model', () => {
                 assert.deepEqual(p.childPipelines, EXTERNAL_PARSED_YAML.childPipelines);
                 assert.notCalled(childPipelineMock.sync);
                 assert.notCalled(childPipelineMock.update);
+            });
+        });
+
+        it('refuses to sync onto an established pipeline when config parse failed', () => {
+            sinon.spy(pipeline, 'update');
+            pipeline.workflowGraph = { nodes: [{ name: 'existing' }], edges: [] };
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            parserMock
+                .withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } })
+                .resolves(PARSED_YAML_WITH_ERRORS);
+            // mainJob is active (archived: false) - this pipeline is established.
+            jobs = [mainJob];
+            jobFactoryMock.list.resolves(jobs);
+
+            return pipeline
+                .sync()
+                .then(() => assert.fail('sync should have rejected'))
+                .catch(err => {
+                    assert.match(err.message, /refusing to sync, config parse failed/);
+                    // nothing about the established pipeline was touched
+                    assert.notCalled(mainJob.update);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(pipeline.update);
+                    assert.deepEqual(pipeline.workflowGraph, { nodes: [{ name: 'existing' }], edges: [] });
+                });
+        });
+
+        it('still creates the fallback job for a brand-new pipeline with no jobs yet', () => {
+            const fallbackJobMock = {
+                id: 5001,
+                name: 'main',
+                archived: false,
+                isPR: sinon.stub().returns(false),
+                update: sinon.stub().resolves()
+            };
+
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            parserMock
+                .withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } })
+                .resolves(PARSED_YAML_WITH_ERRORS);
+            jobs = [];
+            jobFactoryMock.list.resolves(jobs);
+            jobFactoryMock.create.resolves(fallbackJobMock);
+
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.calledWithMatch(jobFactoryMock.create, sinon.match({ pipelineId: testId, name: 'main' }));
+                assert.deepEqual(
+                    pipeline.workflowGraph.nodes.map(n => n.name),
+                    ['~pr', '~commit', 'main']
+                );
             });
         });
 
