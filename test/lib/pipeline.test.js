@@ -4593,6 +4593,68 @@ describe('Pipeline Model', () => {
         });
     });
 
+    describe('enable/disable', () => {
+        it('enable persists state and change details without an SCM admin', () => {
+            const stateChangeTime = '2026-10-09T00:00:00.000Z';
+
+            pipeline.state = 'DISABLED';
+            pipeline.admins = {};
+            pipeline.adminUserIds = [];
+            scmMock.decorateUrl.rejects(new Error('SCM unavailable'));
+            datastore.update.resolves({});
+
+            return pipeline
+                .enable({
+                    stateChanger: 'sd-admin',
+                    stateChangeTime,
+                    stateChangeMessage: 'Emergency maintenance'
+                })
+                .then(() => {
+                    assert.notCalled(userFactoryMock.get);
+                    assert.notCalled(scmMock.decorateUrl);
+                    assert.calledOnce(datastore.update);
+
+                    const { params } = datastore.update.getCall(0).args[0];
+
+                    assert.strictEqual(params.state, 'ACTIVE');
+                    assert.strictEqual(params.stateChanger, 'sd-admin');
+                    assert.strictEqual(params.stateChangeTime, stateChangeTime);
+                    assert.strictEqual(params.stateChangeMessage, 'Emergency maintenance');
+                    assert.strictEqual(pipeline.state, 'ACTIVE');
+                });
+        });
+
+        it('disable persists state and change details without an SCM admin', () => {
+            const stateChangeTime = '2026-10-09T00:00:00.000Z';
+
+            pipeline.state = 'ACTIVE';
+            pipeline.admins = {};
+            pipeline.adminUserIds = [];
+            scmMock.decorateUrl.rejects(new Error('SCM unavailable'));
+            datastore.update.resolves({});
+
+            return pipeline
+                .disable({
+                    stateChanger: 'sd-admin',
+                    stateChangeTime,
+                    stateChangeMessage: 'Emergency maintenance'
+                })
+                .then(() => {
+                    assert.notCalled(userFactoryMock.get);
+                    assert.notCalled(scmMock.decorateUrl);
+                    assert.calledOnce(datastore.update);
+
+                    const { params } = datastore.update.getCall(0).args[0];
+
+                    assert.strictEqual(params.state, 'DISABLED');
+                    assert.strictEqual(params.stateChanger, 'sd-admin');
+                    assert.strictEqual(params.stateChangeTime, stateChangeTime);
+                    assert.strictEqual(params.stateChangeMessage, 'Emergency maintenance');
+                    assert.strictEqual(pipeline.state, 'DISABLED');
+                });
+        });
+    });
+
     describe('deactivate', () => {
         it('persists INACTIVE state without re-decorating the SCM url', () => {
             // The pipeline's SCM context may be unreachable (e.g. the parent migrated away), so
