@@ -1039,6 +1039,87 @@ describe('Event Factory', () => {
                 });
             });
 
+            describe('when the base branch sync is refused', () => {
+                let refusedError;
+
+                beforeEach(() => {
+                    refusedError = Object.assign(new Error('refusing to sync, config is missing'), {
+                        code: 'CONFIG_SYNC_REFUSED'
+                    });
+                    // the unsynced pipeline is carried forward, so it needs what syncedPipelineMock has
+                    Object.assign(pipelineMock, syncedPipelineMock, { sync: sinon.stub().rejects(refusedError) });
+                    // syncPR resolves to this, and the event's builds are created from it
+                    afterSyncedPRPipelineMock.update = sinon.stub().resolves(afterSyncedPRPipelineMock);
+                    const prJobs = [
+                        {
+                            id: 1,
+                            pipelineId: 8765,
+                            name: 'PR-1:main',
+                            permutations: [{ requires: ['~pr', '~pr:branch'] }],
+                            state: 'ENABLED',
+                            parsePRJobName: sinon.stub().returns('main'),
+                            isPR: sinon.stub().returns(true)
+                        }
+                    ];
+
+                    afterSyncedPRPipelineMock.getJobs.resolves(prJobs);
+                    afterSyncedPRPipelineMock.getConfiguration = sinon.stub().resolves({
+                        jobs: prJobs,
+                        workflowGraph: syncedPipelineMock.workflowGraph
+                    });
+                });
+
+                it('should still sync the PR so a PR that fixes the config can run', () => {
+                    config.startFrom = '~pr';
+                    config.prRef = 'branch-pr';
+                    config.prNum = 1;
+                    config.prInfo.ref = 'branch-pr';
+                    config.webhooks = true;
+
+                    return eventFactory.create(config).then(model => {
+                        assert.instanceOf(model, Event);
+                        assert.calledOnce(pipelineMock.sync);
+                        assert.calledOnce(pipelineMock.syncPR);
+                        assert.calledWith(pipelineMock.syncPR, 1);
+                        // the whole point: the PR gets a build (and so a commit status)
+                        assert.calledOnce(buildFactoryMock.create);
+                        assert.calledWith(buildFactoryMock.create, sinon.match({ eventId: model.id, jobId: 1 }));
+                    });
+                });
+
+                it('should fail for a non-PR event', () => {
+                    config.startFrom = '~commit';
+                    config.webhooks = true;
+
+                    return eventFactory
+                        .create(config)
+                        .then(() => assert.fail('should not get here'))
+                        .catch(err => {
+                            assert.equal(err, refusedError);
+                            assert.notCalled(pipelineMock.syncPR);
+                        });
+                });
+
+                it('should fail for a PR event when sync fails for another reason', () => {
+                    const otherError = new Error('boom');
+
+                    pipelineMock.sync.rejects(otherError);
+                    config.startFrom = '~pr';
+                    config.prRef = 'branch-pr';
+                    config.prNum = 1;
+                    config.prInfo.ref = 'branch-pr';
+                    config.webhooks = true;
+
+                    return eventFactory
+                        .create(config)
+                        .then(() => assert.fail('should not get here'))
+                        .catch(err => {
+                            assert.equal(err, otherError);
+                            assert.notCalled(pipelineMock.syncPR);
+                        });
+                });
+            });
+
             it('should skip creating builds', () => {
                 config.startFrom = '~commit';
                 config.webhooks = true;

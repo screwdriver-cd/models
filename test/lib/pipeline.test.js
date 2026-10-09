@@ -2329,10 +2329,6 @@ describe('Pipeline Model', () => {
             parserMock
                 .withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } })
                 .resolves(PARSED_YAML_WITH_ERRORS);
-            // This pipeline has no *active* job, so it is exempt from the
-            // "refuse to sync onto an established pipeline" guard below and this
-            // test can exercise the child-pipeline behavior it's actually about.
-            mainJob.archived = true;
             jobs = [mainJob];
             jobFactoryMock.list.resolves(jobs);
             getUserPermissionMocks({ username: 'batman', push: true, admin: true });
@@ -2348,13 +2344,11 @@ describe('Pipeline Model', () => {
             });
         });
 
-        it('refuses to sync onto an established pipeline when config parse failed', () => {
+        it('refuses to sync onto an established pipeline when the config is missing', () => {
             sinon.spy(pipeline, 'update');
             pipeline.workflowGraph = { nodes: [{ name: 'existing' }], edges: [] };
-            scmMock.getFile.resolves('yamlcontentwithscmurls');
-            parserMock
-                .withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } })
-                .resolves(PARSED_YAML_WITH_ERRORS);
+            scmMock.getFile.resolves('');
+            parserMock.withArgs({ ...parserConfig, ...{ yaml: '' } }).resolves({ ...PARSED_YAML_WITH_ERRORS });
             // mainJob is active (archived: false) - this pipeline is established.
             jobs = [mainJob];
             jobFactoryMock.list.resolves(jobs);
@@ -2363,13 +2357,57 @@ describe('Pipeline Model', () => {
                 .sync()
                 .then(() => assert.fail('sync should have rejected'))
                 .catch(err => {
-                    assert.match(err.message, /refusing to sync, config parse failed/);
+                    assert.match(err.message, /refusing to sync, config is missing/);
+                    assert.equal(err.code, 'CONFIG_SYNC_REFUSED');
                     // nothing about the established pipeline was touched
                     assert.notCalled(mainJob.update);
                     assert.notCalled(jobFactoryMock.create);
                     assert.notCalled(pipeline.update);
                     assert.deepEqual(pipeline.workflowGraph, { nodes: [{ name: 'existing' }], edges: [] });
                 });
+        });
+
+        it('does not touch an established pipeline when the parser fails for a non-config reason', () => {
+            const parserErr = new Error('datastore timeout');
+
+            sinon.spy(pipeline, 'update');
+            pipeline.workflowGraph = { nodes: [{ name: 'existing' }], edges: [] };
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            // e.g. a template lookup hitting the datastore: the parser rethrows instead of
+            // returning a fallback config, so there is nothing to persist over the real jobs
+            parserMock.withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } }).rejects(parserErr);
+            jobs = [mainJob];
+            jobFactoryMock.list.resolves(jobs);
+
+            return pipeline
+                .sync()
+                .then(() => assert.fail('sync should have rejected'))
+                .catch(err => {
+                    assert.equal(err, parserErr);
+                    assert.notCalled(mainJob.update);
+                    assert.notCalled(jobFactoryMock.create);
+                    assert.notCalled(pipeline.update);
+                    assert.deepEqual(pipeline.workflowGraph, { nodes: [{ name: 'existing' }], edges: [] });
+                });
+        });
+
+        it('syncs the fallback config onto an established pipeline when the yaml is invalid', () => {
+            scmMock.getFile.resolves('yamlcontentwithscmurls');
+            parserMock
+                .withArgs({ ...parserConfig, ...{ yaml: 'yamlcontentwithscmurls' } })
+                .resolves({ ...PARSED_YAML_WITH_ERRORS });
+            // mainJob is active, but invalid yaml is a user error, not a missing config
+            jobs = [mainJob];
+            jobFactoryMock.list.resolves(jobs);
+
+            return pipeline.sync().then(p => {
+                assert.equal(p.id, testId);
+                assert.calledOnce(mainJob.update);
+                assert.deepEqual(
+                    pipeline.workflowGraph.nodes.map(n => n.name),
+                    ['~pr', '~commit', 'main']
+                );
+            });
         });
 
         it('still creates the fallback job for a brand-new pipeline with no jobs yet', () => {
@@ -4045,6 +4083,42 @@ describe('Pipeline Model', () => {
                 assert.calledWith(scmMock.getFile, getFileConfig);
                 assert.calledWith(parserMock, parserConfig);
             }));
+
+        it('flags the config as missing when screwdriver.yaml is empty', () => {
+            scmMock.getFile.resolves('');
+            parserMock.withArgs({ ...parserConfig, yaml: '' }).resolves({ ...PARSED_YAML_WITH_ERRORS });
+
+            return pipeline.getConfiguration().then(config => {
+                assert.isTrue(config.configMissing);
+            });
+        });
+
+        it('flags the config as missing when the SCM returns no file content at all', () => {
+            scmMock.getFile.resolves(null);
+            parserMock.withArgs({ ...parserConfig, yaml: null }).resolves({ ...PARSED_YAML_WITH_ERRORS });
+
+            return pipeline.getConfiguration().then(config => {
+                assert.isTrue(config.configMissing);
+            });
+        });
+
+        it('flags the config as missing when screwdriver.yaml is only whitespace', () => {
+            scmMock.getFile.resolves(' \n\t\n');
+            parserMock.withArgs({ ...parserConfig, yaml: ' \n\t\n' }).resolves({ ...PARSED_YAML_WITH_ERRORS });
+
+            return pipeline.getConfiguration().then(config => {
+                assert.isTrue(config.configMissing);
+            });
+        });
+
+        it('does not flag the config as missing when the yaml has errors', () => {
+            parserMock.withArgs(parserConfig).resolves({ ...PARSED_YAML_WITH_ERRORS });
+
+            return pipeline.getConfiguration().then(config => {
+                assert.isOk(config.errors);
+                assert.isUndefined(config.configMissing);
+            });
+        });
 
         it('passes triggerFactoryMock and pipelineId if external join flag is true', () => {
             pipelineFactoryMock.getExternalJoinFlag.returns(true);
