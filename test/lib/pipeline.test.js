@@ -1703,6 +1703,34 @@ describe('Pipeline Model', () => {
             });
         });
 
+        [401, 404].forEach(status => {
+            it(`syncs an existing child using the next admin after a ${status} error`, async () => {
+                const error = new Error('Cannot access child repository');
+                const firstPermissions = sinon.stub().resolves({ push: true });
+
+                error.status = status;
+                firstPermissions.withArgs(childPipelineGitHubFooConfig.scmUri).rejects(error);
+                userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
+                    getPermissions: firstPermissions,
+                    unsealToken: sinon.stub().resolves('foo')
+                });
+                getUserPermissionMocks({ username: 'robin', push: true, admin: true });
+                jobs = [mainJob, publishJob];
+                jobFactoryMock.list.resolves(jobs);
+                scmMock.getFile.resolves('yamlcontentwithscmurls');
+                pipelineFactoryMock.list
+                    .withArgs({ params: { configPipelineId: testId } })
+                    .resolves([childPipelineMock]);
+
+                await pipeline.sync();
+
+                assert.calledWithExactly(firstPermissions, childPipelineGitHubFooConfig.scmUri);
+                assert.calledOnce(childPipelineMock.sync);
+                assert.notCalled(childPipelineMock.deactivate);
+                assert.equal(childPipelineMock.state, 'ACTIVE');
+            });
+        });
+
         it('syncs child pipeline if from read-only SCM', () => {
             const parsedYaml = hoek.clone(EXTERNAL_PARSED_YAML);
             const childPipelineFooMock = getChildPipelineMock({ ...childPipelineGitHubFooConfig, state: 'INACTIVE' });
@@ -3322,6 +3350,90 @@ describe('Pipeline Model', () => {
                     assert.isOk(err);
                     assert.equal(err.message, 'This pipeline is being deleted.');
                 });
+        });
+    });
+
+    describe('_hasAdminPermission', () => {
+        let firstPermissions;
+        let secondPermissions;
+
+        beforeEach(() => {
+            pipeline.admins = { batman: true, robin: true };
+            firstPermissions = sinon.stub().resolves({ admin: false });
+            secondPermissions = sinon.stub().resolves({ admin: true });
+            userFactoryMock.get.withArgs({ username: 'batman', scmContext }).resolves({
+                getPermissions: firstPermissions
+            });
+            userFactoryMock.get.withArgs({ username: 'robin', scmContext }).resolves({
+                getPermissions: secondPermissions
+            });
+        });
+
+        [401, 404].forEach(status => {
+            it(`checks the next admin after a ${status} error`, async () => {
+                const error = new Error('Cannot access repository');
+
+                error.status = status;
+                firstPermissions.rejects(error);
+
+                assert.isTrue(await pipeline._hasAdminPermission(scmUri));
+                assert.calledOnceWithExactly(firstPermissions, scmUri);
+                assert.calledOnceWithExactly(secondPermissions, scmUri);
+                assert.callOrder(firstPermissions, secondPermissions);
+            });
+
+            it(`returns false when all admins receive ${status} errors`, async () => {
+                const error = new Error('Cannot access repository');
+
+                error.status = status;
+                firstPermissions.rejects(error);
+                secondPermissions.rejects(error);
+
+                assert.isFalse(await pipeline._hasAdminPermission(scmUri));
+                assert.calledOnce(secondPermissions);
+            });
+        });
+
+        it('stops checking after finding an admin', async () => {
+            firstPermissions.resolves({ admin: true });
+
+            assert.isTrue(await pipeline._hasAdminPermission(scmUri));
+            assert.notCalled(secondPermissions);
+        });
+
+        it('checks the next user when the first user has no admin permission', async () => {
+            assert.isTrue(await pipeline._hasAdminPermission(scmUri));
+            assert.calledOnce(secondPermissions);
+        });
+
+        it('returns false when no user has admin permission', async () => {
+            secondPermissions.resolves({ admin: false });
+
+            assert.isFalse(await pipeline._hasAdminPermission(scmUri));
+        });
+
+        it('returns false when there are no admins', async () => {
+            pipeline.admins = {};
+
+            assert.isFalse(await pipeline._hasAdminPermission(scmUri));
+            assert.notCalled(userFactoryMock.get);
+        });
+
+        [403, 429, 500, undefined].forEach(status => {
+            it(`propagates an error with status ${status}`, async () => {
+                const error = new Error('Failed to get permissions');
+
+                error.status = status;
+                firstPermissions.rejects(error);
+
+                try {
+                    await pipeline._hasAdminPermission(scmUri);
+                    assert.fail('Expected the permission error to propagate');
+                } catch (err) {
+                    assert.strictEqual(err, error);
+                }
+                assert.notCalled(secondPermissions);
+            });
         });
     });
 
